@@ -1,0 +1,13 @@
+{
+  "name": "@karibu/supabase",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "generate-types": "supabase gen types typescript --local > src/database.types.ts",
+    "migrate": "supabase db push",
+    "reset": "supabase db reset"
+  },
+  "devDependencies": {
+    "supabase": "^1.142.0"
+  }
+}
