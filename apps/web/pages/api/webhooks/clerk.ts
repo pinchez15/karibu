@@ -1,6 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { Webhook } from 'svix'
-import { createServiceClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+import { buffer } from 'micro'
+
+// Disable body parsing - we need the raw body for signature verification
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+// Create Supabase client with service role
+function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Clerk webhook event types
 interface OrganizationMembershipEvent {
@@ -24,28 +40,35 @@ interface OrganizationMembershipEvent {
 
 type WebhookEvent = OrganizationMembershipEvent
 
-export async function POST(request: NextRequest) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
   const supabase = createServiceClient()
 
   // Get webhook secret from environment
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
   if (!webhookSecret) {
     console.error('CLERK_WEBHOOK_SECRET is not configured')
-    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+    return res.status(500).json({ error: 'Webhook secret not configured' })
   }
 
   // Get the headers
-  const svixId = request.headers.get('svix-id')
-  const svixTimestamp = request.headers.get('svix-timestamp')
-  const svixSignature = request.headers.get('svix-signature')
+  const svixId = req.headers['svix-id'] as string
+  const svixTimestamp = req.headers['svix-timestamp'] as string
+  const svixSignature = req.headers['svix-signature'] as string
 
   if (!svixId || !svixTimestamp || !svixSignature) {
     console.error('Missing svix headers')
-    return NextResponse.json({ error: 'Missing webhook headers' }, { status: 400 })
+    return res.status(400).json({ error: 'Missing webhook headers' })
   }
 
-  // Get the body
-  const body = await request.text()
+  // Get the raw body
+  const body = (await buffer(req)).toString()
 
   // Verify the webhook signature
   const wh = new Webhook(webhookSecret)
@@ -59,7 +82,7 @@ export async function POST(request: NextRequest) {
     }) as WebhookEvent
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    return res.status(400).json({ error: 'Invalid signature' })
   }
 
   // Handle the event
@@ -81,10 +104,10 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${(event as { type: string }).type}`)
     }
 
-    return NextResponse.json({ received: true })
+    return res.status(200).json({ received: true })
   } catch (error) {
     console.error('Webhook handler error:', error)
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+    return res.status(500).json({ error: 'Webhook handler failed' })
   }
 }
 
@@ -278,7 +301,6 @@ async function upsertStaff(
 
 function mapClerkRole(clerkRole: string): 'admin' | 'doctor' | 'nurse' {
   // Clerk organization roles: org:admin, org:member, etc.
-  // Map to our roles
   switch (clerkRole.toLowerCase()) {
     case 'org:admin':
     case 'admin':
@@ -291,6 +313,6 @@ function mapClerkRole(clerkRole: string): 'admin' | 'doctor' | 'nurse' {
     case 'org:member':
     case 'member':
     default:
-      return 'doctor' // Default to doctor for regular members
+      return 'doctor'
   }
 }
