@@ -1,18 +1,26 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
+import { createLogger } from '../_shared/logger.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const logger = createLogger('generate-notes')
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let visit_id: string | undefined
+  let supabase: ReturnType<typeof createClient> | undefined
+
   try {
-    const { visit_id } = await req.json()
+    const body = await req.json()
+    visit_id = body.visit_id
 
     if (!visit_id) {
       return new Response(
@@ -21,19 +29,28 @@ serve(async (req) => {
       )
     }
 
+    const op = logger.startOperation('noteGeneration', { visit_id })
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    supabase = createClient(supabaseUrl, supabaseServiceKey)
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
 
     // Get visit and transcript
-    const { data: visit, error: visitError } = await supabase
-      .from('visits')
-      .select('*, provider_notes(*), patient:patients(display_name)')
-      .eq('id', visit_id)
-      .single()
+    const { data: visit, error: visitError } = await withRetry(
+      async () => {
+        const result = await supabase!
+          .from('visits')
+          .select('*, provider_notes(*), patient:patients(display_name)')
+          .eq('id', visit_id)
+          .single()
+        if (result.error) throw new Error(result.error.message)
+        return result
+      },
+      'getVisit'
+    )
 
-    if (visitError || !visit) {
+    if (!visit) {
       throw new Error('Visit not found')
     }
 
@@ -41,6 +58,8 @@ serve(async (req) => {
     if (!transcript) {
       throw new Error('Transcript not found')
     }
+
+    logger.info('Generating notes from transcript', { visit_id, transcript_length: transcript.length })
 
     // Build context from visit data
     const context = []
@@ -66,22 +85,26 @@ Generate a structured clinical note with these sections:
 
 Be concise but thorough. Use medical terminology appropriately. If information is not mentioned in the transcript, note it as "Not documented" rather than making assumptions.`
 
-    const providerResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
+    const providerResponse = await fetchWithRetry(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4-turbo-preview',
+          messages: [
+            { role: 'system', content: 'You are a medical scribe assistant helping doctors document patient visits.' },
+            { role: 'user', content: providerPrompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
       },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [
-          { role: 'system', content: 'You are a medical scribe assistant helping doctors document patient visits.' },
-          { role: 'user', content: providerPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-    })
+      'generateProviderNote'
+    )
 
     if (!providerResponse.ok) {
       throw new Error(`OpenAI API error: ${await providerResponse.text()}`)
@@ -89,6 +112,8 @@ Be concise but thorough. Use medical terminology appropriately. If information i
 
     const providerResult = await providerResponse.json()
     const providerNoteContent = providerResult.choices[0].message.content
+
+    logger.info('Provider note generated', { visit_id, provider_note_length: providerNoteContent.length })
 
     // Generate patient note (plain language)
     const patientName = visit.patient?.display_name || 'there'
@@ -107,22 +132,26 @@ Create a summary for the patient that includes:
 
 Use simple language a non-medical person can understand. Be warm and reassuring. Avoid medical jargon. Keep it under 300 words.`
 
-    const patientResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
+    const patientResponse = await fetchWithRetry(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4-turbo-preview',
+          messages: [
+            { role: 'system', content: 'You are a friendly healthcare assistant helping patients understand their visit.' },
+            { role: 'user', content: patientPrompt },
+          ],
+          temperature: 0.5,
+          max_tokens: 1000,
+        }),
       },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [
-          { role: 'system', content: 'You are a friendly healthcare assistant helping patients understand their visit.' },
-          { role: 'user', content: patientPrompt },
-        ],
-        temperature: 0.5,
-        max_tokens: 1000,
-      }),
-    })
+      'generatePatientNote'
+    )
 
     if (!patientResponse.ok) {
       throw new Error(`OpenAI API error: ${await patientResponse.text()}`)
@@ -131,31 +160,56 @@ Use simple language a non-medical person can understand. Be warm and reassuring.
     const patientResult = await patientResponse.json()
     const patientNoteContent = patientResult.choices[0].message.content
 
-    // Save both notes
-    await supabase
-      .from('provider_notes')
-      .update({
-        note_content: providerNoteContent,
-        status: 'draft',
-      })
-      .eq('visit_id', visit_id)
+    logger.info('Patient note generated', { visit_id, patient_note_length: patientNoteContent.length })
 
-    await supabase
-      .from('patient_notes')
-      .upsert({
-        visit_id,
-        content: patientNoteContent,
-        language: 'en',
-        status: 'draft',
-      }, {
-        onConflict: 'visit_id',
-      })
+    // Save both notes
+    await withRetry(
+      async () => {
+        const { error } = await supabase!
+          .from('provider_notes')
+          .update({
+            note_content: providerNoteContent,
+            status: 'draft',
+          })
+          .eq('visit_id', visit_id)
+        if (error) throw new Error(error.message)
+      },
+      'saveProviderNote'
+    )
+
+    await withRetry(
+      async () => {
+        const { error } = await supabase!
+          .from('patient_notes')
+          .upsert({
+            visit_id,
+            content: patientNoteContent,
+            language: 'en',
+            status: 'draft',
+          }, {
+            onConflict: 'visit_id',
+          })
+        if (error) throw new Error(error.message)
+      },
+      'savePatientNote'
+    )
 
     // Update visit status to review
-    await supabase
-      .from('visits')
-      .update({ status: 'review' })
-      .eq('id', visit_id)
+    await withRetry(
+      async () => {
+        const { error } = await supabase!
+          .from('visits')
+          .update({ status: 'review' })
+          .eq('id', visit_id)
+        if (error) throw new Error(error.message)
+      },
+      'updateVisitStatus'
+    )
+
+    op.success({
+      provider_note_length: providerNoteContent.length,
+      patient_note_length: patientNoteContent.length,
+    })
 
     return new Response(
       JSON.stringify({
@@ -166,7 +220,25 @@ Use simple language a non-medical person can understand. Be warm and reassuring.
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Note generation error:', error)
+    logger.error('Note generation failed', { visit_id }, error)
+
+    // Update visit status to error (this was missing before!)
+    if (visit_id && supabase) {
+      try {
+        await supabase
+          .from('visits')
+          .update({
+            status: 'error',
+            error_message: `Note generation failed: ${error.message}`,
+            error_at: new Date().toISOString(),
+          })
+          .eq('id', visit_id)
+        logger.info('Visit status updated to error', { visit_id })
+      } catch (updateError) {
+        logger.error('Failed to update visit error status', { visit_id }, updateError)
+      }
+    }
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

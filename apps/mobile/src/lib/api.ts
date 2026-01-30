@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { DEMO_CLINIC_ID } from '@karibu/shared';
 import type {
   Patient,
   Visit,
@@ -11,45 +10,50 @@ import type {
   UpdateVisitRequest,
   Staff,
 } from '@karibu/shared';
+import { useAuthStore } from '../stores/authStore';
+
+// Helper to get current clinic ID from auth store
+function getClinicId(): string {
+  const clinicId = useAuthStore.getState().clinicId;
+  if (!clinicId) {
+    throw new Error('No clinic ID available. User may not be authenticated or not assigned to a clinic.');
+  }
+  return clinicId;
+}
 
 // Staff / Auth
 
 export async function getOrCreateStaff(clerkUserId: string, email: string, displayName: string): Promise<Staff> {
-  // First try to get existing staff
-  const { data: existing } = await supabase
+  // Get existing staff - staff should be created via Clerk webhook when joining organization
+  const { data: existing, error } = await supabase
     .from('staff')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
+    .eq('is_active', true)
     .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
 
   if (existing) {
     return existing as Staff;
   }
 
-  // Create new staff linked to demo clinic
-  const { data: created, error } = await supabase
-    .from('staff')
-    .insert({
-      clerk_user_id: clerkUserId,
-      clinic_id: DEMO_CLINIC_ID,
-      email,
-      display_name: displayName,
-      role: 'doctor',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return created as Staff;
+  // Staff not found - this means the user hasn't joined a Clerk Organization yet
+  // or the webhook hasn't processed. Throw a helpful error.
+  throw new Error(
+    'Staff record not found. Please join a clinic organization in Clerk, ' +
+    'or wait for your organization membership to be processed.'
+  );
 }
 
 // Patients
 
 export async function lookupPatient(whatsappNumber: string): Promise<Patient | null> {
+  const clinicId = getClinicId();
   const { data, error } = await supabase
     .from('patients')
     .select('*')
-    .eq('clinic_id', DEMO_CLINIC_ID)
+    .eq('clinic_id', clinicId)
     .eq('whatsapp_number', whatsappNumber)
     .single();
 
@@ -58,10 +62,11 @@ export async function lookupPatient(whatsappNumber: string): Promise<Patient | n
 }
 
 export async function createPatient(request: CreatePatientRequest): Promise<Patient> {
+  const clinicId = getClinicId();
   const { data, error } = await supabase
     .from('patients')
     .insert({
-      clinic_id: DEMO_CLINIC_ID,
+      clinic_id: clinicId,
       whatsapp_number: request.whatsapp_number,
       display_name: request.display_name || null,
     })
@@ -88,10 +93,11 @@ export async function createVisit(
   doctorId: string,
   consentRecording: boolean
 ): Promise<Visit> {
+  const clinicId = getClinicId();
   const { data, error } = await supabase
     .from('visits')
     .insert({
-      clinic_id: DEMO_CLINIC_ID,
+      clinic_id: clinicId,
       patient_id: patientId,
       doctor_id: doctorId,
       status: 'recording',
@@ -169,8 +175,9 @@ export async function createAudioUpload(visitId: string): Promise<AudioUpload> {
 }
 
 export async function getUploadUrl(visitId: string): Promise<{ uploadUrl: string; storagePath: string }> {
+  const clinicId = getClinicId();
   const timestamp = Date.now();
-  const storagePath = `${DEMO_CLINIC_ID}/${visitId}/${timestamp}.m4a`;
+  const storagePath = `${clinicId}/${visitId}/${timestamp}.m4a`;
 
   const { data, error } = await supabase.storage
     .from('audio-recordings')

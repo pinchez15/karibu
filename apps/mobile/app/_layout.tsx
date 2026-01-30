@@ -5,6 +5,7 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '../src/lib/clerk';
 import { setSupabaseAuth } from '../src/lib/supabase';
 import { useAuthStore } from '../src/stores/authStore';
+import { useOfflineSync } from '../src/hooks/useOfflineSync';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import { View } from 'react-native';
 
@@ -13,6 +14,9 @@ const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { setAuth, setLoaded } = useAuthStore();
+
+  // Initialize offline sync (processes pending uploads on reconnect)
+  useOfflineSync();
 
   useEffect(() => {
     setLoaded(isLoaded);

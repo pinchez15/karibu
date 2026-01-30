@@ -4,6 +4,7 @@ export interface Clinic {
   id: string;
   name: string;
   slug: string;
+  clerk_organization_id: string | null;
   whatsapp_phone_number: string | null;
   whatsapp_business_account_id: string | null;
   timezone: string;
@@ -20,6 +21,7 @@ export interface Staff {
   display_name: string;
   role: 'admin' | 'doctor' | 'nurse';
   is_active: boolean;
+  deactivated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,14 +42,31 @@ export type VisitStatus =
   | 'processing'
   | 'review'
   | 'sent'
-  | 'completed';
+  | 'completed'
+  | 'error';
+
+export type QueueStatus =
+  | 'waiting'
+  | 'with_nurse'
+  | 'ready_for_doctor'
+  | 'with_doctor'
+  | 'completed'
+  | 'cancelled';
+
+export type VisitPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface Visit {
   id: string;
   clinic_id: string;
   patient_id: string;
   doctor_id: string | null;
+  nurse_id: string | null;
   status: VisitStatus;
+  queue_status: QueueStatus;
+  queue_position: number | null;
+  priority: VisitPriority;
+  chief_complaint: string | null;
+  checked_in_at: string | null;
   consent_recording: boolean;
   consent_timestamp: string | null;
   diagnosis: string | null;
@@ -58,6 +77,8 @@ export interface Visit {
   created_at: string;
   updated_at: string;
   finalized_at: string | null;
+  error_message: string | null;
+  error_at: string | null;
 }
 
 export interface VisitWithPatient extends Visit {
@@ -219,4 +240,29 @@ export interface PatientNotePageData {
   medications?: string;
   follow_up_instructions?: string;
   tests_ordered?: string;
+}
+
+// Queue Types
+
+export interface QueueItem {
+  visit_id: string;
+  patient_id: string;
+  patient_name: string | null;
+  patient_phone: string;
+  queue_position: number;
+  queue_status: QueueStatus;
+  priority: VisitPriority;
+  chief_complaint: string | null;
+  checked_in_at: string;
+  nurse_id: string | null;
+  nurse_name: string | null;
+  doctor_id: string | null;
+  doctor_name: string | null;
+  wait_minutes: number;
+}
+
+export interface CheckInRequest {
+  patient_id: string;
+  chief_complaint?: string;
+  priority?: VisitPriority;
 }

@@ -1,18 +1,26 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
+import { createLogger } from '../_shared/logger.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const logger = createLogger('send-whatsapp')
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let visit_id: string | undefined
+
   try {
-    const { visit_id, magic_link_token } = await req.json()
+    const body = await req.json()
+    visit_id = body.visit_id
+    const magic_link_token = body.magic_link_token
 
     if (!visit_id || !magic_link_token) {
       return new Response(
@@ -21,18 +29,27 @@ serve(async (req) => {
       )
     }
 
+    const op = logger.startOperation('sendWhatsAppMessage', { visit_id })
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get visit and patient info
-    const { data: visit, error: visitError } = await supabase
-      .from('visits')
-      .select('*, patient:patients(*), clinic:clinics(name, whatsapp_phone_number)')
-      .eq('id', visit_id)
-      .single()
+    const { data: visit, error: visitError } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from('visits')
+          .select('*, patient:patients(*), clinic:clinics(name, whatsapp_phone_number)')
+          .eq('id', visit_id)
+          .single()
+        if (result.error) throw new Error(result.error.message)
+        return result
+      },
+      'getVisit'
+    )
 
-    if (visitError || !visit) {
+    if (!visit) {
       throw new Error('Visit not found')
     }
 
@@ -45,6 +62,8 @@ serve(async (req) => {
     const webUrl = Deno.env.get('WEB_URL') || 'https://karibu.health'
     const noteUrl = `${webUrl}/note/${magic_link_token}`
 
+    logger.info('Sending WhatsApp message', { visit_id, patient_phone: patientPhone.slice(-4) })
+
     // WhatsApp Cloud API configuration
     const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')!
     const whatsappAccessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!
@@ -52,7 +71,7 @@ serve(async (req) => {
     // Format phone number for WhatsApp (remove + prefix)
     const formattedPhone = patientPhone.replace('+', '')
 
-    // Send WhatsApp message
+    // Send WhatsApp template message
     const messagePayload = {
       messaging_product: 'whatsapp',
       to: formattedPhone,
@@ -79,29 +98,38 @@ serve(async (req) => {
       },
     }
 
-    const whatsappResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${whatsappAccessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messagePayload),
-      }
-    )
-
-    let whatsappResult
+    let whatsappResult: any
     let messageSent = false
 
-    if (whatsappResponse.ok) {
-      whatsappResult = await whatsappResponse.json()
-      messageSent = true
-    } else {
-      // If template message fails, try a simple text message
-      // (only works within 24-hour window of patient-initiated conversation)
-      console.log('Template failed, trying text message')
+    // Try template message first (with retry)
+    try {
+      const whatsappResponse = await fetchWithRetry(
+        `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${whatsappAccessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(messagePayload),
+        },
+        'sendTemplateMessage'
+      )
 
+      if (whatsappResponse.ok) {
+        whatsappResult = await whatsappResponse.json()
+        messageSent = true
+        logger.info('Template message sent successfully', { visit_id, message_id: whatsappResult?.messages?.[0]?.id })
+      } else {
+        const errorText = await whatsappResponse.text()
+        logger.warn('Template message failed, trying text fallback', { visit_id, error: errorText })
+      }
+    } catch (templateError) {
+      logger.warn('Template message failed', { visit_id }, templateError)
+    }
+
+    // Fallback to text message if template failed
+    if (!messageSent) {
       const textPayload = {
         messaging_product: 'whatsapp',
         to: formattedPhone,
@@ -111,40 +139,58 @@ serve(async (req) => {
         },
       }
 
-      const textResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${whatsappAccessToken}`,
-            'Content-Type': 'application/json',
+      try {
+        const textResponse = await fetchWithRetry(
+          `https://graph.facebook.com/v18.0/${whatsappPhoneNumberId}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${whatsappAccessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(textPayload),
           },
-          body: JSON.stringify(textPayload),
-        }
-      )
+          'sendTextMessage'
+        )
 
-      if (textResponse.ok) {
-        whatsappResult = await textResponse.json()
-        messageSent = true
-      } else {
-        const errorText = await textResponse.text()
-        console.error('WhatsApp API error:', errorText)
+        if (textResponse.ok) {
+          whatsappResult = await textResponse.json()
+          messageSent = true
+          logger.info('Text message sent successfully', { visit_id, message_id: whatsappResult?.messages?.[0]?.id })
+        } else {
+          const errorText = await textResponse.text()
+          logger.error('Text message also failed', { visit_id, error: errorText })
+        }
+      } catch (textError) {
+        logger.error('Text message failed', { visit_id }, textError)
       }
     }
 
     // Log message attempt
-    await supabase.from('message_logs').insert({
-      patient_id: visit.patient_id,
-      visit_id,
-      direction: 'outbound',
-      channel: 'whatsapp',
-      message_type: 'patient_note',
-      content_summary: 'Visit summary link sent',
-      external_id: whatsappResult?.messages?.[0]?.id,
-      status: messageSent ? 'sent' : 'failed',
-      sent_at: messageSent ? new Date().toISOString() : null,
-      error_message: messageSent ? null : 'Failed to send message',
-    })
+    await withRetry(
+      async () => {
+        const { error } = await supabase.from('message_logs').insert({
+          patient_id: visit.patient_id,
+          visit_id,
+          direction: 'outbound',
+          channel: 'whatsapp',
+          message_type: 'patient_note',
+          content_summary: 'Visit summary link sent',
+          external_id: whatsappResult?.messages?.[0]?.id,
+          status: messageSent ? 'sent' : 'failed',
+          sent_at: messageSent ? new Date().toISOString() : null,
+          error_message: messageSent ? null : 'Failed to send message',
+        })
+        if (error) throw new Error(error.message)
+      },
+      'logMessage'
+    )
+
+    if (messageSent) {
+      op.success({ message_id: whatsappResult?.messages?.[0]?.id })
+    } else {
+      op.failure(new Error('Failed to send WhatsApp message'))
+    }
 
     return new Response(
       JSON.stringify({
@@ -155,7 +201,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('WhatsApp send error:', error)
+    logger.error('WhatsApp send error', { visit_id }, error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

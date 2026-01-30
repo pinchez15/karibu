@@ -6,6 +6,7 @@ interface AuthState {
   isSignedIn: boolean;
   staff: Staff | null;
   clerkUserId: string | null;
+  clinicId: string | null;
 
   // Actions
   setAuth: (isSignedIn: boolean, clerkUserId: string | null) => void;
@@ -19,11 +20,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   isSignedIn: false,
   staff: null,
   clerkUserId: null,
+  clinicId: null,
 
   setAuth: (isSignedIn, clerkUserId) =>
     set({ isSignedIn, clerkUserId }),
 
-  setStaff: (staff) => set({ staff }),
+  setStaff: (staff) => set({
+    staff,
+    clinicId: staff?.clinic_id ?? null,
+  }),
 
   setLoaded: (isLoaded) => set({ isLoaded }),
 
@@ -32,5 +37,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       isSignedIn: false,
       staff: null,
       clerkUserId: null,
+      clinicId: null,
     }),
 }));

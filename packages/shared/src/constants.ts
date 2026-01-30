@@ -1,7 +1,8 @@
 // Karibu Health Constants
 
-// Demo clinic ID (hardcoded for demo MVP)
-export const DEMO_CLINIC_ID = '00000000-0000-0000-0000-000000000001';
+// Note: DEMO_CLINIC_ID was removed in favor of dynamic clinic assignment via Clerk Organizations.
+// The original demo clinic UUID was: '00000000-0000-0000-0000-000000000001'
+// Staff are now assigned to clinics via Clerk Organization membership.
 
 // Visit status flow
 export const VISIT_STATUS_FLOW = [

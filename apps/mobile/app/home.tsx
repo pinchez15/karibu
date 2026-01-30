@@ -162,6 +162,23 @@ export default function Home() {
         </Card>
       )}
 
+      {/* Queue Button */}
+      <Card style={styles.queueCard}>
+        <TouchableOpacity
+          style={styles.queueButton}
+          onPress={() => router.push('/queue')}
+        >
+          <View style={styles.queueInfo}>
+            <Ionicons name="people" size={24} color="#2563EB" />
+            <View style={styles.queueText}>
+              <Text style={styles.queueTitle}>Patient Queue</Text>
+              <Text style={styles.queueSubtitle}>View waiting patients</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+      </Card>
+
       <Button
         title="New Visit"
         onPress={handleNewVisit}
@@ -228,6 +245,30 @@ const styles = StyleSheet.create({
   pendingText: {
     color: '#92400E',
     fontWeight: '500',
+  },
+  queueCard: {
+    marginBottom: 12,
+  },
+  queueButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  queueInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  queueText: {},
+  queueTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  queueSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
   },
   newVisitButton: {
     marginBottom: 24,
