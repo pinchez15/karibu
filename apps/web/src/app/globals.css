@@ -2,15 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Roboto fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
 :root {
-  --foreground: #1a1a1a;
-  --background: #f9fafb;
+  /* Clinical color palette */
+  --color-primary: #0369A1;
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-error: #DC2626;
+
+  /* Slate text hierarchy */
+  --text-primary: #1E293B;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+
+  /* Backgrounds */
+  --background: #FFFFFF;
+  --background-secondary: #F8FAFC;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: var(--text-primary);
+  background: var(--background-secondary);
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Data/measurement typography */
+.font-data {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+}
+
+/* Touch-friendly button base */
+@layer components {
+  .btn {
+    @apply min-h-touch min-w-touch px-4 py-3 font-medium rounded-lg
+           inline-flex items-center justify-center
+           transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-sky-800 focus:ring-primary;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-white hover:bg-emerald-700 focus:ring-success;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400;
+  }
+
+  .btn-danger {
+    @apply btn bg-error text-white hover:bg-red-700 focus:ring-error;
+  }
+
+  /* Clinical card component */
+  .card {
+    @apply bg-white rounded-lg border border-slate-200 p-4;
+  }
+
+  /* Key-value data display */
+  .data-label {
+    @apply text-sm font-medium text-text-muted;
+  }
+
+  .data-value {
+    @apply text-base font-medium text-text-primary mt-0.5;
+  }
+
+  .data-value-mono {
+    @apply text-base font-medium text-text-primary mt-0.5 font-mono;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-slate-200 rounded animate-pulse;
+  }
 }
 
 /* Print styles for patient notes */

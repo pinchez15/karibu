@@ -28,8 +28,8 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="min-h-screen bg-gray-50">
-          <header className="flex justify-end items-center p-4 gap-4">
+        <body className="min-h-screen bg-slate-50 text-slate-800">
+          <header className="flex justify-end items-center p-4 gap-4 bg-white border-b border-slate-200">
             <SignedOut>
               <SignInButton />
               <SignUpButton />
