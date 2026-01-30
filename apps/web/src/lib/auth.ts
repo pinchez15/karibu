@@ -68,5 +68,5 @@ export async function hasRole(role: 'admin' | 'doctor' | 'nurse'): Promise<boole
  */
 export async function isAdmin(): Promise<boolean> {
   const staff = await getStaff()
-  return staff?.role === 'admin' ?? false
+  return staff?.role === 'admin'
 }
