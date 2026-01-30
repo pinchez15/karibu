@@ -38,7 +38,17 @@ interface OrganizationMembershipEvent {
   type: 'organizationMembership.created' | 'organizationMembership.deleted' | 'organizationMembership.updated'
 }
 
-type WebhookEvent = OrganizationMembershipEvent
+interface OrganizationEvent {
+  data: {
+    id: string
+    name: string
+    slug: string
+    created_by: string
+  }
+  type: 'organization.created'
+}
+
+type WebhookEvent = OrganizationMembershipEvent | OrganizationEvent
 
 export default async function handler(
   req: NextApiRequest,
@@ -88,16 +98,20 @@ export default async function handler(
   // Handle the event
   try {
     switch (event.type) {
+      case 'organization.created':
+        await handleOrganizationCreated(supabase, event)
+        break
+
       case 'organizationMembership.created':
-        await handleMembershipCreated(supabase, event)
+        await handleMembershipCreated(supabase, event as OrganizationMembershipEvent)
         break
 
       case 'organizationMembership.deleted':
-        await handleMembershipDeleted(supabase, event)
+        await handleMembershipDeleted(supabase, event as OrganizationMembershipEvent)
         break
 
       case 'organizationMembership.updated':
-        await handleMembershipUpdated(supabase, event)
+        await handleMembershipUpdated(supabase, event as OrganizationMembershipEvent)
         break
 
       default:
@@ -109,6 +123,43 @@ export default async function handler(
     console.error('Webhook handler error:', error)
     return res.status(500).json({ error: 'Webhook handler failed' })
   }
+}
+
+async function handleOrganizationCreated(
+  supabase: ReturnType<typeof createServiceClient>,
+  event: OrganizationEvent
+) {
+  const { id, name, slug } = event.data
+
+  console.log(`Creating clinic for organization ${id}`)
+
+  // Check if clinic already exists
+  const { data: existing } = await supabase
+    .from('clinics')
+    .select('id')
+    .eq('clerk_organization_id', id)
+    .single()
+
+  if (existing) {
+    console.log(`Clinic already exists for org ${id}`)
+    return
+  }
+
+  // Create the clinic
+  const { error } = await supabase
+    .from('clinics')
+    .insert({
+      name,
+      slug,
+      clerk_organization_id: id,
+    })
+
+  if (error) {
+    console.error('Failed to create clinic:', error)
+    throw error
+  }
+
+  console.log(`Created clinic for org ${id}`)
 }
 
 async function handleMembershipCreated(
