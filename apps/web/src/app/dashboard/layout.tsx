@@ -82,7 +82,7 @@ export default function DashboardLayout({
         </div>
         <nav className="p-4 space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
             return (
               <Link
                 key={item.name}
@@ -110,7 +110,7 @@ export default function DashboardLayout({
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
               return (
                 <Link
                   key={item.name}
@@ -149,7 +149,7 @@ export default function DashboardLayout({
             </svg>
           </button>
           <h1 className="text-lg font-semibold text-gray-900">
-            {navigation.find(n => pathname === n.href || (n.href !== '/dashboard' && pathname.startsWith(n.href)))?.name || 'Dashboard'}
+            {navigation.find(n => pathname === n.href || (n.href !== '/dashboard' && pathname?.startsWith(n.href)))?.name || 'Dashboard'}
           </h1>
         </div>
 
