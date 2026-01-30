@@ -11,20 +11,21 @@ interface QueueBoardProps {
   staffRole: 'admin' | 'doctor' | 'nurse'
 }
 
+// Clinical status colors (from STYLING_PRD)
 const statusConfig: Record<QueueStatus, { title: string; color: string; bg: string }> = {
   waiting: { title: 'Waiting', color: 'text-amber-700', bg: 'bg-amber-50' },
-  with_nurse: { title: 'With Nurse', color: 'text-blue-700', bg: 'bg-blue-50' },
-  ready_for_doctor: { title: 'Ready for Doctor', color: 'text-green-700', bg: 'bg-green-50' },
-  with_doctor: { title: 'With Doctor', color: 'text-purple-700', bg: 'bg-purple-50' },
-  completed: { title: 'Completed', color: 'text-gray-700', bg: 'bg-gray-50' },
+  with_nurse: { title: 'With Nurse', color: 'text-sky-700', bg: 'bg-sky-50' },
+  ready_for_doctor: { title: 'Ready for Doctor', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+  with_doctor: { title: 'With Doctor', color: 'text-violet-700', bg: 'bg-violet-50' },
+  completed: { title: 'Completed', color: 'text-slate-600', bg: 'bg-slate-50' },
   cancelled: { title: 'Cancelled', color: 'text-red-700', bg: 'bg-red-50' },
 }
 
 const priorityConfig = {
-  low: { label: 'Low', color: 'text-gray-500', bg: 'bg-gray-100' },
-  normal: { label: 'Normal', color: 'text-blue-600', bg: 'bg-blue-100' },
-  high: { label: 'High', color: 'text-amber-600', bg: 'bg-amber-100' },
-  urgent: { label: 'Urgent', color: 'text-red-600', bg: 'bg-red-100' },
+  low: { label: 'Low', color: 'text-slate-500', bg: 'bg-slate-100' },
+  normal: { label: 'Normal', color: 'text-sky-700', bg: 'bg-sky-100' },
+  high: { label: 'High', color: 'text-amber-700', bg: 'bg-amber-100' },
+  urgent: { label: 'Urgent', color: 'text-red-700', bg: 'bg-red-100' },
 }
 
 export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: QueueBoardProps) {
@@ -135,24 +136,24 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
         const config = statusConfig[status]
 
         return (
-          <div key={status} className={`rounded-xl ${config.bg} p-4`}>
+          <div key={status} className={`rounded-lg ${config.bg} p-4 border border-slate-200`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className={`font-semibold ${config.color}`}>{config.title}</h3>
-              <span className={`text-sm ${config.color} font-medium`}>{items.length}</span>
+              <span className={`text-sm ${config.color} font-medium font-mono`}>{items.length}</span>
             </div>
 
             <div className="space-y-3">
               {items.map((item) => (
                 <div
                   key={item.visit_id}
-                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
+                  className="card"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-slate-800">
                         {item.patient_name || 'Unknown Patient'}
                       </p>
-                      <p className="text-sm text-gray-500">{item.patient_phone}</p>
+                      <p className="text-sm text-slate-500 font-mono">{item.patient_phone}</p>
                     </div>
                     <span className={`text-xs font-medium px-2 py-1 rounded ${priorityConfig[item.priority].bg} ${priorityConfig[item.priority].color}`}>
                       {priorityConfig[item.priority].label}
@@ -160,22 +161,22 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
                   </div>
 
                   {item.chief_complaint && (
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                    <p className="text-sm text-slate-600 mb-2 line-clamp-2">
                       {item.chief_complaint}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                    <span>#{item.queue_position}</span>
-                    <span>{item.wait_minutes} min wait</span>
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+                    <span className="font-mono">#{item.queue_position}</span>
+                    <span className="font-mono">{item.wait_minutes}m wait</span>
                   </div>
 
-                  {/* Action buttons based on status and role */}
+                  {/* Action buttons - 48px min height for touch targets */}
                   {status === 'waiting' && isNurse && (
                     <button
                       onClick={() => handleAssignToNurse(item.visit_id)}
                       disabled={loading === item.visit_id}
-                      className="w-full py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      className="btn-primary w-full"
                     >
                       {loading === item.visit_id ? 'Starting...' : 'Start Intake'}
                     </button>
@@ -185,7 +186,7 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
                     <button
                       onClick={() => handleMarkReady(item.visit_id)}
                       disabled={loading === item.visit_id}
-                      className="w-full py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      className="btn-success w-full"
                     >
                       {loading === item.visit_id ? 'Updating...' : 'Ready for Doctor'}
                     </button>
@@ -195,7 +196,7 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
                     <button
                       onClick={() => handleClaimPatient(item.visit_id)}
                       disabled={loading === item.visit_id}
-                      className="w-full py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                      className="w-full min-h-touch px-4 py-3 bg-violet-600 text-white font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
                     >
                       {loading === item.visit_id ? 'Claiming...' : 'Start Visit'}
                     </button>
@@ -204,20 +205,20 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
                   {status === 'with_doctor' && item.doctor_id === staffId && (
                     <a
                       href={`/dashboard/visits/${item.visit_id}`}
-                      className="block w-full py-2 bg-gray-100 text-gray-700 text-sm font-medium text-center rounded-lg hover:bg-gray-200 transition-colors"
+                      className="btn-secondary w-full"
                     >
                       View Visit
                     </a>
                   )}
 
                   {(status === 'with_nurse' && item.nurse_name) && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-slate-500 mt-2">
                       Nurse: {item.nurse_name}
                     </p>
                   )}
 
                   {(status === 'with_doctor' && item.doctor_name) && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-slate-500 mt-2">
                       Doctor: {item.doctor_name}
                     </p>
                   )}
@@ -225,7 +226,7 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
               ))}
 
               {items.length === 0 && (
-                <p className="text-center text-sm text-gray-500 py-8">
+                <p className="text-center text-sm text-slate-500 py-8">
                   No patients
                 </p>
               )}

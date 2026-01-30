@@ -19,13 +19,14 @@ interface VisitDetailClientProps {
   staffId: string
 }
 
+// Clinical status colors (from STYLING_PRD)
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   recording: { label: 'Recording', color: 'text-amber-700', bg: 'bg-amber-100' },
-  uploading: { label: 'Uploading', color: 'text-blue-700', bg: 'bg-blue-100' },
-  processing: { label: 'Processing', color: 'text-purple-700', bg: 'bg-purple-100' },
-  review: { label: 'Review', color: 'text-indigo-700', bg: 'bg-indigo-100' },
-  sent: { label: 'Sent', color: 'text-green-700', bg: 'bg-green-100' },
-  completed: { label: 'Completed', color: 'text-gray-700', bg: 'bg-gray-100' },
+  uploading: { label: 'Uploading', color: 'text-sky-700', bg: 'bg-sky-100' },
+  processing: { label: 'Processing', color: 'text-violet-700', bg: 'bg-violet-100' },
+  review: { label: 'Review', color: 'text-primary', bg: 'bg-sky-100' },
+  sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
+  completed: { label: 'Completed', color: 'text-slate-600', bg: 'bg-slate-100' },
   error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
 }
 
@@ -160,15 +161,15 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="card">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-slate-800">
               {visit.patient?.display_name || 'Unknown Patient'}
             </h2>
-            <p className="text-gray-500">{visit.patient?.whatsapp_number}</p>
+            <p className="text-slate-500 font-mono">{visit.patient?.whatsapp_number}</p>
           </div>
           <span className={`px-3 py-1 text-sm font-medium rounded-full ${config.bg} ${config.color}`}>
             {config.label}
@@ -176,13 +177,13 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
         </div>
 
         {visit.status === 'error' && visit.error_message && (
-          <div className="mt-4 p-4 bg-red-50 rounded-lg">
+          <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
             <p className="text-sm font-medium text-red-800">Error</p>
             <p className="text-sm text-red-700 mt-1">{visit.error_message}</p>
             <button
               onClick={handleRetryProcessing}
               disabled={retrying}
-              className="mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              className="btn-danger mt-3"
             >
               {retrying ? 'Retrying...' : 'Retry Processing'}
             </button>
@@ -191,58 +192,58 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div>
-            <p className="text-sm text-gray-500">Visit Date</p>
-            <p className="font-medium">{new Date(visit.visit_date).toLocaleDateString()}</p>
+            <p className="data-label">Visit Date</p>
+            <p className="data-value-mono">{new Date(visit.visit_date).toLocaleDateString()}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Doctor</p>
-            <p className="font-medium">{visit.doctor?.display_name || '-'}</p>
+            <p className="data-label">Doctor</p>
+            <p className="data-value">{visit.doctor?.display_name || '-'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Nurse</p>
-            <p className="font-medium">{visit.nurse?.display_name || '-'}</p>
+            <p className="data-label">Nurse</p>
+            <p className="data-value">{visit.nurse?.display_name || '-'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Queue Status</p>
-            <p className="font-medium capitalize">{visit.queue_status?.replace('_', ' ') || '-'}</p>
+            <p className="data-label">Queue Status</p>
+            <p className="data-value capitalize">{visit.queue_status?.replace('_', ' ') || '-'}</p>
           </div>
         </div>
       </div>
 
       {/* Message */}
       {message && (
-        <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+        <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
           {message.text}
         </div>
       )}
 
       {/* Visit Details */}
       {(visit.diagnosis || visit.medications || visit.follow_up_instructions || visit.tests_ordered) && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Visit Details</h3>
+        <div className="card">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Visit Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visit.diagnosis && (
               <div>
-                <p className="text-sm text-gray-500">Diagnosis</p>
-                <p className="mt-1">{visit.diagnosis}</p>
+                <p className="data-label">Diagnosis</p>
+                <p className="data-value">{visit.diagnosis}</p>
               </div>
             )}
             {visit.medications && (
               <div>
-                <p className="text-sm text-gray-500">Medications</p>
-                <p className="mt-1">{visit.medications}</p>
+                <p className="data-label">Medications</p>
+                <p className="data-value">{visit.medications}</p>
               </div>
             )}
             {visit.follow_up_instructions && (
               <div>
-                <p className="text-sm text-gray-500">Follow-up Instructions</p>
-                <p className="mt-1">{visit.follow_up_instructions}</p>
+                <p className="data-label">Follow-up Instructions</p>
+                <p className="data-value">{visit.follow_up_instructions}</p>
               </div>
             )}
             {visit.tests_ordered && (
               <div>
-                <p className="text-sm text-gray-500">Tests Ordered</p>
-                <p className="mt-1">{visit.tests_ordered}</p>
+                <p className="data-label">Tests Ordered</p>
+                <p className="data-value">{visit.tests_ordered}</p>
               </div>
             )}
           </div>
@@ -251,10 +252,10 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
 
       {/* Transcript */}
       {visit.provider_notes?.transcript && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Transcript</h3>
-          <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+        <div className="card">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Transcript</h3>
+          <div className="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto border border-slate-200">
+            <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
               {visit.provider_notes.transcript}
             </p>
           </div>
@@ -262,35 +263,35 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
       )}
 
       {/* Provider Note */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Provider Note (SOAP)</h3>
+      <div className="card">
+        <h3 className="text-lg font-semibold text-slate-800 mb-4">Provider Note (SOAP)</h3>
         <textarea
           value={providerNoteContent}
           onChange={(e) => setProviderNoteContent(e.target.value)}
           rows={12}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-base"
           placeholder="Provider note content..."
         />
       </div>
 
       {/* Patient Note */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Note (Plain Language)</h3>
+      <div className="card">
+        <h3 className="text-lg font-semibold text-slate-800 mb-4">Patient Note (Plain Language)</h3>
         <textarea
           value={patientNoteContent}
           onChange={(e) => setPatientNoteContent(e.target.value)}
           rows={8}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-base"
           placeholder="Patient-friendly note content..."
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4">
+      {/* Actions - 48px min height touch targets */}
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={handleSaveNotes}
           disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="btn-primary"
         >
           {saving ? 'Saving...' : 'Save Notes'}
         </button>
@@ -299,7 +300,7 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
           <button
             onClick={handleResendWhatsApp}
             disabled={resending}
-            className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="btn-success"
           >
             {resending ? 'Sending...' : 'Resend WhatsApp'}
           </button>
@@ -310,7 +311,7 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
             href={`/note/${visit.magic_links[0].token}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200"
+            className="btn-secondary"
           >
             View Patient Link
           </a>

@@ -7,9 +7,10 @@ import type { VisitPriority } from '@karibu/shared'
 
 interface CheckInFormProps {
   clinicId: string
+  staffId: string
 }
 
-export function CheckInForm({ clinicId }: CheckInFormProps) {
+export function CheckInForm({ clinicId, staffId }: CheckInFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [patientName, setPatientName] = useState('')
@@ -96,6 +97,7 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
         p_patient_id: patientId,
         p_chief_complaint: chiefComplaint || null,
         p_priority: priority,
+        p_staff_id: staffId,
       })
 
       if (checkInError) throw checkInError
@@ -131,7 +133,7 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        className="btn-primary flex items-center gap-2"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -143,14 +145,14 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="fixed inset-0 bg-gray-900/50" onClick={handleClose} />
+            <div className="fixed inset-0 bg-slate-900/50" onClick={handleClose} />
 
-            <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="relative bg-white rounded-lg border border-slate-200 max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Check In Patient</h3>
+                <h3 className="text-lg font-semibold text-slate-800">Check In Patient</h3>
                 <button
                   onClick={handleClose}
-                  className="p-2 text-gray-400 hover:text-gray-600"
+                  className="p-2 text-slate-400 hover:text-slate-600 min-h-touch min-w-touch flex items-center justify-center"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -160,14 +162,14 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
 
               <form onSubmit={handleSubmit}>
                 {error && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
                     {error}
                   </div>
                 )}
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="data-label mb-1 block">
                       WhatsApp Number
                     </label>
                     <div className="flex gap-2">
@@ -176,13 +178,13 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         placeholder="+256 7XX XXX XXX"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-base"
                       />
                       <button
                         type="button"
                         onClick={handleLookup}
                         disabled={loading}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                        className="btn-secondary"
                       >
                         Lookup
                       </button>
@@ -190,21 +192,21 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                   </div>
 
                   {patientFound && (
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">Patient Found</p>
-                      <p className="text-sm text-green-700">{patientFound.name || 'Unnamed'}</p>
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <p className="text-sm font-medium text-emerald-800">Patient Found</p>
+                      <p className="text-sm text-emerald-700">{patientFound.name || 'Unnamed'}</p>
                     </div>
                   )}
 
                   {isNewPatient && (
-                    <div className="p-3 bg-amber-50 rounded-lg">
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                       <p className="text-sm font-medium text-amber-800 mb-2">New Patient</p>
                       <input
                         type="text"
                         value={patientName}
                         onChange={(e) => setPatientName(e.target.value)}
                         placeholder="Patient name (optional)"
-                        className="w-full px-3 py-2 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white"
+                        className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white text-base"
                       />
                     </div>
                   )}
@@ -212,7 +214,7 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                   {(patientFound || isNewPatient) && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="data-label mb-1 block">
                           Chief Complaint
                         </label>
                         <textarea
@@ -220,12 +222,12 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                           onChange={(e) => setChiefComplaint(e.target.value)}
                           placeholder="What brings the patient in today?"
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-base"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="data-label mb-2 block">
                           Priority
                         </label>
                         <div className="flex gap-2">
@@ -234,16 +236,16 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                               key={p}
                               type="button"
                               onClick={() => setPriority(p)}
-                              className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                              className={`flex-1 min-h-touch text-sm font-medium rounded-lg border transition-colors ${
                                 priority === p
                                   ? p === 'urgent'
                                     ? 'bg-red-600 text-white border-red-600'
                                     : p === 'high'
                                     ? 'bg-amber-500 text-white border-amber-500'
                                     : p === 'normal'
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'bg-gray-600 text-white border-gray-600'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'bg-slate-600 text-white border-slate-600'
+                                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                               }`}
                             >
                               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -260,14 +262,14 @@ export function CheckInForm({ clinicId }: CheckInFormProps) {
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="flex-1 py-2 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200"
+                      className="btn-secondary flex-1"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="btn-primary flex-1"
                     >
                       {loading ? 'Checking in...' : 'Check In'}
                     </button>
