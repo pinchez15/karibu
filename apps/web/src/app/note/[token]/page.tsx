@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 
-// Initialize Supabase client with service role for reading magic links
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 interface PatientNoteData {
   clinic_name: string
@@ -19,6 +20,8 @@ interface PatientNoteData {
 }
 
 async function getPatientNote(token: string): Promise<PatientNoteData | null> {
+  const supabase = getSupabaseClient()
+
   // Get magic link and verify it's valid
   const { data: magicLink, error: magicLinkError } = await supabase
     .from('magic_links')
