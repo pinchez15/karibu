@@ -62,7 +62,12 @@ export function QueueBoard({ initialQueue, clinicId, staffId, staffRole }: Queue
   const fetchQueue = async () => {
     const { data, error } = await supabase.rpc('get_clinic_queue', {
       p_clinic_id: clinicId,
+      p_staff_id: staffId,
     })
+
+    if (error) {
+      console.error('Failed to fetch queue:', error)
+    }
 
     if (!error && data) {
       setQueue(data as QueueItem[])
