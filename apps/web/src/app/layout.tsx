@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Karibu Health - Visit Summary',
-  description: 'Your visit summary from Karibu Health',
+  title: 'Karibu Health',
+  description: 'AI-native clinical documentation for Uganda',
 }
 
 export const viewport: Viewport = {
@@ -28,16 +21,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="min-h-screen bg-slate-50 text-slate-800">
-          <header className="flex justify-end items-center p-4 gap-4 bg-white border-b border-slate-200">
-            <SignedOut>
-              <SignInButton />
-              <SignUpButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </header>
+        <body className="min-h-screen bg-background text-foreground">
           {children}
         </body>
       </html>

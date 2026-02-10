@@ -1,43 +1,65 @@
-/* Import Roboto fonts from Google Fonts - must be first */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Clinical color palette */
-  --color-primary: #0369A1;
-  --color-success: #059669;
-  --color-warning: #D97706;
-  --color-error: #DC2626;
+  /* Figma design system - RGB triplets for Tailwind alpha support */
+  --background: 255 255 255;
+  --foreground: 26 26 26;
+  --card: 255 255 255;
+  --card-foreground: 26 26 26;
+  --primary: 0 102 204;
+  --primary-foreground: 255 255 255;
+  --secondary: 232 244 253;
+  --secondary-foreground: 0 102 204;
+  --muted: 245 245 245;
+  --muted-foreground: 102 102 102;
+  --accent: 0 168 150;
+  --accent-foreground: 255 255 255;
+  --destructive: 220 38 38;
+  --destructive-foreground: 255 255 255;
+  --border: 224 224 224;
+  --input: 224 224 224;
+  --input-background: 249 249 249;
+  --ring: 0 102 204;
+  --radius: 0.5rem;
 
-  /* Slate text hierarchy */
-  --text-primary: #1E293B;
-  --text-secondary: #334155;
-  --text-muted: #64748B;
+  /* Status colors (used via CSS var()) */
+  --status-synced: #16a34a;
+  --status-pending: #f59e0b;
+  --status-offline: #dc2626;
+  --status-processing: #3b82f6;
 
-  /* Backgrounds */
-  --background: #FFFFFF;
-  --background-secondary: #F8FAFC;
+  /* Pin/alert colors */
+  --pin-critical: #dc2626;
+  --pin-warning: #f59e0b;
+  --pin-info: #0066cc;
 }
 
-body {
-  color: var(--text-primary);
-  background: var(--background-secondary);
-  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 500; line-height: 1.5; }
+  h2 { font-size: 1.25rem; font-weight: 500; line-height: 1.5; }
+  h3 { font-size: 1.125rem; font-weight: 500; line-height: 1.5; }
+  h4 { font-size: 1rem; font-weight: 500; line-height: 1.5; }
+  label { font-size: 1rem; font-weight: 500; line-height: 1.5; }
+  button { font-size: 1rem; font-weight: 500; line-height: 1.5; }
+  input { font-size: 1rem; font-weight: 400; line-height: 1.5; }
 }
 
-/* Data/measurement typography */
-.font-data {
-  font-family: 'Roboto Mono', ui-monospace, monospace;
-}
-
-/* Touch-friendly button base */
 @layer components {
+  /* Touch-friendly button variants (legacy compat) */
   .btn {
     @apply min-h-touch min-w-touch px-4 py-3 font-medium rounded-lg
            inline-flex items-center justify-center
@@ -46,7 +68,7 @@ body {
   }
 
   .btn-primary {
-    @apply btn bg-primary text-white hover:bg-sky-800 focus:ring-primary;
+    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary;
   }
 
   .btn-success {
@@ -54,38 +76,37 @@ body {
   }
 
   .btn-secondary {
-    @apply btn bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-400;
+    @apply btn bg-muted text-foreground hover:bg-muted/80 focus:ring-ring;
   }
 
   .btn-danger {
-    @apply btn bg-error text-white hover:bg-red-700 focus:ring-error;
+    @apply btn bg-destructive text-white hover:bg-red-700 focus:ring-destructive;
   }
 
-  /* Clinical card component */
+  /* Clinical card */
   .card {
-    @apply bg-white rounded-lg border border-slate-200 p-4;
+    @apply bg-card rounded-lg border border-border p-4;
   }
 
-  /* Key-value data display */
+  /* Data display */
   .data-label {
-    @apply text-sm font-medium text-text-muted;
+    @apply text-sm font-medium text-muted-foreground;
   }
 
   .data-value {
-    @apply text-base font-medium text-text-primary mt-0.5;
+    @apply text-base font-medium text-foreground mt-0.5;
   }
 
   .data-value-mono {
-    @apply text-base font-medium text-text-primary mt-0.5 font-mono;
+    @apply text-base font-medium text-foreground mt-0.5 font-mono;
   }
 
-  /* Skeleton loading */
   .skeleton {
-    @apply bg-slate-200 rounded animate-pulse;
+    @apply bg-muted rounded animate-pulse;
   }
 }
 
-/* Print styles for patient notes */
+/* Print styles */
 @media print {
   .no-print {
     display: none !important;

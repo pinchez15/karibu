@@ -9,31 +9,68 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Clinical color palette
-        primary: '#0369A1',      // Clinical blue
-        success: '#059669',      // Semantic green
-        warning: '#D97706',      // Semantic amber
-        error: '#DC2626',        // Semantic red
-        // Slate text hierarchy
-        'text-primary': '#1E293B',   // slate-800
-        'text-secondary': '#334155', // slate-700
-        'text-muted': '#64748B',     // slate-500
+        // Figma design system - CSS variable-based for theming
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: {
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
+        },
+        primary: {
+          DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          foreground: 'rgb(var(--primary-foreground) / <alpha-value>)',
+        },
+        secondary: {
+          DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+          foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)',
+        },
+        muted: {
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
+        },
+        destructive: {
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+        },
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        'input-background': 'rgb(var(--input-background) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
+        // Status colors (direct hex - no opacity needed)
+        'status-synced': '#16a34a',
+        'status-pending': '#f59e0b',
+        'status-offline': '#dc2626',
+        'status-processing': '#3b82f6',
+        // Pin/alert colors
+        'pin-critical': '#dc2626',
+        'pin-warning': '#f59e0b',
+        'pin-info': '#0066cc',
+        // Legacy aliases
+        success: '#059669',
+        warning: '#D97706',
+        error: '#DC2626',
       },
       fontFamily: {
-        sans: ['Roboto', 'system-ui', 'sans-serif'],
-        mono: ['Roboto Mono', 'ui-monospace', 'monospace'],
+        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['ui-monospace', 'monospace'],
       },
       fontSize: {
-        // Ensure minimum 16px base for readability
         base: ['1rem', { lineHeight: '1.5' }],
       },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
       minHeight: {
-        // Touch target minimum (48px)
-        'touch': '48px',
+        touch: '48px',
       },
       minWidth: {
-        // Touch target minimum (48px)
-        'touch': '48px',
+        touch: '48px',
       },
     },
   },
