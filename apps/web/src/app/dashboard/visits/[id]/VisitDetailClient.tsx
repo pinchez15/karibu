@@ -200,6 +200,28 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
             <p className="data-value">{visit.doctor?.display_name || '-'}</p>
           </div>
           <div>
+            <p className="data-label">Language</p>
+            <p className="data-value">{visit.source_language === 'local' ? 'Local Language' : 'English'}</p>
+          </div>
+          <div>
+            <p className="data-label">Transcription</p>
+            <p className="data-value capitalize">{visit.provider_notes?.transcription_provider || '-'}</p>
+          </div>
+          <div>
+            <p className="data-label">Consent</p>
+            <p className="data-value">
+              {visit.consent_verified ? (
+                <span className="text-emerald-700">Verified</span>
+              ) : (
+                <span className="text-amber-700">Pending</span>
+              )}
+            </p>
+          </div>
+          <div>
+            <p className="data-label">Review</p>
+            <p className="data-value capitalize">{visit.review_status?.replace('_', ' ') || 'Pending'}</p>
+          </div>
+          <div>
             <p className="data-label">Nurse</p>
             <p className="data-value">{visit.nurse?.display_name || '-'}</p>
           </div>
@@ -254,11 +276,35 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
       {visit.provider_notes?.transcript && (
         <div className="card">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Transcript</h3>
-          <div className="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto border border-slate-200">
-            <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
-              {visit.provider_notes.transcript}
-            </p>
+
+          {/* Show original transcript if visit was in local language and we have both versions */}
+          {visit.source_language === 'local' && visit.provider_notes.transcript_original && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-slate-600 mb-2">Original (Local Language)</p>
+              <div className="bg-amber-50 rounded-lg p-4 max-h-48 overflow-y-auto border border-amber-200">
+                <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
+                  {visit.provider_notes.transcript_original}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div>
+            {visit.source_language === 'local' && (
+              <p className="text-sm font-medium text-slate-600 mb-2">English Translation</p>
+            )}
+            <div className="bg-slate-50 rounded-lg p-4 max-h-64 overflow-y-auto border border-slate-200">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap font-mono">
+                {visit.provider_notes.transcript_english || visit.provider_notes.transcript}
+              </p>
+            </div>
           </div>
+
+          {visit.provider_notes.audio_trimmed && (
+            <p className="text-xs text-amber-600 mt-2">
+              Note: Audio was trimmed to 10 minutes by the transcription provider.
+            </p>
+          )}
         </div>
       )}
 

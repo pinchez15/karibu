@@ -14,8 +14,25 @@ export const VISIT_STATUS_FLOW = [
   'completed',
 ] as const;
 
-// Magic link expiry (30 days in milliseconds)
-export const MAGIC_LINK_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
+// Magic link expiry (48 hours for DPPA compliance)
+export const MAGIC_LINK_EXPIRY_MS = 48 * 60 * 60 * 1000;
+
+// Audio retention (90 days before automatic deletion)
+export const AUDIO_RETENTION_DAYS = 90;
+
+// Language options for transcription toggle
+export const LANGUAGE_OPTIONS = {
+  eng: { label: 'English', provider: 'openai' },
+  local: { label: 'Local Language', provider: 'sunbird', description: 'Luganda, Acholi, Runyankole, Ateso, Lugbara, Swahili' },
+} as const;
+
+// Required consent types for DPPA compliance
+export const REQUIRED_CONSENT_TYPES = [
+  'audio_recording',
+  'ai_processing',
+  'data_storage',
+  'cross_border_transfer',
+] as const;
 
 // Session expiry (7 days in milliseconds)
 export const SESSION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;

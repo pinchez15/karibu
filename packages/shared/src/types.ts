@@ -1,4 +1,5 @@
-// Database Types for Karibu Health Demo MVP
+// Database Types for Karibu Health
+// Supports dual transcription (OpenAI + Sunbird AI) and Uganda DPPA compliance
 
 export interface Clinic {
   id: string;
@@ -55,6 +56,10 @@ export type QueueStatus =
 
 export type VisitPriority = 'low' | 'normal' | 'high' | 'urgent';
 
+export type SourceLanguage = 'eng' | 'local';
+
+export type ReviewStatus = 'pending' | 'pending_review' | 'reviewed' | 'rejected';
+
 export interface Visit {
   id: string;
   clinic_id: string;
@@ -69,6 +74,18 @@ export interface Visit {
   checked_in_at: string | null;
   consent_recording: boolean;
   consent_timestamp: string | null;
+  // Language & consent (DPPA compliance)
+  source_language: SourceLanguage;
+  consent_verified: boolean;
+  consent_id: string | null;
+  // Clinician review of AI-generated content
+  review_status: ReviewStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  // Audio retention
+  audio_deleted_at: string | null;
+  retention_expires_at: string | null;
+  // Clinical data
   diagnosis: string | null;
   medications: string | null;
   follow_up_instructions: string | null;
@@ -111,10 +128,20 @@ export interface AudioUpload {
 
 export type NoteStatus = 'draft' | 'finalized';
 
+export type TranscriptionProvider = 'openai' | 'sunbird';
+
 export interface ProviderNote {
   id: string;
   visit_id: string;
   transcript: string | null;
+  // Dual transcript storage for multilingual support
+  transcript_original: string | null;
+  transcript_english: string | null;
+  // Transcription metadata
+  transcription_provider: TranscriptionProvider | null;
+  transcription_confidence: number | null;
+  diarization_output: Record<string, unknown> | null;
+  audio_trimmed: boolean;
   note_content: string | null;
   structured_data: Record<string, unknown>;
   status: NoteStatus;
@@ -147,10 +174,13 @@ export interface MagicLink {
 export interface AuditLog {
   id: string;
   actor_id: string | null;
+  actor_clerk_id: string | null;
   actor_type: 'staff' | 'patient' | 'system';
+  actor_role: string | null;
   action: string;
   resource_type: string;
   resource_id: string | null;
+  patient_id: string | null;
   metadata: Record<string, unknown>;
   ip_address: string | null;
   created_at: string;
@@ -172,6 +202,40 @@ export interface MessageLog {
   created_at: string;
 }
 
+// Consent Types (Uganda DPPA compliance)
+
+export type ConsentType =
+  | 'audio_recording'
+  | 'ai_processing'
+  | 'data_storage'
+  | 'cross_border_transfer'
+  | 'minor_guardian';
+
+export type ConsentMethod =
+  | 'verbal_recorded'
+  | 'written_paper'
+  | 'digital_whatsapp'
+  | 'digital_app';
+
+export type ConsentGrantedBy = 'patient' | 'guardian' | 'clinician_witnessed';
+
+export interface PatientConsent {
+  id: string;
+  patient_id: string;
+  visit_id: string | null;
+  consent_type: ConsentType;
+  granted: boolean;
+  granted_at: string;
+  granted_by: ConsentGrantedBy;
+  guardian_name: string | null;
+  guardian_relationship: string | null;
+  withdrawal_at: string | null;
+  consent_method: ConsentMethod;
+  consent_language: string;
+  ip_address: string | null;
+  created_at: string;
+}
+
 // API Request/Response Types
 
 export interface CreatePatientRequest {
@@ -182,6 +246,7 @@ export interface CreatePatientRequest {
 export interface CreateVisitRequest {
   patient_id: string;
   consent_recording: boolean;
+  source_language?: SourceLanguage;
   diagnosis?: string;
   medications?: string;
   follow_up_instructions?: string;

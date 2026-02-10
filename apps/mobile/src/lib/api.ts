@@ -9,6 +9,9 @@ import type {
   CreateVisitRequest,
   UpdateVisitRequest,
   Staff,
+  SourceLanguage,
+  ConsentMethod,
+  ConsentGrantedBy,
 } from '@karibu/shared';
 import { useAuthStore } from '../stores/authStore';
 
@@ -109,6 +112,80 @@ export async function createVisit(
 
   if (error) throw error;
   return data as Visit;
+}
+
+// DPPA-compliant visit creation with consent records
+interface ConsentOptions {
+  consentLanguage: string;
+  consentMethod: ConsentMethod;
+  grantedBy: ConsentGrantedBy;
+  guardianName?: string;
+  guardianRelationship?: string;
+}
+
+export async function createVisitWithConsent(
+  patientId: string,
+  doctorId: string,
+  sourceLanguage: SourceLanguage,
+  consentOptions: ConsentOptions
+): Promise<Visit> {
+  const clinicId = getClinicId();
+
+  // Create the visit first
+  const { data: visit, error: visitError } = await supabase
+    .from('visits')
+    .insert({
+      clinic_id: clinicId,
+      patient_id: patientId,
+      doctor_id: doctorId,
+      status: 'recording',
+      consent_recording: true,
+      consent_timestamp: new Date().toISOString(),
+      source_language: sourceLanguage,
+      consent_verified: true,
+    })
+    .select()
+    .single();
+
+  if (visitError) throw visitError;
+
+  // Create consent records for all required types
+  const baseConsentTypes: string[] = [
+    'audio_recording',
+    'ai_processing',
+    'data_storage',
+    'cross_border_transfer',
+  ];
+
+  // Add minor_guardian consent if guardian info provided
+  if (consentOptions.guardianName) {
+    baseConsentTypes.push('minor_guardian');
+  }
+
+  const consentRecords = baseConsentTypes.map((consentType) => ({
+    patient_id: patientId,
+    visit_id: visit.id,
+    consent_type: consentType,
+    granted: true,
+    granted_at: new Date().toISOString(),
+    granted_by: consentType === 'minor_guardian' ? 'guardian' : consentOptions.grantedBy,
+    guardian_name: consentOptions.guardianName || null,
+    guardian_relationship: consentOptions.guardianRelationship || null,
+    consent_method: consentOptions.consentMethod,
+    consent_language: consentOptions.consentLanguage,
+  }));
+
+  const { error: consentError } = await supabase
+    .from('patient_consents')
+    .insert(consentRecords);
+
+  if (consentError) {
+    console.error('Failed to create consent records:', consentError);
+    // Non-fatal: visit was created, consent records failed
+    // The visit still has consent_verified=true and consent_recording=true
+  }
+
+  return visit as Visit;
 }
 
 export async function getVisit(visitId: string): Promise<Visit | null> {
@@ -305,9 +382,9 @@ export async function finalizeVisit(
       .eq('visit_id', visitId),
   ]);
 
-  // Generate magic link token
+  // Generate magic link token (48-hour expiry for DPPA compliance)
   const token = generateSecureToken();
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48 hours
 
   const { error: magicLinkError } = await supabase.from('magic_links').insert({
     patient_id: visit.patient_id,

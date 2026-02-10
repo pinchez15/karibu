@@ -46,6 +46,18 @@ async function getPatientNote(token: string): Promise<PatientNoteData | null> {
       .eq('id', magicLink.id)
   }
 
+  // Audit log: patient note accessed via magic link (DPPA compliance)
+  try {
+    await supabase.from('audit_logs').insert({
+      actor_type: 'patient',
+      action: 'patient_note_viewed',
+      resource_type: 'patient_note',
+      resource_id: magicLink.visit_id,
+      patient_id: magicLink.patient_id,
+      metadata: { access_method: 'magic_link', first_access: !magicLink.used_at },
+    })
+  } catch { /* fire-and-forget */ }
+
   const visit = magicLink.visit as any
   const patientNote = visit?.patient_note || (magicLink as any).patient_note
 

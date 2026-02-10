@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
 import { createLogger } from '../_shared/logger.ts'
+import { auditLog } from '../_shared/audit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -185,6 +186,20 @@ serve(async (req) => {
       },
       'logMessage'
     )
+
+    // Audit log
+    auditLog(supabase, {
+      actorType: 'system',
+      action: messageSent ? 'whatsapp_sent' : 'patient_note_delivered',
+      resourceType: 'visit',
+      resourceId: visit_id,
+      patientId: visit.patient_id,
+      metadata: {
+        message_sent: messageSent,
+        message_id: whatsappResult?.messages?.[0]?.id,
+        channel: 'whatsapp',
+      },
+    })
 
     if (messageSent) {
       op.success({ message_id: whatsappResult?.messages?.[0]?.id })

@@ -15,8 +15,8 @@ export default function NotFound() {
         </h1>
 
         <p className="text-gray-600 mb-6">
-          This link may have expired or is no longer valid.
-          Please contact your clinic or request a new link via WhatsApp.
+          This note has expired. Links are valid for 48 hours for your security.
+          Please contact your clinic for a copy of your visit summary.
         </p>
 
         <div className="bg-white rounded-lg p-6 shadow-sm">

@@ -2,6 +2,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
 import { createLogger } from '../_shared/logger.ts'
+import { transcribe } from '../_shared/transcription/router.ts'
+import { translateToEnglish } from '../_shared/transcription/translate.ts'
+import { auditLog } from '../_shared/audit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,8 +39,46 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // Get visit info (including language toggle)
+    const { data: visit, error: visitError } = await withRetry(
+      async () => {
+        const result = await supabase
+          .from('visits')
+          .select('id, patient_id, source_language, consent_verified')
+          .eq('id', visit_id)
+          .single()
+        if (result.error) throw new Error(result.error.message)
+        return result
+      },
+      'getVisit',
+      { maxRetries: 2 }
+    )
+
+    if (!visit) {
+      throw new Error('Visit not found')
+    }
+
+    // Check consent before processing (DPPA requirement)
+    if (!visit.consent_verified) {
+      logger.warn('Consent not verified, skipping transcription', { visit_id })
+      await supabase
+        .from('visits')
+        .update({
+          status: 'error',
+          error_message: 'Consent not verified. Audio cannot be processed without patient consent.',
+          error_at: new Date().toISOString(),
+        })
+        .eq('id', visit_id)
+      return new Response(
+        JSON.stringify({ error: 'Consent not verified' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const sourceLanguage = visit.source_language || 'eng'
+
     // Get audio upload info
-    const { data: audioUpload, error: audioError } = await withRetry(
+    const { data: audioUpload } = await withRetry(
       async () => {
         const result = await supabase
           .from('audio_uploads')
@@ -59,7 +100,11 @@ serve(async (req) => {
       throw new Error('Audio file path not found')
     }
 
-    logger.info('Audio upload found', { visit_id, storage_path: audioUpload.storage_path })
+    logger.info('Audio upload found', {
+      visit_id,
+      storage_path: audioUpload.storage_path,
+      source_language: sourceLanguage,
+    })
 
     // Update status to transcribing
     await withRetry(
@@ -77,7 +122,7 @@ serve(async (req) => {
     )
 
     // Download audio file from storage
-    const { data: audioData, error: downloadError } = await withRetry(
+    const { data: audioData } = await withRetry(
       async () => {
         const result = await supabase.storage
           .from('audio-recordings')
@@ -94,34 +139,55 @@ serve(async (req) => {
 
     logger.info('Audio file downloaded', { visit_id, size_bytes: audioData.size })
 
-    // Call OpenAI Whisper API for transcription
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
+    // Route to correct transcription provider based on language toggle
+    const transcriptionResult = await transcribe({
+      audioFile: audioData,
+      language: sourceLanguage,
+      filename: audioUpload.storage_path.split('/').pop() || 'recording.m4a',
+    })
 
-    const formData = new FormData()
-    formData.append('file', audioData, 'recording.m4a')
-    formData.append('model', 'whisper-1')
-    formData.append('language', 'en')
-    formData.append('response_format', 'text')
+    logger.info('Transcription completed', {
+      visit_id,
+      provider: transcriptionResult.provider,
+      transcript_length: transcriptionResult.transcript.length,
+      audio_trimmed: transcriptionResult.audio_trimmed,
+    })
 
-    const whisperResponse = await fetchWithRetry(
-      'https://api.openai.com/v1/audio/transcriptions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-        },
-        body: formData,
-      },
-      'whisperTranscription'
-    )
+    // For non-English transcripts, translate to English
+    let transcriptEnglish = transcriptionResult.transcript
+    let transcriptOriginal = transcriptionResult.transcript
 
-    if (!whisperResponse.ok) {
-      const errorText = await whisperResponse.text()
-      throw new Error(`Whisper API error: ${errorText}`)
+    if (sourceLanguage === 'local' && transcriptionResult.transcript.length > 0) {
+      logger.info('Translating local language transcript to English', { visit_id })
+      try {
+        const translationResult = await translateToEnglish(transcriptionResult.transcript)
+        transcriptEnglish = translationResult.translated_text
+        logger.info('Translation completed', {
+          visit_id,
+          original_length: transcriptOriginal.length,
+          translated_length: transcriptEnglish.length,
+        })
+
+        // Audit the translation
+        auditLog(supabase, {
+          actorType: 'system',
+          action: 'translation_completed',
+          resourceType: 'visit',
+          resourceId: visit_id,
+          patientId: visit.patient_id,
+          metadata: {
+            source_language: sourceLanguage,
+            original_length: transcriptOriginal.length,
+            translated_length: transcriptEnglish.length,
+          },
+        })
+      } catch (translateError) {
+        // Translation failure is non-fatal: keep the original transcript
+        logger.error('Translation failed, keeping original transcript', { visit_id }, translateError as Error)
+        // Still set English transcript to original so the pipeline can continue
+        transcriptEnglish = transcriptOriginal
+      }
     }
-
-    const transcript = await whisperResponse.text()
-    logger.info('Transcription completed', { visit_id, transcript_length: transcript.length })
 
     // Update audio upload with completed status
     await withRetry(
@@ -138,14 +204,22 @@ serve(async (req) => {
       'updateStatusToCompleted'
     )
 
-    // Create or update provider note with transcript
+    // Create or update provider note with transcripts
     await withRetry(
       async () => {
         const { error } = await supabase
           .from('provider_notes')
           .upsert({
             visit_id,
-            transcript,
+            transcript: transcriptEnglish, // Keep backward compat: transcript = English version
+            transcript_original: transcriptOriginal,
+            transcript_english: transcriptEnglish,
+            transcription_provider: transcriptionResult.provider,
+            transcription_confidence: transcriptionResult.confidence,
+            diarization_output: transcriptionResult.diarization.length > 0
+              ? transcriptionResult.diarization
+              : null,
+            audio_trimmed: transcriptionResult.audio_trimmed,
             status: 'draft',
           }, {
             onConflict: 'visit_id',
@@ -154,6 +228,21 @@ serve(async (req) => {
       },
       'saveTranscript'
     )
+
+    // Audit the transcription
+    auditLog(supabase, {
+      actorType: 'system',
+      action: 'transcription_completed',
+      resourceType: 'visit',
+      resourceId: visit_id,
+      patientId: visit.patient_id,
+      metadata: {
+        provider: transcriptionResult.provider,
+        source_language: sourceLanguage,
+        transcript_length: transcriptEnglish.length,
+        audio_trimmed: transcriptionResult.audio_trimmed,
+      },
+    })
 
     logger.info('Transcript saved, triggering note generation', { visit_id })
 
@@ -174,10 +263,20 @@ serve(async (req) => {
       logger.error('Failed to trigger note generation', { visit_id }, error)
     })
 
-    op.success({ transcript_length: transcript.length })
+    op.success({
+      provider: transcriptionResult.provider,
+      source_language: sourceLanguage,
+      transcript_length: transcriptEnglish.length,
+      translated: sourceLanguage === 'local',
+    })
 
     return new Response(
-      JSON.stringify({ success: true, transcript_length: transcript.length }),
+      JSON.stringify({
+        success: true,
+        provider: transcriptionResult.provider,
+        source_language: sourceLanguage,
+        transcript_length: transcriptEnglish.length,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
