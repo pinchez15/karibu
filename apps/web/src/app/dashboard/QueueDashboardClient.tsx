@@ -64,21 +64,15 @@ export function QueueDashboardClient({
 
   const totalWaiting = waitingNurse.length + withNurse.length + readyForDoctor.length
 
-  // Real-time updates
+  // Real-time updates via broadcast (trigger on visits table)
   useEffect(() => {
+    const topic = `queue-updates:${clinicId}`
     const channel = supabase
-      .channel('queue-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visits',
-          filter: `clinic_id=eq.${clinicId}`,
-        },
-        () => fetchQueue()
-      )
-      .subscribe()
+      .channel(topic, { config: { private: true, broadcast: { self: true, ack: true } } })
+      .on('broadcast', { event: 'queue_changed' }, () => fetchQueue())
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') fetchQueue()
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [clinicId])
