@@ -2,10 +2,10 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Mic, MicOff, Loader2 } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { saveVisitNotes, retryVisitProcessing } from '../actions'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
 
 interface VisitWithRelations extends Visit {
@@ -45,7 +45,6 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
-  const supabase = getSupabase()
   const config = statusConfig[visit.status] || statusConfig.error
 
   const startDictation = useCallback(async (target: 'provider' | 'patient') => {
@@ -119,35 +118,19 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
     setMessage(null)
 
     try {
-      // Provider note: update existing or create new
-      if (visit.provider_notes) {
-        const { error: providerError } = await supabase
-          .from('provider_notes')
-          .update({ note_content: providerNoteContent })
-          .eq('id', visit.provider_notes.id)
-        if (providerError) throw providerError
-      } else if (providerNoteContent) {
-        const { error: providerError } = await supabase
-          .from('provider_notes')
-          .insert({ visit_id: visit.id, note_content: providerNoteContent })
-        if (providerError) throw providerError
-      }
+      const result = await saveVisitNotes(
+        visit.id,
+        visit.provider_notes?.id || null,
+        providerNoteContent,
+        visit.patient_notes?.id || null,
+        patientNoteContent,
+      )
 
-      // Patient note: update existing or create new
-      if (visit.patient_notes) {
-        const { error: patientError } = await supabase
-          .from('patient_notes')
-          .update({ content: patientNoteContent })
-          .eq('id', visit.patient_notes.id)
-        if (patientError) throw patientError
-      } else if (patientNoteContent) {
-        const { error: patientError } = await supabase
-          .from('patient_notes')
-          .insert({ visit_id: visit.id, content: patientNoteContent })
-        if (patientError) throw patientError
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setMessage({ type: 'success', text: 'Notes saved successfully' })
       }
-
-      setMessage({ type: 'success', text: 'Notes saved successfully' })
     } catch (error) {
       console.error('Failed to save notes:', error)
       setMessage({ type: 'error', text: 'Failed to save notes' })
@@ -198,28 +181,13 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
     setMessage(null)
 
     try {
-      const { error: clearError } = await supabase
-        .from('visits')
-        .update({ status: 'processing', error_message: null, error_at: null })
-        .eq('id', visit.id)
-      if (clearError) throw clearError
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transcribe`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ visit_id: visit.id }),
-        }
-      )
-
-      if (!response.ok) throw new Error('Failed to trigger reprocessing')
-
-      setMessage({ type: 'success', text: 'Reprocessing started' })
-      setTimeout(() => window.location.reload(), 2000)
+      const result = await retryVisitProcessing(visit.id)
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setMessage({ type: 'success', text: 'Reprocessing started' })
+        setTimeout(() => window.location.reload(), 2000)
+      }
     } catch (error) {
       console.error('Failed to retry:', error)
       setMessage({ type: 'error', text: 'Failed to retry processing' })

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { getSupabase } from '@/lib/supabase'
 import { Check, X, Edit, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +11,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { approveVisit, rejectVisit, saveProviderNoteEdit } from './actions'
 
 interface ReviewVisit {
   id: string
@@ -50,54 +50,26 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
   const [saving, setSaving] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const supabase = getSupabase()
-
   const handleApprove = async (visitId: string) => {
     setSaving(visitId)
     setMessage(null)
 
     try {
-      // Save any edited notes first
-      if (editingNote === visitId && editedSoapNote) {
-        const visit = visits.find(v => v.id === visitId)
-        if (visit?.provider_notes) {
-          const { error: noteError } = await supabase
-            .from('provider_notes')
-            .update({ note_content: editedSoapNote })
-            .eq('id', visit.provider_notes.id)
-          if (noteError) throw noteError
-        }
+      const visit = visits.find(v => v.id === visitId)
+      const editedNote = editingNote === visitId ? editedSoapNote : null
+      const result = await approveVisit(
+        visitId,
+        editedNote !== null ? (visit?.provider_notes?.id || null) : null,
+        editedNote,
+      )
+
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setVisits(prev => prev.filter(v => v.id !== visitId))
+        setEditingNote(null)
+        setMessage({ type: 'success', text: 'Visit approved and notes finalized' })
       }
-
-      // Update visit review status
-      const { error } = await supabase
-        .from('visits')
-        .update({
-          review_status: 'approved',
-          reviewed_by: staffId,
-          reviewed_at: new Date().toISOString(),
-          status: 'review',
-        })
-        .eq('id', visitId)
-
-      if (error) throw error
-
-      // Finalize notes
-      const now = new Date().toISOString()
-      await Promise.all([
-        supabase
-          .from('provider_notes')
-          .update({ status: 'finalized', finalized_at: now, finalized_by: staffId })
-          .eq('visit_id', visitId),
-        supabase
-          .from('patient_notes')
-          .update({ status: 'finalized' })
-          .eq('visit_id', visitId),
-      ])
-
-      setVisits(prev => prev.filter(v => v.id !== visitId))
-      setEditingNote(null)
-      setMessage({ type: 'success', text: 'Visit approved and notes finalized' })
     } catch (error) {
       console.error('Failed to approve:', error)
       setMessage({ type: 'error', text: 'Failed to approve visit' })
@@ -111,20 +83,13 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
     setMessage(null)
 
     try {
-      const { error } = await supabase
-        .from('visits')
-        .update({
-          review_status: 'rejected',
-          reviewed_by: staffId,
-          reviewed_at: new Date().toISOString(),
-          status: 'processing',
-        })
-        .eq('id', visitId)
-
-      if (error) throw error
-
-      setVisits(prev => prev.filter(v => v.id !== visitId))
-      setMessage({ type: 'success', text: 'Visit sent back for re-processing' })
+      const result = await rejectVisit(visitId)
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setVisits(prev => prev.filter(v => v.id !== visitId))
+        setMessage({ type: 'success', text: 'Visit sent back for re-processing' })
+      }
     } catch (error) {
       console.error('Failed to reject:', error)
       setMessage({ type: 'error', text: 'Failed to reject visit' })
@@ -139,15 +104,10 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
 
     setSaving(visitId)
     try {
-      const { error } = await supabase
-        .from('provider_notes')
-        .update({ note_content: editedSoapNote })
-        .eq('id', visit.provider_notes.id)
+      const result = await saveProviderNoteEdit(visit.provider_notes.id, editedSoapNote)
+      if (result.error) throw new Error(result.error)
 
-      if (error) throw error
       setEditingNote(null)
-
-      // Update local state
       setVisits(prev => prev.map(v =>
         v.id === visitId && v.provider_notes
           ? { ...v, provider_notes: { ...v.provider_notes, note_content: editedSoapNote } }
