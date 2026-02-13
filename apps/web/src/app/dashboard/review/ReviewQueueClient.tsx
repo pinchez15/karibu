@@ -171,7 +171,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
           </div>
           <div>
             <h2 className="text-xl font-medium mb-2">All caught up!</h2>
-            <p className="text-muted-foreground">No encounters to review</p>
+            <p className="text-muted-foreground">No visits to review</p>
           </div>
           <Link href="/dashboard">
             <Button>Back to Queue</Button>

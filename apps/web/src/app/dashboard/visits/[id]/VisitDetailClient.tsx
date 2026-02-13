@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { Mic, MicOff, Loader2 } from 'lucide-react'
 import { getSupabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,9 +40,80 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
   const [resending, setResending] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [dictating, setDictating] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   const supabase = getSupabase()
   const config = statusConfig[visit.status] || statusConfig.error
+
+  const startDictation = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm',
+      })
+      mediaRecorderRef.current = mediaRecorder
+      chunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        if (audioBlob.size < 1000) return // Too short, ignore
+
+        setTranscribing(true)
+        try {
+          const formData = new FormData()
+          formData.append('audio', audioBlob, 'dictation.webm')
+
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/dictate`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              },
+              body: formData,
+            }
+          )
+
+          const result = await response.json()
+          if (result.text) {
+            setProviderNoteContent(prev =>
+              prev ? prev + '\n' + result.text : result.text
+            )
+          } else if (result.error) {
+            setMessage({ type: 'error', text: `Dictation failed: ${result.error}` })
+          }
+        } catch (error) {
+          console.error('Dictation error:', error)
+          setMessage({ type: 'error', text: 'Dictation failed' })
+        } finally {
+          setTranscribing(false)
+        }
+      }
+
+      mediaRecorder.start()
+      setDictating(true)
+    } catch (error) {
+      console.error('Microphone access error:', error)
+      setMessage({ type: 'error', text: 'Could not access microphone. Please allow microphone access.' })
+    }
+  }, [])
+
+  const stopDictation = useCallback(() => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+    setDictating(false)
+  }, [])
 
   const handleSaveNotes = async () => {
     setSaving(true)
@@ -300,12 +372,44 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
 
       {/* Provider Note */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-4">Provider Note (SOAP)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Provider Note (SOAP)</h3>
+          <Button
+            variant={dictating ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={dictating ? stopDictation : startDictation}
+            disabled={transcribing}
+            className="gap-2"
+          >
+            {transcribing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Transcribing...
+              </>
+            ) : dictating ? (
+              <>
+                <MicOff className="h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                Dictate
+              </>
+            )}
+          </Button>
+        </div>
+        {dictating && (
+          <div className="mb-3 flex items-center gap-2 text-sm text-red-600">
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            Recording... Tap Stop when done.
+          </div>
+        )}
         <Textarea
           value={providerNoteContent}
           onChange={(e) => setProviderNoteContent(e.target.value)}
           className="min-h-[200px] font-mono text-sm"
-          placeholder="Provider note content..."
+          placeholder="Provider note content... Use the Dictate button to speak your note."
         />
       </div>
 

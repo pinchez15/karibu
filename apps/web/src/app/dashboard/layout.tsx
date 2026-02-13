@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 const navigation = [
   { name: "Today's Queue", href: '/dashboard', icon: Users },
   { name: 'Review', href: '/dashboard/review', icon: ClipboardList },
-  { name: 'Visits', href: '/dashboard/visits', icon: Stethoscope },
+  { name: 'Patients', href: '/dashboard/visits', icon: Stethoscope },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
