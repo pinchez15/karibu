@@ -22,8 +22,6 @@ interface ReviewVisit {
     id: string
     note_content: string | null
     transcript: string | null
-    transcript_original: string | null
-    transcript_english: string | null
     transcription_provider: string | null
     transcription_confidence: number | null
     status: string
@@ -230,27 +228,10 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
               <div className="space-y-2">
                 <h3 className="font-medium text-sm text-muted-foreground">TRANSCRIPT</h3>
 
-                {/* Original (local language) */}
-                {visit.source_language === 'local' && visit.provider_notes.transcript_original && (
-                  <div className="mb-2">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Original (Local Language)</p>
-                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 max-h-36 overflow-y-auto">
-                      <pre className="text-sm whitespace-pre-wrap font-sans">
-                        {visit.provider_notes.transcript_original}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  {visit.source_language === 'local' && (
-                    <p className="text-xs font-medium text-muted-foreground mb-1">English Translation</p>
-                  )}
-                  <div className="bg-card rounded-lg p-3 border border-border max-h-48 overflow-y-auto">
-                    <pre className="text-sm whitespace-pre-wrap font-sans">
-                      {visit.provider_notes.transcript_english || visit.provider_notes.transcript}
-                    </pre>
-                  </div>
+                <div className="bg-card rounded-lg p-3 border border-border max-h-48 overflow-y-auto">
+                  <pre className="text-sm whitespace-pre-wrap font-sans">
+                    {visit.provider_notes.transcript}
+                  </pre>
                 </div>
 
                 {visit.provider_notes.transcription_provider && (

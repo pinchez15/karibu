@@ -12,8 +12,6 @@ interface ReviewVisit {
     id: string
     note_content: string | null
     transcript: string | null
-    transcript_original: string | null
-    transcript_english: string | null
     transcription_provider: string | null
     transcription_confidence: number | null
     status: string
@@ -37,7 +35,7 @@ async function getReviewVisits(clinicId: string): Promise<ReviewVisit[]> {
     .select(`
       id, visit_date, source_language, diagnosis, medications, follow_up_instructions, tests_ordered,
       patient:patients(id, display_name, whatsapp_number),
-      provider_notes(id, note_content, transcript, transcript_original, transcript_english, transcription_provider, transcription_confidence, status),
+      provider_notes(id, note_content, transcript, transcription_provider, transcription_confidence, status),
       patient_notes(id, content, status)
     `)
     .eq('clinic_id', clinicId)

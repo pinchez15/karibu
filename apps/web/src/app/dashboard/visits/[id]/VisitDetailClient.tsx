@@ -340,26 +340,10 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
         <div className="bg-card border border-border rounded-lg p-4">
           <h3 className="text-lg font-semibold mb-4">Transcript</h3>
 
-          {visit.source_language === 'local' && visit.provider_notes.transcript_original && (
-            <div className="mb-4">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Original (Local Language)</p>
-              <div className="bg-amber-50 rounded-lg p-4 max-h-48 overflow-y-auto border border-amber-200">
-                <p className="text-sm whitespace-pre-wrap font-mono">
-                  {visit.provider_notes.transcript_original}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div>
-            {visit.source_language === 'local' && (
-              <p className="text-sm font-medium text-muted-foreground mb-2">English Translation</p>
-            )}
-            <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto border border-border">
-              <p className="text-sm whitespace-pre-wrap font-mono">
-                {visit.provider_notes.transcript_english || visit.provider_notes.transcript}
-              </p>
-            </div>
+          <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto border border-border">
+            <p className="text-sm whitespace-pre-wrap font-mono">
+              {visit.provider_notes.transcript}
+            </p>
           </div>
 
           {visit.provider_notes.audio_trimmed && (
