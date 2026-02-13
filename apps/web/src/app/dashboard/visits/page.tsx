@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Visit, VisitStatus } from '@karibu/shared'
+import { PatientsToolbar } from './PatientsToolbar'
 
 interface VisitWithPatient extends Visit {
   patient: { display_name: string | null; whatsapp_number: string }
@@ -13,9 +14,25 @@ async function getVisits(
   clinicId: string,
   statusFilter?: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  search?: string,
 ) {
   const supabase = createServiceClient()
+
+  // If searching, find matching patient IDs first
+  let patientIds: string[] | null = null
+  if (search) {
+    const { data: matchingPatients } = await supabase
+      .from('patients')
+      .select('id')
+      .eq('clinic_id', clinicId)
+      .or(`display_name.ilike.%${search}%,whatsapp_number.ilike.%${search}%`)
+
+    patientIds = matchingPatients?.map(p => p.id) || []
+    if (patientIds.length === 0) {
+      return { visits: [], total: 0 }
+    }
+  }
 
   let query = supabase
     .from('visits')
@@ -26,6 +43,10 @@ async function getVisits(
 
   if (statusFilter && statusFilter !== 'all') {
     query = query.eq('status', statusFilter)
+  }
+
+  if (patientIds) {
+    query = query.in('patient_id', patientIds)
   }
 
   const { data, error, count } = await query
@@ -51,7 +72,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 export default async function VisitsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>
+  searchParams: Promise<{ status?: string; page?: string; search?: string }>
 }) {
   const staff = await getStaff()
   if (!staff) redirect('/')
@@ -59,18 +80,21 @@ export default async function VisitsPage({
   const params = await searchParams
   const statusFilter = params.status || 'all'
   const page = parseInt(params.page || '1', 10)
+  const search = params.search || ''
 
-  const { visits, total } = await getVisits(staff.clinic_id, statusFilter, page)
+  const { visits, total } = await getVisits(staff.clinic_id, statusFilter, page, 20, search)
   const totalPages = Math.ceil(total / 20)
 
   return (
     <div className="p-4 space-y-4">
+      <PatientsToolbar />
+
       {/* Status filter chips */}
       <div className="flex flex-wrap gap-2">
         {['all', 'review', 'processing', 'sent', 'completed', 'error'].map((status) => (
           <Link
             key={status}
-            href={`/dashboard/visits${status !== 'all' ? `?status=${status}` : ''}`}
+            href={`/dashboard/visits${status !== 'all' ? `?status=${status}` : ''}${search ? `${status !== 'all' ? '&' : '?'}search=${search}` : ''}`}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               statusFilter === status
                 ? 'bg-primary text-primary-foreground'
@@ -82,7 +106,10 @@ export default async function VisitsPage({
         ))}
       </div>
 
-      <p className="text-sm text-muted-foreground">{total} visits</p>
+      <p className="text-sm text-muted-foreground">
+        {total} {total === 1 ? 'visit' : 'visits'}
+        {search && <> matching &ldquo;{search}&rdquo;</>}
+      </p>
 
       {/* Visit cards */}
       <div className="space-y-2">
@@ -120,7 +147,7 @@ export default async function VisitsPage({
 
         {visits.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
-            No visits found
+            {search ? 'No patients found' : 'No visits found'}
           </div>
         )}
       </div>
@@ -134,7 +161,7 @@ export default async function VisitsPage({
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`/dashboard/visits?${statusFilter !== 'all' ? `status=${statusFilter}&` : ''}page=${page - 1}`}
+                href={`/dashboard/visits?${statusFilter !== 'all' ? `status=${statusFilter}&` : ''}${search ? `search=${search}&` : ''}page=${page - 1}`}
                 className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
               >
                 Previous
@@ -142,7 +169,7 @@ export default async function VisitsPage({
             )}
             {page < totalPages && (
               <Link
-                href={`/dashboard/visits?${statusFilter !== 'all' ? `status=${statusFilter}&` : ''}page=${page + 1}`}
+                href={`/dashboard/visits?${statusFilter !== 'all' ? `status=${statusFilter}&` : ''}${search ? `search=${search}&` : ''}page=${page + 1}`}
                 className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
               >
                 Next

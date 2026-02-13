@@ -40,15 +40,15 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
   const [resending, setResending] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [dictating, setDictating] = useState(false)
-  const [transcribing, setTranscribing] = useState(false)
+  const [dictationTarget, setDictationTarget] = useState<'provider' | 'patient' | null>(null)
+  const [transcribingTarget, setTranscribingTarget] = useState<'provider' | 'patient' | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
   const supabase = getSupabase()
   const config = statusConfig[visit.status] || statusConfig.error
 
-  const startDictation = useCallback(async () => {
+  const startDictation = useCallback(async (target: 'provider' | 'patient') => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream, {
@@ -68,7 +68,7 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
         if (audioBlob.size < 1000) return // Too short, ignore
 
-        setTranscribing(true)
+        setTranscribingTarget(target)
         try {
           const formData = new FormData()
           formData.append('audio', audioBlob, 'dictation.webm')
@@ -86,9 +86,8 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
 
           const result = await response.json()
           if (result.text) {
-            setProviderNoteContent(prev =>
-              prev ? prev + '\n' + result.text : result.text
-            )
+            const setter = target === 'provider' ? setProviderNoteContent : setPatientNoteContent
+            setter(prev => prev ? prev + '\n' + result.text : result.text)
           } else if (result.error) {
             setMessage({ type: 'error', text: `Dictation failed: ${result.error}` })
           }
@@ -96,12 +95,12 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
           console.error('Dictation error:', error)
           setMessage({ type: 'error', text: 'Dictation failed' })
         } finally {
-          setTranscribing(false)
+          setTranscribingTarget(null)
         }
       }
 
       mediaRecorder.start()
-      setDictating(true)
+      setDictationTarget(target)
     } catch (error) {
       console.error('Microphone access error:', error)
       setMessage({ type: 'error', text: 'Could not access microphone. Please allow microphone access.' })
@@ -112,7 +111,7 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop()
     }
-    setDictating(false)
+    setDictationTarget(null)
   }, [])
 
   const handleSaveNotes = async () => {
@@ -120,19 +119,31 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
     setMessage(null)
 
     try {
+      // Provider note: update existing or create new
       if (visit.provider_notes) {
         const { error: providerError } = await supabase
           .from('provider_notes')
           .update({ note_content: providerNoteContent })
           .eq('id', visit.provider_notes.id)
         if (providerError) throw providerError
+      } else if (providerNoteContent) {
+        const { error: providerError } = await supabase
+          .from('provider_notes')
+          .insert({ visit_id: visit.id, note_content: providerNoteContent })
+        if (providerError) throw providerError
       }
 
+      // Patient note: update existing or create new
       if (visit.patient_notes) {
         const { error: patientError } = await supabase
           .from('patient_notes')
           .update({ content: patientNoteContent })
           .eq('id', visit.patient_notes.id)
+        if (patientError) throw patientError
+      } else if (patientNoteContent) {
+        const { error: patientError } = await supabase
+          .from('patient_notes')
+          .insert({ visit_id: visit.id, content: patientNoteContent })
         if (patientError) throw patientError
       }
 
@@ -359,18 +370,18 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Provider Note (SOAP)</h3>
           <Button
-            variant={dictating ? 'destructive' : 'outline'}
+            variant={dictationTarget === 'provider' ? 'destructive' : 'outline'}
             size="sm"
-            onClick={dictating ? stopDictation : startDictation}
-            disabled={transcribing}
+            onClick={dictationTarget === 'provider' ? stopDictation : () => startDictation('provider')}
+            disabled={transcribingTarget === 'provider' || (dictationTarget !== null && dictationTarget !== 'provider')}
             className="gap-2"
           >
-            {transcribing ? (
+            {transcribingTarget === 'provider' ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Transcribing...
               </>
-            ) : dictating ? (
+            ) : dictationTarget === 'provider' ? (
               <>
                 <MicOff className="h-4 w-4" />
                 Stop
@@ -383,7 +394,7 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
             )}
           </Button>
         </div>
-        {dictating && (
+        {dictationTarget === 'provider' && (
           <div className="mb-3 flex items-center gap-2 text-sm text-red-600">
             <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
             Recording... Tap Stop when done.
@@ -399,12 +410,44 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
 
       {/* Patient Note */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-4">Patient Note (Plain Language)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Patient Note (Plain Language)</h3>
+          <Button
+            variant={dictationTarget === 'patient' ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={dictationTarget === 'patient' ? stopDictation : () => startDictation('patient')}
+            disabled={transcribingTarget === 'patient' || (dictationTarget !== null && dictationTarget !== 'patient')}
+            className="gap-2"
+          >
+            {transcribingTarget === 'patient' ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Transcribing...
+              </>
+            ) : dictationTarget === 'patient' ? (
+              <>
+                <MicOff className="h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                Dictate
+              </>
+            )}
+          </Button>
+        </div>
+        {dictationTarget === 'patient' && (
+          <div className="mb-3 flex items-center gap-2 text-sm text-red-600">
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            Recording... Tap Stop when done.
+          </div>
+        )}
         <Textarea
           value={patientNoteContent}
           onChange={(e) => setPatientNoteContent(e.target.value)}
           className="min-h-[150px] text-sm"
-          placeholder="Patient-friendly note content..."
+          placeholder="Patient-friendly note content... Use the Dictate button to speak your note."
         />
       </div>
 
