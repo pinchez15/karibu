@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import {
+  fetchQueueData,
+  assignToNurse,
+  markReadyForDoctor,
+  claimPatient,
+} from './actions'
+import {
   Users,
   UserCheck,
   Stethoscope,
@@ -69,30 +75,25 @@ export function QueueDashboardClient({
     const topic = `queue-updates:${clinicId}`
     const channel = supabase
       .channel(topic, { config: { private: true, broadcast: { self: true, ack: true } } })
-      .on('broadcast', { event: 'queue_changed' }, () => fetchQueue())
+      .on('broadcast', { event: 'queue_changed' }, () => refreshQueue())
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') fetchQueue()
+        if (status === 'SUBSCRIBED') refreshQueue()
       })
 
     return () => { supabase.removeChannel(channel) }
   }, [clinicId])
 
-  const fetchQueue = async () => {
-    const { data, error } = await supabase.rpc('get_clinic_queue', {
-      p_clinic_id: clinicId,
-    })
-    if (!error && data) setQueue(data as QueueItem[])
+  const refreshQueue = async () => {
+    const data = await fetchQueueData(clinicId)
+    setQueue(data)
   }
 
   const handleAssignToNurse = async (visitId: string) => {
     setLoading(visitId)
     try {
-      const { error } = await supabase.rpc('assign_to_nurse', {
-        p_visit_id: visitId,
-        p_nurse_id: staffId,
-      })
-      if (error) throw error
-      await fetchQueue()
+      const result = await assignToNurse(visitId)
+      if (result.error) throw new Error(result.error)
+      await refreshQueue()
     } catch (error) {
       console.error('Failed to assign:', error)
     } finally {
@@ -103,11 +104,9 @@ export function QueueDashboardClient({
   const handleMarkReady = async (visitId: string) => {
     setLoading(visitId)
     try {
-      const { error } = await supabase.rpc('mark_ready_for_doctor', {
-        p_visit_id: visitId,
-      })
-      if (error) throw error
-      await fetchQueue()
+      const result = await markReadyForDoctor(visitId)
+      if (result.error) throw new Error(result.error)
+      await refreshQueue()
     } catch (error) {
       console.error('Failed to mark ready:', error)
     } finally {
@@ -118,12 +117,9 @@ export function QueueDashboardClient({
   const handleClaimPatient = async (visitId: string) => {
     setLoading(visitId)
     try {
-      const { error } = await supabase.rpc('claim_patient', {
-        p_visit_id: visitId,
-        p_doctor_id: staffId,
-      })
-      if (error) throw error
-      await fetchQueue()
+      const result = await claimPatient(visitId)
+      if (result.error) throw new Error(result.error)
+      await refreshQueue()
     } catch (error) {
       console.error('Failed to claim:', error)
     } finally {
