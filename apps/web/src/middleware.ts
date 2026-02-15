@@ -11,7 +11,15 @@ const isPublicRoute = createRouteMatcher([
   '/',
 ]);
 
+// Routes that should never be intercepted
+const isPassthroughRoute = createRouteMatcher([
+  '/demo',
+]);
+
 export default clerkMiddleware(async (auth, req) => {
+  // Let /demo route handle its own logic
+  if (isPassthroughRoute(req)) return;
+
   const { userId } = await auth();
 
   // If user is authenticated and on home page, redirect to dashboard
