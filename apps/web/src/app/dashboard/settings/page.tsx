@@ -1,6 +1,9 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
+import { SignOutButton } from '@clerk/nextjs'
+import { Button } from '@/components/ui/button'
+import { LogOut } from 'lucide-react'
 
 async function getClinicName(clinicId: string): Promise<string> {
   const supabase = createServiceClient()
@@ -57,6 +60,14 @@ export default async function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* Sign out */}
+      <SignOutButton redirectUrl="/">
+        <Button variant="outline" className="w-full h-12 gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </Button>
+      </SignOutButton>
     </div>
   )
 }
