@@ -5,6 +5,48 @@
 -- Copy-paste into Supabase SQL Editor to seed
 -- ============================================================
 
+-- ENSURE SCHEMA: Add columns from migration 011 if not already present
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS source_language TEXT DEFAULT 'eng';
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS consent_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS consent_id UUID;
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS review_status TEXT DEFAULT 'pending';
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES staff(id);
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS audio_deleted_at TIMESTAMPTZ;
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS retention_expires_at TIMESTAMPTZ;
+
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS transcript_original TEXT;
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS transcript_english TEXT;
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS transcription_provider TEXT;
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS transcription_confidence NUMERIC;
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS diarization_output JSONB;
+ALTER TABLE provider_notes ADD COLUMN IF NOT EXISTS audio_trimmed BOOLEAN DEFAULT FALSE;
+
+-- Create patient_consents table if not exists (from migration 011)
+CREATE TABLE IF NOT EXISTS patient_consents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  visit_id UUID REFERENCES visits(id) ON DELETE CASCADE,
+  consent_type TEXT NOT NULL CHECK (consent_type IN (
+    'audio_recording', 'ai_processing', 'data_storage',
+    'cross_border_transfer', 'minor_guardian'
+  )),
+  granted BOOLEAN NOT NULL,
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  granted_by TEXT NOT NULL CHECK (granted_by IN (
+    'patient', 'guardian', 'clinician_witnessed'
+  )),
+  guardian_name TEXT,
+  guardian_relationship TEXT,
+  withdrawal_at TIMESTAMPTZ,
+  consent_method TEXT NOT NULL CHECK (consent_method IN (
+    'verbal_recorded', 'written_paper', 'digital_whatsapp', 'digital_app'
+  )),
+  consent_language TEXT NOT NULL DEFAULT 'eng',
+  ip_address TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- CLEANUP: Remove any previous demo data (safe to re-run)
 DELETE FROM patients WHERE id IN (
   '00000000-0000-0000-0000-000000000201',
