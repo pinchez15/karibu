@@ -1,5 +1,6 @@
 'use server'
 
+import { randomBytes } from 'crypto'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 
@@ -25,20 +26,16 @@ export async function approveVisit(
     }
   }
 
-  // Update visit review status
-  const { error } = await supabase
+  // Get visit details for magic link creation
+  const { data: visit, error: visitError } = await supabase
     .from('visits')
-    .update({
-      review_status: 'approved',
-      reviewed_by: staff.id,
-      reviewed_at: new Date().toISOString(),
-      status: 'review',
-    })
+    .select('patient_id')
     .eq('id', visitId)
+    .single()
 
-  if (error) {
-    console.error('Failed to approve visit:', error)
-    return { error: 'Failed to approve visit' }
+  if (visitError || !visit) {
+    console.error('Failed to fetch visit:', visitError)
+    return { error: 'Failed to find visit' }
   }
 
   // Finalize notes
@@ -53,6 +50,59 @@ export async function approveVisit(
       .update({ status: 'finalized' })
       .eq('visit_id', visitId),
   ])
+
+  // Create magic link for patient note access
+  const token = randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 hours
+
+  const { error: linkError } = await supabase
+    .from('magic_links')
+    .insert({
+      patient_id: visit.patient_id,
+      visit_id: visitId,
+      token,
+      expires_at: expiresAt,
+    })
+
+  if (linkError) {
+    console.error('Failed to create magic link:', linkError)
+    return { error: 'Failed to create patient note link' }
+  }
+
+  // Update visit status to 'sent'
+  const { error: statusError } = await supabase
+    .from('visits')
+    .update({
+      review_status: 'approved',
+      reviewed_by: staff.id,
+      reviewed_at: now,
+      status: 'sent',
+    })
+    .eq('id', visitId)
+
+  if (statusError) {
+    console.error('Failed to update visit status:', statusError)
+    return { error: 'Failed to approve visit' }
+  }
+
+  // Send WhatsApp message with patient note link (fire-and-forget)
+  fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-whatsapp`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        visit_id: visitId,
+        magic_link_token: token,
+      }),
+    }
+  ).catch(err => {
+    // Non-blocking — WhatsApp send failure shouldn't block approval
+    console.error('Failed to send WhatsApp:', err)
+  })
 
   return { success: true }
 }
@@ -76,6 +126,24 @@ export async function rejectVisit(visitId: string) {
   if (error) {
     console.error('Failed to reject visit:', error)
     return { error: 'Failed to reject visit' }
+  }
+
+  // Re-trigger the transcription pipeline
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transcribe`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ visit_id: visitId }),
+    }
+  )
+
+  if (!response.ok) {
+    console.error('Failed to trigger reprocessing')
+    // Don't return error — the status was already updated, pipeline will retry
   }
 
   return { success: true }

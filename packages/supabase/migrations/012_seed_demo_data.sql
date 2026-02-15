@@ -1274,6 +1274,78 @@ Karibu Demo Clinic$patient_note$,
   'finalized'
 );
 
+-- Patient note for Asiimwe TB-IRIS (pending_review visit 0311)
+INSERT INTO patient_notes (id, visit_id, content, language, status)
+VALUES (
+  '00000000-0000-0000-0000-000000000502',
+  '00000000-0000-0000-0000-000000000311',
+  $patient_note$Hello Patience,
+
+Thank you for coming back for your check-up. You have been taking your HIV medicine (TLD) very well — every day without missing, that is excellent.
+
+The new symptoms you are having — the night sweats, cough, chest pain, and weight loss — are likely caused by your body's immune system getting stronger from the HIV medicine. When the immune system wakes up, it can sometimes cause a strong reaction. This is called IRIS and it can be uncomfortable, but it means your medicine is working.
+
+We need to check if you also have TB (tuberculosis). We have taken some sputum samples and a chest X-ray. We will have results in 2 days.
+
+What is happening now:
+- Continue taking your HIV medicine (TLD) every evening — DO NOT STOP
+- Continue taking Cotrimoxazole
+- We are stopping the Isoniazid for now until we get your test results
+- Take Paracetamol for the fever and pain
+
+You must come back in 2 days for your test results. This is very important.
+
+Come to the clinic immediately if:
+- You have difficulty breathing
+- You cough up blood
+- Your fever gets much worse
+- You feel confused or very weak
+
+Please eat well and rest. If available, take Plumpy'Nut for nutrition.
+
+Take care,
+Dr. Sarah Amara
+Karibu Demo Clinic$patient_note$,
+  'en',
+  'draft'
+);
+
+-- Patient note for Kemigisha UTI (pending_review visit 0321)
+INSERT INTO patient_notes (id, visit_id, content, language, status)
+VALUES (
+  '00000000-0000-0000-0000-000000000503',
+  '00000000-0000-0000-0000-000000000321',
+  $patient_note$Hello Diana,
+
+You came to see us because of pain when passing urine, going to the toilet very often, and lower tummy discomfort. These are signs of a urine infection (UTI). This is your third infection in 8 months, so we are taking extra care.
+
+Your medicine:
+- Nitrofurantoin — Take one tablet twice a day (morning and evening) with food for 5 days. Finish all the tablets even if you feel better.
+- Paracetamol — Take for pain as needed, up to 3 times a day.
+
+We have sent your urine for a special test (culture) to check exactly which germ is causing the infection. The results will be ready in about 3-5 days.
+
+What you can do to help:
+- Drink at least 8 glasses of water every day
+- Go to the toilet as soon as you feel the need — do not hold it
+- After using the toilet, always wipe from front to back
+- Pass urine before and after being with your husband
+- This medicine is safe if you become pregnant
+
+Come back to the clinic:
+- In 5 days for your culture results
+- Immediately if you get fever, pain in your back/sides, or vomiting
+- If you do not feel better after 2 days
+
+Since this keeps coming back, we may need to do an ultrasound of your kidneys at your next visit.
+
+Take care,
+Dr. Sarah Amara
+Karibu Demo Clinic$patient_note$,
+  'en',
+  'draft'
+);
+
 -- ============================================================
 -- MAGIC LINK (for Owomugisha — sent visit)
 -- ============================================================

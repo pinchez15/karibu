@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { Mic, MicOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -202,9 +203,12 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
       <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold">
+            <Link
+              href={`/dashboard/patients/${visit.patient?.id}`}
+              className="text-xl font-bold hover:underline"
+            >
               {visit.patient?.display_name || 'Unknown Patient'}
-            </h2>
+            </Link>
             <p className="text-muted-foreground font-mono">{visit.patient?.whatsapp_number}</p>
           </div>
           <span className={`px-3 py-1 text-sm font-medium rounded-full ${config.bg} ${config.color}`}>

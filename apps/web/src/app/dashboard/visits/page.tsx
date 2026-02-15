@@ -6,7 +6,7 @@ import type { Visit, VisitStatus } from '@karibu/shared'
 import { PatientsToolbar } from './PatientsToolbar'
 
 interface VisitWithPatient extends Visit {
-  patient: { display_name: string | null; whatsapp_number: string }
+  patient: { id: string; display_name: string | null; whatsapp_number: string }
   doctor: { display_name: string } | null
 }
 
@@ -36,7 +36,7 @@ async function getVisits(
 
   let query = supabase
     .from('visits')
-    .select('*, patient:patients(display_name, whatsapp_number), doctor:staff!visits_doctor_id_fkey(display_name)', { count: 'exact' })
+    .select('*, patient:patients(id, display_name, whatsapp_number), doctor:staff!visits_doctor_id_fkey(display_name)', { count: 'exact' })
     .eq('clinic_id', clinicId)
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
@@ -116,24 +116,32 @@ export default async function VisitsPage({
         {visits.map((visit) => {
           const config = statusConfig[visit.status] || statusConfig.error
           return (
-            <Link
+            <div
               key={visit.id}
-              href={`/dashboard/visits/${visit.id}`}
-              className="block bg-card border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors min-h-[72px]"
+              className="bg-card border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors min-h-[72px]"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">
+                    <Link
+                      href={`/dashboard/patients/${visit.patient?.id}`}
+                      className="font-medium truncate hover:underline"
+                    >
                       {visit.patient?.display_name || 'Unknown Patient'}
-                    </p>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${config.bg} ${config.color}`}>
+                    </Link>
+                    <Link
+                      href={`/dashboard/visits/${visit.id}`}
+                      className={`px-2 py-0.5 text-xs font-medium rounded-full hover:opacity-80 ${config.bg} ${config.color}`}
+                    >
                       {config.label}
-                    </span>
+                    </Link>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <Link
+                    href={`/dashboard/visits/${visit.id}`}
+                    className="block text-sm text-muted-foreground mt-1"
+                  >
                     {new Date(visit.visit_date).toLocaleDateString()} &middot; {visit.doctor?.display_name || 'Unassigned'}
-                  </p>
+                  </Link>
                   {visit.status === 'error' && visit.error_message && (
                     <p className="text-xs text-red-600 mt-1 truncate">
                       {visit.error_message}
@@ -141,7 +149,7 @@ export default async function VisitsPage({
                   )}
                 </div>
               </div>
-            </Link>
+            </div>
           )
         })}
 

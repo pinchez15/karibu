@@ -127,12 +127,20 @@ export function QueueDashboardClient({
     }
   }
 
-  const QueueCard = ({ item, showActions = true }: { item: QueueItem; showActions?: boolean }) => {
+  const QueueCard = ({ item, showActions = true, linkTo }: { item: QueueItem; showActions?: boolean; linkTo?: string }) => {
     const isUrgent = item.priority === 'urgent'
     const isHigh = item.priority === 'high'
 
+    const Wrapper = linkTo
+      ? ({ children, className }: { children: React.ReactNode; className: string }) => (
+          <Link href={linkTo} className={`block ${className} hover:bg-secondary/50 transition-colors`}>{children}</Link>
+        )
+      : ({ children, className }: { children: React.ReactNode; className: string }) => (
+          <div className={className}>{children}</div>
+        )
+
     return (
-      <div className={`bg-card border rounded-lg p-4 space-y-3 ${
+      <Wrapper className={`bg-card border rounded-lg p-4 space-y-3 ${
         isUrgent ? 'border-red-300 bg-red-50/50' :
         isHigh ? 'border-amber-300 bg-amber-50/30' :
         'border-border'
@@ -140,7 +148,13 @@ export function QueueDashboardClient({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <p className="font-medium">{item.patient_name || 'Unknown Patient'}</p>
+              <Link
+                href={`/dashboard/patients/${item.patient_id}`}
+                className="font-medium hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {item.patient_name || 'Unknown Patient'}
+              </Link>
               {(isUrgent || isHigh) && (
                 <Badge variant="destructive" className="text-xs">
                   {isUrgent ? 'Urgent' : 'High'}
@@ -204,7 +218,7 @@ export function QueueDashboardClient({
             )}
           </div>
         )}
-      </div>
+      </Wrapper>
     )
   }
 
@@ -319,7 +333,7 @@ export function QueueDashboardClient({
               <p>No completed encounters yet</p>
             </div>
           ) : (
-            completed.map(item => <QueueCard key={item.visit_id} item={item} showActions={false} />)
+            completed.map(item => <QueueCard key={item.visit_id} item={item} showActions={false} linkTo={`/dashboard/visits/${item.visit_id}`} />)
           )}
         </TabsContent>
       </Tabs>
