@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS patient_consents (
 );
 
 -- DISABLE realtime trigger during seeding (avoids realtime.send() errors)
-ALTER TABLE visits DISABLE TRIGGER ALL;
+ALTER TABLE visits DISABLE TRIGGER USER;
 
 -- CLEANUP: Remove any previous demo data (safe to re-run)
 DELETE FROM patients WHERE id IN (
@@ -1338,4 +1338,4 @@ BEGIN
 END $$;
 
 -- Re-enable triggers after seeding
-ALTER TABLE visits ENABLE TRIGGER ALL;
+ALTER TABLE visits ENABLE TRIGGER USER;
