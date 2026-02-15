@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS patient_consents (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- DISABLE realtime trigger during seeding (avoids realtime.send() errors)
+ALTER TABLE visits DISABLE TRIGGER ALL;
+
 -- CLEANUP: Remove any previous demo data (safe to re-run)
 DELETE FROM patients WHERE id IN (
   '00000000-0000-0000-0000-000000000201',
@@ -1333,3 +1336,6 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+
+-- Re-enable triggers after seeding
+ALTER TABLE visits ENABLE TRIGGER ALL;
