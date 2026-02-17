@@ -5,6 +5,10 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Karibu Health',
   description: 'AI-native clinical documentation for Uganda',
+  icons: {
+    icon: '/logos/icon-only.png',
+    apple: '/logos/icon-only.png',
+  },
 }
 
 export const viewport: Viewport = {

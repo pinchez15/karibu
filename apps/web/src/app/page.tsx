@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Activity, Users, Clock, FileText, TrendingDown, Globe, Phone, MessageCircle, CheckCircle, ArrowRight } from 'lucide-react'
+import { Users, Clock, FileText, TrendingDown, Globe, Phone, MessageCircle, CheckCircle, ArrowRight } from 'lucide-react'
 
 function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -17,12 +17,7 @@ export default function Home() {
         {/* Floating Navigation */}
         <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">Karibu.Health</span>
-            </div>
+            <img src="/logos/shortname-and-icon.png" alt="Karibu" className="h-8" />
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
@@ -51,9 +46,7 @@ export default function Home() {
           <div className="w-full max-w-4xl text-center space-y-8">
             {/* Logo */}
             <div className="flex justify-center">
-              <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center">
-                <Activity className="w-12 h-12 text-primary-foreground" />
-              </div>
+              <img src="/logos/icon-and-name.png" alt="Karibu.health" className="h-24" />
             </div>
 
             {/* Headline */}
@@ -700,10 +693,7 @@ export default function Home() {
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto text-center text-sm text-muted-foreground space-y-2">
           <div className="flex items-center justify-center gap-2">
-            <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-              <Activity className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-foreground">Karibu.Health</span>
+            <img src="/logos/shortname-and-icon.png" alt="Karibu" className="h-6" />
           </div>
           <p>Mobile-first healthcare for Uganda</p>
           <p>CappaWork LLC © {new Date().getFullYear()}</p>

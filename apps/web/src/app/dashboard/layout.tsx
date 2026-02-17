@@ -35,9 +35,12 @@ export default function DashboardLayout({
       {/* Sticky header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">
-            {currentPage?.name || 'Karibu Health'}
-          </h1>
+          <div className="flex items-center gap-2">
+            <img src="/logos/icon-only.png" alt="" className="h-7 w-7" />
+            <h1 className="text-xl font-semibold">
+              {currentPage?.name || 'Karibu Health'}
+            </h1>
+          </div>
 
           {/* Hamburger menu */}
           <Sheet>
