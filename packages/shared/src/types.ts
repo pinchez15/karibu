@@ -391,3 +391,53 @@ export interface DataQualityStats {
   missing_dob: number;
   total_patients: number;
 }
+
+// Multi-clinic HMIS 105 Analytics Types
+
+export interface ClinicOption {
+  id: string;
+  name: string;
+}
+
+export interface Hmis105SingleReport {
+  clinic_id: string;
+  clinic_name: string;
+  year: number;
+  month: number;
+  rows: Hmis105Row[];
+  quality: DataQualityStats;
+}
+
+export interface Hmis105SummaryRow {
+  hmis_code: string;
+  display_name: string;
+  sort_order: number;
+  clinic_totals: Record<string, number>; // clinic_id → total
+  grand_total: number;
+}
+
+export interface Hmis105TrendPoint {
+  year: number;
+  month: number;
+  total: number;
+}
+
+export interface Hmis105TrendRow {
+  hmis_code: string;
+  display_name: string;
+  points: Hmis105TrendPoint[];
+  max_total: number;
+}
+
+export interface Hmis105MultiReport {
+  reports: Hmis105SingleReport[];
+  clinics: ClinicOption[];
+  date_range: {
+    start_year: number;
+    start_month: number;
+    end_year: number;
+    end_month: number;
+  };
+  aggregated_quality: DataQualityStats;
+  generated_at: string;
+}

@@ -2,7 +2,14 @@
 
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff, isAdmin } from '@/lib/auth'
-import type { Hmis105Report, Hmis105Row, DataQualityStats } from '@karibu/shared'
+import type {
+  Hmis105Report,
+  Hmis105Row,
+  Hmis105SingleReport,
+  Hmis105MultiReport,
+  DataQualityStats,
+  ClinicOption,
+} from '@karibu/shared'
 
 export async function generateHmis105Report(
   year: number,
@@ -220,6 +227,168 @@ export async function getDataQualityStats(): Promise<{
       patients_missing_sex: (missingSexPatients || []) as Array<{ id: string; display_name: string | null; whatsapp_number: string }>,
       patients_missing_dob: (missingDobPatients || []) as Array<{ id: string; display_name: string | null; whatsapp_number: string }>,
       uncoded_visit_ids: uncodedVisits,
+    },
+  }
+}
+
+export async function fetchAllClinics(): Promise<{
+  data?: ClinicOption[]
+  error?: string
+}> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const admin = await isAdmin()
+  if (!admin) return { error: 'Admin access required' }
+
+  const supabase = createServiceClient()
+
+  const { data: clinics, error } = await supabase
+    .from('clinics')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name')
+
+  if (error) {
+    console.error('Failed to fetch clinics:', error)
+    return { error: 'Failed to fetch clinics' }
+  }
+
+  return { data: (clinics || []) as ClinicOption[] }
+}
+
+export async function generateMultiHmis105Report(
+  clinicIds: string[],
+  startYear: number,
+  startMonth: number,
+  endYear: number,
+  endMonth: number,
+): Promise<{ data?: Hmis105MultiReport; error?: string }> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const admin = await isAdmin()
+  if (!admin) return { error: 'Admin access required' }
+
+  // Validation
+  if (clinicIds.length === 0) return { error: 'Select at least one clinic' }
+  if (clinicIds.length > 50) return { error: 'Maximum 50 clinics allowed' }
+
+  // Build (year, month) pairs
+  const monthPairs: { year: number; month: number }[] = []
+  let y = startYear
+  let m = startMonth
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    monthPairs.push({ year: y, month: m })
+    m++
+    if (m > 12) {
+      m = 1
+      y++
+    }
+  }
+
+  if (monthPairs.length === 0) return { error: 'Invalid date range' }
+  if (monthPairs.length > 12) return { error: 'Maximum 12 months allowed' }
+
+  const totalCalls = clinicIds.length * monthPairs.length
+  if (totalCalls > 600) return { error: 'Too many report combinations (max 600)' }
+
+  const supabase = createServiceClient()
+
+  // Fetch clinic names
+  const { data: clinicsData, error: clinicsError } = await supabase
+    .from('clinics')
+    .select('id, name')
+    .in('id', clinicIds)
+
+  if (clinicsError) {
+    console.error('Failed to fetch clinics:', clinicsError)
+    return { error: 'Failed to fetch clinic details' }
+  }
+
+  const clinicMap = new Map(
+    (clinicsData || []).map((c: { id: string; name: string }) => [c.id, c.name]),
+  )
+  const clinics: ClinicOption[] = clinicIds.map((id) => ({
+    id,
+    name: clinicMap.get(id) || 'Unknown',
+  }))
+
+  // Generate all reports in parallel
+  const reportPromises = clinicIds.flatMap((clinicId) =>
+    monthPairs.map(async ({ year, month }) => {
+      const { data: rows, error: rpcError } = await supabase.rpc(
+        'generate_hmis_105',
+        {
+          p_clinic_id: clinicId,
+          p_year: year,
+          p_month: month,
+        },
+      )
+
+      if (rpcError) {
+        console.error(
+          `HMIS 105 RPC failed for clinic=${clinicId} ${year}-${month}:`,
+          rpcError,
+        )
+        return null
+      }
+
+      const periodStart = `${year}-${String(month).padStart(2, '0')}-01`
+      const nextMonth = month === 12 ? 1 : month + 1
+      const nextYear = month === 12 ? year + 1 : year
+      const periodEnd = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
+
+      const quality = await getDataQualityStatsForPeriod(
+        clinicId,
+        periodStart,
+        periodEnd,
+      )
+
+      return {
+        clinic_id: clinicId,
+        clinic_name: clinicMap.get(clinicId) || 'Unknown',
+        year,
+        month,
+        rows: (rows || []) as Hmis105Row[],
+        quality,
+      } as Hmis105SingleReport
+    }),
+  )
+
+  const results = await Promise.all(reportPromises)
+  const reports = results.filter(Boolean) as Hmis105SingleReport[]
+
+  // Aggregate quality stats
+  const aggregated_quality: DataQualityStats = {
+    total_visits: 0,
+    coded_visits: 0,
+    uncoded_visits: 0,
+    missing_sex: 0,
+    missing_dob: 0,
+    total_patients: 0,
+  }
+  for (const r of reports) {
+    aggregated_quality.total_visits += r.quality.total_visits
+    aggregated_quality.coded_visits += r.quality.coded_visits
+    aggregated_quality.uncoded_visits += r.quality.uncoded_visits
+    aggregated_quality.missing_sex += r.quality.missing_sex
+    aggregated_quality.missing_dob += r.quality.missing_dob
+    aggregated_quality.total_patients += r.quality.total_patients
+  }
+
+  return {
+    data: {
+      reports,
+      clinics,
+      date_range: {
+        start_year: startYear,
+        start_month: startMonth,
+        end_year: endYear,
+        end_month: endMonth,
+      },
+      aggregated_quality,
+      generated_at: new Date().toISOString(),
     },
   }
 }

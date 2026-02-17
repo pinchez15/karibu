@@ -1,4 +1,4 @@
-import type { Hmis105Report } from '@karibu/shared'
+import type { Hmis105Report, Hmis105MultiReport } from '@karibu/shared'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -60,6 +60,78 @@ export function generateHmis105Csv(report: Hmis105Report): string {
   lines.push(`Visits without HMIS codes,${report.quality.uncoded_visits}`)
   lines.push(`Patients missing sex,${report.quality.missing_sex}`)
   lines.push(`Patients missing date of birth,${report.quality.missing_dob}`)
+
+  return lines.join('\n')
+}
+
+export function generateMultiHmis105Csv(multiReport: Hmis105MultiReport): string {
+  const lines: string[] = []
+  const isMultiClinic = multiReport.clinics.length > 1
+  const { start_year, start_month, end_year, end_month } = multiReport.date_range
+  const startLabel = `${MONTH_NAMES[start_month - 1]} ${start_year}`
+  const endLabel = `${MONTH_NAMES[end_month - 1]} ${end_year}`
+
+  lines.push('HMIS 105 - Multi-Clinic/Period Report')
+  lines.push(`Clinics: ${multiReport.clinics.map((c) => c.name).join('; ')}`)
+  lines.push(`Period: ${startLabel} to ${endLabel}`)
+  lines.push(`Generated: ${new Date(multiReport.generated_at).toLocaleString()}`)
+  lines.push('')
+
+  // Column headers
+  const headers = [
+    ...(isMultiClinic ? ['Clinic'] : []),
+    'Month',
+    'Year',
+    'HMIS Code',
+    'Diagnosis',
+    'M 0-28d',
+    'F 0-28d',
+    'M 29d-4y',
+    'F 29d-4y',
+    'M 5-14y',
+    'F 5-14y',
+    'M 15-59y',
+    'F 15-59y',
+    'M 60+',
+    'F 60+',
+    'Total',
+  ]
+  lines.push(headers.join(','))
+
+  // Data rows - one row per clinic x month x diagnosis
+  for (const report of multiReport.reports) {
+    const monthName = MONTH_NAMES[report.month - 1]
+    for (const row of report.rows) {
+      const fields = [
+        ...(isMultiClinic ? [`"${report.clinic_name}"`] : []),
+        `"${monthName}"`,
+        report.year,
+        `"${row.hmis_code}"`,
+        `"${row.display_name}"`,
+        row.male_0_28d,
+        row.female_0_28d,
+        row.male_29d_4y,
+        row.female_29d_4y,
+        row.male_5_14y,
+        row.female_5_14y,
+        row.male_15_59y,
+        row.female_15_59y,
+        row.male_60plus,
+        row.female_60plus,
+        row.total,
+      ]
+      lines.push(fields.join(','))
+    }
+  }
+
+  // Quality summary
+  lines.push('')
+  lines.push('Aggregate Data Quality Summary')
+  lines.push(`Total finalized visits,${multiReport.aggregated_quality.total_visits}`)
+  lines.push(`Visits with HMIS codes,${multiReport.aggregated_quality.coded_visits}`)
+  lines.push(`Visits without HMIS codes,${multiReport.aggregated_quality.uncoded_visits}`)
+  lines.push(`Patients missing sex,${multiReport.aggregated_quality.missing_sex}`)
+  lines.push(`Patients missing date of birth,${multiReport.aggregated_quality.missing_dob}`)
 
   return lines.join('\n')
 }

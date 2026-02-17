@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Hmis105Client } from './Hmis105Client'
+import { fetchAllClinics } from '../actions'
 
 export default async function Hmis105Page() {
   const staff = await getStaff()
@@ -11,6 +12,8 @@ export default async function Hmis105Page() {
 
   const admin = await isAdmin()
   if (!admin) redirect('/dashboard')
+
+  const { data: clinics } = await fetchAllClinics()
 
   return (
     <div className="p-4 space-y-6">
@@ -30,7 +33,7 @@ export default async function Hmis105Page() {
         </p>
       </div>
 
-      <Hmis105Client />
+      <Hmis105Client clinics={clinics || []} staffClinicId={staff.clinic_id} />
     </div>
   )
 }
