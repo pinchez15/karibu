@@ -72,19 +72,14 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Button size="lg" className="w-full sm:w-auto h-12 text-base px-8" asChild>
-                <Link href="/demo">
-                  Try the Demo
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 text-base px-8" asChild>
                 <Link href="/dashboard">
                   Clinician Sign In
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
               <Button
                 onClick={() => scrollToSection('donate')}
-                variant="ghost"
+                variant="outline"
                 size="lg"
                 className="w-full sm:w-auto h-12 text-base px-8"
               >
