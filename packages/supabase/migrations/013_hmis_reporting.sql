@@ -136,8 +136,8 @@ BEGIN
     COUNT(*) FILTER (WHERE p.sex = 'M' AND age_years >= 60)::BIGINT AS male_60plus,
     -- Female 60+
     COUNT(*) FILTER (WHERE p.sex = 'F' AND age_years >= 60)::BIGINT AS female_60plus,
-    -- Total
-    COUNT(*)::BIGINT AS total
+    -- Total (count non-NULL join rows only; LEFT JOIN produces NULLs for unmatched codes)
+    COUNT(p.hmis_code_id)::BIGINT AS total
   FROM hmis_diagnosis_codes h
   LEFT JOIN (
     SELECT
