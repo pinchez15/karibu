@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
+import { PatientSexEditor } from './PatientSexEditor'
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   recording: { label: 'Recording', color: 'text-amber-700', bg: 'bg-amber-100' },
@@ -79,11 +80,12 @@ export default async function PatientProfilePage({
           {patient.display_name || 'Unknown Patient'}
         </h2>
         <p className="text-muted-foreground font-mono">{patient.whatsapp_number}</p>
-        {patient.date_of_birth && (
-          <p className="text-sm text-muted-foreground mt-1">
-            DOB: {new Date(patient.date_of_birth).toLocaleDateString()}
-          </p>
-        )}
+        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+          {patient.date_of_birth && (
+            <span>DOB: {new Date(patient.date_of_birth).toLocaleDateString()}</span>
+          )}
+          <PatientSexEditor patientId={patient.id} currentSex={patient.sex} />
+        </div>
         <p className="text-sm text-muted-foreground mt-2">
           {visitList.length} visit{visitList.length !== 1 ? 's' : ''} on record
         </p>

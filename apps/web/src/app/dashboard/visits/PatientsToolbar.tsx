@@ -71,7 +71,7 @@ export function PatientsToolbar() {
 
       {showNewPatient && (
         <form action={handleCreatePatient} className="bg-card border border-border rounded-lg p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="whatsapp_number">WhatsApp Number *</Label>
               <Input
@@ -88,6 +88,19 @@ export function PatientsToolbar() {
                 name="display_name"
                 placeholder="Patient name"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Sex</Label>
+              <div className="flex gap-4 pt-1.5">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" name="sex" value="M" className="accent-primary" />
+                  <span className="text-sm">Male</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" name="sex" value="F" className="accent-primary" />
+                  <span className="text-sm">Female</span>
+                </label>
+              </div>
             </div>
           </div>
           {error && (

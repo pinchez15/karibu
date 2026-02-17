@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { saveVisitNotes, retryVisitProcessing } from '../actions'
+import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
 
 interface VisitWithRelations extends Visit {
@@ -316,6 +317,11 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
             )}
           </div>
         </div>
+      )}
+
+      {/* HMIS Diagnosis Codes — show on finalized visits */}
+      {['sent', 'completed', 'review'].includes(visit.status) && (
+        <DiagnosisCoder visitId={visit.id} />
       )}
 
       {/* Transcript */}

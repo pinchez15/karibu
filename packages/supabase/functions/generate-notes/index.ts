@@ -210,6 +210,99 @@ Use simple language a non-medical person can understand. Be warm and reassuring.
       'savePatientNote'
     )
 
+    // AI Diagnosis Coding: Map assessment to HMIS 105 codes
+    try {
+      // Fetch HMIS diagnosis codes
+      const { data: hmisCodes } = await supabase!
+        .from('hmis_diagnosis_codes')
+        .select('id, hmis_code, display_name, category, subcategory')
+        .eq('is_active', true)
+        .order('sort_order')
+
+      if (hmisCodes && hmisCodes.length > 0) {
+        const codeList = hmisCodes
+          .map((c: { hmis_code: string; display_name: string; category: string; subcategory: string | null }) =>
+            `${c.hmis_code}: ${c.display_name}`)
+          .join('\n')
+
+        const diagnosisField = visit.diagnosis || ''
+        const codingPrompt = `Based on this clinical note's Assessment section and diagnosis, map to the appropriate HMIS 105 diagnosis codes.
+
+Assessment/Diagnosis from note:
+${providerNoteContent}
+
+${diagnosisField ? `Doctor's diagnosis field: ${diagnosisField}` : ''}
+
+Available HMIS 105 codes:
+${codeList}
+
+Return a JSON array of matches. Each match should have:
+- "hmis_code": the code string (e.g. "HMIS_105_1.1")
+- "confidence": a number 0-1 indicating match confidence
+
+Only include codes that clearly match the clinical findings. Return 1-3 codes maximum.
+Return ONLY the JSON array, no other text.`
+
+        const codingResponse = await fetchWithRetry(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: 'You are a medical coding assistant. Map clinical findings to HMIS 105 OPD diagnosis codes used in Uganda. Return only valid JSON.' },
+                { role: 'user', content: codingPrompt },
+              ],
+              temperature: 0.1,
+              max_tokens: 500,
+            }),
+          },
+          'aiDiagnosisCoding'
+        )
+
+        if (codingResponse.ok) {
+          const codingResult = await codingResponse.json()
+          const codingText = codingResult.choices[0].message.content.trim()
+
+          // Parse JSON, stripping markdown fences if present
+          const jsonStr = codingText.replace(/^```json?\s*/, '').replace(/\s*```$/, '')
+          const matches = JSON.parse(jsonStr) as Array<{ hmis_code: string; confidence: number }>
+
+          // Build a lookup of hmis_code -> id
+          const codeIdMap = new Map(
+            hmisCodes.map((c: { id: number; hmis_code: string }) => [c.hmis_code, c.id])
+          )
+
+          const validInserts = matches
+            .filter((m: { hmis_code: string }) => codeIdMap.has(m.hmis_code))
+            .map((m: { hmis_code: string; confidence: number }) => ({
+              visit_id,
+              hmis_code_id: codeIdMap.get(m.hmis_code),
+              confidence: m.confidence,
+              source: 'ai',
+            }))
+
+          if (validInserts.length > 0) {
+            await supabase!
+              .from('visit_diagnosis_codes')
+              .upsert(validInserts, { onConflict: 'visit_id,hmis_code_id' })
+
+            logger.info('AI diagnosis coding completed', {
+              visit_id,
+              codes_mapped: validInserts.length,
+            })
+          }
+        }
+      }
+    } catch (codingError) {
+      // Non-blocking: log but don't fail the visit
+      logger.error('AI diagnosis coding failed (non-blocking)', { visit_id }, codingError)
+    }
+
     // Update visit status to review (pending clinician review)
     await withRetry(
       async () => {

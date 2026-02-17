@@ -33,6 +33,7 @@ export interface Patient {
   whatsapp_number: string;
   display_name: string | null;
   date_of_birth: string | null;
+  sex: 'M' | 'F' | null;
   created_at: string;
   updated_at: string;
 }
@@ -330,4 +331,63 @@ export interface CheckInRequest {
   patient_id: string;
   chief_complaint?: string;
   priority?: VisitPriority;
+}
+
+// HMIS 105 Reporting Types
+
+export interface HmisDiagnosisCode {
+  id: number;
+  hmis_code: string;
+  category: string;
+  subcategory: string | null;
+  display_name: string;
+  icd10_codes: string[];
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface VisitDiagnosisCode {
+  id: string;
+  visit_id: string;
+  hmis_code_id: number;
+  confidence: number | null;
+  source: 'ai' | 'manual' | 'ai_confirmed';
+  coded_by: string | null;
+  coded_at: string;
+  hmis_diagnosis_code?: HmisDiagnosisCode;
+}
+
+export interface Hmis105Row {
+  hmis_code: string;
+  display_name: string;
+  sort_order: number;
+  male_0_28d: number;
+  female_0_28d: number;
+  male_29d_4y: number;
+  female_29d_4y: number;
+  male_5_14y: number;
+  female_5_14y: number;
+  male_15_59y: number;
+  female_15_59y: number;
+  male_60plus: number;
+  female_60plus: number;
+  total: number;
+}
+
+export interface Hmis105Report {
+  clinic_name: string;
+  year: number;
+  month: number;
+  generated_at: string;
+  rows: Hmis105Row[];
+  quality: DataQualityStats;
+}
+
+export interface DataQualityStats {
+  total_visits: number;
+  coded_visits: number;
+  uncoded_visits: number;
+  missing_sex: number;
+  missing_dob: number;
+  total_patients: number;
 }

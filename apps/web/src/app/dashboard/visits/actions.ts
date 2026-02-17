@@ -10,6 +10,7 @@ export async function createPatientWithVisit(formData: FormData) {
 
   const rawPhone = formData.get('whatsapp_number') as string
   const displayName = (formData.get('display_name') as string)?.trim() || null
+  const sex = (formData.get('sex') as string) || null
 
   if (!rawPhone) {
     return { error: 'WhatsApp number is required' }
@@ -41,6 +42,7 @@ export async function createPatientWithVisit(formData: FormData) {
         clinic_id: staff.clinic_id,
         whatsapp_number: whatsappNumber,
         display_name: displayName,
+        ...(sex === 'M' || sex === 'F' ? { sex } : {}),
       })
       .select('id')
       .single()
@@ -124,6 +126,26 @@ export async function saveVisitNotes(
       console.error('Failed to create patient note:', error)
       return { error: 'Failed to save patient note' }
     }
+  }
+
+  return { success: true }
+}
+
+export async function updatePatientSex(patientId: string, sex: 'M' | 'F') {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const supabase = createServiceClient()
+
+  const { error } = await supabase
+    .from('patients')
+    .update({ sex })
+    .eq('id', patientId)
+    .eq('clinic_id', staff.clinic_id)
+
+  if (error) {
+    console.error('Failed to update patient sex:', error)
+    return { error: 'Failed to update patient sex' }
   }
 
   return { success: true }
