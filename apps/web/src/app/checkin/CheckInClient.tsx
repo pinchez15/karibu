@@ -7,8 +7,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { checkInPatient } from './actions'
 
-export function CheckInClient() {
+interface CheckInClientProps {
+  clinicSlug: string
+  clinicName: string
+}
+
+export function CheckInClient({ clinicSlug, clinicName }: CheckInClientProps) {
   const [step, setStep] = useState<'form' | 'confirmation'>('form')
   const [formData, setFormData] = useState({
     name: '',
@@ -17,17 +23,28 @@ export function CheckInClient() {
     isNewPatient: false,
   })
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
+    setError(null)
 
-    // In production, this would call an API to create a queue entry
-    // For now, simulate a check-in
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const result = await checkInPatient({
+      clinicSlug,
+      name: formData.name,
+      phone: formData.phone,
+      reasonForVisit: formData.reasonForVisit,
+      isNewPatient: formData.isNewPatient,
+    })
 
     setSubmitting(false)
-    setStep('confirmation')
+
+    if (result.success) {
+      setStep('confirmation')
+    } else {
+      setError(result.error || 'Something went wrong. Please try again.')
+    }
   }
 
   if (step === 'confirmation') {
@@ -87,7 +104,7 @@ export function CheckInClient() {
           <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-3">
             <Activity className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-medium">Karibu Health</h1>
+          <h1 className="text-2xl font-medium">{clinicName}</h1>
           <p className="text-muted-foreground mt-1">Patient Check-In</p>
         </div>
       </header>
@@ -102,6 +119,12 @@ export function CheckInClient() {
               If you don&apos;t have a phone, ask a clinic assistant for help.
             </p>
           </div>
+
+          {error && (
+            <div className="bg-red-50 text-red-800 p-4 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
           {/* Name */}
           <div className="space-y-2">

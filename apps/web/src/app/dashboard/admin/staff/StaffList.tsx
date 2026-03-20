@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { getSupabase } from '@/lib/supabase'
+import { updateStaffRole, toggleStaffActive } from './actions'
 import type { Staff } from '@karibu/shared'
 
 interface StaffListProps {
@@ -20,24 +20,14 @@ export function StaffList({ initialStaff, clinicId }: StaffListProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const supabase = getSupabase()
-
   const handleToggleActive = async (staffMember: Staff) => {
     setLoading(staffMember.id)
     setMessage(null)
 
-    try {
-      const newStatus = !staffMember.is_active
-      const { error } = await supabase
-        .from('staff')
-        .update({
-          is_active: newStatus,
-          deactivated_at: newStatus ? null : new Date().toISOString(),
-        })
-        .eq('id', staffMember.id)
+    const newStatus = !staffMember.is_active
+    const result = await toggleStaffActive(staffMember.id, newStatus)
 
-      if (error) throw error
-
+    if (result.success) {
       setStaffList((prev) =>
         prev.map((s) =>
           s.id === staffMember.id
@@ -45,45 +35,36 @@ export function StaffList({ initialStaff, clinicId }: StaffListProps) {
             : s
         )
       )
-
       setMessage({
         type: 'success',
         text: `${staffMember.display_name} has been ${newStatus ? 'activated' : 'deactivated'}`,
       })
-    } catch (error) {
-      console.error('Failed to update staff:', error)
-      setMessage({ type: 'error', text: 'Failed to update staff member' })
-    } finally {
-      setLoading(null)
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Failed to update staff member' })
     }
+
+    setLoading(null)
   }
 
   const handleRoleChange = async (staffMember: Staff, newRole: 'admin' | 'doctor' | 'nurse') => {
     setLoading(staffMember.id)
     setMessage(null)
 
-    try {
-      const { error } = await supabase
-        .from('staff')
-        .update({ role: newRole })
-        .eq('id', staffMember.id)
+    const result = await updateStaffRole(staffMember.id, newRole)
 
-      if (error) throw error
-
+    if (result.success) {
       setStaffList((prev) =>
         prev.map((s) => (s.id === staffMember.id ? { ...s, role: newRole } : s))
       )
-
       setMessage({
         type: 'success',
         text: `${staffMember.display_name}'s role updated to ${newRole}`,
       })
-    } catch (error) {
-      console.error('Failed to update role:', error)
-      setMessage({ type: 'error', text: 'Failed to update role' })
-    } finally {
-      setLoading(null)
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Failed to update role' })
     }
+
+    setLoading(null)
   }
 
   const activeStaff = staffList.filter((s) => s.is_active)

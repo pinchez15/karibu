@@ -14,7 +14,7 @@ import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { useAuthStore } from '../src/stores/authStore';
 import { useVisitStore } from '../src/stores/visitStore';
-import { getOrCreateStaff, getRecentVisits } from '../src/lib/api';
+import { getOrCreateStaff, getRecentVisits, getClinicName } from '../src/lib/api';
 import { useNetworkState } from '../src/hooks/useNetworkState';
 import type { Visit } from '@karibu/shared';
 
@@ -26,6 +26,7 @@ export default function Home() {
   const { recentVisits, setRecentVisits, pendingUploads, isOnline } = useVisitStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [clinicName, setClinicName] = useState<string | null>(null);
 
   useNetworkState();
 
@@ -41,6 +42,8 @@ export default function Home() {
           user.fullName || user.firstName || 'Doctor'
         );
         setStaff(staffData);
+        const name = await getClinicName(staffData.clinic_id);
+        setClinicName(name);
       } catch (error) {
         console.error('Failed to initialize staff:', error);
       } finally {
@@ -144,7 +147,7 @@ export default function Home() {
           <Text style={styles.greeting}>
             Hello, {staff?.display_name || 'Doctor'}
           </Text>
-          <Text style={styles.clinicName}>Karibu Demo Clinic</Text>
+          <Text style={styles.clinicName}>{clinicName || 'Loading...'}</Text>
         </View>
         <TouchableOpacity onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={24} color="#6B7280" />

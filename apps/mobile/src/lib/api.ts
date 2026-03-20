@@ -49,6 +49,17 @@ export async function getOrCreateStaff(clerkUserId: string, email: string, displ
   );
 }
 
+export async function getClinicName(clinicId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('clinics')
+    .select('name')
+    .eq('id', clinicId)
+    .single();
+
+  if (error || !data) return 'Karibu Health';
+  return data.name;
+}
+
 // Patients
 
 export async function lookupPatient(whatsappNumber: string): Promise<Patient | null> {

@@ -136,7 +136,7 @@ serve(async (req) => {
         to: formattedPhone,
         type: 'text',
         text: {
-          body: `Your visit summary from ${clinicName} is ready.\n\nView your summary here:\n${noteUrl}\n\nThis link will expire in 30 days.`,
+          body: `Your visit summary from ${clinicName} is ready.\n\nView your summary here:\n${noteUrl}\n\nThis link will expire in 48 hours.`,
         },
       }
 

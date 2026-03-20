@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
       .update({ expires_at: new Date().toISOString() })
       .eq('visit_id', visit.id)
 
-    // Generate new magic link
+    // Generate new magic link (48-hour expiry per DPPA compliance)
     const token = generateToken(32)
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
 
     const { error: linkError } = await supabase
       .from('magic_links')
@@ -83,11 +83,30 @@ export async function POST(request: NextRequest) {
       throw linkError
     }
 
-    // In a real implementation, this would trigger WhatsApp message
-    // For now, just return success
+    // Trigger WhatsApp message via edge function
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          visit_id: visit.id,
+          magic_link_token: token,
+        }),
+      })
+    } catch (whatsappError) {
+      // Log but don't fail — the link was created, patient can still use it
+      console.error('Failed to trigger WhatsApp send:', whatsappError)
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'A new link will be sent to your WhatsApp',
+      message: 'A new link has been sent to your WhatsApp',
     })
   } catch (error) {
     console.error('Request link error:', error)
