@@ -2,18 +2,24 @@
 // No database, no storage — just fast speech-to-text for keyboard-mic-style dictation
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
+import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const corsHeaders = getCorsHeaders(req)
+  const preflightResponse = handleCorsPreflightOrError(req)
+  if (preflightResponse) return preflightResponse
 
   try {
+    // Rate limit: 30 dictation requests per IP per minute
+    const rlKey = getRateLimitKey(req)
+    const rl = checkRateLimit(rlKey, { maxRequests: 30, windowMs: 60 * 1000 })
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many dictation requests. Please wait.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
     const apiKey = Deno.env.get('OPENAI_API_KEY')
     if (!apiKey) {
       throw new Error('OPENAI_API_KEY is not configured')

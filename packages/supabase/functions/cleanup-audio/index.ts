@@ -2,18 +2,14 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { createLogger } from '../_shared/logger.ts'
 import { auditLog } from '../_shared/audit.ts'
+import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
 
 const logger = createLogger('cleanup-audio')
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const corsHeaders = getCorsHeaders(req)
+  const preflightResponse = handleCorsPreflightOrError(req)
+  if (preflightResponse) return preflightResponse
 
   const op = logger.startOperation('audio_retention_cleanup')
 

@@ -3,18 +3,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
 import { createLogger } from '../_shared/logger.ts'
 import { auditLog } from '../_shared/audit.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
+import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
 
 const logger = createLogger('send-whatsapp')
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const corsHeaders = getCorsHeaders(req)
+  const preflightResponse = handleCorsPreflightOrError(req)
+  if (preflightResponse) return preflightResponse
 
   let visit_id: string | undefined
 
@@ -22,6 +19,16 @@ serve(async (req) => {
     const body = await req.json()
     visit_id = body.visit_id
     const magic_link_token = body.magic_link_token
+
+    // Rate limit: 3 WhatsApp messages per visit per hour
+    const rlKey = getRateLimitKey(req, body)
+    const rl = checkRateLimit(rlKey, { maxRequests: 3, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many messages sent. Please wait before retrying.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil((rl.retryAfterMs || 60000) / 1000)) } }
+      )
+    }
 
     if (!visit_id || !magic_link_token) {
       return new Response(

@@ -5,25 +5,31 @@ import { createLogger } from '../_shared/logger.ts'
 import { transcribe } from '../_shared/transcription/router.ts'
 import { translateToEnglish } from '../_shared/transcription/translate.ts'
 import { auditLog } from '../_shared/audit.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
+import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
 
 const logger = createLogger('transcribe')
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const corsHeaders = getCorsHeaders(req)
+  const preflightResponse = handleCorsPreflightOrError(req)
+  if (preflightResponse) return preflightResponse
 
   let visit_id: string | undefined
 
   try {
     const body = await req.json()
     visit_id = body.visit_id
+
+    // Rate limit: 5 transcription requests per visit per 10 minutes
+    const rlKey = getRateLimitKey(req, body)
+    const rl = checkRateLimit(rlKey, { maxRequests: 5, windowMs: 10 * 60 * 1000 })
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait before retrying.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil((rl.retryAfterMs || 60000) / 1000)) } }
+      )
+    }
 
     if (!visit_id) {
       return new Response(
