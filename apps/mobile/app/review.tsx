@@ -30,6 +30,7 @@ export default function Review() {
   const {
     providerNote,
     patientNote,
+    currentPatient,
     setProviderNote,
     setPatientNote,
     clearCurrentVisit,
@@ -127,8 +128,11 @@ export default function Review() {
               }
 
               const result = await finalizeVisit(visitId, staff.id);
+              const patientName = currentPatient?.display_name || 'Patient';
               clearCurrentVisit();
-              router.replace(`/success?token=${result.magicLinkToken}`);
+              router.replace(
+                `/payment?visitId=${visitId}&token=${result.magicLinkToken}&patientName=${encodeURIComponent(patientName)}`
+              );
             } catch (error) {
               console.error('Failed to finalize:', error);
               Alert.alert('Error', 'Failed to send to patient. Please try again.');

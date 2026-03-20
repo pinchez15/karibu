@@ -20,9 +20,20 @@ interface VisitWithRelations extends Visit {
   magic_links: { token: string; expires_at: string; used_at: string | null }[] | null
 }
 
+interface PaymentData {
+  receipt_number: string
+  amount_ugx: number
+  payment_method: string
+  status: string
+  service_type: string | null
+  created_at: string
+  collector: { display_name: string } | null
+}
+
 interface VisitDetailClientProps {
   visit: VisitWithRelations
   staffId: string
+  payment?: PaymentData | null
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -35,7 +46,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
 }
 
-export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
+export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClientProps) {
   const [providerNoteContent, setProviderNoteContent] = useState(visit.provider_notes?.note_content || '')
   const [patientNoteContent, setPatientNoteContent] = useState(visit.patient_notes?.content || '')
   const [saving, setSaving] = useState(false)
@@ -340,6 +351,55 @@ export function VisitDetailClient({ visit, staffId }: VisitDetailClientProps) {
               Note: Audio was trimmed to 10 minutes by the transcription provider.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Payment Summary */}
+      {payment && (
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">Payment</h3>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              payment.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
+              payment.status === 'waived' ? 'bg-gray-100 text-gray-600' :
+              payment.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground">Receipt</p>
+              <p className="font-mono font-medium">{payment.receipt_number}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Amount</p>
+              <p className="font-semibold text-lg">
+                {payment.status === 'waived' ? 'Waived' : `UGX ${payment.amount_ugx.toLocaleString('en-UG')}`}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Method</p>
+              <p>{payment.payment_method === 'cash' ? 'Cash' : payment.payment_method === 'mtn_momo' ? 'MTN MoMo' : 'Airtel Money'}</p>
+            </div>
+            {payment.service_type && (
+              <div>
+                <p className="text-muted-foreground">Service</p>
+                <p>{payment.service_type}</p>
+              </div>
+            )}
+            {payment.collector && (
+              <div>
+                <p className="text-muted-foreground">Recorded by</p>
+                <p>{payment.collector.display_name}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-muted-foreground">Date</p>
+              <p>{new Date(payment.created_at).toLocaleString()}</p>
+            </div>
+          </div>
         </div>
       )}
 

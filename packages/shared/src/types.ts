@@ -441,3 +441,35 @@ export interface Hmis105MultiReport {
   aggregated_quality: DataQualityStats;
   generated_at: string;
 }
+
+// =============================================
+// PAYMENTS
+// =============================================
+
+export type PaymentMethod = 'cash' | 'mtn_momo' | 'airtel_money';
+export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'waived';
+
+export interface Payment {
+  id: string;
+  visit_id: string;
+  clinic_id: string;
+  patient_id: string;
+  amount_ugx: number;
+  payment_method: PaymentMethod;
+  status: PaymentStatus;
+  receipt_number: string;
+  service_type: string | null;
+  notes: string | null;
+  collected_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordPaymentRequest {
+  visit_id: string;
+  amount_ugx: number;
+  payment_method: PaymentMethod;
+  service_type?: string;
+  notes?: string;
+  waived?: boolean;
+}

@@ -82,6 +82,23 @@ export const ERROR_MESSAGES = {
   sessionExpired: 'Your session has expired. Please request a new link.',
 } as const;
 
+// Payment methods
+export const PAYMENT_METHODS = {
+  cash: { label: 'Cash', disabled: false },
+  mtn_momo: { label: 'MTN Mobile Money', disabled: true },
+  airtel_money: { label: 'Airtel Money', disabled: true },
+} as const;
+
+// Service types for payment categorisation
+export const SERVICE_TYPES = [
+  'Consultation',
+  'Laboratory',
+  'Pharmacy',
+  'Imaging',
+  'Procedure',
+  'Other',
+] as const;
+
 // Phone number formatting (Uganda)
 export const PHONE_FORMATS = {
   countryCode: '+256',

@@ -48,6 +48,14 @@ export default async function VisitDetailPage({
     notFound()
   }
 
+  // Fetch payment for this visit
+  const supabase = createServiceClient()
+  const { data: payment } = await supabase
+    .from('payments')
+    .select('*, collector:staff!payments_collected_by_fkey(display_name)')
+    .eq('visit_id', id)
+    .maybeSingle()
+
   return (
     <div>
       <div className="px-4 pt-4">
@@ -62,7 +70,7 @@ export default async function VisitDetailPage({
         </Link>
       </div>
 
-      <VisitDetailClient visit={visit} staffId={staff.id} />
+      <VisitDetailClient visit={visit} staffId={staff.id} payment={payment} />
     </div>
   )
 }

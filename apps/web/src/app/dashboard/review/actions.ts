@@ -167,3 +167,69 @@ export async function saveProviderNoteEdit(providerNoteId: string, noteContent: 
 
   return { success: true }
 }
+
+export async function recordPayment(
+  visitId: string,
+  data: {
+    amount_ugx: number
+    payment_method: string
+    service_type?: string
+    notes?: string
+    waived?: boolean
+  }
+): Promise<{ success?: boolean; receipt_number?: string; error?: string }> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const supabase = createServiceClient()
+
+  const { data: visit } = await supabase
+    .from('visits')
+    .select('patient_id, clinic_id')
+    .eq('id', visitId)
+    .single()
+
+  if (!visit) return { error: 'Visit not found' }
+
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .insert({
+      visit_id: visitId,
+      clinic_id: visit.clinic_id,
+      patient_id: visit.patient_id,
+      amount_ugx: data.waived ? 0 : data.amount_ugx,
+      payment_method: data.payment_method,
+      status: data.waived ? 'waived' : 'paid',
+      service_type: data.service_type || null,
+      notes: data.notes || null,
+      collected_by: staff.id,
+    })
+    .select('receipt_number')
+    .single()
+
+  if (error) {
+    console.error('Failed to record payment:', error)
+    return { error: 'Failed to record payment' }
+  }
+
+  await supabase
+    .from('visits')
+    .update({ status: 'completed' })
+    .eq('id', visitId)
+
+  return { success: true, receipt_number: payment.receipt_number }
+}
+
+export async function skipPayment(visitId: string): Promise<{ success?: boolean; error?: string }> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const supabase = createServiceClient()
+
+  await supabase
+    .from('visits')
+    .update({ status: 'completed' })
+    .eq('id', visitId)
+
+  return { success: true }
+}

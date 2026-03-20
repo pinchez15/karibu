@@ -6,7 +6,12 @@ import { Card } from '../src/components/Card';
 
 export default function Success() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ token?: string }>();
+  const params = useLocalSearchParams<{
+    token?: string;
+    receiptNumber?: string;
+    paymentAmount?: string;
+    paymentStatus?: string;
+  }>();
 
   const handleNewVisit = () => {
     router.replace('/new-visit');
@@ -19,6 +24,14 @@ export default function Success() {
   const noteUrl = params.token
     ? `${process.env.EXPO_PUBLIC_WEB_URL}/note/${params.token}`
     : null;
+
+  const hasPayment = !!params.receiptNumber;
+  const isWaived = params.paymentStatus === 'waived';
+
+  const formatAmount = (amount: string) => {
+    const num = parseInt(amount || '0');
+    return num.toLocaleString('en-UG');
+  };
 
   return (
     <View style={styles.container}>
@@ -55,6 +68,37 @@ export default function Success() {
             </View>
           </View>
         </Card>
+
+        {hasPayment && (
+          <Card style={styles.receiptCard}>
+            <View style={styles.cardRow}>
+              <Ionicons
+                name="receipt-outline"
+                size={24}
+                color={isWaived ? '#6B7280' : '#16A34A'}
+              />
+              <View style={styles.cardText}>
+                <Text style={styles.cardTitle}>
+                  {isWaived ? 'Payment Waived' : 'Payment Recorded'}
+                </Text>
+                {!isWaived && (
+                  <Text style={styles.paymentAmount}>
+                    UGX {formatAmount(params.paymentAmount || '0')}
+                  </Text>
+                )}
+              </View>
+              <View style={[styles.statusBadge, isWaived ? styles.badgeWaived : styles.badgePaid]}>
+                <Text style={[styles.statusText, isWaived ? styles.statusWaived : styles.statusPaid]}>
+                  {isWaived ? 'Waived' : 'Paid'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>Receipt:</Text>
+              <Text style={styles.receiptNumber}>{params.receiptNumber}</Text>
+            </View>
+          </Card>
+        )}
 
         {noteUrl && (
           <Card style={styles.linkCard}>
@@ -131,6 +175,58 @@ const styles = StyleSheet.create({
   cardDescription: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  receiptCard: {
+    width: '100%',
+    marginBottom: 12,
+    borderColor: '#D1FAE5',
+    borderWidth: 1,
+  },
+  paymentAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgePaid: {
+    backgroundColor: '#D1FAE5',
+  },
+  badgeWaived: {
+    backgroundColor: '#F3F4F6',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusPaid: {
+    color: '#16A34A',
+  },
+  statusWaived: {
+    color: '#6B7280',
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  receiptLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  receiptNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   linkCard: {
     width: '100%',

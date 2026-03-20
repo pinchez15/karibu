@@ -11,7 +11,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { approveVisit, rejectVisit, saveProviderNoteEdit } from './actions'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { approveVisit, rejectVisit, saveProviderNoteEdit, recordPayment, skipPayment } from './actions'
+import { SERVICE_TYPES } from '@karibu/shared'
 
 interface ReviewVisit {
   id: string
@@ -49,6 +52,11 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
   const [editedSoapNote, setEditedSoapNote] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [paymentVisitId, setPaymentVisitId] = useState<string | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentServiceType, setPaymentServiceType] = useState('')
+  const [paymentNotes, setPaymentNotes] = useState('')
+  const [paymentWaived, setPaymentWaived] = useState(false)
 
   const handleApprove = async (visitId: string) => {
     setSaving(visitId)
@@ -66,9 +74,13 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
       if (result.error) {
         setMessage({ type: 'error', text: result.error })
       } else {
-        setVisits(prev => prev.filter(v => v.id !== visitId))
         setEditingNote(null)
-        setMessage({ type: 'success', text: 'Visit approved and notes finalized' })
+        setPaymentVisitId(visitId)
+        setPaymentAmount('')
+        setPaymentServiceType('')
+        setPaymentNotes('')
+        setPaymentWaived(false)
+        setMessage({ type: 'success', text: 'Visit approved — record payment below' })
       }
     } catch (error) {
       console.error('Failed to approve:', error)
@@ -120,7 +132,57 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
     }
   }
 
-  if (visits.length === 0) {
+  const handleRecordPayment = async () => {
+    if (!paymentVisitId) return
+    if (!paymentWaived && (!paymentAmount || parseInt(paymentAmount) <= 0)) {
+      setMessage({ type: 'error', text: 'Please enter a valid amount' })
+      return
+    }
+
+    setSaving(paymentVisitId)
+    try {
+      const result = await recordPayment(paymentVisitId, {
+        amount_ugx: paymentWaived ? 0 : parseInt(paymentAmount),
+        payment_method: 'cash',
+        service_type: paymentServiceType || undefined,
+        notes: paymentNotes || undefined,
+        waived: paymentWaived,
+      })
+
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+      } else {
+        setVisits(prev => prev.filter(v => v.id !== paymentVisitId))
+        setPaymentVisitId(null)
+        setMessage({
+          type: 'success',
+          text: `Payment recorded — Receipt: ${result.receipt_number}`,
+        })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to record payment' })
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const handleSkipPayment = async () => {
+    if (!paymentVisitId) return
+
+    setSaving(paymentVisitId)
+    try {
+      await skipPayment(paymentVisitId)
+      setVisits(prev => prev.filter(v => v.id !== paymentVisitId))
+      setPaymentVisitId(null)
+      setMessage({ type: 'success', text: 'Visit completed (no payment recorded)' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to complete visit' })
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  if (visits.length === 0 && !paymentVisitId) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -148,6 +210,94 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
             : 'bg-red-50 text-red-800 border-red-200'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* Payment form for approved visit */}
+      {paymentVisitId && (
+        <div className="bg-card border-2 border-primary/30 rounded-lg p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <Check className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Record Payment</h3>
+              <p className="text-sm text-muted-foreground">
+                {visits.find(v => v.id === paymentVisitId)?.patient?.display_name || 'Patient'} — Notes approved and sent
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <input
+              type="checkbox"
+              id="waive-payment"
+              checked={paymentWaived}
+              onChange={(e) => setPaymentWaived(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="waive-payment" className="text-sm text-amber-800 cursor-pointer">
+              Waive payment (patient unable to pay)
+            </Label>
+          </div>
+
+          {!paymentWaived && (
+            <div className="space-y-1.5">
+              <Label>Amount (UGX)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="25000"
+                className="text-lg font-semibold"
+              />
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label>Service Type</Label>
+            <select
+              value={paymentServiceType}
+              onChange={(e) => setPaymentServiceType(e.target.value)}
+              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+            >
+              <option value="">Select service type</option>
+              {SERVICE_TYPES.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Notes (optional)</Label>
+            <Input
+              value={paymentNotes}
+              onChange={(e) => setPaymentNotes(e.target.value)}
+              placeholder="Additional payment notes..."
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              onClick={handleRecordPayment}
+              disabled={saving === paymentVisitId}
+              className="flex-1 h-11"
+            >
+              {saving === paymentVisitId
+                ? 'Recording...'
+                : paymentWaived
+                  ? 'Record Waiver'
+                  : 'Record Payment'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleSkipPayment}
+              disabled={saving === paymentVisitId}
+            >
+              Skip
+            </Button>
+          </div>
         </div>
       )}
 

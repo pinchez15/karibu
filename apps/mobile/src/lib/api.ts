@@ -9,6 +9,7 @@ import type {
   CreateVisitRequest,
   UpdateVisitRequest,
   Staff,
+  Payment,
   SourceLanguage,
   ConsentMethod,
   ConsentGrantedBy,
@@ -416,6 +417,63 @@ export async function finalizeVisit(
     .eq('id', visitId);
 
   return { magicLinkToken: token };
+}
+
+// Payments
+
+export async function recordPayment(
+  visitId: string,
+  staffId: string,
+  data: {
+    amount_ugx: number;
+    payment_method: string;
+    service_type?: string;
+    notes?: string;
+    waived?: boolean;
+  }
+): Promise<{ receipt_number: string }> {
+  const clinicId = getClinicId();
+
+  const visit = await getVisit(visitId);
+  if (!visit) throw new Error('Visit not found');
+
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .insert({
+      visit_id: visitId,
+      clinic_id: clinicId,
+      patient_id: visit.patient_id,
+      amount_ugx: data.waived ? 0 : data.amount_ugx,
+      payment_method: data.payment_method,
+      status: data.waived ? 'waived' : 'paid',
+      service_type: data.service_type || null,
+      notes: data.notes || null,
+      collected_by: staffId,
+    })
+    .select('receipt_number')
+    .single();
+
+  if (error) throw error;
+
+  // Mark visit as completed
+  await updateVisitStatus(visitId, 'completed');
+
+  return { receipt_number: payment.receipt_number };
+}
+
+export async function skipPayment(visitId: string): Promise<void> {
+  await updateVisitStatus(visitId, 'completed');
+}
+
+export async function getPaymentForVisit(visitId: string): Promise<Payment | null> {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('visit_id', visitId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data as Payment | null;
 }
 
 // Helper functions
