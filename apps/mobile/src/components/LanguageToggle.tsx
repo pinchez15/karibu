@@ -34,21 +34,21 @@ export function LanguageToggle({ value, onValueChange }: LanguageToggleProps) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.option, value === 'local' && styles.optionSelected]}
-          onPress={() => onValueChange('local')}
-          activeOpacity={0.7}
+          style={[styles.option, styles.optionDisabled]}
+          activeOpacity={1}
+          disabled
         >
           <Ionicons
-            name={value === 'local' ? 'radio-button-on' : 'radio-button-off'}
+            name="radio-button-off"
             size={22}
-            color={value === 'local' ? '#0369A1' : '#9CA3AF'}
+            color="#D1D5DB"
           />
           <View style={styles.optionContent}>
-            <Text style={[styles.optionTitle, value === 'local' && styles.optionTitleSelected]}>
+            <Text style={[styles.optionTitle, styles.optionTitleDisabled]}>
               Local Language
             </Text>
             <Text style={styles.optionSubtitle}>
-              Luganda, Acholi, Runyankole, Ateso, Lugbara, Swahili
+              Coming soon — Luganda, Acholi, Runyankole, Ateso, Lugbara, Swahili
             </Text>
           </View>
         </TouchableOpacity>
@@ -104,5 +104,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     marginTop: 2,
+  },
+  optionDisabled: {
+    opacity: 0.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  optionTitleDisabled: {
+    color: '#9CA3AF',
   },
 });

@@ -39,6 +39,13 @@ export async function transcribe(options: TranscribeOptions): Promise<Transcript
     if (provider === 'openai') {
       return await transcribeWithOpenAI(audioFile, filename)
     } else {
+      // Check if Sunbird is configured before attempting
+      const sunbirdKey = Deno.env.get('SUNBIRD_API_KEY')
+      if (!sunbirdKey) {
+        throw new Error(
+          'Local language transcription is not yet available. Please select English for now.'
+        )
+      }
       return await transcribeWithSunbird(audioFile, filename)
     }
   } catch (error) {

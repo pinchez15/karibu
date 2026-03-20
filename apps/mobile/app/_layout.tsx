@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import { tokenCache } from '../src/lib/clerk';
 import { setSupabaseAuth } from '../src/lib/supabase';
 import { useAuthStore } from '../src/stores/authStore';
@@ -10,10 +11,13 @@ import { OfflineBanner } from '../src/components/OfflineBanner';
 import { View } from 'react-native';
 
 const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_KEY || '';
+const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { setAuth, setLoaded } = useAuthStore();
+  const posthog = usePostHog();
 
   // Initialize offline sync (processes pending uploads on reconnect)
   useOfflineSync();
@@ -25,6 +29,15 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setAuth(isSignedIn ?? false, userId ?? null);
   }, [isSignedIn, userId, setAuth]);
+
+  // Identify user in PostHog
+  useEffect(() => {
+    if (isSignedIn && userId && posthog) {
+      posthog.identify(userId);
+    } else if (!isSignedIn && posthog) {
+      posthog.reset();
+    }
+  }, [isSignedIn, userId, posthog]);
 
   // Sync Clerk token with Supabase
   useEffect(() => {
@@ -43,7 +56,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function RootLayout() {
+function AppContent() {
   return (
     <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
       <AuthProvider>
@@ -68,5 +81,20 @@ export default function RootLayout() {
         </View>
       </AuthProvider>
     </ClerkProvider>
+  );
+}
+
+export default function RootLayout() {
+  if (!posthogApiKey) {
+    return <AppContent />;
+  }
+
+  return (
+    <PostHogProvider
+      apiKey={posthogApiKey}
+      options={{ host: posthogHost }}
+    >
+      <AppContent />
+    </PostHogProvider>
   );
 }

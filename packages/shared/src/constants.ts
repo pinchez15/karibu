@@ -1,9 +1,5 @@
 // Karibu Health Constants
 
-// Note: DEMO_CLINIC_ID was removed in favor of dynamic clinic assignment via Clerk Organizations.
-// The original demo clinic UUID was: '00000000-0000-0000-0000-000000000001'
-// Staff are now assigned to clinics via Clerk Organization membership.
-
 // Visit status flow
 export const VISIT_STATUS_FLOW = [
   'recording',
@@ -23,7 +19,7 @@ export const AUDIO_RETENTION_DAYS = 90;
 // Language options for transcription toggle
 export const LANGUAGE_OPTIONS = {
   eng: { label: 'English', provider: 'openai' },
-  local: { label: 'Local Language', provider: 'sunbird', description: 'Luganda, Acholi, Runyankole, Ateso, Lugbara, Swahili' },
+  local: { label: 'Local Language', provider: 'sunbird', description: 'Coming soon — Luganda, Acholi, Runyankole, Ateso, Lugbara, Swahili', disabled: true },
 } as const;
 
 // Required consent types for DPPA compliance

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import { PostHogProvider } from '@/components/PostHogProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className="min-h-screen bg-background text-foreground">
-          {children}
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>
