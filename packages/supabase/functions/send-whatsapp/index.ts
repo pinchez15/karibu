@@ -40,7 +40,7 @@ serve(async (req) => {
     const op = logger.startOperation('sendWhatsAppMessage', { visit_id })
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SECRET_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get visit and patient info

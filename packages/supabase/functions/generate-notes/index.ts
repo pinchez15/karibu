@@ -40,7 +40,7 @@ serve(async (req) => {
     const op = logger.startOperation('noteGeneration', { visit_id })
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SECRET_KEY')!
     supabase = createClient(supabaseUrl, supabaseServiceKey)
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!
 

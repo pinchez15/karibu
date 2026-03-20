@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SECRET_KEY!
   )
 }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Trigger WhatsApp message via edge function
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY!
 
     try {
       await fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
