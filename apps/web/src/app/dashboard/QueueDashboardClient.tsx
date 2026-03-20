@@ -94,11 +94,9 @@ export function QueueDashboardClient({
   useEffect(() => {
     const topic = `queue-updates:${clinicId}`
     const channel = supabase
-      .channel(topic, { config: { private: true, broadcast: { self: true, ack: true } } })
+      .channel(topic, { config: { broadcast: { self: true } } })
       .on('broadcast', { event: 'queue_changed' }, () => refreshQueue())
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') refreshQueue()
-      })
+      .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [clinicId])

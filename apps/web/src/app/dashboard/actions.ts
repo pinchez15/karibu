@@ -5,6 +5,17 @@ import { getStaff } from '@/lib/auth'
 import type { QueueItem, Patient } from '@karibu/shared'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
+async function broadcastQueueUpdate(clinicId: string) {
+  const supabase = createServiceClient()
+  const channel = supabase.channel(`queue-updates:${clinicId}`)
+  await channel.send({
+    type: 'broadcast',
+    event: 'queue_changed',
+    payload: {},
+  })
+  supabase.removeChannel(channel)
+}
+
 export async function fetchQueueData(clinicId: string): Promise<QueueItem[]> {
   const staff = await getStaff()
   if (!staff) return []
@@ -37,6 +48,7 @@ export async function assignToNurse(visitId: string) {
     return { error: error.message }
   }
 
+  broadcastQueueUpdate(staff.clinic_id).catch(() => {})
   return { success: true }
 }
 
@@ -55,6 +67,7 @@ export async function markReadyForDoctor(visitId: string) {
     return { error: error.message }
   }
 
+  broadcastQueueUpdate(staff.clinic_id).catch(() => {})
   return { success: true }
 }
 
@@ -73,6 +86,7 @@ export async function claimPatient(visitId: string) {
     return { error: error.message }
   }
 
+  broadcastQueueUpdate(staff.clinic_id).catch(() => {})
   return { success: true }
 }
 
@@ -193,5 +207,6 @@ export async function addPatientToQueue(data: {
     return { error: 'Failed to add patient to queue' }
   }
 
+  broadcastQueueUpdate(staff.clinic_id).catch(() => {})
   return { success: true, patient_number: patientNumber || undefined }
 }
