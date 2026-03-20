@@ -180,12 +180,12 @@ export async function addPatientToQueue(data: {
   }
 
   // Add to queue via check_in_patient RPC
+  // Note: don't pass p_staff_id — PostgREST only matches the 4-param signature
   const { error: rpcError } = await supabase.rpc('check_in_patient', {
     p_clinic_id: staff.clinic_id,
     p_patient_id: patientId,
     p_chief_complaint: data.chief_complaint || null,
     p_priority: data.priority || 'normal',
-    p_staff_id: staff.id,
   })
 
   if (rpcError) {
