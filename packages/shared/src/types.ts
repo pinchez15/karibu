@@ -30,7 +30,8 @@ export interface Staff {
 export interface Patient {
   id: string;
   clinic_id: string;
-  whatsapp_number: string;
+  patient_number: string | null;
+  whatsapp_number: string | null;
   display_name: string | null;
   date_of_birth: string | null;
   sex: 'M' | 'F' | null;

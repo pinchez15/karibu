@@ -8,6 +8,8 @@ import {
   assignToNurse,
   markReadyForDoctor,
   claimPatient,
+  addPatientToQueue,
+  searchPatients,
 } from './actions'
 import {
   Users,
@@ -16,11 +18,16 @@ import {
   CheckCircle,
   AlertTriangle,
   ClipboardList,
+  UserPlus,
+  Search,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { QueueItem, QueueStatus } from '@karibu/shared'
+import type { QueueItem, QueueStatus, Patient } from '@karibu/shared'
 
 interface QueueDashboardClientProps {
   initialQueue: QueueItem[]
@@ -56,6 +63,19 @@ export function QueueDashboardClient({
 }: QueueDashboardClientProps) {
   const [queue, setQueue] = useState<QueueItem[]>(initialQueue)
   const [loading, setLoading] = useState<string | null>(null)
+  const [showAddPatient, setShowAddPatient] = useState(false)
+  const [addingPatient, setAddingPatient] = useState(false)
+  const [addMessage, setAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [patientSearch, setPatientSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<Patient[]>([])
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [newPatient, setNewPatient] = useState({
+    display_name: '',
+    date_of_birth: '',
+    sex: '' as '' | 'M' | 'F',
+    whatsapp_number: '',
+    chief_complaint: '',
+  })
   const supabase = getSupabase()
 
   const isDoctor = staffRole === 'doctor' || staffRole === 'admin'
@@ -124,6 +144,70 @@ export function QueueDashboardClient({
       console.error('Failed to claim:', error)
     } finally {
       setLoading(null)
+    }
+  }
+
+  // Patient search with debounce
+  useEffect(() => {
+    if (patientSearch.length < 2) {
+      setSearchResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      const results = await searchPatients(patientSearch)
+      setSearchResults(results)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [patientSearch])
+
+  const handleSelectExisting = (patient: Patient) => {
+    setSelectedPatient(patient)
+    setNewPatient({
+      display_name: patient.display_name || '',
+      date_of_birth: patient.date_of_birth || '',
+      sex: (patient.sex as 'M' | 'F') || '',
+      whatsapp_number: patient.whatsapp_number || '',
+      chief_complaint: '',
+    })
+    setPatientSearch('')
+    setSearchResults([])
+  }
+
+  const handleClearSelected = () => {
+    setSelectedPatient(null)
+    setNewPatient({ display_name: '', date_of_birth: '', sex: '', whatsapp_number: '', chief_complaint: '' })
+  }
+
+  const handleAddToQueue = async () => {
+    if (!newPatient.display_name || !newPatient.date_of_birth || !newPatient.sex) {
+      setAddMessage({ type: 'error', text: 'Name, date of birth, and sex are required' })
+      return
+    }
+
+    setAddingPatient(true)
+    setAddMessage(null)
+
+    const result = await addPatientToQueue({
+      display_name: newPatient.display_name,
+      date_of_birth: newPatient.date_of_birth,
+      sex: newPatient.sex as 'M' | 'F',
+      whatsapp_number: newPatient.whatsapp_number || undefined,
+      chief_complaint: newPatient.chief_complaint || undefined,
+      existing_patient_id: selectedPatient?.id,
+    })
+
+    setAddingPatient(false)
+
+    if (result.error) {
+      setAddMessage({ type: 'error', text: result.error })
+    } else {
+      setAddMessage({
+        type: 'success',
+        text: `${newPatient.display_name} added to queue${result.patient_number ? ` (${result.patient_number})` : ''}`,
+      })
+      setShowAddPatient(false)
+      handleClearSelected()
+      await refreshQueue()
     }
   }
 
@@ -272,6 +356,153 @@ export function QueueDashboardClient({
         )}
       </div>
 
+      {/* Add patient message */}
+      {addMessage && !showAddPatient && (
+        <div className={`mx-4 mt-3 p-3 rounded-lg text-sm ${
+          addMessage.type === 'success'
+            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {addMessage.text}
+        </div>
+      )}
+
+      {/* Add Patient Panel */}
+      {showAddPatient && (
+        <div className="border-b border-border bg-card p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">Add Patient to Queue</h3>
+            <Button variant="ghost" size="sm" onClick={() => { setShowAddPatient(false); handleClearSelected() }}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {addMessage && (
+            <div className={`p-3 rounded-lg text-sm ${
+              addMessage.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'
+            }`}>
+              {addMessage.text}
+            </div>
+          )}
+
+          {/* Search for returning patient */}
+          {!selectedPatient && (
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Search by name (returning patient)..."
+                  className="pl-9"
+                />
+              </div>
+              {searchResults.length > 0 && (
+                <div className="border border-border rounded-lg divide-y divide-border max-h-40 overflow-y-auto">
+                  {searchResults.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSelectExisting(p)}
+                      className="w-full text-left px-3 py-2.5 hover:bg-secondary/50 text-sm flex justify-between items-center"
+                    >
+                      <span className="font-medium">{p.display_name || 'Unknown'}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {(p as any).patient_number || ''}{p.sex ? ` · ${p.sex}` : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Selected returning patient badge */}
+          {selectedPatient && (
+            <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
+              <Badge variant="outline" className="text-xs">Returning</Badge>
+              <span className="text-sm font-medium flex-1">
+                {selectedPatient.display_name} ({(selectedPatient as any).patient_number || 'ID pending'})
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleClearSelected} className="h-6 w-6 p-0">
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+
+          {/* Patient fields */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label>Full Name *</Label>
+              <Input
+                value={newPatient.display_name}
+                onChange={(e) => setNewPatient({ ...newPatient, display_name: e.target.value })}
+                placeholder="Patient's full name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Date of Birth *</Label>
+              <Input
+                type="date"
+                value={newPatient.date_of_birth}
+                onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Sex *</Label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNewPatient({ ...newPatient, sex: 'M' })}
+                  className={`flex-1 h-10 rounded-md border text-sm font-medium transition-colors ${
+                    newPatient.sex === 'M'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-input hover:bg-secondary/50'
+                  }`}
+                >
+                  Male
+                </button>
+                <button
+                  onClick={() => setNewPatient({ ...newPatient, sex: 'F' })}
+                  className={`flex-1 h-10 rounded-md border text-sm font-medium transition-colors ${
+                    newPatient.sex === 'F'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-input hover:bg-secondary/50'
+                  }`}
+                >
+                  Female
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>WhatsApp (optional)</Label>
+              <Input
+                type="tel"
+                value={newPatient.whatsapp_number}
+                onChange={(e) => setNewPatient({ ...newPatient, whatsapp_number: e.target.value })}
+                placeholder="+256 7XX..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Chief Complaint</Label>
+              <Input
+                value={newPatient.chief_complaint}
+                onChange={(e) => setNewPatient({ ...newPatient, chief_complaint: e.target.value })}
+                placeholder="Reason for visit"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={handleAddToQueue}
+            disabled={addingPatient}
+            className="w-full h-11"
+            size="lg"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            {addingPatient ? 'Adding...' : 'Add to Queue'}
+          </Button>
+        </div>
+      )}
+
       {/* Queue tabs */}
       <Tabs defaultValue="nurse" className="flex-1 flex flex-col">
         <TabsList className="w-full rounded-none border-b border-border h-12 bg-background">
@@ -293,11 +524,21 @@ export function QueueDashboardClient({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="nurse" className="p-4 space-y-3 mt-0 overflow-y-auto">
+        <TabsContent value="nurse" className="p-4 space-y-3 mt-0 overflow-y-auto pb-20">
           {nurseTabItems.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No patients waiting for nurse</p>
+              {!showAddPatient && (
+                <Button
+                  onClick={() => { setShowAddPatient(true); setAddMessage(null) }}
+                  className="mt-4"
+                  size="lg"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add First Patient
+                </Button>
+              )}
             </div>
           ) : (
             nurseTabItems.map(item => <QueueCard key={item.visit_id} item={item} />)
@@ -337,6 +578,20 @@ export function QueueDashboardClient({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Sticky Add Patient button */}
+      {!showAddPatient && (
+        <div className="sticky bottom-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
+          <Button
+            onClick={() => { setShowAddPatient(true); setAddMessage(null) }}
+            size="lg"
+            className="w-full h-12 shadow-lg"
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Add Patient
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
