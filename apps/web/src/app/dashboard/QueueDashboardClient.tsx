@@ -70,7 +70,8 @@ export function QueueDashboardClient({
   const [searchResults, setSearchResults] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [newPatient, setNewPatient] = useState({
-    display_name: '',
+    first_name: '',
+    last_name: '',
     date_of_birth: '',
     sex: '' as '' | 'M' | 'F',
     whatsapp_number: '',
@@ -161,7 +162,8 @@ export function QueueDashboardClient({
   const handleSelectExisting = (patient: Patient) => {
     setSelectedPatient(patient)
     setNewPatient({
-      display_name: patient.display_name || '',
+      first_name: patient.first_name || '',
+      last_name: patient.last_name || '',
       date_of_birth: patient.date_of_birth || '',
       sex: (patient.sex as 'M' | 'F') || '',
       whatsapp_number: patient.whatsapp_number || '',
@@ -173,12 +175,12 @@ export function QueueDashboardClient({
 
   const handleClearSelected = () => {
     setSelectedPatient(null)
-    setNewPatient({ display_name: '', date_of_birth: '', sex: '', whatsapp_number: '', chief_complaint: '' })
+    setNewPatient({ first_name: '', last_name: '', date_of_birth: '', sex: '', whatsapp_number: '', chief_complaint: '' })
   }
 
   const handleAddToQueue = async () => {
-    if (!newPatient.display_name || !newPatient.date_of_birth || !newPatient.sex) {
-      setAddMessage({ type: 'error', text: 'Name, date of birth, and sex are required' })
+    if (!newPatient.first_name || !newPatient.last_name || !newPatient.date_of_birth || !newPatient.sex) {
+      setAddMessage({ type: 'error', text: 'First name, last name, date of birth, and sex are required' })
       return
     }
 
@@ -186,7 +188,8 @@ export function QueueDashboardClient({
     setAddMessage(null)
 
     const result = await addPatientToQueue({
-      display_name: newPatient.display_name,
+      first_name: newPatient.first_name,
+      last_name: newPatient.last_name,
       date_of_birth: newPatient.date_of_birth,
       sex: newPatient.sex as 'M' | 'F',
       whatsapp_number: newPatient.whatsapp_number || undefined,
@@ -201,7 +204,7 @@ export function QueueDashboardClient({
     } else {
       setAddMessage({
         type: 'success',
-        text: `${newPatient.display_name} added to queue${result.patient_number ? ` (${result.patient_number})` : ''}`,
+        text: `${newPatient.first_name} ${newPatient.last_name} added to queue${result.patient_id ? ` (#${result.patient_id})` : ''}`,
       })
       setShowAddPatient(false)
       handleClearSelected()
@@ -403,9 +406,9 @@ export function QueueDashboardClient({
                       onClick={() => handleSelectExisting(p)}
                       className="w-full text-left px-3 py-2.5 hover:bg-secondary/50 text-sm flex justify-between items-center"
                     >
-                      <span className="font-medium">{p.display_name || 'Unknown'}</span>
+                      <span className="font-medium">{[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unknown'}</span>
                       <span className="text-muted-foreground text-xs">
-                        {(p as any).patient_number || ''}{p.sex ? ` · ${p.sex}` : ''}
+                        {p.patient_id ? `#${p.patient_id}` : ''}{p.sex ? ` · ${p.sex}` : ''}
                       </span>
                     </button>
                   ))}
@@ -419,7 +422,7 @@ export function QueueDashboardClient({
             <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2">
               <Badge variant="outline" className="text-xs">Returning</Badge>
               <span className="text-sm font-medium flex-1">
-                {selectedPatient.display_name} ({(selectedPatient as any).patient_number || 'ID pending'})
+                {[selectedPatient.first_name, selectedPatient.last_name].filter(Boolean).join(' ')} ({selectedPatient.patient_id ? `#${selectedPatient.patient_id}` : 'ID pending'})
               </span>
               <Button variant="ghost" size="sm" onClick={handleClearSelected} className="h-6 w-6 p-0">
                 <X className="w-3 h-3" />
@@ -429,12 +432,20 @@ export function QueueDashboardClient({
 
           {/* Patient fields */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <Label>Full Name *</Label>
+            <div className="space-y-1.5">
+              <Label>First Name *</Label>
               <Input
-                value={newPatient.display_name}
-                onChange={(e) => setNewPatient({ ...newPatient, display_name: e.target.value })}
-                placeholder="Patient's full name"
+                value={newPatient.first_name}
+                onChange={(e) => setNewPatient({ ...newPatient, first_name: e.target.value })}
+                placeholder="First name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Last Name *</Label>
+              <Input
+                value={newPatient.last_name}
+                onChange={(e) => setNewPatient({ ...newPatient, last_name: e.target.value })}
+                placeholder="Last name"
               />
             </div>
             <div className="space-y-1.5">

@@ -14,7 +14,8 @@ import javax.inject.Inject
 
 data class NewVisitUiState(
     val searchQuery: String = "",
-    val displayName: String = "",
+    val firstName: String = "",
+    val lastName: String = "",
     val searchResults: List<Patient> = emptyList(),
     val foundPatient: Patient? = null,
     val isSearching: Boolean = false,
@@ -48,8 +49,12 @@ class NewVisitViewModel @Inject constructor(
         }
     }
 
-    fun updateDisplayName(name: String) {
-        _uiState.update { it.copy(displayName = name) }
+    fun updateFirstName(name: String) {
+        _uiState.update { it.copy(firstName = name) }
+    }
+
+    fun updateLastName(name: String) {
+        _uiState.update { it.copy(lastName = name) }
     }
 
     fun selectPatient(patient: Patient) {
@@ -79,9 +84,9 @@ class NewVisitViewModel @Inject constructor(
 
         val clinicId = authTokenStore.getClinicId() ?: return null
         val phone = if (state.phoneValid) formatPhoneNumber(state.searchQuery) else null
-        val name = state.displayName.takeIf { it.isNotBlank() }
+        val hasName = state.firstName.isNotBlank() || state.lastName.isNotBlank()
 
-        if (phone == null && name == null) {
+        if (phone == null && !hasName) {
             _uiState.update { it.copy(error = "Please enter a phone number or name") }
             return null
         }
@@ -90,8 +95,9 @@ class NewVisitViewModel @Inject constructor(
         return try {
             val patient = patientRepository.createPatient(
                 clinicId = clinicId,
+                firstName = state.firstName,
+                lastName = state.lastName,
                 whatsappNumber = phone,
-                displayName = name,
             )
             _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
             patient.id

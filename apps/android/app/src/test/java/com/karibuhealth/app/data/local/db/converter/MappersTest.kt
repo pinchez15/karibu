@@ -13,9 +13,12 @@ class MappersTest {
         val dto = PatientDto(
             id = "p1",
             clinicId = "c1",
-            patientNumber = "KDC-0001",
-            whatsappNumber = "+256701234567",
+            patientId = 100001,
+            patientNumber = "100001",
+            firstName = "John",
+            lastName = "Doe",
             displayName = "John Doe",
+            whatsappNumber = "+256701234567",
             dateOfBirth = "1990-01-15",
             sex = "M",
             createdAt = "2026-01-01T00:00:00Z",
@@ -26,9 +29,10 @@ class MappersTest {
 
         assertEquals("p1", entity.id)
         assertEquals("c1", entity.clinicId)
-        assertEquals("KDC-0001", entity.patientNumber)
+        assertEquals(100001L, entity.patientId)
+        assertEquals("John", entity.firstName)
+        assertEquals("Doe", entity.lastName)
         assertEquals("+256701234567", entity.whatsappNumber)
-        assertEquals("John Doe", entity.displayName)
         assertEquals("M", entity.sex)
         assertTrue(entity.isSynced)
     }
@@ -37,23 +41,28 @@ class MappersTest {
     fun `PatientEntity to Domain maps correctly`() {
         val dto = PatientDto(
             id = "p1", clinicId = "c1",
-            displayName = "Jane", sex = "F",
+            firstName = "Jane", lastName = "Doe", sex = "F",
         )
         val entity = dto.toEntity()
         val domain = entity.toDomain()
 
         assertEquals("p1", domain.id)
         assertEquals("c1", domain.clinicId)
-        assertEquals("Jane", domain.displayName)
+        assertEquals("Jane", domain.firstName)
+        assertEquals("Doe", domain.lastName)
+        assertEquals("Jane Doe", domain.fullName)
         assertEquals("F", domain.sex)
-        assertNull(domain.patientNumber) // Not set in dto
+        assertNull(domain.patientId)
     }
 
     @Test
     fun `Patient domain to CreateDto`() {
         val patient = Patient(
-            id = "p1", clinicId = "c1", patientNumber = null,
-            whatsappNumber = "+256701234567", displayName = "Test",
+            id = "p1", clinicId = "c1",
+            patientId = null, patientNumber = null,
+            firstName = "Grace", lastName = "Natukunda",
+            displayName = "Grace Natukunda",
+            whatsappNumber = "+256701234567",
             dateOfBirth = null, sex = null,
             createdAt = "", updatedAt = "",
         )
@@ -62,8 +71,9 @@ class MappersTest {
 
         assertEquals("p1", createDto.id)
         assertEquals("c1", createDto.clinicId)
+        assertEquals("Grace", createDto.firstName)
+        assertEquals("Natukunda", createDto.lastName)
         assertEquals("+256701234567", createDto.whatsappNumber)
-        assertEquals("Test", createDto.displayName)
     }
 
     @Test
@@ -128,10 +138,32 @@ class MappersTest {
         val entity = dto.toEntity()
         val domain = entity.toDomain()
 
-        assertNull(domain.patientNumber)
+        assertNull(domain.patientId)
         assertNull(domain.whatsappNumber)
-        assertNull(domain.displayName)
+        assertNull(domain.firstName)
+        assertNull(domain.lastName)
         assertNull(domain.dateOfBirth)
         assertNull(domain.sex)
+        assertEquals("", domain.fullName) // No name parts
+    }
+
+    @Test
+    fun `fullName computed property works correctly`() {
+        val patientBothNames = Patient(
+            id = "p1", clinicId = "c1", patientId = null, patientNumber = null,
+            firstName = "Grace", lastName = "Natukunda", displayName = "Grace Natukunda",
+            whatsappNumber = null, dateOfBirth = null, sex = null,
+            createdAt = "", updatedAt = "",
+        )
+        assertEquals("Grace Natukunda", patientBothNames.fullName)
+
+        val patientFirstOnly = patientBothNames.copy(firstName = "Grace", lastName = null)
+        assertEquals("Grace", patientFirstOnly.fullName)
+
+        val patientLastOnly = patientBothNames.copy(firstName = null, lastName = "Natukunda")
+        assertEquals("Natukunda", patientLastOnly.fullName)
+
+        val patientFallback = patientBothNames.copy(firstName = null, lastName = null, displayName = "Legacy Name")
+        assertEquals("Legacy Name", patientFallback.fullName)
     }
 }

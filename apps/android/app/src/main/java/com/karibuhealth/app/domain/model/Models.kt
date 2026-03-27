@@ -63,14 +63,19 @@ data class Staff(
 data class Patient(
     val id: String,
     val clinicId: String,
+    val patientId: Long?,
     val patientNumber: String?,
-    val whatsappNumber: String?,
+    val firstName: String?,
+    val lastName: String?,
     val displayName: String?,
+    val whatsappNumber: String?,
     val dateOfBirth: String?,
     val sex: String?,
     val createdAt: String,
     val updatedAt: String,
-)
+) {
+    val fullName: String get() = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { displayName ?: "" }
+}
 
 data class Visit(
     val id: String,
@@ -205,8 +210,11 @@ data class QueueItem(
 
 @Serializable
 data class CreatePatientRequest(
-    val whatsapp_number: String,
-    val display_name: String? = null,
+    val first_name: String,
+    val last_name: String,
+    val whatsapp_number: String? = null,
+    val date_of_birth: String? = null,
+    val sex: String? = null,
 )
 
 @Serializable

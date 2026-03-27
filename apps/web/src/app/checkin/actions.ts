@@ -53,7 +53,8 @@ export async function checkInPatient(data: CheckInData): Promise<{
         .insert({
           clinic_id: clinic.id,
           whatsapp_number: formattedPhone,
-          display_name: data.name || null,
+          first_name: data.name?.split(' ').slice(1).join(' ') || data.name || null,
+          last_name: data.name?.split(' ')[0] || null,
         })
         .select('id')
         .single()

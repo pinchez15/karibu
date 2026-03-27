@@ -9,7 +9,8 @@ export async function createPatientWithVisit(formData: FormData) {
   if (!staff) throw new Error('Not authenticated')
 
   const rawPhone = formData.get('whatsapp_number') as string
-  const displayName = (formData.get('display_name') as string)?.trim() || null
+  const firstName = (formData.get('first_name') as string)?.trim() || null
+  const lastName = (formData.get('last_name') as string)?.trim() || null
   const sex = (formData.get('sex') as string) || null
 
   if (!rawPhone) {
@@ -41,7 +42,8 @@ export async function createPatientWithVisit(formData: FormData) {
       .insert({
         clinic_id: staff.clinic_id,
         whatsapp_number: whatsappNumber,
-        display_name: displayName,
+        first_name: firstName,
+        last_name: lastName,
         ...(sex === 'M' || sex === 'F' ? { sex } : {}),
       })
       .select('id')

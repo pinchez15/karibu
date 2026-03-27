@@ -6,7 +6,7 @@ import type { Visit, VisitStatus } from '@karibu/shared'
 import { PatientsToolbar } from './PatientsToolbar'
 
 interface VisitWithPatient extends Visit {
-  patient: { id: string; display_name: string | null; whatsapp_number: string }
+  patient: { id: string; first_name: string | null; last_name: string | null; display_name: string | null; whatsapp_number: string }
   doctor: { display_name: string } | null
 }
 
@@ -36,7 +36,7 @@ async function getVisits(
 
   let query = supabase
     .from('visits')
-    .select('*, patient:patients(id, display_name, whatsapp_number), doctor:staff!visits_doctor_id_fkey(display_name)', { count: 'exact' })
+    .select('*, patient:patients(id, first_name, last_name, display_name, whatsapp_number), doctor:staff!visits_doctor_id_fkey(display_name)', { count: 'exact' })
     .eq('clinic_id', clinicId)
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)

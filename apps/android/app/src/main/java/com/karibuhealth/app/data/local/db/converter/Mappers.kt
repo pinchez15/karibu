@@ -44,23 +44,29 @@ fun StaffEntity.toDomain() = Staff(
 // ========== Patient ==========
 
 fun PatientDto.toEntity(isSynced: Boolean = true) = PatientEntity(
-    id = id, clinicId = clinicId, patientNumber = patientNumber,
-    whatsappNumber = whatsappNumber, displayName = displayName,
+    id = id, clinicId = clinicId,
+    patientId = patientId, patientNumber = patientNumber,
+    firstName = firstName, lastName = lastName, displayName = displayName,
+    whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced,
 )
 
 fun PatientEntity.toDomain() = Patient(
-    id = id, clinicId = clinicId, patientNumber = patientNumber,
-    whatsappNumber = whatsappNumber, displayName = displayName,
+    id = id, clinicId = clinicId,
+    patientId = patientId, patientNumber = patientNumber,
+    firstName = firstName, lastName = lastName, displayName = displayName,
+    whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
     createdAt = createdAt, updatedAt = updatedAt,
 )
 
 fun Patient.toEntity(isSynced: Boolean = true, localCreatedAt: Long? = null) = PatientEntity(
-    id = id, clinicId = clinicId, patientNumber = patientNumber,
-    whatsappNumber = whatsappNumber, displayName = displayName,
+    id = id, clinicId = clinicId,
+    patientId = patientId, patientNumber = patientNumber,
+    firstName = firstName, lastName = lastName, displayName = displayName,
+    whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced, localCreatedAt = localCreatedAt,
@@ -68,7 +74,8 @@ fun Patient.toEntity(isSynced: Boolean = true, localCreatedAt: Long? = null) = P
 
 fun Patient.toCreateDto() = PatientCreateDto(
     id = id, clinicId = clinicId,
-    whatsappNumber = whatsappNumber, displayName = displayName,
+    firstName = firstName, lastName = lastName,
+    whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
 )
 

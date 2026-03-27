@@ -100,8 +100,8 @@ export async function searchPatients(query: string): Promise<Patient[]> {
     .from('patients')
     .select('*')
     .eq('clinic_id', staff.clinic_id)
-    .ilike('display_name', `%${query}%`)
-    .order('display_name')
+    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+    .order('last_name')
     .limit(8)
 
   if (error) {
@@ -113,21 +113,22 @@ export async function searchPatients(query: string): Promise<Patient[]> {
 }
 
 export async function addPatientToQueue(data: {
-  display_name: string
+  first_name: string
+  last_name: string
   date_of_birth: string
   sex: 'M' | 'F'
   whatsapp_number?: string
   chief_complaint?: string
   priority?: string
   existing_patient_id?: string
-}): Promise<{ success?: boolean; error?: string; patient_number?: string }> {
+}): Promise<{ success?: boolean; error?: string; patient_id?: number }> {
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
   const supabase = createServiceClient()
 
   let patientId: string
-  let patientNumber: string | null = null
+  let numericPatientId: number | null = null
 
   if (data.existing_patient_id) {
     // Returning patient — use their existing record
@@ -137,7 +138,8 @@ export async function addPatientToQueue(data: {
     await supabase
       .from('patients')
       .update({
-        display_name: data.display_name,
+        first_name: data.first_name,
+        last_name: data.last_name,
         date_of_birth: data.date_of_birth,
         sex: data.sex,
         ...(data.whatsapp_number ? { whatsapp_number: formatPhoneNumber(data.whatsapp_number) } : {}),
@@ -146,10 +148,10 @@ export async function addPatientToQueue(data: {
 
     const { data: existing } = await supabase
       .from('patients')
-      .select('patient_number')
+      .select('patient_id')
       .eq('id', patientId)
       .single()
-    patientNumber = existing?.patient_number || null
+    numericPatientId = existing?.patient_id || null
   } else {
     // New patient
     let formattedPhone: string | null = null
@@ -162,13 +164,13 @@ export async function addPatientToQueue(data: {
       // Check for duplicate phone at this clinic
       const { data: existing } = await supabase
         .from('patients')
-        .select('id, patient_number')
+        .select('id, patient_id')
         .eq('clinic_id', staff.clinic_id)
         .eq('whatsapp_number', formattedPhone)
         .single()
 
       if (existing) {
-        return { error: `A patient with this phone number already exists (${existing.patient_number})` }
+        return { error: `A patient with this phone number already exists (#${existing.patient_id})` }
       }
     }
 
@@ -176,12 +178,13 @@ export async function addPatientToQueue(data: {
       .from('patients')
       .insert({
         clinic_id: staff.clinic_id,
-        display_name: data.display_name,
+        first_name: data.first_name,
+        last_name: data.last_name,
         date_of_birth: data.date_of_birth,
         sex: data.sex,
         whatsapp_number: formattedPhone,
       })
-      .select('id, patient_number')
+      .select('id, patient_id')
       .single()
 
     if (patientError || !newPatient) {
@@ -190,7 +193,7 @@ export async function addPatientToQueue(data: {
     }
 
     patientId = newPatient.id
-    patientNumber = newPatient.patient_number
+    numericPatientId = newPatient.patient_id
   }
 
   // Add to queue via check_in_patient RPC
@@ -208,5 +211,5 @@ export async function addPatientToQueue(data: {
   }
 
   broadcastQueueUpdate(staff.clinic_id).catch(() => {})
-  return { success: true, patient_number: patientNumber || undefined }
+  return { success: true, patient_id: numericPatientId || undefined }
 }

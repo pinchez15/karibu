@@ -62,8 +62,13 @@ export default function NewVisit() {
           id: `local_${Date.now()}`,
           clinic_id: '',
           whatsapp_number: formattedPhone,
+          first_name: displayName?.split(' ').slice(1).join(' ') || displayName || null,
+          last_name: displayName?.split(' ')[0] || null,
           display_name: displayName || null,
+          patient_id: null,
+          patient_number: null,
           date_of_birth: null,
+          sex: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });

@@ -30,9 +30,12 @@ export interface Staff {
 export interface Patient {
   id: string;
   clinic_id: string;
+  patient_id: number | null;
   patient_number: string | null;
-  whatsapp_number: string | null;
+  first_name: string | null;
+  last_name: string | null;
   display_name: string | null;
+  whatsapp_number: string | null;
   date_of_birth: string | null;
   sex: 'M' | 'F' | null;
   created_at: string;
@@ -241,8 +244,11 @@ export interface PatientConsent {
 // API Request/Response Types
 
 export interface CreatePatientRequest {
-  whatsapp_number: string;
-  display_name?: string;
+  first_name: string;
+  last_name: string;
+  whatsapp_number?: string;
+  date_of_birth?: string;
+  sex?: 'M' | 'F';
 }
 
 export interface CreateVisitRequest {

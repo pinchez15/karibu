@@ -72,9 +72,11 @@ export default function CheckIn() {
       let patientToCheckIn = patient;
 
       if (!patientToCheckIn) {
+        const nameParts = (patientName || '').trim().split(' ');
         patientToCheckIn = await createPatient({
+          first_name: nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '',
+          last_name: nameParts.length > 1 ? nameParts[0] : '',
           whatsapp_number: formatted,
-          display_name: patientName || undefined,
         });
       }
 

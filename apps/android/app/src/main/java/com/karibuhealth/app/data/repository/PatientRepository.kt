@@ -42,8 +42,9 @@ class PatientRepository @Inject constructor(
 
     suspend fun createPatient(
         clinicId: String,
-        whatsappNumber: String?,
-        displayName: String?,
+        firstName: String,
+        lastName: String,
+        whatsappNumber: String? = null,
         dateOfBirth: String? = null,
         sex: String? = null,
     ): Patient {
@@ -51,9 +52,12 @@ class PatientRepository @Inject constructor(
         val patient = Patient(
             id = UUID.randomUUID().toString(),
             clinicId = clinicId,
-            patientNumber = null, // Assigned by server on sync
+            patientId = null, // Assigned by server on sync
+            patientNumber = null,
+            firstName = firstName,
+            lastName = lastName,
+            displayName = "$firstName $lastName".trim(),
             whatsappNumber = whatsappNumber,
-            displayName = displayName,
             dateOfBirth = dateOfBirth,
             sex = sex,
             createdAt = now,

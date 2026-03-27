@@ -50,9 +50,12 @@ data class StaffEntity(
 data class PatientEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "clinic_id") val clinicId: String,
+    @ColumnInfo(name = "patient_id") val patientId: Long? = null,
     @ColumnInfo(name = "patient_number") val patientNumber: String?,
-    @ColumnInfo(name = "whatsapp_number") val whatsappNumber: String?,
+    @ColumnInfo(name = "first_name") val firstName: String?,
+    @ColumnInfo(name = "last_name") val lastName: String?,
     @ColumnInfo(name = "display_name") val displayName: String?,
+    @ColumnInfo(name = "whatsapp_number") val whatsappNumber: String?,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: String?,
     val sex: String?, // M, F
     @ColumnInfo(name = "created_at") val createdAt: String,

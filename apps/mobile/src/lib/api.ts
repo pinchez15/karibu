@@ -82,8 +82,11 @@ export async function createPatient(request: CreatePatientRequest): Promise<Pati
     .from('patients')
     .insert({
       clinic_id: clinicId,
-      whatsapp_number: request.whatsapp_number,
-      display_name: request.display_name || null,
+      first_name: request.first_name,
+      last_name: request.last_name,
+      whatsapp_number: request.whatsapp_number || null,
+      date_of_birth: request.date_of_birth || null,
+      sex: request.sex || null,
     })
     .select()
     .single();
@@ -94,11 +97,12 @@ export async function createPatient(request: CreatePatientRequest): Promise<Pati
 
 export async function getOrCreatePatient(
   whatsappNumber: string,
-  displayName?: string
+  firstName?: string,
+  lastName?: string,
 ): Promise<Patient> {
   const existing = await lookupPatient(whatsappNumber);
   if (existing) return existing;
-  return createPatient({ whatsapp_number: whatsappNumber, display_name: displayName });
+  return createPatient({ first_name: firstName || '', last_name: lastName || '', whatsapp_number: whatsappNumber });
 }
 
 // Visits

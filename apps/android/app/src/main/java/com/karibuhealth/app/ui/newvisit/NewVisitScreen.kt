@@ -58,12 +58,23 @@ fun NewVisitScreen(
                     { Text("Enter a valid Uganda phone number") }
                 } else null,
             )
-            OutlinedTextField(
-                value = uiState.displayName,
-                onValueChange = { viewModel.updateDisplayName(it) },
-                label = { Text("Patient Name (optional)") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = uiState.firstName,
+                    onValueChange = { viewModel.updateFirstName(it) },
+                    label = { Text("First Name") },
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = uiState.lastName,
+                    onValueChange = { viewModel.updateLastName(it) },
+                    label = { Text("Last Name") },
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
             // Search results
             if (uiState.searchResults.isNotEmpty()) {
@@ -74,9 +85,9 @@ fun NewVisitScreen(
                 ) {
                     items(uiState.searchResults) { patient ->
                         ListItem(
-                            headlineContent = { Text(patient.displayName ?: "Unknown") },
+                            headlineContent = { Text(patient.fullName.ifBlank { "Unknown" }) },
                             supportingContent = {
-                                Text(patient.whatsappNumber ?: patient.patientNumber ?: "")
+                                Text(patient.patientId?.let { "#$it" } ?: patient.whatsappNumber ?: "")
                             },
                             leadingContent = {
                                 Icon(Icons.Default.Person, contentDescription = null)
@@ -95,8 +106,8 @@ fun NewVisitScreen(
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Patient Found", style = MaterialTheme.typography.labelLarge)
-                        Text(patient.displayName ?: "Unknown")
-                        patient.patientNumber?.let { Text("ID: $it") }
+                        Text(patient.fullName.ifBlank { "Unknown" })
+                        patient.patientId?.let { Text("ID: #$it") }
                     }
                 }
             }
@@ -115,7 +126,7 @@ fun NewVisitScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isCreating && (uiState.foundPatient != null || uiState.phoneValid || uiState.displayName.isNotBlank()),
+                enabled = !uiState.isCreating && (uiState.foundPatient != null || uiState.phoneValid || uiState.firstName.isNotBlank() || uiState.lastName.isNotBlank()),
             ) {
                 if (uiState.isCreating) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))

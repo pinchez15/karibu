@@ -35,9 +35,12 @@ data class StaffDto(
 data class PatientDto(
     val id: String,
     @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: Long? = null,
     @SerialName("patient_number") val patientNumber: String? = null,
-    @SerialName("whatsapp_number") val whatsappNumber: String? = null,
+    @SerialName("first_name") val firstName: String? = null,
+    @SerialName("last_name") val lastName: String? = null,
     @SerialName("display_name") val displayName: String? = null,
+    @SerialName("whatsapp_number") val whatsappNumber: String? = null,
     @SerialName("date_of_birth") val dateOfBirth: String? = null,
     val sex: String? = null,
     @SerialName("created_at") val createdAt: String = "",
@@ -48,8 +51,9 @@ data class PatientDto(
 data class PatientCreateDto(
     val id: String,
     @SerialName("clinic_id") val clinicId: String,
+    @SerialName("first_name") val firstName: String? = null,
+    @SerialName("last_name") val lastName: String? = null,
     @SerialName("whatsapp_number") val whatsappNumber: String? = null,
-    @SerialName("display_name") val displayName: String? = null,
     @SerialName("date_of_birth") val dateOfBirth: String? = null,
     val sex: String? = null,
 )
