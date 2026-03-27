@@ -19,6 +19,7 @@ kotlinxCoroutines = "1.9.0"
 datastore = "1.1.1"
 securityCrypto = "1.1.0-alpha06"
 clerk = "0.8.0"
+posthog = "3.8.2"
 junit = "4.13.2"
 junitExt = "1.2.1"
 espresso = "3.6.1"
@@ -81,6 +82,9 @@ androidx-security-crypto = { group = "androidx.security", name = "security-crypt
 
 # Clerk Auth
 clerk-android = { group = "com.clerk", name = "clerk-android", version.ref = "clerk" }
+
+# Analytics
+posthog-android = { group = "com.posthog", name = "posthog-android", version.ref = "posthog" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

@@ -19,6 +19,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import com.karibuhealth.app.data.sync.PullSyncManager
 import com.karibuhealth.app.data.sync.SyncWorker
+import com.karibuhealth.app.util.RecordingRecovery
+import com.karibuhealth.app.util.SessionMonitor
 import com.karibuhealth.app.ui.components.OfflineBanner
 import com.karibuhealth.app.ui.navigation.KaribuNavHost
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
@@ -30,6 +32,8 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var pullSyncManager: PullSyncManager
+    @Inject lateinit var recordingRecovery: RecordingRecovery
+    @Inject lateinit var sessionMonitor: SessionMonitor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +57,15 @@ class MainActivity : ComponentActivity() {
                 pullSyncManager.pullAll()
             }
         }
+
+        // Recover orphaned recordings and re-enqueue pending uploads
+        lifecycleScope.launch {
+            recordingRecovery.recoverOrphanedRecordings()
+            recordingRecovery.reEnqueuePendingUploads()
+        }
+
+        // Monitor session token freshness
+        sessionMonitor.startMonitoring(lifecycleScope)
 
         setContent {
             KaribuHealthTheme {

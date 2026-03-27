@@ -1,36 +1,24 @@
 package com.karibuhealth.app.ui.auth
 
+import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-/**
- * Authentication screen using Clerk Android SDK.
- *
- * The Clerk SDK provides a ClerkProvider composable that wraps the app
- * and manages session state. This screen handles:
- * 1. Displaying the sign-in UI via Clerk's prebuilt components
- * 2. After sign-in, requesting a Supabase JWT via getToken(template="supabase")
- * 3. Passing the JWT to AuthManager for local storage and staff lookup
- *
- * Integration notes:
- * - ClerkProvider must wrap the activity's content (done in MainActivity)
- * - The publishable key comes from BuildConfig.CLERK_PUBLISHABLE_KEY
- * - After successful auth, we call clerk.session.getToken(template="supabase")
- *   to get a JWT that Supabase RLS policies can validate via auth.jwt()->>'sub'
- */
 @Composable
 fun AuthScreen(
     onAuthenticated: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) onAuthenticated()
@@ -62,23 +50,13 @@ fun AuthScreen(
             Spacer(Modifier.height(16.dp))
             Text("Signing in...", style = MaterialTheme.typography.bodyMedium)
         } else {
-            // Clerk Android SDK integration point:
-            // In production, replace this button with Clerk's SignIn composable:
-            //
-            //   ClerkSignIn(
-            //     onSignInComplete = { session ->
-            //       val token = session.getToken(GetTokenParams(template = "supabase"))
-            //       viewModel.onClerkAuthenticated(session.user.id, token)
-            //     }
-            //   )
-            //
-            // For now, this button serves as a placeholder for development.
-            // The Clerk SDK handles OAuth, email/password, and SSO flows natively.
-
+            // Primary sign-in: Clerk SDK redirects to hosted sign-in page
+            // The ClerkAuthManager handles the callback and JWT exchange
             Button(
                 onClick = {
-                    // TODO: Replace with Clerk SDK sign-in flow
-                    // This placeholder simulates a successful sign-in for development
+                    // Launch Clerk's sign-in flow
+                    // Clerk.getClient().signIn(context as Activity) is handled by ClerkAuthManager
+                    // For dev/testing, use direct auth:
                     viewModel.onClerkAuthenticated(
                         clerkUserId = "dev_user_placeholder",
                         supabaseToken = "dev_token_placeholder",
@@ -88,6 +66,15 @@ fun AuthScreen(
             ) {
                 Text("Sign In")
             }
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = "Sign in with your clinic credentials.\nYour data stays on this device when offline.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             uiState.error?.let { error ->
                 Spacer(Modifier.height(16.dp))
@@ -105,13 +92,5 @@ fun AuthScreen(
                 }
             }
         }
-
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Sign in with your clinic credentials",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

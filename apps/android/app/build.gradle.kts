@@ -24,6 +24,8 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"${findProperty("SUPABASE_URL") ?: ""}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
         buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${findProperty("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
+        buildConfigField("String", "POSTHOG_API_KEY", "\"${findProperty("POSTHOG_API_KEY") ?: ""}\"")
+        buildConfigField("String", "POSTHOG_HOST", "\"${findProperty("POSTHOG_HOST") ?: "https://us.i.posthog.com"}\"")
     }
 
     buildTypes {
@@ -104,6 +106,9 @@ dependencies {
 
     // Clerk Auth
     implementation(libs.clerk.android)
+
+    // Analytics
+    implementation(libs.posthog.android)
 
     // Testing
     testImplementation(libs.junit)

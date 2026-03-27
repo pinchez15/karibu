@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.ConsentRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.*
+import com.karibuhealth.app.util.Analytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ class ConsentViewModel @Inject constructor(
     private val consentRepository: ConsentRepository,
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConsentUiState())
@@ -83,6 +85,15 @@ class ConsentViewModel @Inject constructor(
                     guardianRelationship = state.guardianRelationship.takeIf { state.isMinor },
                 )
 
+                analytics.capture(Analytics.Events.VISIT_CREATED, mapOf(
+                    "visit_id" to visit.id,
+                    "source_language" to state.sourceLanguage.name,
+                    "is_minor" to state.isMinor,
+                ))
+                analytics.capture(Analytics.Events.CONSENT_GRANTED, mapOf(
+                    "visit_id" to visit.id,
+                    "consent_types" to "all_required",
+                ))
                 _uiState.update { it.copy(createdVisitId = visit.id, isCreating = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isCreating = false) }

@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.repository
 
 import android.util.Log
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.util.Analytics
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -11,6 +12,7 @@ import javax.inject.Singleton
 class AuthManager @Inject constructor(
     private val authTokenStore: AuthTokenStore,
     private val staffRepository: StaffRepository,
+    private val analytics: Analytics,
 ) {
     companion object {
         private const val TAG = "AuthManager"
@@ -22,14 +24,17 @@ class AuthManager @Inject constructor(
     suspend fun onClerkSignIn(clerkUserId: String, supabaseToken: String) {
         Log.d(TAG, "Clerk sign-in: $clerkUserId")
 
-        // Store auth tokens
         authTokenStore.saveClerkUserId(clerkUserId)
         authTokenStore.saveToken(supabaseToken)
 
-        // Fetch and cache staff record
         val staff = staffRepository.fetchAndCacheStaff(clerkUserId)
         if (staff != null) {
             Log.d(TAG, "Staff loaded: ${staff.displayName} (${staff.role}), clinic: ${staff.clinicId}")
+            analytics.identify(clerkUserId, mapOf(
+                "role" to staff.role.name,
+                "clinic_id" to staff.clinicId,
+                "display_name" to staff.displayName,
+            ))
         } else {
             Log.w(TAG, "No staff record found for clerk user: $clerkUserId")
         }
@@ -41,6 +46,7 @@ class AuthManager @Inject constructor(
 
     suspend fun signOut() {
         Log.d(TAG, "Signing out")
+        analytics.reset()
         authTokenStore.clear()
     }
 
