@@ -10,7 +10,9 @@
     "mobile": "npm run dev --workspace=apps/mobile",
     "web": "npm run dev --workspace=apps/web",
     "db:migrate": "npm run migrate --workspace=packages/supabase",
-    "db:types": "npm run generate-types --workspace=packages/supabase"
+    "db:types": "npm run generate-types --workspace=packages/supabase",
+    "android:build": "cd apps/android && ./gradlew assembleDebug",
+    "android:test": "cd apps/android && ./gradlew testDebugUnitTest"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
