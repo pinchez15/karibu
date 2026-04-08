@@ -25,19 +25,27 @@ karibu-health/
 
 ## Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js 20+
+- pnpm 10+ (install via `corepack enable && corepack prepare pnpm@10.18.0 --activate`)
 - Supabase CLI
-- Expo CLI (`npm install -g expo-cli`)
 - Android Studio (for Android development)
 
 ## Setup
 
 ### 1. Clone and Install Dependencies
 
+This project uses **pnpm** as the package manager. Install it via Corepack:
+
+```bash
+corepack enable
+corepack prepare pnpm@10.18.0 --activate
+```
+
+Then install workspace dependencies:
+
 ```bash
 cd karibu-health
-npm install
+pnpm install
 ```
 
 ### 2. Set Up Supabase
@@ -112,9 +120,7 @@ supabase secrets set SUNBIRD_API_KEY=...
 ### Mobile App
 
 ```bash
-cd apps/mobile
-npm install
-npx expo start
+pnpm --filter @karibu/mobile dev
 ```
 
 Scan the QR code with Expo Go, or press `a` to open Android emulator.
@@ -122,9 +128,7 @@ Scan the QR code with Expo Go, or press `a` to open Android emulator.
 ### Web App
 
 ```bash
-cd apps/web
-npm install
-npm run dev
+pnpm --filter @karibu/web dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
