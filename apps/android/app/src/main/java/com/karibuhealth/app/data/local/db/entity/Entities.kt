@@ -12,8 +12,10 @@ data class ClinicEntity(
     val name: String,
     val slug: String,
     @ColumnInfo(name = "clerk_organization_id") val clerkOrganizationId: String?,
-    @ColumnInfo(name = "whatsapp_phone_number") val whatsappPhoneNumber: String?,
-    @ColumnInfo(name = "whatsapp_business_account_id") val whatsappBusinessAccountId: String?,
+    // Legacy columns kept in Room v2 schema to avoid a destructive DB migration on
+    // upgrade. WhatsApp delivery removed 2026-04-08; always null on writes.
+    @ColumnInfo(name = "whatsapp_phone_number") val whatsappPhoneNumber: String? = null,
+    @ColumnInfo(name = "whatsapp_business_account_id") val whatsappBusinessAccountId: String? = null,
     val timezone: String,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: String,

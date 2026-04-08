@@ -4,15 +4,27 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
 import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
+import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   const preflightResponse = handleCorsPreflightOrError(req)
   if (preflightResponse) return preflightResponse
 
+  // Require authenticated caller (Clerk session or service role).
+  // Without this, the public anon key is the only gate, which is no gate at all.
+  let authCtx
   try {
-    // Rate limit: 30 dictation requests per IP per minute
-    const rlKey = getRateLimitKey(req)
+    authCtx = await requireAuth(req)
+  } catch (err) {
+    return authErrorResponse(err, corsHeaders)
+  }
+
+  try {
+    // Rate limit: 30 dictation requests per authenticated user per minute.
+    // Keyed by Clerk userId (or 'service' for service-role calls) so attackers
+    // can't bypass by rotating IPs.
+    const rlKey = authCtx.type === 'clerk' ? `clerk:${authCtx.userId}` : 'service'
     const rl = checkRateLimit(rlKey, { maxRequests: 30, windowMs: 60 * 1000 })
     if (!rl.allowed) {
       return new Response(
@@ -70,9 +82,12 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders)
+    }
     console.error('Dictation error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

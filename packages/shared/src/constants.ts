@@ -10,9 +10,6 @@ export const VISIT_STATUS_FLOW = [
   'completed',
 ] as const;
 
-// Magic link expiry (48 hours for DPPA compliance)
-export const MAGIC_LINK_EXPIRY_MS = 48 * 60 * 60 * 1000;
-
 // Audio retention (90 days before automatic deletion)
 export const AUDIO_RETENTION_DAYS = 90;
 
@@ -55,18 +52,10 @@ export const API_ENDPOINTS = {
   providerNote: (visitId: string) => `/api/visits/${visitId}/notes/provider`,
   patientNote: (visitId: string) => `/api/visits/${visitId}/notes/patient`,
   finalize: (visitId: string) => `/api/visits/${visitId}/finalize`,
-  patientNotePublic: (token: string) => `/api/patient/note/${token}`,
+  printPatientNote: (visitId: string) => `/dashboard/visits/${visitId}/print`,
   sync: {
     push: '/api/sync/push',
     pull: '/api/sync/pull',
-  },
-} as const;
-
-// WhatsApp message templates
-export const WHATSAPP_TEMPLATES = {
-  patientNoteSent: {
-    name: 'patient_note_ready',
-    language: 'en',
   },
 } as const;
 
@@ -78,8 +67,6 @@ export const ERROR_MESSAGES = {
   consentRequired: 'Patient consent is required before recording.',
   patientNotFound: 'Patient not found.',
   visitNotFound: 'Visit not found.',
-  invalidMagicLink: 'This link is invalid or has expired.',
-  sessionExpired: 'Your session has expired. Please request a new link.',
 } as const;
 
 // Payment methods

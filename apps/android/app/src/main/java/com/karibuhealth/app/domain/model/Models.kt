@@ -39,8 +39,6 @@ data class Clinic(
     val name: String,
     val slug: String,
     val clerkOrganizationId: String?,
-    val whatsappPhoneNumber: String?,
-    val whatsappBusinessAccountId: String?,
     val timezone: String,
     val isActive: Boolean,
     val createdAt: String,

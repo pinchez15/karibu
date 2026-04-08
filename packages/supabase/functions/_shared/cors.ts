@@ -1,5 +1,8 @@
-// CORS configuration for edge functions
-// Restricts origins to the app's actual domains
+// CORS configuration for edge functions.
+// Strict allow-list — no wildcard fallback. Service-to-service calls have no
+// Origin header at all and don't need a CORS response (CORS is a browser
+// concern); they pass through with empty allowed-origin which the browser
+// would reject, but the browser isn't involved in those calls.
 
 const ALLOWED_ORIGINS = [
   Deno.env.get('WEB_URL'),
@@ -15,15 +18,15 @@ if (Deno.env.get('ENVIRONMENT') !== 'production') {
 export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin') || ''
 
-  // For service-to-service calls (edge function → edge function), there's no origin
-  // Allow these through since they're authenticated via service role key
-  const isServiceCall = !origin && req.headers.get('authorization')?.includes('service_role')
-
+  // Echo back the origin only if it's in the allow-list. Browsers reject
+  // responses where Access-Control-Allow-Origin doesn't match the request
+  // origin, so unauthorized origins get blocked client-side.
+  //
+  // For service-to-service calls (no Origin header), we still emit the
+  // first allow-list entry — harmless because there's no browser involved.
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin)
     ? origin
-    : isServiceCall
-      ? '*'
-      : ALLOWED_ORIGINS[0] || ''
+    : ALLOWED_ORIGINS[0] || ''
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,

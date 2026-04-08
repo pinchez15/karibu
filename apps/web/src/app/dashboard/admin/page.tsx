@@ -103,10 +103,6 @@ export default async function AdminPage() {
             <p className="font-medium">{stats.clinic?.slug || '-'}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">WhatsApp Number</p>
-            <p className="font-medium">{stats.clinic?.whatsapp_phone_number || 'Not configured'}</p>
-          </div>
-          <div>
             <p className="text-sm text-gray-500">Timezone</p>
             <p className="font-medium">{stats.clinic?.timezone || '-'}</p>
           </div>

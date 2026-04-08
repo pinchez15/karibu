@@ -35,7 +35,7 @@ fun SuccessScreen(
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "The patient will receive their notes via WhatsApp.",
+            text = "Print the patient note from the staff dashboard and hand it to the patient before they leave.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

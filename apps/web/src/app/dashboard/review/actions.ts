@@ -1,6 +1,5 @@
 'use server'
 
-import { randomBytes } from 'crypto'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 
@@ -26,18 +25,6 @@ export async function approveVisit(
     }
   }
 
-  // Get visit details for magic link creation
-  const { data: visit, error: visitError } = await supabase
-    .from('visits')
-    .select('patient_id')
-    .eq('id', visitId)
-    .single()
-
-  if (visitError || !visit) {
-    console.error('Failed to fetch visit:', visitError)
-    return { error: 'Failed to find visit' }
-  }
-
   // Finalize notes
   const now = new Date().toISOString()
   await Promise.all([
@@ -51,25 +38,7 @@ export async function approveVisit(
       .eq('visit_id', visitId),
   ])
 
-  // Create magic link for patient note access
-  const token = randomBytes(32).toString('hex')
-  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 hours
-
-  const { error: linkError } = await supabase
-    .from('magic_links')
-    .insert({
-      patient_id: visit.patient_id,
-      visit_id: visitId,
-      token,
-      expires_at: expiresAt,
-    })
-
-  if (linkError) {
-    console.error('Failed to create magic link:', linkError)
-    return { error: 'Failed to create patient note link' }
-  }
-
-  // Update visit status to 'sent'
+  // Mark visit as approved and ready to print
   const { error: statusError } = await supabase
     .from('visits')
     .update({
@@ -85,26 +54,7 @@ export async function approveVisit(
     return { error: 'Failed to approve visit' }
   }
 
-  // Send WhatsApp message with patient note link (fire-and-forget)
-  fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-whatsapp`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
-      },
-      body: JSON.stringify({
-        visit_id: visitId,
-        magic_link_token: token,
-      }),
-    }
-  ).catch(err => {
-    // Non-blocking — WhatsApp send failure shouldn't block approval
-    console.error('Failed to send WhatsApp:', err)
-  })
-
-  return { success: true }
+  return { success: true, printUrl: `/dashboard/visits/${visitId}/print` }
 }
 
 export async function rejectVisit(visitId: string) {

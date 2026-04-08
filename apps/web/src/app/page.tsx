@@ -9,7 +9,7 @@ const benefits = [
     icon: Users,
     title: 'Better Patient Care',
     description:
-      'Patients check in via WhatsApp, get discharge instructions on their phone, no paperwork lost.',
+      'Quick check-in, AI-generated visit notes, and printed discharge instructions handed to patients before they leave.',
   },
   {
     icon: Stethoscope,
@@ -64,8 +64,7 @@ export default function Home() {
               <span className="text-primary">for Uganda</span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              An AI-native, WhatsApp-integrated EHR built specifically for Ugandan clinics.
-              No computers required.
+              An AI-native EHR built specifically for Ugandan clinics. No computers required.
             </p>
           </div>
 

@@ -6,8 +6,6 @@ export interface Clinic {
   name: string;
   slug: string;
   clerk_organization_id: string | null;
-  whatsapp_phone_number: string | null;
-  whatsapp_business_account_id: string | null;
   timezone: string;
   is_active: boolean;
   created_at: string;
@@ -166,16 +164,6 @@ export interface PatientNote {
   updated_at: string;
 }
 
-export interface MagicLink {
-  id: string;
-  patient_id: string;
-  visit_id: string;
-  token: string;
-  expires_at: string;
-  used_at: string | null;
-  created_at: string;
-}
-
 export interface AuditLog {
   id: string;
   actor_id: string | null;
@@ -188,22 +176,6 @@ export interface AuditLog {
   patient_id: string | null;
   metadata: Record<string, unknown>;
   ip_address: string | null;
-  created_at: string;
-}
-
-export interface MessageLog {
-  id: string;
-  patient_id: string | null;
-  visit_id: string | null;
-  direction: 'inbound' | 'outbound';
-  channel: 'whatsapp' | 'sms';
-  message_type: string | null;
-  content_summary: string | null;
-  external_id: string | null;
-  status: string;
-  sent_at: string | null;
-  delivered_at: string | null;
-  error_message: string | null;
   created_at: string;
 }
 
@@ -280,8 +252,7 @@ export interface FinalizeVisitResponse {
   visit: Visit;
   provider_note: ProviderNote;
   patient_note: PatientNote;
-  magic_link_url: string;
-  whatsapp_sent: boolean;
+  print_url: string;
 }
 
 // Offline Sync Types
@@ -300,19 +271,6 @@ export interface LocalVisit extends Visit {
   synced: boolean;
   audio_local_path?: string;
   audio_uploaded: boolean;
-}
-
-// Patient Note Page Types (for magic link access)
-
-export interface PatientNotePageData {
-  clinic_name: string;
-  visit_date: string;
-  patient_name: string | null;
-  content: string;
-  diagnosis?: string;
-  medications?: string;
-  follow_up_instructions?: string;
-  tests_ordered?: string;
 }
 
 // Queue Types

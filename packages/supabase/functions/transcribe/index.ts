@@ -6,7 +6,8 @@ import { transcribe } from '../_shared/transcription/router.ts'
 import { translateToEnglish } from '../_shared/transcription/translate.ts'
 import { auditLog } from '../_shared/audit.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
-import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
+import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
 
 const logger = createLogger('transcribe')
 
@@ -15,14 +16,26 @@ serve(async (req) => {
   const preflightResponse = handleCorsPreflightOrError(req)
   if (preflightResponse) return preflightResponse
 
+  // Require authenticated caller. Either:
+  //   - Clerk session JWT (browser / Android upload worker)
+  //   - Supabase service role (Next.js server actions, edge-to-edge fan-out)
+  let authCtx
+  try {
+    authCtx = await requireAuth(req)
+  } catch (err) {
+    return authErrorResponse(err, corsHeaders)
+  }
+
   let visit_id: string | undefined
 
   try {
     const body = await req.json()
     visit_id = body.visit_id
 
-    // Rate limit: 5 transcription requests per visit per 10 minutes
-    const rlKey = getRateLimitKey(req, body)
+    // Rate limit: 5 transcription requests per caller identity per 10 minutes.
+    // Keyed by Clerk userId (or 'service') so attackers can't bypass by submitting
+    // fresh visit_ids each call.
+    const rlKey = authCtx.type === 'clerk' ? `clerk:${authCtx.userId}` : 'service'
     const rl = checkRateLimit(rlKey, { maxRequests: 5, windowMs: 10 * 60 * 1000 })
     if (!rl.allowed) {
       return new Response(

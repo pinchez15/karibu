@@ -9,8 +9,6 @@ import com.karibuhealth.app.domain.model.*
 fun ClinicDto.toEntity() = ClinicEntity(
     id = id, name = name, slug = slug,
     clerkOrganizationId = clerkOrganizationId,
-    whatsappPhoneNumber = whatsappPhoneNumber,
-    whatsappBusinessAccountId = whatsappBusinessAccountId,
     timezone = timezone, isActive = isActive,
     createdAt = createdAt, updatedAt = updatedAt,
 )
@@ -18,8 +16,6 @@ fun ClinicDto.toEntity() = ClinicEntity(
 fun ClinicEntity.toDomain() = Clinic(
     id = id, name = name, slug = slug,
     clerkOrganizationId = clerkOrganizationId,
-    whatsappPhoneNumber = whatsappPhoneNumber,
-    whatsappBusinessAccountId = whatsappBusinessAccountId,
     timezone = timezone, isActive = isActive,
     createdAt = createdAt, updatedAt = updatedAt,
 )

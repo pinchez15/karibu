@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Mic, MicOff, Loader2 } from 'lucide-react'
+import { useAuth } from '@clerk/nextjs'
+import { Mic, MicOff, Loader2, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,7 +18,6 @@ interface VisitWithRelations extends Visit {
   provider_notes: ProviderNote | null
   patient_notes: PatientNote | null
   audio_uploads: { status: string; error_message: string | null } | null
-  magic_links: { token: string; expires_at: string; used_at: string | null }[] | null
 }
 
 interface PaymentData {
@@ -47,10 +47,10 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 }
 
 export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClientProps) {
+  const { getToken } = useAuth()
   const [providerNoteContent, setProviderNoteContent] = useState(visit.provider_notes?.note_content || '')
   const [patientNoteContent, setPatientNoteContent] = useState(visit.patient_notes?.content || '')
   const [saving, setSaving] = useState(false)
-  const [resending, setResending] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [dictationTarget, setDictationTarget] = useState<'provider' | 'patient' | null>(null)
@@ -85,12 +85,23 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
           const formData = new FormData()
           formData.append('audio', audioBlob, 'dictation.webm')
 
+          // Send Clerk session JWT in Authorization for function-level auth.
+          // Send the public anon key in `apikey` so Supabase's platform gateway
+          // accepts the request — the function itself ignores it.
+          const clerkToken = await getToken()
+          if (!clerkToken) {
+            setMessage({ type: 'error', text: 'Not signed in. Please refresh.' })
+            setTranscribingTarget(null)
+            return
+          }
+
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/dictate`,
             {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                'Authorization': `Bearer ${clerkToken}`,
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
               },
               body: formData,
             }
@@ -117,7 +128,7 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
       console.error('Microphone access error:', error)
       setMessage({ type: 'error', text: 'Could not access microphone. Please allow microphone access.' })
     }
-  }, [])
+  }, [getToken])
 
   const stopDictation = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
@@ -152,41 +163,8 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
     }
   }
 
-  const handleResendWhatsApp = async () => {
-    setResending(true)
-    setMessage(null)
-
-    try {
-      const magicLink = visit.magic_links?.[0]
-      if (!magicLink) throw new Error('No magic link found')
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-whatsapp`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            visit_id: visit.id,
-            magic_link_token: magicLink.token,
-          }),
-        }
-      )
-
-      const result = await response.json()
-      if (result.success) {
-        setMessage({ type: 'success', text: 'WhatsApp message sent successfully' })
-      } else {
-        throw new Error(result.error || 'Failed to send message')
-      }
-    } catch (error) {
-      console.error('Failed to resend WhatsApp:', error)
-      setMessage({ type: 'error', text: 'Failed to send WhatsApp message' })
-    } finally {
-      setResending(false)
-    }
+  const handlePrintPatientNote = () => {
+    window.open(`/dashboard/visits/${visit.id}/print`, '_blank')
   }
 
   const handleRetryProcessing = async () => {
@@ -498,26 +476,14 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
           {saving ? 'Saving...' : 'Save Notes'}
         </Button>
 
-        {['sent', 'completed'].includes(visit.status) && visit.magic_links?.length ? (
+        {['sent', 'completed', 'review'].includes(visit.status) && visit.patient_notes?.content ? (
           <Button
-            onClick={handleResendWhatsApp}
-            disabled={resending}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            onClick={handlePrintPatientNote}
+            className="bg-emerald-600 hover:bg-emerald-700 gap-2"
           >
-            {resending ? 'Sending...' : 'Resend WhatsApp'}
+            <Printer className="h-4 w-4" />
+            Print patient note
           </Button>
-        ) : null}
-
-        {visit.magic_links?.length ? (
-          <a
-            href={`/note/${visit.magic_links[0].token}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline">
-              View Patient Link
-            </Button>
-          </a>
         ) : null}
       </div>
     </div>

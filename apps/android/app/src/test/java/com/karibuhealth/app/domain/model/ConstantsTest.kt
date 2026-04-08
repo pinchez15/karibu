@@ -24,11 +24,6 @@ class ConstantsTest {
     }
 
     @Test
-    fun `magic link expiry is 48 hours`() {
-        assertEquals(48L * 60 * 60 * 1000, Constants.MAGIC_LINK_EXPIRY_MS)
-    }
-
-    @Test
     fun `audio retention is 90 days`() {
         assertEquals(90, Constants.AUDIO_RETENTION_DAYS)
     }

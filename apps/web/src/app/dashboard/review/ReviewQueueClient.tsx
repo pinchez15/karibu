@@ -81,6 +81,9 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
         setPaymentNotes('')
         setPaymentWaived(false)
         setMessage({ type: 'success', text: 'Visit approved — record payment below' })
+        if (result.printUrl) {
+          window.open(result.printUrl, '_blank')
+        }
       }
     } catch (error) {
       console.error('Failed to approve:', error)
@@ -223,7 +226,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
             <div>
               <h3 className="font-semibold">Record Payment</h3>
               <p className="text-sm text-muted-foreground">
-                {visits.find(v => v.id === paymentVisitId)?.patient?.display_name || 'Patient'} — Notes approved and sent
+                {visits.find(v => v.id === paymentVisitId)?.patient?.display_name || 'Patient'} — Notes approved and ready to print
               </p>
             </div>
           </div>
@@ -460,7 +463,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                 className="w-full h-12"
                 size="lg"
               >
-                {saving === visit.id ? 'Approving...' : 'Approve & Send Patient Note'}
+                {saving === visit.id ? 'Approving...' : 'Approve & Print Patient Note'}
               </Button>
               <Button
                 variant="outline"

@@ -4,7 +4,8 @@ import { withRetry, fetchWithRetry } from '../_shared/retry.ts'
 import { createLogger } from '../_shared/logger.ts'
 import { auditLog } from '../_shared/audit.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
-import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
+import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
 
 const logger = createLogger('generate-notes')
 
@@ -13,6 +14,14 @@ serve(async (req) => {
   const preflightResponse = handleCorsPreflightOrError(req)
   if (preflightResponse) return preflightResponse
 
+  // Require authenticated caller (Clerk session or service role).
+  let authCtx
+  try {
+    authCtx = await requireAuth(req)
+  } catch (err) {
+    return authErrorResponse(err, corsHeaders)
+  }
+
   let visit_id: string | undefined
   let supabase: ReturnType<typeof createClient> | undefined
 
@@ -20,8 +29,8 @@ serve(async (req) => {
     const body = await req.json()
     visit_id = body.visit_id
 
-    // Rate limit: 5 note generation requests per visit per 10 minutes
-    const rlKey = getRateLimitKey(req, body)
+    // Rate limit: 5 note generation requests per caller identity per 10 minutes.
+    const rlKey = authCtx.type === 'clerk' ? `clerk:${authCtx.userId}` : 'service'
     const rl = checkRateLimit(rlKey, { maxRequests: 5, windowMs: 10 * 60 * 1000 })
     if (!rl.allowed) {
       return new Response(
@@ -60,6 +69,22 @@ serve(async (req) => {
 
     if (!visit) {
       throw new Error('Visit not found')
+    }
+
+    // Idempotency: refuse to re-bill OpenAI if a non-empty note already exists.
+    // Callers should explicitly clear note_content (e.g. via the "Re-process"
+    // flow which calls /transcribe again) if they want to regenerate.
+    const existingNote = visit.provider_notes?.note_content
+    if (existingNote && existingNote.trim().length > 0) {
+      logger.info('Note already exists, skipping regeneration', { visit_id })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          skipped: true,
+          reason: 'note_already_exists',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Use English transcript for note generation (translated if source was local language)

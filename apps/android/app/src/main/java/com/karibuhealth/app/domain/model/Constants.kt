@@ -12,9 +12,6 @@ object Constants {
         VisitStatus.completed,
     )
 
-    // Magic link expiry (48 hours for DPPA compliance)
-    const val MAGIC_LINK_EXPIRY_MS = 48L * 60 * 60 * 1000
-
     // Audio retention (90 days before automatic deletion)
     const val AUDIO_RETENTION_DAYS = 90
 
@@ -91,8 +88,6 @@ object Constants {
         const val CONSENT_REQUIRED = "Patient consent is required before recording."
         const val PATIENT_NOT_FOUND = "Patient not found."
         const val VISIT_NOT_FOUND = "Visit not found."
-        const val INVALID_MAGIC_LINK = "This link is invalid or has expired."
-        const val SESSION_EXPIRED = "Your session has expired. Please request a new link."
     }
 
     // Consent display labels

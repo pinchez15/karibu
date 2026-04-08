@@ -86,8 +86,14 @@ class AudioUploadWorker @AssistedInject constructor(
             audioUploadDao.updateStatus(audioUploadId, "uploading", Instant.now().toString())
             visitDao.updateStatus(visitId, "uploading", Instant.now().toString())
 
-            // 2. Get signed upload URL from Supabase Storage
-            val token = authTokenStore.getToken() ?: BuildConfig.SUPABASE_ANON_KEY
+            // 2. Get signed upload URL from Supabase Storage.
+            // Fail closed: no Clerk session means no upload. We must NEVER fall
+            // back to the public anon key — storage RLS would reject it anyway,
+            // and the edge functions now reject anon-only callers (CSO Finding 2/3).
+            val token = authTokenStore.getToken() ?: run {
+                Log.w(TAG, "No Clerk session token; deferring upload until signed in")
+                return Result.retry()
+            }
             val clinicId = authTokenStore.getClinicId() ?: return Result.failure()
             val storagePath = "$clinicId/$visitId/${file.name}"
 

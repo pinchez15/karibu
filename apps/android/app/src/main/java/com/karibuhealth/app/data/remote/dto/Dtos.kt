@@ -9,8 +9,6 @@ data class ClinicDto(
     val name: String,
     val slug: String,
     @SerialName("clerk_organization_id") val clerkOrganizationId: String? = null,
-    @SerialName("whatsapp_phone_number") val whatsappPhoneNumber: String? = null,
-    @SerialName("whatsapp_business_account_id") val whatsappBusinessAccountId: String? = null,
     val timezone: String = "Africa/Kampala",
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String = "",

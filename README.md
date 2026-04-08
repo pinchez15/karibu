@@ -101,13 +101,10 @@ cp apps/web/.env.example apps/web/.env
 cd packages/supabase
 supabase functions deploy transcribe
 supabase functions deploy generate-notes
-supabase functions deploy send-whatsapp
 
 # Set secrets
 supabase secrets set OPENAI_API_KEY=sk-...
-supabase secrets set WHATSAPP_PHONE_NUMBER_ID=...
-supabase secrets set WHATSAPP_ACCESS_TOKEN=...
-supabase secrets set WEB_URL=https://your-app.vercel.app
+supabase secrets set SUNBIRD_API_KEY=...
 ```
 
 ## Development
@@ -153,7 +150,7 @@ npx vercel
 | Component | Technology |
 |-----------|------------|
 | Mobile App | React Native (Expo) |
-| Web App | Next.js 14 |
+| Web App | Next.js 16 |
 | Database | Supabase (Postgres) |
 | Auth | Clerk |
 | Storage | Supabase Storage |
