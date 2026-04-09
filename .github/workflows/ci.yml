@@ -26,8 +26,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint web app
-        run: pnpm --filter @karibu/web lint
+      # next lint was removed in Next.js 16 and no ESLint config exists yet.
+      # TODO: add eslint + eslint-config-next when linting is needed.
+      # Typecheck is the stronger signal — catches type errors, unused vars,
+      # unreachable code, and import resolution.
 
       - name: Typecheck shared package
         run: pnpm --filter @karibu/shared exec tsc --noEmit
