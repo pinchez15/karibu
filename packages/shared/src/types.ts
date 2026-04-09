@@ -6,6 +6,9 @@ export interface Clinic {
   name: string;
   slug: string;
   clerk_organization_id: string | null;
+  // Letterhead fields for printed patient notes (added 2026-04-09)
+  phone: string | null;
+  umdpc_number: string | null;
   timezone: string;
   is_active: boolean;
   created_at: string;

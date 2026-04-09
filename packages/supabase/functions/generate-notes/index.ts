@@ -170,19 +170,29 @@ Be concise but thorough. Use medical terminology appropriately. If information i
     // Generate patient note (plain language)
     const patientName = visit.patient?.display_name || 'there'
 
-    const patientPrompt = `You are helping explain a doctor visit to a patient in simple, friendly language. Based on this clinical note, create a patient-friendly summary.
+    // IMPORTANT: this output is printed on a 58mm thermal receipt and handed
+    // to the patient. Every word costs paper. Diagnosis / medications /
+    // follow-up are surfaced as STRUCTURED FIELDS on the printout already
+    // (from visits.diagnosis, visits.medications, visits.follow_up_instructions),
+    // so this prompt should NOT repeat them. Its only job is to add a short,
+    // warm, plain-language explanation that contextualizes the structured
+    // fields for the patient.
+    const patientPrompt = `You are explaining a doctor visit to a patient in simple, warm, plain language. The patient will receive this on a small printed receipt alongside structured fields (diagnosis, medications, follow-up). Your job is the warm explanation only — do NOT repeat the medication names, doses, or follow-up dates.
 
-Clinical Note:
+Clinical Note (for your context, do not quote it):
 ${providerNoteContent}
 
-Create a summary for the patient that includes:
-1. A brief, friendly greeting using their name: ${patientName}
-2. What was found during the visit (in simple terms)
-3. Any medications prescribed and how to take them
-4. What to do next (follow-up appointments, tests, etc.)
-5. When to seek help if things get worse
+Write a short note for ${patientName} that:
+- Starts with their name as a friendly greeting
+- Explains in 1-2 sentences what was found
+- Reassures them if appropriate
+- Reminds them to take medicine as prescribed and come back if they feel worse
 
-Use simple language a non-medical person can understand. Be warm and reassuring. Avoid medical jargon. Keep it under 300 words.`
+Hard rules:
+- Maximum 80 words. Count them. Stop at 80.
+- No markdown, no asterisks, no bullet points, no headers.
+- No medical jargon.
+- Plain text only.`
 
     const patientResponse = await fetchWithRetry(
       'https://api.openai.com/v1/chat/completions',
@@ -199,7 +209,7 @@ Use simple language a non-medical person can understand. Be warm and reassuring.
             { role: 'user', content: patientPrompt },
           ],
           temperature: 0.5,
-          max_tokens: 1000,
+          max_tokens: 200,
         }),
       },
       'generatePatientNote'
