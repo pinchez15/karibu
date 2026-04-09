@@ -5,7 +5,7 @@ import { createLogger } from '../_shared/logger.ts'
 import { auditLog } from '../_shared/audit.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
 import { checkRateLimit } from '../_shared/rate-limit.ts'
-import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
+import { requireAuth, requireStaffForClinic, AuthError, authErrorResponse } from '../_shared/auth.ts'
 
 const logger = createLogger('generate-notes')
 
@@ -70,6 +70,10 @@ serve(async (req) => {
     if (!visit) {
       throw new Error('Visit not found')
     }
+
+    // Tenant check: Clerk callers must belong to the visit's clinic.
+    // Service-role callers (server-to-server) bypass this.
+    await requireStaffForClinic(supabase, authCtx, visit.clinic_id)
 
     // Idempotency: refuse to re-bill OpenAI if a non-empty note already exists.
     // Callers should explicitly clear note_content (e.g. via the "Re-process"
@@ -378,6 +382,11 @@ Return ONLY the JSON array, no other text.`
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    // Auth/tenant errors: return as 401/403 without marking the visit failed.
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders)
+    }
+
     logger.error('Note generation failed', { visit_id }, error)
 
     // Update visit status to error

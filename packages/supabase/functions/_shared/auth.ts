@@ -71,6 +71,47 @@ export async function requireAuth(req: Request): Promise<AuthContext> {
   }
 }
 
+/**
+ * Tenant check: verify that a Clerk-authenticated caller is an active staff
+ * member of the visit's clinic. Service role calls bypass this check (they're
+ * trusted server-to-server).
+ *
+ * Call this AFTER fetching the visit (you need its clinic_id) and BEFORE
+ * doing any expensive work. Closes the cross-tenant authorization gap that
+ * Clerk-JWT auth alone leaves open: a valid Clerk token from clinic A would
+ * otherwise be sufficient to trigger paid LLM calls on a clinic B visit_id.
+ *
+ * @param supabase  service-role Supabase client
+ * @param authCtx   result of requireAuth()
+ * @param visitClinicId  the visit's clinic_id
+ * @throws AuthError(403) if the Clerk user is not an active staff member of that clinic
+ */
+// deno-lint-ignore no-explicit-any
+export async function requireStaffForClinic(
+  supabase: any,
+  authCtx: AuthContext,
+  visitClinicId: string,
+): Promise<void> {
+  if (authCtx.type === 'service') return // service-to-service bypass
+
+  const { data: staff, error } = await supabase
+    .from('staff')
+    .select('clinic_id')
+    .eq('clerk_user_id', authCtx.userId)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (error) {
+    throw new AuthError(`Staff lookup failed: ${error.message}`, 500)
+  }
+  if (!staff) {
+    throw new AuthError('No active staff record for this user', 403)
+  }
+  if (staff.clinic_id !== visitClinicId) {
+    throw new AuthError('Visit does not belong to your clinic', 403)
+  }
+}
+
 export function authErrorResponse(
   err: unknown,
   corsHeaders: Record<string, string>,

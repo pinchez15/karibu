@@ -7,7 +7,7 @@ import { translateToEnglish } from '../_shared/transcription/translate.ts'
 import { auditLog } from '../_shared/audit.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
 import { checkRateLimit } from '../_shared/rate-limit.ts'
-import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
+import { requireAuth, requireStaffForClinic, AuthError, authErrorResponse } from '../_shared/auth.ts'
 
 const logger = createLogger('transcribe')
 
@@ -58,12 +58,12 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get visit info (including language toggle)
+    // Get visit info (including language toggle and clinic for tenant check)
     const { data: visit, error: visitError } = await withRetry(
       async () => {
         const result = await supabase
           .from('visits')
-          .select('id, patient_id, source_language, consent_verified')
+          .select('id, clinic_id, patient_id, source_language, consent_verified')
           .eq('id', visit_id)
           .single()
         if (result.error) throw new Error(result.error.message)
@@ -76,6 +76,10 @@ serve(async (req) => {
     if (!visit) {
       throw new Error('Visit not found')
     }
+
+    // Tenant check: Clerk callers must belong to the visit's clinic.
+    // Service-role callers (server-to-server) are trusted and bypass this.
+    await requireStaffForClinic(supabase, authCtx, visit.clinic_id)
 
     // Check consent before processing (DPPA requirement)
     if (!visit.consent_verified) {
@@ -299,6 +303,12 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    // Auth/tenant errors: return as 401/403 without marking the visit failed.
+    // (We don't want a misauthorized request to put a real visit into 'error'.)
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders)
+    }
+
     logger.error('Transcription failed', { visit_id }, error)
 
     // Try to update status to failed
