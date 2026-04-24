@@ -1,13 +1,29 @@
 package com.karibuhealth.app.ui.auth
 
-import android.app.Activity
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,7 +34,6 @@ fun AuthScreen(
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
 
     LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) onAuthenticated()
@@ -29,8 +44,8 @@ fun AuthScreen(
             .fillMaxSize()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
+        Spacer(Modifier.height(48.dp))
         Text(
             text = "Karibu Health",
             style = MaterialTheme.typography.headlineLarge,
@@ -43,53 +58,81 @@ fun AuthScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "Clinic staff sign in with Clerk. Once signed in, the app keeps working from local storage when the network drops.",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(24.dp))
 
-        if (uiState.isLoading) {
+        if (uiState.isLoading || uiState.isAuthenticated) {
             CircularProgressIndicator()
             Spacer(Modifier.height(16.dp))
-            Text("Signing in...", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = if (uiState.isAuthenticated) "Finishing sign-in..." else "Loading sign-in...",
+                style = MaterialTheme.typography.bodyMedium,
+            )
         } else {
-            // Primary sign-in: Clerk SDK redirects to hosted sign-in page
-            // The ClerkAuthManager handles the callback and JWT exchange
-            Button(
-                onClick = {
-                    // Launch Clerk's sign-in flow
-                    // Clerk.getClient().signIn(context as Activity) is handled by ClerkAuthManager
-                    // For dev/testing, use direct auth:
-                    viewModel.onClerkAuthenticated(
-                        clerkUserId = "dev_user_placeholder",
-                        supabaseToken = "dev_token_placeholder",
-                    )
-                },
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = viewModel::updateEmail,
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Sign In")
-            }
+                label = { Text("Email") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            )
 
             Spacer(Modifier.height(12.dp))
 
+            OutlinedTextField(
+                value = uiState.password,
+                onValueChange = viewModel::updatePassword,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = viewModel::signIn,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isSubmitting,
+            ) {
+                Text(if (uiState.isSubmitting) "Signing in..." else "Sign In")
+            }
+
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = "Sign in with your clinic credentials.\nYour data stays on this device when offline.",
+                text = "Accounts are managed centrally in Clerk. Contact your clinic administrator if you need access.",
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
 
-            uiState.error?.let { error ->
-                Spacer(Modifier.height(16.dp))
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                    ),
-                ) {
-                    Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+        uiState.error?.let { error ->
+            Spacer(Modifier.height(16.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                ),
+            ) {
+                Text(
+                    text = error,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(onClick = viewModel::retryInitialize) {
+                Text("Retry")
             }
         }
     }

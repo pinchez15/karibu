@@ -40,14 +40,11 @@ class Analytics @Inject constructor(
     }
 
     fun identify(clerkUserId: String, properties: Map<String, Any> = emptyMap()) {
-        PostHog.identify(
-            clerkUserId,
-            properties = properties,
-        )
+        PostHog.identify(clerkUserId, properties, null)
     }
 
     fun capture(event: String, properties: Map<String, Any> = emptyMap()) {
-        PostHog.capture(event, properties = properties)
+        PostHog.capture(event, null, properties, null, null, null)
     }
 
     fun reset() {

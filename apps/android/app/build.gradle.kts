@@ -54,6 +54,10 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy.force("androidx.browser:browser:1.8.0")
+}
+
 dependencies {
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
@@ -105,7 +109,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
 
     // Clerk Auth
-    implementation(libs.clerk.android)
+    implementation(libs.clerk.android.api)
 
     // Analytics
     implementation(libs.posthog.android)

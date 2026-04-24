@@ -8,6 +8,8 @@ import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -170,23 +172,15 @@ class SyncEngine @Inject constructor(
             kotlinx.serialization.json.JsonObject.serializer(),
             entry.payload,
         )
-        val rpcName = payload["rpc"]?.let {
-            json.decodeFromString(kotlinx.serialization.builtins.serializer<String>(), it.toString())
+        val rpcName = payload["rpc"]?.jsonPrimitive?.content
+        val rpcParams = payload["params"]?.jsonObject?.mapValues { (_, value) ->
+            if (value is kotlinx.serialization.json.JsonPrimitive && value.isString) {
+                value.content
+            } else {
+                value.toString().trim('"')
+            }
         }
-        val params = payload["params"]?.let {
-            json.decodeFromString(
-                kotlinx.serialization.builtins.MapSerializer(
-                    kotlinx.serialization.builtins.serializer<String>(),
-                    kotlinx.serialization.json.JsonElement.serializer(),
-                ),
-                it.toString(),
-            )
-        } ?: emptyMap()
-
-        val rpcParams = params.mapValues { (_, v) ->
-            // Convert JsonElement to appropriate type
-            v.toString().trim('"')
-        }
+            ?: emptyMap()
 
         when (rpcName) {
             "assign_to_nurse" -> supabaseApi.assignToNurse(rpcParams)

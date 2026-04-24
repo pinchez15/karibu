@@ -9,7 +9,7 @@ import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Clinic
 import com.karibuhealth.app.domain.model.Staff
-import com.karibuhealth.app.domain.model.Visit
+import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -29,6 +29,7 @@ class HomeViewModel @Inject constructor(
     private val staffRepository: StaffRepository,
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
+    private val clerkAuthManager: ClerkAuthManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -59,6 +60,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val clinicId = authTokenStore.getClinicId() ?: return@launch
             visitRepository.refreshTodayVisits(clinicId)
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            clerkAuthManager.signOut()
         }
     }
 }
