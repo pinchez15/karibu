@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun NewVisitScreen(
     onNavigateBack: () -> Unit,
-    onPatientSelected: (String) -> Unit,
+    onVisitCreated: (String) -> Unit,
     viewModel: NewVisitViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -94,7 +94,10 @@ fun NewVisitScreen(
                             },
                             modifier = Modifier.clickable {
                                 viewModel.selectPatient(patient)
-                                onPatientSelected(patient.id)
+                                scope.launch {
+                                    val visitId = viewModel.startVisitForSelectedPatient()
+                                    if (visitId != null) onVisitCreated(visitId)
+                                }
                             },
                         )
                     }
@@ -119,10 +122,8 @@ fun NewVisitScreen(
             Button(
                 onClick = {
                     scope.launch {
-                        val patientId = viewModel.createOrGetPatient()
-                        if (patientId != null) {
-                            onPatientSelected(patientId)
-                        }
+                        val visitId = viewModel.createPatientAndStartVisit()
+                        if (visitId != null) onVisitCreated(visitId)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -131,7 +132,7 @@ fun NewVisitScreen(
                 if (uiState.isCreating) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 } else {
-                    Text(if (uiState.foundPatient != null) "Continue with Patient" else "Create & Continue")
+                    Text(if (uiState.foundPatient != null) "Start Visit" else "Create & Start Visit")
                 }
             }
         }

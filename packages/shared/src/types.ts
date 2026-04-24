@@ -1,5 +1,7 @@
 // Database Types for Karibu Health
-// Supports dual transcription (OpenAI + Sunbird AI) and Uganda DPPA compliance
+// Dictation-first product: clinician dictates after the visit, AI structures
+// the dictation into a SOAP note with citations, clinician reviews + prints.
+// No ambient audio capture, no DPPA cross-border consent flow, no audio storage.
 
 export interface Clinic {
   id: string;
@@ -36,6 +38,8 @@ export interface Patient {
   first_name: string | null;
   last_name: string | null;
   display_name: string | null;
+  // Column kept named whatsapp_number for backwards compat with the original
+  // schema; semantically it is just the patient's phone number now.
   whatsapp_number: string | null;
   date_of_birth: string | null;
   sex: 'M' | 'F' | null;
@@ -43,10 +47,14 @@ export interface Patient {
   updated_at: string;
 }
 
+// Visit lifecycle:
+//   pending   -> visit created, waiting for clinician dictation
+//   review    -> dictation done, AI structured note ready for clinician review
+//   sent      -> clinician approved + printed
+//   completed -> payment recorded, visit closed
+//   error     -> AI structuring failed, clinician can retry
 export type VisitStatus =
-  | 'recording'
-  | 'uploading'
-  | 'processing'
+  | 'pending'
   | 'review'
   | 'sent'
   | 'completed'
@@ -62,8 +70,6 @@ export type QueueStatus =
 
 export type VisitPriority = 'low' | 'normal' | 'high' | 'urgent';
 
-export type SourceLanguage = 'eng' | 'local';
-
 export type ReviewStatus = 'pending' | 'pending_review' | 'reviewed' | 'rejected';
 
 export interface Visit {
@@ -78,19 +84,10 @@ export interface Visit {
   priority: VisitPriority;
   chief_complaint: string | null;
   checked_in_at: string | null;
-  consent_recording: boolean;
-  consent_timestamp: string | null;
-  // Language & consent (DPPA compliance)
-  source_language: SourceLanguage;
-  consent_verified: boolean;
-  consent_id: string | null;
   // Clinician review of AI-generated content
   review_status: ReviewStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;
-  // Audio retention
-  audio_deleted_at: string | null;
-  retention_expires_at: string | null;
   // Clinical data
   diagnosis: string | null;
   medications: string | null;
@@ -108,46 +105,15 @@ export interface VisitWithPatient extends Visit {
   patient: Patient;
 }
 
-export type AudioUploadStatus =
-  | 'pending'
-  | 'uploading'
-  | 'uploaded'
-  | 'transcribing'
-  | 'completed'
-  | 'failed';
-
-export interface AudioUpload {
-  id: string;
-  visit_id: string;
-  storage_path: string | null;
-  file_size_bytes: number | null;
-  duration_seconds: number | null;
-  mime_type: string;
-  uploaded_at: string | null;
-  transcription_started_at: string | null;
-  transcription_completed_at: string | null;
-  status: AudioUploadStatus;
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export type NoteStatus = 'draft' | 'finalized';
-
-export type TranscriptionProvider = 'openai' | 'sunbird';
 
 export interface ProviderNote {
   id: string;
   visit_id: string;
+  // Raw dictation transcript from Whisper. Short-form (typically <3 min of
+  // audio). The audio itself is never persisted — only this text.
   transcript: string | null;
-  // Dual transcript storage for multilingual support
-  transcript_original: string | null;
-  transcript_english: string | null;
-  // Transcription metadata
-  transcription_provider: TranscriptionProvider | null;
-  transcription_confidence: number | null;
-  diarization_output: Record<string, unknown> | null;
-  audio_trimmed: boolean;
+  // SOAP-formatted note structured by the AI assistant from the transcript.
   note_content: string | null;
   structured_data: Record<string, unknown>;
   status: NoteStatus;
@@ -182,40 +148,6 @@ export interface AuditLog {
   created_at: string;
 }
 
-// Consent Types (Uganda DPPA compliance)
-
-export type ConsentType =
-  | 'audio_recording'
-  | 'ai_processing'
-  | 'data_storage'
-  | 'cross_border_transfer'
-  | 'minor_guardian';
-
-export type ConsentMethod =
-  | 'verbal_recorded'
-  | 'written_paper'
-  | 'digital_whatsapp'
-  | 'digital_app';
-
-export type ConsentGrantedBy = 'patient' | 'guardian' | 'clinician_witnessed';
-
-export interface PatientConsent {
-  id: string;
-  patient_id: string;
-  visit_id: string | null;
-  consent_type: ConsentType;
-  granted: boolean;
-  granted_at: string;
-  granted_by: ConsentGrantedBy;
-  guardian_name: string | null;
-  guardian_relationship: string | null;
-  withdrawal_at: string | null;
-  consent_method: ConsentMethod;
-  consent_language: string;
-  ip_address: string | null;
-  created_at: string;
-}
-
 // API Request/Response Types
 
 export interface CreatePatientRequest {
@@ -228,8 +160,6 @@ export interface CreatePatientRequest {
 
 export interface CreateVisitRequest {
   patient_id: string;
-  consent_recording: boolean;
-  source_language?: SourceLanguage;
   diagnosis?: string;
   medications?: string;
   follow_up_instructions?: string;
@@ -256,24 +186,6 @@ export interface FinalizeVisitResponse {
   provider_note: ProviderNote;
   patient_note: PatientNote;
   print_url: string;
-}
-
-// Offline Sync Types
-
-export interface SyncQueueItem {
-  id: string;
-  type: 'create_patient' | 'create_visit' | 'update_visit' | 'upload_audio';
-  data: unknown;
-  created_at: string;
-  attempts: number;
-  last_error?: string;
-}
-
-export interface LocalVisit extends Visit {
-  local_id: string;
-  synced: boolean;
-  audio_local_path?: string;
-  audio_uploaded: boolean;
 }
 
 // Queue Types

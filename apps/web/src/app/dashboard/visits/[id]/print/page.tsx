@@ -2,8 +2,38 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect, notFound } from 'next/navigation'
 import { PrintView } from './PrintView'
+import { PrintBlocker } from './PrintBlocker'
 
-async function getPrintData(visitId: string, clinicId: string) {
+type PrintData = {
+  id: string
+  visit_date: string
+  diagnosis: string | null
+  medications: string | null
+  follow_up_instructions: string | null
+  tests_ordered: string | null
+  patient: {
+    display_name: string | null
+    first_name: string | null
+    last_name: string | null
+    patient_id: number | null
+  } | null
+  patient_notes: { content: string | null } | null
+  doctor: { display_name: string } | null
+  clinic: {
+    name: string
+    phone: string | null
+    umdpc_number: string | null
+    timezone: string
+  } | null
+}
+
+type FetchResult =
+  | { kind: 'ok'; visit: PrintData }
+  | { kind: 'missing_visit' }
+  | { kind: 'missing_note' }
+  | { kind: 'missing_clinic_phone' }
+
+async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchResult> {
   const supabase = createServiceClient()
 
   const { data: visit, error } = await supabase
@@ -24,7 +54,7 @@ async function getPrintData(visitId: string, clinicId: string) {
     .eq('clinic_id', clinicId)
     .single()
 
-  if (error || !visit) return null
+  if (error || !visit) return { kind: 'missing_visit' }
 
   // Supabase returns nested relations as arrays even for one-to-one
   const patientNotesArr = visit.patient_notes as unknown as { content: string | null }[] | null
@@ -43,19 +73,33 @@ async function getPrintData(visitId: string, clinicId: string) {
   }> | null
 
   const patientNote = patientNotesArr?.[0] ?? null
-  if (!patientNote?.content) return null
+  if (!patientNote?.content || patientNote.content.trim().length === 0) {
+    return { kind: 'missing_note' }
+  }
+
+  const clinic = clinicArr?.[0] ?? null
+  // Clinic letterhead is required: without a phone number the receipt loses
+  // the "call us if symptoms worsen" callout — the most important thing on
+  // the page. Fail loudly so staff fix the clinic config instead of handing
+  // the patient a receipt with no callback number.
+  if (!clinic?.phone || clinic.phone.trim().length === 0) {
+    return { kind: 'missing_clinic_phone' }
+  }
 
   return {
-    id: visit.id,
-    visit_date: visit.visit_date,
-    diagnosis: visit.diagnosis as string | null,
-    medications: visit.medications as string | null,
-    follow_up_instructions: visit.follow_up_instructions as string | null,
-    tests_ordered: visit.tests_ordered as string | null,
-    patient: patientArr?.[0] ?? null,
-    patient_notes: patientNote,
-    doctor: doctorArr?.[0] ?? null,
-    clinic: clinicArr?.[0] ?? null,
+    kind: 'ok',
+    visit: {
+      id: visit.id,
+      visit_date: visit.visit_date,
+      diagnosis: visit.diagnosis as string | null,
+      medications: visit.medications as string | null,
+      follow_up_instructions: visit.follow_up_instructions as string | null,
+      tests_ordered: visit.tests_ordered as string | null,
+      patient: patientArr?.[0] ?? null,
+      patient_notes: patientNote,
+      doctor: doctorArr?.[0] ?? null,
+      clinic,
+    },
   }
 }
 
@@ -68,9 +112,31 @@ export default async function PrintPatientNotePage({
   if (!staff) redirect('/')
 
   const { id } = await params
-  const visit = await getPrintData(id, staff.clinic_id)
+  const result = await fetchPrintData(id, staff.clinic_id)
 
-  if (!visit) notFound()
+  if (result.kind === 'missing_visit') notFound()
 
-  return <PrintView visit={visit as never} />
+  if (result.kind === 'missing_note') {
+    return (
+      <PrintBlocker
+        title="Patient note not ready"
+        message="The AI hasn't generated a patient summary for this visit yet. This usually means transcription failed. Try Reject &amp; Reprocess from the review queue, or contact support if it persists."
+        ctaHref="/dashboard/review"
+        ctaLabel="Back to review queue"
+      />
+    )
+  }
+
+  if (result.kind === 'missing_clinic_phone') {
+    return (
+      <PrintBlocker
+        title="Clinic phone number not set"
+        message="The receipt needs a clinic phone number so the patient knows who to call if symptoms worsen. An admin must set it in Settings before printing."
+        ctaHref="/dashboard/settings"
+        ctaLabel="Go to settings"
+      />
+    )
+  }
+
+  return <PrintView visit={result.visit as never} />
 }

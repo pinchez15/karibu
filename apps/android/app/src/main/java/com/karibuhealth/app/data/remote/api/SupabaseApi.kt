@@ -65,20 +65,6 @@ interface SupabaseApi {
         @Body update: Map<String, @JvmSuppressWildcards Any?>,
     ): List<VisitDto>
 
-    // Audio Uploads
-    @POST("audio_uploads")
-    suspend fun createAudioUpload(@Body audioUpload: AudioUploadCreateDto): List<AudioUploadDto>
-
-    @PATCH("audio_uploads")
-    suspend fun updateAudioUpload(
-        @Query("id") id: String,
-        @Body update: Map<String, @JvmSuppressWildcards Any?>,
-    ): List<AudioUploadDto>
-
-    // Patient Consents
-    @POST("patient_consents")
-    suspend fun createConsent(@Body consent: ConsentCreateDto): List<ConsentDto>
-
     // Provider Notes
     @GET("provider_notes")
     suspend fun getProviderNote(

@@ -11,10 +11,8 @@ import com.karibuhealth.app.ui.home.HomeScreen
 import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
-import com.karibuhealth.app.ui.consent.ConsentScreen
-import com.karibuhealth.app.ui.recording.RecordingScreen
+import com.karibuhealth.app.ui.dictation.DictationScreen
 import com.karibuhealth.app.ui.visitdetails.VisitDetailsScreen
-import com.karibuhealth.app.ui.processing.ProcessingScreen
 import com.karibuhealth.app.ui.review.ReviewScreen
 import com.karibuhealth.app.ui.payment.PaymentScreen
 import com.karibuhealth.app.ui.success.SuccessScreen
@@ -72,32 +70,8 @@ fun KaribuNavHost(
         composable<NavRoute.NewVisit> {
             NewVisitScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onPatientSelected = { patientId ->
-                    navController.navigate(NavRoute.Consent(patientId))
-                },
-            )
-        }
-
-        composable<NavRoute.Consent> { backStackEntry ->
-            val route = backStackEntry.toRoute<NavRoute.Consent>()
-            ConsentScreen(
-                patientId = route.patientId,
-                onNavigateBack = { navController.popBackStack() },
-                onConsentGranted = { visitId ->
-                    navController.navigate(NavRoute.Recording(visitId)) {
-                        popUpTo(NavRoute.Home)
-                    }
-                },
-            )
-        }
-
-        composable<NavRoute.Recording> { backStackEntry ->
-            val route = backStackEntry.toRoute<NavRoute.Recording>()
-            RecordingScreen(
-                visitId = route.visitId,
-                onNavigateBack = { navController.popBackStack() },
-                onRecordingComplete = { visitId ->
-                    navController.navigate(NavRoute.Processing(visitId)) {
+                onVisitCreated = { visitId ->
+                    navController.navigate(NavRoute.VisitDetails(visitId)) {
                         popUpTo(NavRoute.Home)
                     }
                 },
@@ -109,8 +83,8 @@ fun KaribuNavHost(
             VisitDetailsScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToRecording = { visitId ->
-                    navController.navigate(NavRoute.Recording(visitId))
+                onNavigateToDictation = { visitId ->
+                    navController.navigate(NavRoute.Dictation(visitId))
                 },
                 onNavigateToReview = { visitId ->
                     navController.navigate(NavRoute.Review(visitId))
@@ -118,13 +92,16 @@ fun KaribuNavHost(
             )
         }
 
-        composable<NavRoute.Processing> { backStackEntry ->
-            val route = backStackEntry.toRoute<NavRoute.Processing>()
-            ProcessingScreen(
+        composable<NavRoute.Dictation> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.Dictation>()
+            DictationScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
-                onProcessingComplete = { visitId ->
-                    navController.navigate(NavRoute.Review(visitId)) {
+                onSubmitted = { visitId ->
+                    // Dictation submitted; visit is now in 'pending' while
+                    // Inngest structures the note. Drop back to VisitDetails
+                    // so the clinician sees the AI working.
+                    navController.navigate(NavRoute.VisitDetails(visitId)) {
                         popUpTo(NavRoute.Home)
                     }
                 },
@@ -138,6 +115,14 @@ fun KaribuNavHost(
                 onNavigateBack = { navController.popBackStack() },
                 onApproved = { visitId ->
                     navController.navigate(NavRoute.Payment(visitId)) {
+                        popUpTo(NavRoute.Home)
+                    }
+                },
+                onRejected = { visitId ->
+                    // Back to dictation so the clinician can edit the kept
+                    // transcript and re-submit. Inngest will run again on the
+                    // new transcript.
+                    navController.navigate(NavRoute.Dictation(visitId)) {
                         popUpTo(NavRoute.Home)
                     }
                 },

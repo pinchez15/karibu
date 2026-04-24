@@ -3,12 +3,11 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- RECORD_AUDIO is still required: short-form dictation captures the
+         clinician's voice and POSTs it to the dictate edge function. No
+         foreground service needed because dictation is in-foreground only
+         (clinician is looking at the phone the whole time). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- Required on Android 14+ to run a foreground service of type "microphone".
-         Without this, RecordingService.startForeground will throw SecurityException. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".KaribuApplication"
@@ -27,14 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Foreground service that keeps the process alive during a clinical
-             recording so MediaRecorder isn't killed when the screen sleeps or
-             the clinician switches apps. See RecordingService.kt. -->
-        <service
-            android:name=".util.RecordingService"
-            android:exported="false"
-            android:foregroundServiceType="microphone" />
 
     </application>
 

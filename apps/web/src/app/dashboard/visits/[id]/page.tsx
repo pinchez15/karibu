@@ -15,8 +15,7 @@ async function getVisitDetails(visitId: string, clinicId: string) {
       doctor:staff!visits_doctor_id_fkey(id, display_name),
       nurse:staff!visits_nurse_id_fkey(id, display_name),
       provider_notes(*),
-      patient_notes(*),
-      audio_uploads(*)
+      patient_notes(*)
     `)
     .eq('id', visitId)
     .eq('clinic_id', clinicId)

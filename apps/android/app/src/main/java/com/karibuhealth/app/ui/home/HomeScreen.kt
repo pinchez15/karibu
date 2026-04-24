@@ -179,10 +179,14 @@ fun HomeScreen(
 
 @Composable
 private fun StatusChip(status: String) {
+    // Visit lifecycle for the dictation-first product:
+    // pending -> visit created, awaiting clinician dictation
+    // review  -> AI structured note ready, clinician needs to approve
+    // sent    -> clinician approved + printed receipt
+    // completed -> payment recorded, visit closed
+    // error   -> AI structuring failed, clinician can retry
     val (label, color) = when (status) {
-        "recording" -> "Recording" to MaterialTheme.colorScheme.error
-        "uploading" -> "Uploading" to MaterialTheme.colorScheme.tertiary
-        "processing" -> "Processing" to MaterialTheme.colorScheme.tertiary
+        "pending" -> "To Dictate" to MaterialTheme.colorScheme.tertiary
         "review" -> "Review" to MaterialTheme.colorScheme.primary
         "sent" -> "Sent" to MaterialTheme.colorScheme.secondary
         "completed" -> "Done" to MaterialTheme.colorScheme.secondary

@@ -18,12 +18,23 @@ fun ReviewScreen(
     visitId: String,
     onNavigateBack: () -> Unit,
     onApproved: (String) -> Unit,
+    onRejected: (String) -> Unit,
     viewModel: ReviewViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(visitId) {
         viewModel.loadVisit(visitId)
+    }
+
+    // The viewmodel sets these flags after the server confirms the action; we
+    // navigate from here (rather than inline at the button) so the user sees
+    // the loading spinner long enough to know the request actually happened.
+    LaunchedEffect(uiState.approved) {
+        if (uiState.approved) onApproved(visitId)
+    }
+    LaunchedEffect(uiState.rejected) {
+        if (uiState.rejected) onRejected(visitId)
     }
 
     Scaffold(
@@ -106,30 +117,62 @@ fun ReviewScreen(
                 }
 
                 uiState.error?.let { error ->
-                    Text(error, color = MaterialTheme.colorScheme.error)
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = error,
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            TextButton(onClick = { viewModel.dismissError() }) {
+                                Text("Dismiss")
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(8.dp))
 
+                val isBusy = uiState.isApproving || uiState.isRejecting
+
                 Button(
-                    onClick = {
-                        viewModel.approveNote(visitId)
-                        onApproved(visitId)
-                    },
+                    onClick = { viewModel.approveNote(visitId) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isApproving,
+                    enabled = !isBusy,
                 ) {
                     if (uiState.isApproving) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
                     } else {
                         Text("Approve & Send to Patient")
                     }
                 }
+                // Reject = AI got it wrong. Server clears the structured note +
+                // patient summary, keeps the original transcript so the
+                // clinician can edit it on the dictation screen instead of
+                // starting over.
                 OutlinedButton(
-                    onClick = { /* TODO: Reject flow */ },
+                    onClick = { viewModel.rejectNote(visitId) },
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = !isBusy,
                 ) {
-                    Text("Request Changes")
+                    if (uiState.isRejecting) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Re-dictate (AI got it wrong)")
+                    }
                 }
             }
         }

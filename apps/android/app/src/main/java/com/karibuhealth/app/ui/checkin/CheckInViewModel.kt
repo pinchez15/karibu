@@ -71,13 +71,16 @@ class CheckInViewModel @Inject constructor(
                 val clinicId = authTokenStore.getClinicId() ?: throw Exception("No clinic ID")
                 val state = _uiState.value
 
-                // Find or create patient
+                // Find or create patient. Phone-only check-in (the common queue
+                // path) doesn't capture names — the server's display_name trigger
+                // will leave display_name blank until a clinician edits it later.
                 val patient = state.foundPatient ?: run {
                     val phone = formatPhoneNumber(state.phoneNumber)
                     patientRepository.createPatient(
                         clinicId = clinicId,
+                        firstName = "",
+                        lastName = "",
                         whatsappNumber = phone,
-                        displayName = null,
                     )
                 }
 
@@ -102,7 +105,9 @@ class CheckInViewModel @Inject constructor(
                 )
                 syncQueueDao.insert(syncEntry)
 
-                _uiState.update { it.copy(checkedInVisitId = visit.id, isCheckingIn = false) }
+                _uiState.update {
+                    it.copy(checkedInVisitId = visit.id, isCheckingIn = false)
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isCheckingIn = false) }
             }

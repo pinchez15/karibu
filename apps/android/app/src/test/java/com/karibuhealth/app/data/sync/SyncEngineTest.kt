@@ -16,7 +16,6 @@ class SyncEngineTest {
     private lateinit var syncQueueDao: SyncQueueDao
     private lateinit var patientDao: PatientDao
     private lateinit var visitDao: VisitDao
-    private lateinit var consentDao: ConsentDao
     private lateinit var paymentDao: PaymentDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
@@ -27,7 +26,6 @@ class SyncEngineTest {
         syncQueueDao = mockk(relaxed = true)
         patientDao = mockk(relaxed = true)
         visitDao = mockk(relaxed = true)
-        consentDao = mockk(relaxed = true)
         paymentDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
@@ -36,7 +34,6 @@ class SyncEngineTest {
             syncQueueDao = syncQueueDao,
             patientDao = patientDao,
             visitDao = visitDao,
-            consentDao = consentDao,
             paymentDao = paymentDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
@@ -77,26 +74,6 @@ class SyncEngineTest {
         val result = syncEngine.processQueue()
 
         assertEquals(0, result)
-    }
-
-    @Test
-    fun `processes entry when dependency is completed`() = runTest {
-        every { networkMonitor.isOnline() } returns true
-
-        val depEntry = makeSyncEntry("dep-1", operationType = "create_patient", status = "completed")
-        val entry = makeSyncEntry(
-            "entry-1",
-            operationType = "upload_audio", // This type just logs, doesn't fail
-            dependsOn = "dep-1",
-        )
-
-        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
-        coEvery { syncQueueDao.getById("dep-1") } returns depEntry
-
-        val result = syncEngine.processQueue()
-
-        assertEquals(1, result)
-        coVerify { syncQueueDao.update(match { it.status == "completed" }) }
     }
 
     @Test

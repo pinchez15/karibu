@@ -21,7 +21,7 @@ import com.karibuhealth.app.domain.model.VisitStatus
 fun VisitDetailsScreen(
     visitId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToRecording: (String) -> Unit,
+    onNavigateToDictation: (String) -> Unit,
     onNavigateToReview: (String) -> Unit,
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
@@ -98,13 +98,6 @@ fun VisitDetailsScreen(
                                 Text("Date")
                                 Text(visit.visitDate)
                             }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text("Language")
-                                Text(if (visit.sourceLanguage.name == "eng") "English" else "Local")
-                            }
                             visit.chiefComplaint?.let {
                                 Spacer(Modifier.height(8.dp))
                                 Text("Chief Complaint", style = MaterialTheme.typography.labelSmall)
@@ -144,14 +137,41 @@ fun VisitDetailsScreen(
                     Spacer(Modifier.height(8.dp))
 
                     when (visit.status) {
-                        VisitStatus.recording -> {
-                            Button(
-                                onClick = { onNavigateToRecording(visitId) },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Icon(Icons.Default.Mic, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Record Consultation")
+                        VisitStatus.pending -> {
+                            // Dictation may have been submitted but Inngest is
+                            // still structuring the note — show a non-blocking
+                            // "AI working" hint when the provider note already
+                            // has a transcript. Otherwise prompt to dictate.
+                            val hasTranscript = uiState.providerNote?.transcript?.isNotBlank() == true
+                            if (hasTranscript) {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "AI is structuring your dictation…",
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "This usually takes under a minute. The visit will move to Review when it's ready.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            } else {
+                                Button(
+                                    onClick = { onNavigateToDictation(visitId) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(Icons.Default.Mic, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Dictate Note")
+                                }
                             }
                         }
                         VisitStatus.review -> {
@@ -162,6 +182,16 @@ fun VisitDetailsScreen(
                                 Icon(Icons.Default.RateReview, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Review Notes")
+                            }
+                        }
+                        VisitStatus.error -> {
+                            Button(
+                                onClick = { onNavigateToDictation(visitId) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Re-dictate Note")
                             }
                         }
                         else -> {}

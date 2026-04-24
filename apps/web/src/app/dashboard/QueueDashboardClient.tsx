@@ -482,7 +482,7 @@ export function QueueDashboardClient({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>WhatsApp (optional)</Label>
+              <Label>Phone (optional)</Label>
               <Input
                 type="tel"
                 value={newPatient.whatsapp_number}

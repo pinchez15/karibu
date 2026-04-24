@@ -47,8 +47,6 @@ class VisitRepository @Inject constructor(
         clinicId: String,
         patientId: String,
         doctorId: String?,
-        sourceLanguage: SourceLanguage = SourceLanguage.eng,
-        consentRecording: Boolean = true,
         chiefComplaint: String? = null,
         patientSyncEntryId: String? = null,
     ): Visit {
@@ -61,22 +59,15 @@ class VisitRepository @Inject constructor(
             patientId = patientId,
             doctorId = doctorId,
             nurseId = null,
-            status = VisitStatus.recording,
+            status = VisitStatus.pending,
             queueStatus = QueueStatus.waiting,
             queuePosition = null,
             priority = VisitPriority.normal,
             chiefComplaint = chiefComplaint,
             checkedInAt = now,
-            consentRecording = consentRecording,
-            consentTimestamp = now,
-            sourceLanguage = sourceLanguage,
-            consentVerified = false,
-            consentId = null,
             reviewStatus = ReviewStatus.pending,
             reviewedBy = null,
             reviewedAt = null,
-            audioDeletedAt = null,
-            retentionExpiresAt = null,
             diagnosis = null,
             medications = null,
             followUpInstructions = null,
@@ -103,7 +94,7 @@ class VisitRepository @Inject constructor(
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
-            dependsOn = patientSyncEntryId, // Wait for patient to sync first if created offline
+            dependsOn = patientSyncEntryId,
         )
 
         database.runInTransaction {
@@ -114,10 +105,6 @@ class VisitRepository @Inject constructor(
         }
 
         return visit
-    }
-
-    suspend fun updateAudioLocal(visitId: String, localPath: String) {
-        visitDao.updateAudioLocal(visitId, localPath, uploaded = false)
     }
 
     suspend fun updateStatus(visitId: String, status: VisitStatus) {

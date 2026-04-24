@@ -18,7 +18,6 @@ class SyncEngine @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val patientDao: PatientDao,
     private val visitDao: VisitDao,
-    private val consentDao: ConsentDao,
     private val paymentDao: PaymentDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -81,14 +80,13 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun processEntry(entry: SyncQueueEntry) {
+        // Operation set is intentionally small for the dictation-first product:
+        // patient/visit creation, queue ops via SECURITY DEFINER RPCs, and
+        // cash payment recording. No audio upload (dictation streams direct
+        // to OpenAI via the dictate edge function), no DPPA consent records.
         when (entry.operationType) {
             "create_patient" -> syncCreatePatient(entry)
             "create_visit" -> syncCreateVisit(entry)
-            "record_consent" -> syncRecordConsent(entry)
-            "upload_audio" -> {
-                // Handled by AudioUploadWorker separately
-                Log.d(TAG, "Audio upload handled by dedicated worker")
-            }
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
@@ -103,14 +101,11 @@ class SyncEngine @Inject constructor(
             val result = supabaseApi.createPatient(dto)
             val serverPatient = result.firstOrNull()
             if (serverPatient != null) {
-                // Update local entity with server-assigned fields (patient_number)
                 patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                Log.d(TAG, "Patient synced: ${serverPatient.id}, number: ${serverPatient.patientNumber}")
+                Log.d(TAG, "Patient synced: ${serverPatient.id}")
             }
         } catch (e: retrofit2.HttpException) {
             if (e.code() == 409) {
-                // Duplicate -- patient with this phone already exists
-                // Fetch the existing patient and update local
                 Log.w(TAG, "Patient conflict (409), fetching existing")
                 val existing = supabaseApi.lookupPatient(
                     "eq.${dto.clinicId}",
@@ -118,7 +113,6 @@ class SyncEngine @Inject constructor(
                 )
                 existing.firstOrNull()?.let { serverPatient ->
                     patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                    // Update any dependent sync entries to use the server patient ID
                     val dependents = syncQueueDao.getDependents(entry.id)
                     for (dep in dependents) {
                         val updatedPayload = dep.payload.replace(entry.entityId, serverPatient.id)
@@ -143,31 +137,8 @@ class SyncEngine @Inject constructor(
         }
     }
 
-    private suspend fun syncRecordConsent(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(ConsentCreateDto.serializer(), entry.payload)
-        Log.d(TAG, "Syncing record_consent: ${entry.entityId}")
-
-        try {
-            supabaseApi.createConsent(dto)
-            // Update local entity
-            val local = consentDao.getByVisitOnce(dto.visitId ?: "")
-            local.find { it.id == entry.entityId }?.let {
-                consentDao.upsert(it.copy(isSynced = true))
-            }
-        } catch (e: retrofit2.HttpException) {
-            if (e.code() == 409) {
-                // Consent already exists, mark as synced
-                Log.w(TAG, "Consent already exists (409), marking synced")
-            } else {
-                throw e
-            }
-        }
-    }
-
     private suspend fun syncQueueOperation(entry: SyncQueueEntry) {
         Log.d(TAG, "Syncing queue_op: ${entry.entityId}")
-        // Queue RPCs are SECURITY DEFINER and the payload contains the RPC name + params
-        // Parse and dispatch to the appropriate RPC
         val payload = json.decodeFromString(
             kotlinx.serialization.json.JsonObject.serializer(),
             entry.payload,
@@ -197,7 +168,6 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.createPayment(dto)
         val serverPayment = result.firstOrNull()
         if (serverPayment != null) {
-            // Update with server-assigned receipt_number
             paymentDao.upsert(serverPayment.toEntity(isSynced = true))
             Log.d(TAG, "Payment synced: ${serverPayment.id}, receipt: ${serverPayment.receiptNumber}")
         }

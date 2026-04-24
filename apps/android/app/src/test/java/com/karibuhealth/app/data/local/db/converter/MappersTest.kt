@@ -80,22 +80,18 @@ class MappersTest {
     fun `VisitDto to Entity to Domain roundtrip`() {
         val dto = VisitDto(
             id = "v1", clinicId = "c1", patientId = "p1",
-            status = "recording", queueStatus = "waiting",
-            priority = "normal", sourceLanguage = "eng",
-            consentRecording = true, consentVerified = false,
-            reviewStatus = "pending", visitDate = "2026-03-27",
+            status = "pending", queueStatus = "waiting",
+            priority = "normal",
+            reviewStatus = "pending", visitDate = "2026-04-24",
         )
 
         val entity = dto.toEntity()
         val domain = entity.toDomain()
 
         assertEquals("v1", domain.id)
-        assertEquals(VisitStatus.recording, domain.status)
+        assertEquals(VisitStatus.pending, domain.status)
         assertEquals(QueueStatus.waiting, domain.queueStatus)
         assertEquals(VisitPriority.normal, domain.priority)
-        assertEquals(SourceLanguage.eng, domain.sourceLanguage)
-        assertTrue(domain.consentRecording)
-        assertFalse(domain.consentVerified)
         assertEquals(ReviewStatus.pending, domain.reviewStatus)
     }
 
@@ -104,20 +100,16 @@ class MappersTest {
         val visit = Visit(
             id = "v1", clinicId = "c1", patientId = "p1",
             doctorId = "d1", nurseId = null,
-            status = VisitStatus.recording,
+            status = VisitStatus.pending,
             queueStatus = QueueStatus.waiting,
             queuePosition = null, priority = VisitPriority.normal,
             chiefComplaint = "Headache",
-            checkedInAt = null, consentRecording = true,
-            consentTimestamp = null,
-            sourceLanguage = SourceLanguage.eng,
-            consentVerified = false, consentId = null,
+            checkedInAt = null,
             reviewStatus = ReviewStatus.pending,
             reviewedBy = null, reviewedAt = null,
-            audioDeletedAt = null, retentionExpiresAt = null,
             diagnosis = null, medications = null,
             followUpInstructions = null, testsOrdered = null,
-            visitDate = "2026-03-27",
+            visitDate = "2026-04-24",
             createdAt = "", updatedAt = "",
             finalizedAt = null, errorMessage = null, errorAt = null,
         )
@@ -128,7 +120,6 @@ class MappersTest {
         assertEquals("c1", createDto.clinicId)
         assertEquals("p1", createDto.patientId)
         assertEquals("d1", createDto.doctorId)
-        assertEquals("eng", createDto.sourceLanguage)
         assertEquals("Headache", createDto.chiefComplaint)
     }
 
@@ -144,7 +135,7 @@ class MappersTest {
         assertNull(domain.lastName)
         assertNull(domain.dateOfBirth)
         assertNull(domain.sex)
-        assertEquals("", domain.fullName) // No name parts
+        assertEquals("", domain.fullName)
     }
 
     @Test

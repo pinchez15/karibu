@@ -17,8 +17,6 @@ data class VisitWithDetails(
     @Relation(parentColumn = "patient_id", entityColumn = "id")
     val patient: PatientEntity,
     @Relation(parentColumn = "id", entityColumn = "visit_id")
-    val audioUpload: AudioUploadEntity?,
-    @Relation(parentColumn = "id", entityColumn = "visit_id")
     val providerNote: ProviderNoteEntity?,
     @Relation(parentColumn = "id", entityColumn = "visit_id")
     val patientNote: PatientNoteEntity?,

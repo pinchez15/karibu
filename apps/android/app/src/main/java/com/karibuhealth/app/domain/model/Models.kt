@@ -2,31 +2,29 @@ package com.karibuhealth.app.domain.model
 
 import kotlinx.serialization.Serializable
 
-// Enums matching TypeScript union types from packages/shared/src/types.ts
+// Enums matching TypeScript union types from packages/shared/src/types.ts.
+//
+// Visit lifecycle is dictation-first: clinician records the visit on paper /
+// from memory, then dictates a summary into the phone after the patient leaves.
+// Audio is short-form (<3 min) sent directly to OpenAI Whisper via the dictate
+// edge function — never stored, never gated by patient consent. Status flow:
+//   pending  -> visit created, no dictation yet
+//   review   -> dictation done, AI structured note ready for clinician review
+//   sent     -> clinician approved + printed
+//   completed-> payment recorded, visit closed
+//   error    -> something failed in the AI structuring step
 
 enum class StaffRole { admin, doctor, nurse }
 
-enum class VisitStatus { recording, uploading, processing, review, sent, completed, error }
+enum class VisitStatus { pending, review, sent, completed, error }
 
 enum class QueueStatus { waiting, with_nurse, ready_for_doctor, with_doctor, completed, cancelled }
 
 enum class VisitPriority { low, normal, high, urgent }
 
-enum class SourceLanguage { eng, local }
-
 enum class ReviewStatus { pending, pending_review, reviewed, rejected }
 
-enum class AudioUploadStatus { pending, uploading, uploaded, transcribing, completed, failed }
-
 enum class NoteStatus { draft, finalized }
-
-enum class TranscriptionProvider { openai, sunbird }
-
-enum class ConsentType { audio_recording, ai_processing, data_storage, cross_border_transfer, minor_guardian }
-
-enum class ConsentMethod { verbal_recorded, written_paper, digital_whatsapp, digital_app }
-
-enum class ConsentGrantedBy { patient, guardian, clinician_witnessed }
 
 enum class PaymentMethod { cash, mtn_momo, airtel_money }
 
@@ -87,16 +85,9 @@ data class Visit(
     val priority: VisitPriority,
     val chiefComplaint: String?,
     val checkedInAt: String?,
-    val consentRecording: Boolean,
-    val consentTimestamp: String?,
-    val sourceLanguage: SourceLanguage,
-    val consentVerified: Boolean,
-    val consentId: String?,
     val reviewStatus: ReviewStatus,
     val reviewedBy: String?,
     val reviewedAt: String?,
-    val audioDeletedAt: String?,
-    val retentionExpiresAt: String?,
     val diagnosis: String?,
     val medications: String?,
     val followUpInstructions: String?,
@@ -109,32 +100,13 @@ data class Visit(
     val errorAt: String?,
 )
 
-data class AudioUpload(
-    val id: String,
-    val visitId: String,
-    val storagePath: String?,
-    val fileSizeBytes: Long?,
-    val durationSeconds: Int?,
-    val mimeType: String,
-    val uploadedAt: String?,
-    val transcriptionStartedAt: String?,
-    val transcriptionCompletedAt: String?,
-    val status: AudioUploadStatus,
-    val errorMessage: String?,
-    val createdAt: String,
-    val updatedAt: String,
-)
-
 data class ProviderNote(
     val id: String,
     val visitId: String,
+    // Raw dictation transcript from Whisper. Short-form (typically <3 min of
+    // audio). The audio itself is never persisted — only this text.
     val transcript: String?,
-    val transcriptOriginal: String?,
-    val transcriptEnglish: String?,
-    val transcriptionProvider: TranscriptionProvider?,
-    val transcriptionConfidence: Double?,
-    val diarizationOutput: String?,
-    val audioTrimmed: Boolean,
+    // SOAP-formatted note structured by the AI assistant from the transcript.
     val noteContent: String?,
     val structuredData: String?,
     val status: NoteStatus,
@@ -154,23 +126,6 @@ data class PatientNote(
     val updatedAt: String,
 )
 
-data class PatientConsent(
-    val id: String,
-    val patientId: String,
-    val visitId: String?,
-    val consentType: ConsentType,
-    val granted: Boolean,
-    val grantedAt: String,
-    val grantedBy: ConsentGrantedBy,
-    val guardianName: String?,
-    val guardianRelationship: String?,
-    val withdrawalAt: String?,
-    val consentMethod: ConsentMethod,
-    val consentLanguage: String,
-    val ipAddress: String?,
-    val createdAt: String,
-)
-
 data class Payment(
     val id: String,
     val visitId: String,
@@ -185,60 +140,4 @@ data class Payment(
     val collectedBy: String,
     val createdAt: String,
     val updatedAt: String,
-)
-
-data class QueueItem(
-    val visitId: String,
-    val patientId: String,
-    val patientName: String?,
-    val patientPhone: String,
-    val queuePosition: Int,
-    val queueStatus: QueueStatus,
-    val priority: VisitPriority,
-    val chiefComplaint: String?,
-    val checkedInAt: String,
-    val nurseId: String?,
-    val nurseName: String?,
-    val doctorId: String?,
-    val doctorName: String?,
-    val waitMinutes: Int,
-)
-
-// API request types
-
-@Serializable
-data class CreatePatientRequest(
-    val first_name: String,
-    val last_name: String,
-    val whatsapp_number: String? = null,
-    val date_of_birth: String? = null,
-    val sex: String? = null,
-)
-
-@Serializable
-data class CreateVisitRequest(
-    val patient_id: String,
-    val consent_recording: Boolean,
-    val source_language: String? = null,
-    val diagnosis: String? = null,
-    val medications: String? = null,
-    val follow_up_instructions: String? = null,
-    val tests_ordered: String? = null,
-)
-
-@Serializable
-data class CheckInRequest(
-    val patient_id: String,
-    val chief_complaint: String? = null,
-    val priority: String? = null,
-)
-
-@Serializable
-data class RecordPaymentRequest(
-    val visit_id: String,
-    val amount_ugx: Int,
-    val payment_method: String,
-    val service_type: String? = null,
-    val notes: String? = null,
-    val waived: Boolean? = null,
 )

@@ -51,15 +51,12 @@ class Analytics @Inject constructor(
         PostHog.reset()
     }
 
-    // Pre-defined events matching Expo app's analytics
+    // Events emitted by the dictation-first product. The recording/upload/
+    // consent events from the ambient era have been removed.
     object Events {
         const val VISIT_CREATED = "visit_created"
-        const val CONSENT_GRANTED = "consent_granted"
-        const val RECORDING_STARTED = "recording_started"
-        const val RECORDING_STOPPED = "recording_stopped"
-        const val UPLOAD_STARTED = "upload_started"
-        const val UPLOAD_COMPLETED = "upload_completed"
-        const val UPLOAD_FAILED = "upload_failed"
+        const val DICTATION_STARTED = "dictation_started"
+        const val DICTATION_COMPLETED = "dictation_completed"
         const val NOTE_APPROVED = "note_approved"
         const val NOTE_REJECTED = "note_rejected"
         const val PAYMENT_RECORDED = "payment_recorded"

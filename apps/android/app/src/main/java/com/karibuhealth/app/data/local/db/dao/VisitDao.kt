@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import androidx.room.Update
 import com.karibuhealth.app.data.local.db.entity.VisitEntity
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.local.db.entity.VisitWithDetails
@@ -45,9 +44,6 @@ interface VisitDao {
 
     @Query("UPDATE visits SET queue_status = :queueStatus, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateQueueStatus(id: String, queueStatus: String, updatedAt: String)
-
-    @Query("UPDATE visits SET audio_local_path = :path, audio_uploaded = :uploaded WHERE id = :id")
-    suspend fun updateAudioLocal(id: String, path: String?, uploaded: Boolean)
 
     @Query("SELECT COUNT(*) FROM visits WHERE clinic_id = :clinicId AND is_synced = 0")
     suspend fun getUnsyncedCount(clinicId: String): Int

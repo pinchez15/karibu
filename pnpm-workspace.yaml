@@ -1,13 +1,4 @@
 packages:
   - 'apps/web'
-  - 'apps/mobile'
   - 'packages/shared'
   - 'packages/supabase'
-
-# apps/mobile is deprecated (replaced by apps/android offline-first Kotlin app).
-# Its react/react-dom versions drift from apps/web and tripping on this would
-# block every install. Loosen strict peer dep enforcement at the workspace
-# level until apps/mobile is fully removed.
-strictPeerDependencies: false
-
-# Lifecycle script allow-list lives in package.json under "pnpm.onlyBuiltDependencies".

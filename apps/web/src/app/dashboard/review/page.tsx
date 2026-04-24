@@ -6,14 +6,12 @@ import { ReviewQueueClient } from './ReviewQueueClient'
 interface ReviewVisit {
   id: string
   visit_date: string
-  source_language: string
   patient: { id: string; display_name: string | null; whatsapp_number: string }
   provider_notes: {
     id: string
     note_content: string | null
     transcript: string | null
-    transcription_provider: string | null
-    transcription_confidence: number | null
+    structured_data: Record<string, unknown> | null
     status: string
   } | null
   patient_notes: {
@@ -33,9 +31,9 @@ async function getReviewVisits(clinicId: string): Promise<ReviewVisit[]> {
   const { data, error } = await supabase
     .from('visits')
     .select(`
-      id, visit_date, source_language, diagnosis, medications, follow_up_instructions, tests_ordered,
+      id, visit_date, diagnosis, medications, follow_up_instructions, tests_ordered,
       patient:patients(id, display_name, whatsapp_number),
-      provider_notes(id, note_content, transcript, transcription_provider, transcription_confidence, status),
+      provider_notes(id, note_content, transcript, structured_data, status),
       patient_notes(id, content, status)
     `)
     .eq('clinic_id', clinicId)

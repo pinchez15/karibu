@@ -23,7 +23,11 @@ object DatabaseModule {
             KaribuDatabase::class.java,
             "karibu_health.db",
         )
-            .fallbackToDestructiveMigration()
+            // Offline-first means unsynced patient/visit/payment rows live only
+            // in this DB until the next sync. fallbackToDestructiveMigration()
+            // would wipe all of that on every schema bump. Only allow destructive
+            // wipe on downgrade. Schema upgrades MUST add a real Migration object.
+            .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }
 
@@ -31,8 +35,6 @@ object DatabaseModule {
     @Provides fun provideStaffDao(db: KaribuDatabase): StaffDao = db.staffDao()
     @Provides fun providePatientDao(db: KaribuDatabase): PatientDao = db.patientDao()
     @Provides fun provideVisitDao(db: KaribuDatabase): VisitDao = db.visitDao()
-    @Provides fun provideAudioUploadDao(db: KaribuDatabase): AudioUploadDao = db.audioUploadDao()
-    @Provides fun provideConsentDao(db: KaribuDatabase): ConsentDao = db.consentDao()
     @Provides fun provideProviderNoteDao(db: KaribuDatabase): ProviderNoteDao = db.providerNoteDao()
     @Provides fun providePatientNoteDao(db: KaribuDatabase): PatientNoteDao = db.patientNoteDao()
     @Provides fun providePaymentDao(db: KaribuDatabase): PaymentDao = db.paymentDao()

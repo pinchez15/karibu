@@ -1,184 +1,108 @@
 # Karibu Health
 
-A clinical documentation system for low-bandwidth environments. Record patient visits, auto-generate dual notes (provider + patient), and deliver summaries via WhatsApp.
+A clinical documentation system for low-resource health centres in Uganda. Clinicians dictate a brief summary after each patient visit; an AI assistant turns the dictation into a structured SOAP note with diagnosis suggestions and citations; the patient walks out with a printed receipt.
 
-## Demo MVP Scope
+## Product Shape
 
-This initial build validates the core loop:
+The product is built around two surfaces:
 
-1. **Doctor records visit** - Offline-capable audio recording
-2. **AI generates dual notes** - Transcription + SOAP note + patient-friendly summary
-3. **Patient receives summary** - WhatsApp magic link to mobile-friendly page
+- **Android tablet (apps/android)** — what nurses use day to day. Offline-first via Room + WorkManager. After the patient leaves, the clinician taps the visit, dictates 1-3 minutes into the phone, and watches the AI structure the note.
+- **Web dashboard (apps/web)** — for desktop staff and admins: queue management, visit review + edit + approve, payment recording, printed-receipt rendering, and HMIS 105 reporting (which is what the diocese uses to report to the Ministry of Health and unlock subsidies).
+
+### Core flow
+
+1. Patient arrives at the clinic. Receptionist (or any staff) checks them in via the Queue (web or Android).
+2. Nurse calls the patient and conducts the visit face-to-face — no app involvement during the consultation.
+3. After the patient leaves, nurse opens the visit on Android and dictates a 1-3 minute summary.
+4. Inngest workflow turns the dictation into a SOAP note + patient summary, suggests likely diagnoses with citations, drafts follow-up instructions.
+5. Nurse reviews + edits + approves on the web dashboard.
+6. Web dashboard renders the patient receipt for the clinic's 58mm thermal printer.
+7. Patient walks out with the receipt. Done.
+
+The patient never touches the app — the printed receipt is the entire patient-facing surface.
 
 ## Project Structure
 
 ```
 karibu-health/
 ├── apps/
-│   ├── mobile/          # React Native (Expo) doctor app
-│   └── web/             # Next.js patient note viewer
+│   ├── android/         # Kotlin clinician app (offline-first dictation)
+│   └── web/             # Next.js dashboard (review, print, admin, HMIS)
 ├── packages/
-│   ├── shared/          # Shared types and utilities
-│   └── supabase/        # Database schema and Edge Functions
-└── PRD.md               # Product Requirements Document
-```
-
-## Prerequisites
-
-- Node.js 20+
-- pnpm 10+ (install via `corepack enable && corepack prepare pnpm@10.18.0 --activate`)
-- Supabase CLI
-- Android Studio (for Android development)
-
-## Setup
-
-### 1. Clone and Install Dependencies
-
-This project uses **pnpm** as the package manager. Install it via Corepack:
-
-```bash
-corepack enable
-corepack prepare pnpm@10.18.0 --activate
-```
-
-Then install workspace dependencies:
-
-```bash
-cd karibu-health
-pnpm install
-```
-
-### 2. Set Up Supabase
-
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Copy your project URL and keys
-3. Install Supabase CLI:
-   ```bash
-   npm install -g supabase
-   ```
-4. Link to your project:
-   ```bash
-   cd packages/supabase
-   supabase link --project-ref your-project-ref
-   ```
-5. Run migrations:
-   ```bash
-   supabase db push
-   ```
-
-### 3. Set Up Clerk Authentication
-
-1. Create a Clerk account at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Configure for Expo:
-   - Enable Email/Password sign-in
-   - Create a JWT template named "supabase" with your Supabase JWT secret
-4. Copy your publishable and secret keys
-
-### 4. Set Up OpenAI
-
-1. Get an API key from [platform.openai.com](https://platform.openai.com)
-2. Ensure you have access to Whisper API and GPT-4
-
-### 5. Set Up WhatsApp Business API
-
-1. Create a Meta Business account
-2. Set up WhatsApp Business API
-3. Create a message template named "patient_note_ready":
-   ```
-   Your visit summary from {{1}} is ready.
-
-   Tap to view your summary:
-   [View Summary]({{2}})
-   ```
-4. Get your Phone Number ID and Access Token
-
-### 6. Configure Environment Variables
-
-Copy the example files and fill in your values:
-
-```bash
-cp .env.example .env
-cp apps/mobile/.env.example apps/mobile/.env
-cp apps/web/.env.example apps/web/.env
-```
-
-### 7. Deploy Edge Functions
-
-```bash
-cd packages/supabase
-supabase functions deploy transcribe
-supabase functions deploy generate-notes
-
-# Set secrets
-supabase secrets set OPENAI_API_KEY=sk-...
-supabase secrets set SUNBIRD_API_KEY=...
-```
-
-## Development
-
-### Mobile App
-
-```bash
-pnpm --filter @karibu/mobile dev
-```
-
-Scan the QR code with Expo Go, or press `a` to open Android emulator.
-
-### Web App
-
-```bash
-pnpm --filter @karibu/web dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-## Deployment
-
-### Mobile App
-
-```bash
-cd apps/mobile
-npx eas build --platform android
-```
-
-### Web App (Vercel)
-
-```bash
-cd apps/web
-npx vercel
+│   ├── shared/          # Shared TS types + constants
+│   └── supabase/        # Database migrations + edge functions
+└── docs/                # Architecture, legal compliance, design docs
 ```
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|------------|
-| Mobile App | React Native (Expo) |
-| Web App | Next.js 16 |
+| Android app | Kotlin, Compose, Room, Hilt, WorkManager |
+| Web app | Next.js 16, React, Tailwind |
 | Database | Supabase (Postgres) |
-| Auth | Clerk |
-| Storage | Supabase Storage |
-| Serverless | Supabase Edge Functions |
-| AI | OpenAI (Whisper + GPT-4) |
-| Messaging | WhatsApp Cloud API |
+| Auth | Clerk (Android SDK + Next.js) |
+| Edge functions | Supabase (Deno) — `dictate`, `generate-notes` |
+| Background jobs | Inngest (note structuring workflow, scheduled tasks) |
+| AI | OpenAI Whisper (dictation transcription), OpenAI healthcare model (SOAP + citations) |
+| Receipt printer | 58mm thermal via browser print dialog |
 
-## Demo Flow
+## Prerequisites
 
-1. Doctor logs in with Clerk
-2. Enters patient WhatsApp number and name
-3. Confirms recording consent
-4. Records visit (audio stored locally)
-5. Submits for processing
-6. Audio uploads → Transcription → Note generation
-7. Doctor reviews and edits notes
-8. Approves and sends to patient
-9. Patient receives WhatsApp with magic link
-10. Patient views summary on mobile-friendly page
+- Node.js 20+
+- pnpm 10+ (`corepack enable && corepack prepare pnpm@10.18.0 --activate`)
+- Supabase CLI
+- Android Studio (for Android development)
+- Inngest CLI for local dev (optional)
 
-## Environment Variables
+## Setup
 
-See `.env.example` files in each app directory.
+```bash
+corepack enable
+corepack prepare pnpm@10.18.0 --activate
+pnpm install
+```
+
+### Supabase
+
+```bash
+cd packages/supabase
+supabase link --project-ref your-project-ref
+supabase db push
+```
+
+### Clerk
+
+Create a Clerk app, enable email/password sign-in, create a JWT template named `supabase` with your Supabase JWT secret, drop the keys into `.env`.
+
+### OpenAI
+
+API key with access to Whisper + the healthcare model goes into `.env` as `OPENAI_API_KEY`.
+
+### Edge functions
+
+```bash
+cd packages/supabase
+supabase functions deploy dictate
+supabase functions deploy generate-notes
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
+```
+
+## Development
+
+```bash
+pnpm web                     # Next.js dashboard at localhost:3000
+pnpm android:build           # Build the debug APK
+pnpm android:test            # Run Android unit tests
+```
+
+## Deployment
+
+- **Web** ships to Vercel.
+- **Android** is distributed as a signed APK to clinic-managed devices.
+- **Edge functions** ship via `supabase functions deploy`.
 
 ## License
 
-Proprietary - Karibu Health
+Proprietary — Karibu Health

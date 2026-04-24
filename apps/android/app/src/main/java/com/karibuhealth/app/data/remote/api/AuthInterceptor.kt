@@ -18,7 +18,7 @@ class AuthInterceptor @Inject constructor(
 
         val token = runBlocking { authTokenStore.getToken() }
 
-        val request = originalRequest.newBuilder()
+        val builder = originalRequest.newBuilder()
             .header("apikey", BuildConfig.SUPABASE_ANON_KEY)
             .apply {
                 if (token != null) {
@@ -27,10 +27,15 @@ class AuthInterceptor @Inject constructor(
                     header("Authorization", "Bearer ${BuildConfig.SUPABASE_ANON_KEY}")
                 }
             }
-            .header("Content-Type", "application/json")
             .header("Prefer", "return=representation")
-            .build()
 
-        return chain.proceed(request)
+        // Only force Content-Type when the request body hasn't set one. The
+        // dictation flow uploads multipart/form-data audio to /functions/v1/dictate
+        // and overriding that here would break the boundary parsing.
+        if (originalRequest.header("Content-Type") == null && originalRequest.body?.contentType() == null) {
+            builder.header("Content-Type", "application/json")
+        }
+
+        return chain.proceed(builder.build())
     }
 }

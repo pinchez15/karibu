@@ -2,7 +2,6 @@ package com.karibuhealth.app.data.local.db.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -12,10 +11,6 @@ data class ClinicEntity(
     val name: String,
     val slug: String,
     @ColumnInfo(name = "clerk_organization_id") val clerkOrganizationId: String?,
-    // Legacy columns kept in Room v2 schema to avoid a destructive DB migration on
-    // upgrade. WhatsApp delivery removed 2026-04-08; always null on writes.
-    @ColumnInfo(name = "whatsapp_phone_number") val whatsappPhoneNumber: String? = null,
-    @ColumnInfo(name = "whatsapp_business_account_id") val whatsappBusinessAccountId: String? = null,
     val timezone: String,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: String,
@@ -35,7 +30,7 @@ data class StaffEntity(
     @ColumnInfo(name = "clinic_id") val clinicId: String,
     val email: String,
     @ColumnInfo(name = "display_name") val displayName: String,
-    val role: String, // admin, doctor, nurse
+    val role: String,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "deactivated_at") val deactivatedAt: String?,
     @ColumnInfo(name = "created_at") val createdAt: String,
@@ -57,9 +52,11 @@ data class PatientEntity(
     @ColumnInfo(name = "first_name") val firstName: String?,
     @ColumnInfo(name = "last_name") val lastName: String?,
     @ColumnInfo(name = "display_name") val displayName: String?,
+    // Column kept named whatsapp_number for backwards compat with the server
+    // schema; semantically it is just the patient's phone number now.
     @ColumnInfo(name = "whatsapp_number") val whatsappNumber: String?,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: String?,
-    val sex: String?, // M, F
+    val sex: String?,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     // Local-only fields
@@ -83,22 +80,15 @@ data class VisitEntity(
     @ColumnInfo(name = "patient_id") val patientId: String,
     @ColumnInfo(name = "doctor_id") val doctorId: String?,
     @ColumnInfo(name = "nurse_id") val nurseId: String?,
-    val status: String, // VisitStatus
-    @ColumnInfo(name = "queue_status") val queueStatus: String, // QueueStatus
+    val status: String,
+    @ColumnInfo(name = "queue_status") val queueStatus: String,
     @ColumnInfo(name = "queue_position") val queuePosition: Int?,
-    val priority: String, // VisitPriority
+    val priority: String,
     @ColumnInfo(name = "chief_complaint") val chiefComplaint: String?,
     @ColumnInfo(name = "checked_in_at") val checkedInAt: String?,
-    @ColumnInfo(name = "consent_recording") val consentRecording: Boolean,
-    @ColumnInfo(name = "consent_timestamp") val consentTimestamp: String?,
-    @ColumnInfo(name = "source_language") val sourceLanguage: String,
-    @ColumnInfo(name = "consent_verified") val consentVerified: Boolean,
-    @ColumnInfo(name = "consent_id") val consentId: String?,
     @ColumnInfo(name = "review_status") val reviewStatus: String,
     @ColumnInfo(name = "reviewed_by") val reviewedBy: String?,
     @ColumnInfo(name = "reviewed_at") val reviewedAt: String?,
-    @ColumnInfo(name = "audio_deleted_at") val audioDeletedAt: String?,
-    @ColumnInfo(name = "retention_expires_at") val retentionExpiresAt: String?,
     val diagnosis: String?,
     val medications: String?,
     @ColumnInfo(name = "follow_up_instructions") val followUpInstructions: String?,
@@ -109,57 +99,7 @@ data class VisitEntity(
     @ColumnInfo(name = "finalized_at") val finalizedAt: String?,
     @ColumnInfo(name = "error_message") val errorMessage: String?,
     @ColumnInfo(name = "error_at") val errorAt: String?,
-    // Local-only fields
-    @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
-    @ColumnInfo(name = "audio_local_path") val audioLocalPath: String? = null,
-    @ColumnInfo(name = "audio_uploaded") val audioUploaded: Boolean = false,
-)
-
-@Entity(
-    tableName = "audio_uploads",
-    indices = [Index("visit_id", unique = true)],
-)
-data class AudioUploadEntity(
-    @PrimaryKey val id: String,
-    @ColumnInfo(name = "visit_id") val visitId: String,
-    @ColumnInfo(name = "storage_path") val storagePath: String?,
-    @ColumnInfo(name = "file_size_bytes") val fileSizeBytes: Long?,
-    @ColumnInfo(name = "duration_seconds") val durationSeconds: Int?,
-    @ColumnInfo(name = "mime_type") val mimeType: String,
-    @ColumnInfo(name = "uploaded_at") val uploadedAt: String?,
-    @ColumnInfo(name = "transcription_started_at") val transcriptionStartedAt: String?,
-    @ColumnInfo(name = "transcription_completed_at") val transcriptionCompletedAt: String?,
-    val status: String, // AudioUploadStatus
-    @ColumnInfo(name = "error_message") val errorMessage: String?,
-    @ColumnInfo(name = "created_at") val createdAt: String,
-    @ColumnInfo(name = "updated_at") val updatedAt: String,
-    // Local-only
-    @ColumnInfo(name = "local_file_path") val localFilePath: String? = null,
-)
-
-@Entity(
-    tableName = "patient_consents",
-    indices = [
-        Index("patient_id"),
-        Index("visit_id"),
-    ],
-)
-data class PatientConsentEntity(
-    @PrimaryKey val id: String,
-    @ColumnInfo(name = "patient_id") val patientId: String,
-    @ColumnInfo(name = "visit_id") val visitId: String?,
-    @ColumnInfo(name = "consent_type") val consentType: String, // ConsentType
-    val granted: Boolean,
-    @ColumnInfo(name = "granted_at") val grantedAt: String,
-    @ColumnInfo(name = "granted_by") val grantedBy: String, // ConsentGrantedBy
-    @ColumnInfo(name = "guardian_name") val guardianName: String?,
-    @ColumnInfo(name = "guardian_relationship") val guardianRelationship: String?,
-    @ColumnInfo(name = "withdrawal_at") val withdrawalAt: String?,
-    @ColumnInfo(name = "consent_method") val consentMethod: String, // ConsentMethod
-    @ColumnInfo(name = "consent_language") val consentLanguage: String,
-    @ColumnInfo(name = "ip_address") val ipAddress: String?,
-    @ColumnInfo(name = "created_at") val createdAt: String,
-    // Local-only
+    // Local-only field
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )
 
@@ -171,15 +111,9 @@ data class ProviderNoteEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "visit_id") val visitId: String,
     val transcript: String?,
-    @ColumnInfo(name = "transcript_original") val transcriptOriginal: String?,
-    @ColumnInfo(name = "transcript_english") val transcriptEnglish: String?,
-    @ColumnInfo(name = "transcription_provider") val transcriptionProvider: String?,
-    @ColumnInfo(name = "transcription_confidence") val transcriptionConfidence: Double?,
-    @ColumnInfo(name = "diarization_output") val diarizationOutput: String?,
-    @ColumnInfo(name = "audio_trimmed") val audioTrimmed: Boolean,
     @ColumnInfo(name = "note_content") val noteContent: String?,
     @ColumnInfo(name = "structured_data") val structuredData: String?,
-    val status: String, // NoteStatus
+    val status: String,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     @ColumnInfo(name = "finalized_at") val finalizedAt: String?,
@@ -195,7 +129,7 @@ data class PatientNoteEntity(
     @ColumnInfo(name = "visit_id") val visitId: String,
     val content: String?,
     val language: String,
-    val status: String, // NoteStatus
+    val status: String,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
 )
@@ -213,8 +147,8 @@ data class PaymentEntity(
     @ColumnInfo(name = "clinic_id") val clinicId: String,
     @ColumnInfo(name = "patient_id") val patientId: String,
     @ColumnInfo(name = "amount_ugx") val amountUgx: Int,
-    @ColumnInfo(name = "payment_method") val paymentMethod: String, // PaymentMethod
-    val status: String, // PaymentStatus
+    @ColumnInfo(name = "payment_method") val paymentMethod: String,
+    val status: String,
     @ColumnInfo(name = "receipt_number") val receiptNumber: String,
     @ColumnInfo(name = "service_type") val serviceType: String?,
     val notes: String?,
@@ -231,8 +165,8 @@ data class SyncQueueEntry(
     @ColumnInfo(name = "operation_type") val operationType: String,
     @ColumnInfo(name = "entity_type") val entityType: String,
     @ColumnInfo(name = "entity_id") val entityId: String,
-    val payload: String, // JSON
-    val status: String, // pending, in_progress, completed, failed
+    val payload: String,
+    val status: String,
     val attempts: Int = 0,
     @ColumnInfo(name = "max_attempts") val maxAttempts: Int = 5,
     @ColumnInfo(name = "last_error") val lastError: String? = null,

@@ -4,7 +4,6 @@
   "private": true,
   "packageManager": "pnpm@10.18.0",
   "scripts": {
-    "mobile": "pnpm --filter @karibu/mobile dev",
     "web": "pnpm --filter @karibu/web dev",
     "db:migrate": "pnpm --filter @karibu/supabase migrate",
     "db:types": "pnpm --filter @karibu/supabase generate-types",

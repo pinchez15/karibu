@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.PatientRepository
+import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.util.formatPhoneNumber
 import com.karibuhealth.app.util.isValidUgandaPhone
@@ -27,6 +28,7 @@ data class NewVisitUiState(
 @HiltViewModel
 class NewVisitViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
+    private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -76,11 +78,31 @@ class NewVisitViewModel @Inject constructor(
         }
     }
 
-    suspend fun createOrGetPatient(): String? {
-        val state = _uiState.value
+    // Look-up + select path: patient already exists, just start a visit for them.
+    suspend fun startVisitForSelectedPatient(): String? {
+        val patient = _uiState.value.foundPatient ?: return null
+        val clinicId = authTokenStore.getClinicId() ?: return null
+        return runCatching {
+            _uiState.update { it.copy(isCreating = true) }
+            val staffId = authTokenStore.getStaffId()
+            val visit = visitRepository.createVisit(
+                clinicId = clinicId,
+                patientId = patient.id,
+                doctorId = staffId,
+            )
+            _uiState.update { it.copy(isCreating = false) }
+            visit.id
+        }.getOrElse { e ->
+            _uiState.update { it.copy(error = e.message, isCreating = false) }
+            null
+        }
+    }
 
-        // If already found, return their ID
-        if (state.foundPatient != null) return state.foundPatient.id
+    // Create-new + start path: register the patient (offline-first) and
+    // immediately open a visit for them. Both writes are queued for sync.
+    suspend fun createPatientAndStartVisit(): String? {
+        val state = _uiState.value
+        if (state.foundPatient != null) return startVisitForSelectedPatient()
 
         val clinicId = authTokenStore.getClinicId() ?: return null
         val phone = if (state.phoneValid) formatPhoneNumber(state.searchQuery) else null
@@ -99,8 +121,14 @@ class NewVisitViewModel @Inject constructor(
                 lastName = state.lastName,
                 whatsappNumber = phone,
             )
+            val staffId = authTokenStore.getStaffId()
+            val visit = visitRepository.createVisit(
+                clinicId = clinicId,
+                patientId = patient.id,
+                doctorId = staffId,
+            )
             _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
-            patient.id
+            visit.id
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message, isCreating = false) }
             null

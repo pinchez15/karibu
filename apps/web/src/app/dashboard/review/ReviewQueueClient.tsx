@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Check, X, Edit, AlertCircle } from 'lucide-react'
+import { Check, X, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,14 +19,12 @@ import { SERVICE_TYPES } from '@karibu/shared'
 interface ReviewVisit {
   id: string
   visit_date: string
-  source_language: string
   patient: { id: string; display_name: string | null; whatsapp_number: string }
   provider_notes: {
     id: string
     note_content: string | null
     transcript: string | null
-    transcription_provider: string | null
-    transcription_confidence: number | null
+    structured_data: Record<string, unknown> | null
     status: string
   } | null
   patient_notes: {
@@ -38,6 +36,30 @@ interface ReviewVisit {
   medications: string | null
   follow_up_instructions: string | null
   tests_ordered: string | null
+}
+
+// Shape that the structure-dictation Inngest function writes to
+// provider_notes.structured_data. Defensive parsing — anything missing or
+// malformed just means we render less, not throw.
+type DiagnosisSuggestion = {
+  name: string
+  icd10?: string | null
+  confidence: 'high' | 'medium' | 'low'
+  rationale: string
+  citations: Array<{ title: string; source: string; url?: string | null }>
+}
+type StructuredData = {
+  diagnoses?: DiagnosisSuggestion[]
+  learning_note?: string | null
+  missing_info?: string[]
+}
+function parseStructured(raw: Record<string, unknown> | null | undefined): StructuredData {
+  if (!raw || typeof raw !== 'object') return {}
+  return {
+    diagnoses: Array.isArray(raw.diagnoses) ? (raw.diagnoses as DiagnosisSuggestion[]) : [],
+    learning_note: typeof raw.learning_note === 'string' ? raw.learning_note : null,
+    missing_info: Array.isArray(raw.missing_info) ? (raw.missing_info as string[]) : [],
+  }
 }
 
 interface ReviewQueueClientProps {
@@ -325,36 +347,20 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                   Review &rarr;
                 </Button>
               </div>
-              {visit.provider_notes?.transcription_confidence != null &&
-                visit.provider_notes.transcription_confidence < 0.8 && (
-                <div className="flex items-center gap-2 text-sm text-amber-600">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Low confidence transcription</span>
-                </div>
-              )}
             </div>
           </CollapsibleTrigger>
 
           <CollapsibleContent className="px-4 py-4 bg-muted/30 border border-t-0 border-border rounded-b-lg space-y-4">
-            {/* Transcript */}
+            {/* Dictation transcript */}
             {visit.provider_notes?.transcript && (
               <div className="space-y-2">
-                <h3 className="font-medium text-sm text-muted-foreground">TRANSCRIPT</h3>
+                <h3 className="font-medium text-sm text-muted-foreground">DICTATION</h3>
 
                 <div className="bg-card rounded-lg p-3 border border-border max-h-48 overflow-y-auto">
                   <pre className="text-sm whitespace-pre-wrap font-sans">
                     {visit.provider_notes.transcript}
                   </pre>
                 </div>
-
-                {visit.provider_notes.transcription_provider && (
-                  <p className="text-xs text-muted-foreground">
-                    Provider: {visit.provider_notes.transcription_provider}
-                    {visit.provider_notes.transcription_confidence != null &&
-                      ` (${Math.round(visit.provider_notes.transcription_confidence * 100)}% confidence)`
-                    }
-                  </p>
-                )}
               </div>
             )}
 
@@ -390,6 +396,97 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                 </div>
               </div>
             )}
+
+            {/* AI suggestions — shown subtly between the extracted data and
+                the SOAP note. Tone: a colleague sharing relevant research,
+                not a checker. We only render diagnosis suggestions when the
+                model produced them, only render the learning note when there
+                is one to share, and only render missing_info when it's
+                non-empty (which the prompt restricts to genuinely critical
+                gaps). Never blocks the clinician — Approve is always one tap
+                away and ignores all of this. */}
+            {(() => {
+              const s = parseStructured(visit.provider_notes?.structured_data)
+              const hasAnything = (s.diagnoses?.length ?? 0) > 0 || s.learning_note || (s.missing_info?.length ?? 0) > 0
+              if (!hasAnything) return null
+              return (
+                <div className="space-y-3">
+                  {s.diagnoses && s.diagnoses.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="font-medium text-sm text-muted-foreground">AI SUGGESTIONS</h3>
+                      <div className="space-y-2">
+                        {s.diagnoses.map((dx, i) => (
+                          <div
+                            key={i}
+                            className="bg-card rounded-lg p-3 border border-border space-y-1.5"
+                          >
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="font-medium">{dx.name}</span>
+                              {dx.icd10 && (
+                                <span className="text-xs text-muted-foreground font-mono">{dx.icd10}</span>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className={
+                                  dx.confidence === 'high' ? 'border-emerald-300 text-emerald-700' :
+                                  dx.confidence === 'medium' ? 'border-amber-300 text-amber-700' :
+                                  'border-gray-300 text-gray-600'
+                                }
+                              >
+                                {dx.confidence} confidence
+                              </Badge>
+                            </div>
+                            {dx.rationale && (
+                              <p className="text-sm text-muted-foreground">{dx.rationale}</p>
+                            )}
+                            {dx.citations && dx.citations.length > 0 && (
+                              <div className="text-xs space-y-0.5 pt-1">
+                                {dx.citations.map((c, j) => (
+                                  <div key={j} className="text-muted-foreground">
+                                    {c.url ? (
+                                      <a
+                                        href={c.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline decoration-dotted hover:text-foreground"
+                                      >
+                                        {c.title} <span className="opacity-60">— {c.source}</span>
+                                      </a>
+                                    ) : (
+                                      <span>
+                                        {c.title} <span className="opacity-60">— {c.source}</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {s.learning_note && (
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                      <span className="font-medium">Worth a read: </span>
+                      {s.learning_note}
+                    </div>
+                  )}
+
+                  {s.missing_info && s.missing_info.length > 0 && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                      <p className="font-medium mb-1">Worth confirming:</p>
+                      <ul className="list-disc pl-5 space-y-0.5">
+                        {s.missing_info.map((m, i) => (
+                          <li key={i}>{m}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Provider note (SOAP) */}
             <div className="space-y-2">

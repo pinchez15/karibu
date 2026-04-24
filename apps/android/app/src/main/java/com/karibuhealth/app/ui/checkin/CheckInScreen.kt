@@ -14,7 +14,7 @@ import com.karibuhealth.app.domain.model.VisitPriority
 @Composable
 fun CheckInScreen(
     onNavigateBack: () -> Unit,
-    onCheckedIn: (String) -> Unit,
+    onCheckedIn: (visitId: String) -> Unit,
     viewModel: CheckInViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()

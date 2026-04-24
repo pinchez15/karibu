@@ -9,6 +9,14 @@ build/
 .next/
 out/
 .expo/
+*.tsbuildinfo
+
+# Local Claude Code state (project memory + session locks)
+.claude/
+
+# Local-only design assets (kept out of the repo for size)
+Karibu Health EHR App Figma/
+karibu logos/
 
 # Environment files
 .env

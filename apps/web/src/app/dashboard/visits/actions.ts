@@ -14,7 +14,7 @@ export async function createPatientWithVisit(formData: FormData) {
   const sex = (formData.get('sex') as string) || null
 
   if (!rawPhone) {
-    return { error: 'WhatsApp number is required' }
+    return { error: 'Phone number is required' }
   }
 
   const whatsappNumber = formatPhoneNumber(rawPhone)
@@ -56,7 +56,8 @@ export async function createPatientWithVisit(formData: FormData) {
     patientId = newPatient.id
   }
 
-  // Create a visit for today
+  // Create a visit for today. Status starts at 'pending' — clinician will
+  // dictate the SOAP note from this visit later from the dashboard or app.
   const { data: visit, error: visitError } = await supabase
     .from('visits')
     .insert({
@@ -64,8 +65,7 @@ export async function createPatientWithVisit(formData: FormData) {
       patient_id: patientId,
       doctor_id: staff.role === 'doctor' ? staff.id : null,
       nurse_id: staff.role === 'nurse' ? staff.id : null,
-      status: 'recording',
-      source_language: 'eng',
+      status: 'pending',
     })
     .select('id')
     .single()

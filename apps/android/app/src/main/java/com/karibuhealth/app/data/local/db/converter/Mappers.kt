@@ -83,11 +83,8 @@ fun VisitDto.toEntity(isSynced: Boolean = true) = VisitEntity(
     status = status, queueStatus = queueStatus,
     queuePosition = queuePosition, priority = priority,
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
-    consentRecording = consentRecording, consentTimestamp = consentTimestamp,
-    sourceLanguage = sourceLanguage, consentVerified = consentVerified,
-    consentId = consentId, reviewStatus = reviewStatus,
+    reviewStatus = reviewStatus,
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
-    audioDeletedAt = audioDeletedAt, retentionExpiresAt = retentionExpiresAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
@@ -103,12 +100,8 @@ fun VisitEntity.toDomain() = Visit(
     queuePosition = queuePosition,
     priority = VisitPriority.valueOf(priority),
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
-    consentRecording = consentRecording, consentTimestamp = consentTimestamp,
-    sourceLanguage = SourceLanguage.valueOf(sourceLanguage),
-    consentVerified = consentVerified, consentId = consentId,
     reviewStatus = ReviewStatus.valueOf(reviewStatus),
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
-    audioDeletedAt = audioDeletedAt, retentionExpiresAt = retentionExpiresAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
@@ -117,8 +110,7 @@ fun VisitEntity.toDomain() = Visit(
 
 fun Visit.toCreateDto() = VisitCreateDto(
     id = id, clinicId = clinicId, patientId = patientId,
-    doctorId = doctorId, consentRecording = consentRecording,
-    sourceLanguage = sourceLanguage.name, visitDate = visitDate,
+    doctorId = doctorId, visitDate = visitDate,
     chiefComplaint = chiefComplaint,
 )
 
@@ -128,11 +120,8 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
     status = status.name, queueStatus = queueStatus.name,
     queuePosition = queuePosition, priority = priority.name,
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
-    consentRecording = consentRecording, consentTimestamp = consentTimestamp,
-    sourceLanguage = sourceLanguage.name, consentVerified = consentVerified,
-    consentId = consentId, reviewStatus = reviewStatus.name,
+    reviewStatus = reviewStatus.name,
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
-    audioDeletedAt = audioDeletedAt, retentionExpiresAt = retentionExpiresAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
@@ -140,81 +129,11 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
     isSynced = isSynced,
 )
 
-// ========== AudioUpload ==========
-
-fun AudioUploadDto.toEntity(localFilePath: String? = null) = AudioUploadEntity(
-    id = id, visitId = visitId, storagePath = storagePath,
-    fileSizeBytes = fileSizeBytes, durationSeconds = durationSeconds,
-    mimeType = mimeType, uploadedAt = uploadedAt,
-    transcriptionStartedAt = transcriptionStartedAt,
-    transcriptionCompletedAt = transcriptionCompletedAt,
-    status = status, errorMessage = errorMessage,
-    createdAt = createdAt, updatedAt = updatedAt,
-    localFilePath = localFilePath,
-)
-
-fun AudioUploadEntity.toDomain() = AudioUpload(
-    id = id, visitId = visitId, storagePath = storagePath,
-    fileSizeBytes = fileSizeBytes, durationSeconds = durationSeconds,
-    mimeType = mimeType, uploadedAt = uploadedAt,
-    transcriptionStartedAt = transcriptionStartedAt,
-    transcriptionCompletedAt = transcriptionCompletedAt,
-    status = AudioUploadStatus.valueOf(status),
-    errorMessage = errorMessage,
-    createdAt = createdAt, updatedAt = updatedAt,
-)
-
-// ========== PatientConsent ==========
-
-fun ConsentDto.toEntity(isSynced: Boolean = true) = PatientConsentEntity(
-    id = id, patientId = patientId, visitId = visitId,
-    consentType = consentType, granted = granted,
-    grantedAt = grantedAt, grantedBy = grantedBy,
-    guardianName = guardianName, guardianRelationship = guardianRelationship,
-    withdrawalAt = withdrawalAt, consentMethod = consentMethod,
-    consentLanguage = consentLanguage, ipAddress = ipAddress,
-    createdAt = createdAt, isSynced = isSynced,
-)
-
-fun PatientConsentEntity.toDomain() = PatientConsent(
-    id = id, patientId = patientId, visitId = visitId,
-    consentType = ConsentType.valueOf(consentType),
-    granted = granted, grantedAt = grantedAt,
-    grantedBy = ConsentGrantedBy.valueOf(grantedBy),
-    guardianName = guardianName, guardianRelationship = guardianRelationship,
-    withdrawalAt = withdrawalAt,
-    consentMethod = ConsentMethod.valueOf(consentMethod),
-    consentLanguage = consentLanguage, ipAddress = ipAddress,
-    createdAt = createdAt,
-)
-
-fun PatientConsent.toEntity(isSynced: Boolean = true) = PatientConsentEntity(
-    id = id, patientId = patientId, visitId = visitId,
-    consentType = consentType.name, granted = granted,
-    grantedAt = grantedAt, grantedBy = grantedBy.name,
-    guardianName = guardianName, guardianRelationship = guardianRelationship,
-    withdrawalAt = withdrawalAt, consentMethod = consentMethod.name,
-    consentLanguage = consentLanguage, ipAddress = ipAddress,
-    createdAt = createdAt, isSynced = isSynced,
-)
-
-fun PatientConsent.toCreateDto() = ConsentCreateDto(
-    id = id, patientId = patientId, visitId = visitId,
-    consentType = consentType.name, granted = granted,
-    grantedAt = grantedAt, grantedBy = grantedBy.name,
-    guardianName = guardianName, guardianRelationship = guardianRelationship,
-    consentMethod = consentMethod.name, consentLanguage = consentLanguage,
-)
-
 // ========== ProviderNote ==========
 
 fun ProviderNoteDto.toEntity() = ProviderNoteEntity(
     id = id, visitId = visitId, transcript = transcript,
-    transcriptOriginal = transcriptOriginal, transcriptEnglish = transcriptEnglish,
-    transcriptionProvider = transcriptionProvider,
-    transcriptionConfidence = transcriptionConfidence,
-    diarizationOutput = diarizationOutput,
-    audioTrimmed = audioTrimmed, noteContent = noteContent,
+    noteContent = noteContent,
     structuredData = structuredData, status = status,
     createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, finalizedBy = finalizedBy,
@@ -222,12 +141,7 @@ fun ProviderNoteDto.toEntity() = ProviderNoteEntity(
 
 fun ProviderNoteEntity.toDomain() = ProviderNote(
     id = id, visitId = visitId, transcript = transcript,
-    transcriptOriginal = transcriptOriginal, transcriptEnglish = transcriptEnglish,
-    transcriptionProvider = transcriptionProvider?.let { TranscriptionProvider.valueOf(it) },
-    transcriptionConfidence = transcriptionConfidence,
-    diarizationOutput = diarizationOutput,
-    audioTrimmed = audioTrimmed, noteContent = noteContent,
-    structuredData = structuredData,
+    noteContent = noteContent, structuredData = structuredData,
     status = NoteStatus.valueOf(status),
     createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, finalizedBy = finalizedBy,

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { saveVisitNotes, retryVisitProcessing } from '../actions'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
+import { PendingDictationCard } from './PendingDictationCard'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
 
 interface VisitWithRelations extends Visit {
@@ -17,7 +18,6 @@ interface VisitWithRelations extends Visit {
   nurse: { id: string; display_name: string } | null
   provider_notes: ProviderNote | null
   patient_notes: PatientNote | null
-  audio_uploads: { status: string; error_message: string | null } | null
 }
 
 interface PaymentData {
@@ -37,9 +37,7 @@ interface VisitDetailClientProps {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  recording: { label: 'Recording', color: 'text-amber-700', bg: 'bg-amber-100' },
-  uploading: { label: 'Uploading', color: 'text-sky-700', bg: 'bg-sky-100' },
-  processing: { label: 'Processing', color: 'text-violet-700', bg: 'bg-violet-100' },
+  pending: { label: 'To Dictate', color: 'text-violet-700', bg: 'bg-violet-100' },
   review: { label: 'Review', color: 'text-primary', bg: 'bg-secondary' },
   sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
   completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
@@ -232,24 +230,6 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
             <p className="font-medium">{visit.doctor?.display_name || '-'}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Language</p>
-            <p className="font-medium">{visit.source_language === 'local' ? 'Local Language' : 'English'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Transcription</p>
-            <p className="font-medium capitalize">{visit.provider_notes?.transcription_provider || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Consent</p>
-            <p className="font-medium">
-              {visit.consent_verified ? (
-                <span className="text-emerald-700">Verified</span>
-              ) : (
-                <span className="text-amber-700">Pending</span>
-              )}
-            </p>
-          </div>
-          <div>
             <p className="text-sm text-muted-foreground">Review</p>
             <p className="font-medium capitalize">{visit.review_status?.replace('_', ' ') || 'Pending'}</p>
           </div>
@@ -272,6 +252,21 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
             : 'bg-red-50 text-red-800 border-red-200'
         }`}>
           {message.text}
+        </div>
+      )}
+
+      {/* Pending visit: either show the dictation card (if no transcript yet)
+          or a non-blocking "AI is working..." hint (if dictation is in flight
+          and Inngest is structuring). */}
+      {visit.status === 'pending' && !visit.provider_notes?.transcript && (
+        <PendingDictationCard visitId={visit.id} />
+      )}
+      {visit.status === 'pending' && visit.provider_notes?.transcript && (
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+          <p className="font-medium text-violet-900">AI is structuring this dictation…</p>
+          <p className="text-sm text-violet-800 mt-1">
+            Usually under a minute. The visit will move to Review when it&apos;s ready.
+          </p>
         </div>
       )}
 
@@ -313,22 +308,16 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
         <DiagnosisCoder visitId={visit.id} />
       )}
 
-      {/* Transcript */}
+      {/* Dictation transcript */}
       {visit.provider_notes?.transcript && (
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-4">Transcript</h3>
+          <h3 className="text-lg font-semibold mb-4">Dictation</h3>
 
           <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto border border-border">
             <p className="text-sm whitespace-pre-wrap font-mono">
               {visit.provider_notes.transcript}
             </p>
           </div>
-
-          {visit.provider_notes.audio_trimmed && (
-            <p className="text-xs text-amber-600 mt-2">
-              Note: Audio was trimmed to 10 minutes by the transcription provider.
-            </p>
-          )}
         </div>
       )}
 
