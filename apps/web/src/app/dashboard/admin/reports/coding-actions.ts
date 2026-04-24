@@ -95,25 +95,7 @@ export async function removeVisitDiagnosisCode(visitId: string, hmisCodeId: numb
   return { success: true }
 }
 
-export async function triggerAiCoding(visitId: string) {
-  const staff = await getStaff()
-  if (!staff) return { error: 'Not authenticated' }
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-notes`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
-      },
-      body: JSON.stringify({ visit_id: visitId }),
-    }
-  )
-
-  if (!response.ok) {
-    return { error: 'Failed to trigger AI coding' }
-  }
-
-  return { success: true }
-}
+// triggerAiCoding removed in the dictation pivot. AI coding now runs as the
+// final step of the structure-dictation Inngest workflow (see
+// apps/web/src/inngest/functions/structure-dictation.ts:code-diagnoses-hmis).
+// Manual code edits go through saveVisitDiagnosisCode / removeVisitDiagnosisCode.

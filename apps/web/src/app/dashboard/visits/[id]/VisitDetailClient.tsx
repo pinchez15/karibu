@@ -1,16 +1,28 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@clerk/nextjs'
-import { Mic, MicOff, Loader2, Printer } from 'lucide-react'
+import { Mic, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { saveVisitNotes, retryVisitProcessing } from '../actions'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
+
+// Visit detail in the dictation-only product is a read-only summary, not an
+// editor. The flow is:
+//
+//   pending  -> PendingDictationCard (record + submit) — or "AI structuring..."
+//                while Inngest processes the submitted dictation
+//   review   -> review queue handles edit + approve/reject (this page just
+//                shows the AI output; the queue is where decisions happen)
+//   sent     -> show the print button + AI-generated content
+//   completed-> show the receipt + payment
+//   error    -> let the clinician re-dictate (clears AI output server-side
+//                via the same path as Reject)
+//
+// No per-textarea dictation, no manual saveVisitNotes — those were the
+// pre-pivot dual-note model and would create a parallel editing surface
+// alongside PendingDictationCard. Bug fixes / clinician overrides happen on
+// the review queue.
 
 interface VisitWithRelations extends Visit {
   patient: { id: string; display_name: string | null; whatsapp_number: string; date_of_birth: string | null }
@@ -44,145 +56,11 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
 }
 
-export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClientProps) {
-  const { getToken } = useAuth()
-  const [providerNoteContent, setProviderNoteContent] = useState(visit.provider_notes?.note_content || '')
-  const [patientNoteContent, setPatientNoteContent] = useState(visit.patient_notes?.content || '')
-  const [saving, setSaving] = useState(false)
-  const [retrying, setRetrying] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [dictationTarget, setDictationTarget] = useState<'provider' | 'patient' | null>(null)
-  const [transcribingTarget, setTranscribingTarget] = useState<'provider' | 'patient' | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-
+export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
   const config = statusConfig[visit.status] || statusConfig.error
-
-  const startDictation = useCallback(async (target: 'provider' | 'patient') => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : 'audio/webm',
-      })
-      mediaRecorderRef.current = mediaRecorder
-      chunksRef.current = []
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data)
-      }
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop())
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
-        if (audioBlob.size < 1000) return // Too short, ignore
-
-        setTranscribingTarget(target)
-        try {
-          const formData = new FormData()
-          formData.append('audio', audioBlob, 'dictation.webm')
-
-          // Send Clerk session JWT in Authorization for function-level auth.
-          // Send the public anon key in `apikey` so Supabase's platform gateway
-          // accepts the request — the function itself ignores it.
-          const clerkToken = await getToken()
-          if (!clerkToken) {
-            setMessage({ type: 'error', text: 'Not signed in. Please refresh.' })
-            setTranscribingTarget(null)
-            return
-          }
-
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/dictate`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${clerkToken}`,
-                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-              },
-              body: formData,
-            }
-          )
-
-          const result = await response.json()
-          if (result.text) {
-            const setter = target === 'provider' ? setProviderNoteContent : setPatientNoteContent
-            setter(prev => prev ? prev + '\n' + result.text : result.text)
-          } else if (result.error) {
-            setMessage({ type: 'error', text: `Dictation failed: ${result.error}` })
-          }
-        } catch (error) {
-          console.error('Dictation error:', error)
-          setMessage({ type: 'error', text: 'Dictation failed' })
-        } finally {
-          setTranscribingTarget(null)
-        }
-      }
-
-      mediaRecorder.start()
-      setDictationTarget(target)
-    } catch (error) {
-      console.error('Microphone access error:', error)
-      setMessage({ type: 'error', text: 'Could not access microphone. Please allow microphone access.' })
-    }
-  }, [getToken])
-
-  const stopDictation = useCallback(() => {
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop()
-    }
-    setDictationTarget(null)
-  }, [])
-
-  const handleSaveNotes = async () => {
-    setSaving(true)
-    setMessage(null)
-
-    try {
-      const result = await saveVisitNotes(
-        visit.id,
-        visit.provider_notes?.id || null,
-        providerNoteContent,
-        visit.patient_notes?.id || null,
-        patientNoteContent,
-      )
-
-      if (result.error) {
-        setMessage({ type: 'error', text: result.error })
-      } else {
-        setMessage({ type: 'success', text: 'Notes saved successfully' })
-      }
-    } catch (error) {
-      console.error('Failed to save notes:', error)
-      setMessage({ type: 'error', text: 'Failed to save notes' })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const handlePrintPatientNote = () => {
     window.open(`/dashboard/visits/${visit.id}/print`, '_blank')
-  }
-
-  const handleRetryProcessing = async () => {
-    setRetrying(true)
-    setMessage(null)
-
-    try {
-      const result = await retryVisitProcessing(visit.id)
-      if (result.error) {
-        setMessage({ type: 'error', text: result.error })
-      } else {
-        setMessage({ type: 'success', text: 'Reprocessing started' })
-        setTimeout(() => window.location.reload(), 2000)
-      }
-    } catch (error) {
-      console.error('Failed to retry:', error)
-      setMessage({ type: 'error', text: 'Failed to retry processing' })
-    } finally {
-      setRetrying(false)
-    }
   }
 
   return (
@@ -204,19 +82,15 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
           </span>
         </div>
 
-        {visit.status === 'error' && visit.error_message && (
-          <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm font-medium text-red-800">Error</p>
-            <p className="text-sm text-red-700 mt-1">{visit.error_message}</p>
-            <Button
-              onClick={handleRetryProcessing}
-              disabled={retrying}
-              variant="destructive"
-              className="mt-3"
-              size="sm"
-            >
-              {retrying ? 'Retrying...' : 'Retry Processing'}
-            </Button>
+        {visit.status === 'error' && (
+          <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200 space-y-2">
+            <p className="text-sm font-medium text-red-800">AI structuring failed</p>
+            {visit.error_message && (
+              <p className="text-sm text-red-700">{visit.error_message}</p>
+            )}
+            <p className="text-sm text-red-700">
+              Re-dictate to clear the error and try again. The original transcript is preserved.
+            </p>
           </div>
         )}
 
@@ -244,23 +118,13 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
         </div>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div className={`p-4 rounded-lg border ${
-          message.type === 'success'
-            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-            : 'bg-red-50 text-red-800 border-red-200'
-        }`}>
-          {message.text}
-        </div>
-      )}
-
-      {/* Pending visit: either show the dictation card (if no transcript yet)
-          or a non-blocking "AI is working..." hint (if dictation is in flight
-          and Inngest is structuring). */}
-      {visit.status === 'pending' && !visit.provider_notes?.transcript && (
-        <PendingDictationCard visitId={visit.id} />
-      )}
+      {/* Pending visit: dictation card OR "AI is working" hint, depending on
+          whether a dictation has been submitted yet. Errored visits also get
+          the dictation card so the clinician can re-dictate. */}
+      {(visit.status === 'pending' || visit.status === 'error') &&
+        !(visit.status === 'pending' && visit.provider_notes?.transcript) && (
+          <PendingDictationCard visitId={visit.id} />
+        )}
       {visit.status === 'pending' && visit.provider_notes?.transcript && (
         <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
           <p className="font-medium text-violet-900">AI is structuring this dictation…</p>
@@ -270,7 +134,7 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
         </div>
       )}
 
-      {/* Visit Details */}
+      {/* Visit Details (flattened by Inngest persist step) */}
       {(visit.diagnosis || visit.medications || visit.follow_up_instructions || visit.tests_ordered) && (
         <div className="bg-card border border-border rounded-lg p-4">
           <h3 className="text-lg font-semibold mb-4">Visit Details</h3>
@@ -303,17 +167,47 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
         </div>
       )}
 
-      {/* HMIS Diagnosis Codes — show on finalized visits */}
+      {/* HMIS Diagnosis Codes — coded automatically by Inngest, can be
+          confirmed/edited here once the visit is past pending. */}
       {['sent', 'completed', 'review'].includes(visit.status) && (
         <DiagnosisCoder visitId={visit.id} />
       )}
 
-      {/* Dictation transcript */}
+      {/* Provider Note (read-only — edits happen in the review queue) */}
+      {visit.provider_notes?.note_content && (
+        <div className="bg-card border border-border rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-3">Provider Note (SOAP)</h3>
+          <pre className="text-sm whitespace-pre-wrap font-mono bg-muted rounded-lg p-3 border border-border">
+            {visit.provider_notes.note_content}
+          </pre>
+          {visit.status === 'review' && (
+            <p className="text-sm text-muted-foreground mt-3">
+              Edits and approve/reject happen in the{' '}
+              <Link href="/dashboard/review" className="underline">review queue</Link>.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Patient Note (read-only — what gets printed on the receipt) */}
+      {visit.patient_notes?.content && (
+        <div className="bg-card border border-border rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-3">Patient Note</h3>
+          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+            {visit.patient_notes.content}
+          </p>
+        </div>
+      )}
+
+      {/* Original dictation transcript — preserved through reject/error so
+          the clinician can see what they originally said. */}
       {visit.provider_notes?.transcript && (
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-4">Dictation</h3>
-
-          <div className="bg-muted rounded-lg p-4 max-h-64 overflow-y-auto border border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Mic className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold">Dictation</h3>
+          </div>
+          <div className="bg-muted rounded-lg p-3 max-h-64 overflow-y-auto border border-border">
             <p className="text-sm whitespace-pre-wrap font-mono">
               {visit.provider_notes.transcript}
             </p>
@@ -370,102 +264,9 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
         </div>
       )}
 
-      {/* Provider Note */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Provider Note (SOAP)</h3>
-          <Button
-            variant={dictationTarget === 'provider' ? 'destructive' : 'outline'}
-            size="sm"
-            onClick={dictationTarget === 'provider' ? stopDictation : () => startDictation('provider')}
-            disabled={transcribingTarget === 'provider' || (dictationTarget !== null && dictationTarget !== 'provider')}
-            className="gap-2"
-          >
-            {transcribingTarget === 'provider' ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Transcribing...
-              </>
-            ) : dictationTarget === 'provider' ? (
-              <>
-                <MicOff className="h-4 w-4" />
-                Stop
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4" />
-                Dictate
-              </>
-            )}
-          </Button>
-        </div>
-        {dictationTarget === 'provider' && (
-          <div className="mb-3 flex items-center gap-2 text-sm text-red-600">
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            Recording... Tap Stop when done.
-          </div>
-        )}
-        <Textarea
-          value={providerNoteContent}
-          onChange={(e) => setProviderNoteContent(e.target.value)}
-          className="min-h-[200px] font-mono text-sm"
-          placeholder="Provider note content... Use the Dictate button to speak your note."
-        />
-      </div>
-
-      {/* Patient Note */}
-      <div className="bg-card border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Patient Note (Plain Language)</h3>
-          <Button
-            variant={dictationTarget === 'patient' ? 'destructive' : 'outline'}
-            size="sm"
-            onClick={dictationTarget === 'patient' ? stopDictation : () => startDictation('patient')}
-            disabled={transcribingTarget === 'patient' || (dictationTarget !== null && dictationTarget !== 'patient')}
-            className="gap-2"
-          >
-            {transcribingTarget === 'patient' ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Transcribing...
-              </>
-            ) : dictationTarget === 'patient' ? (
-              <>
-                <MicOff className="h-4 w-4" />
-                Stop
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4" />
-                Dictate
-              </>
-            )}
-          </Button>
-        </div>
-        {dictationTarget === 'patient' && (
-          <div className="mb-3 flex items-center gap-2 text-sm text-red-600">
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            Recording... Tap Stop when done.
-          </div>
-        )}
-        <Textarea
-          value={patientNoteContent}
-          onChange={(e) => setPatientNoteContent(e.target.value)}
-          className="min-h-[150px] text-sm"
-          placeholder="Patient-friendly note content... Use the Dictate button to speak your note."
-        />
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          onClick={handleSaveNotes}
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save Notes'}
-        </Button>
-
-        {['sent', 'completed', 'review'].includes(visit.status) && visit.patient_notes?.content ? (
+      {/* Print receipt — only available once approved */}
+      {['sent', 'completed'].includes(visit.status) && visit.patient_notes?.content && (
+        <div className="flex items-center gap-3">
           <Button
             onClick={handlePrintPatientNote}
             className="bg-emerald-600 hover:bg-emerald-700 gap-2"
@@ -473,8 +274,8 @@ export function VisitDetailClient({ visit, staffId, payment }: VisitDetailClient
             <Printer className="h-4 w-4" />
             Print patient note
           </Button>
-        ) : null}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

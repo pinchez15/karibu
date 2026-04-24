@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.DictationException
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.domain.model.AiStructuredSuggestions
 import com.karibuhealth.app.domain.model.PatientNote
 import com.karibuhealth.app.domain.model.ProviderNote
 import com.karibuhealth.app.domain.model.Visit
@@ -21,6 +22,7 @@ data class ReviewUiState(
     val visit: Visit? = null,
     val providerNote: ProviderNote? = null,
     val patientNote: PatientNote? = null,
+    val suggestions: AiStructuredSuggestions? = null,
     val isLoading: Boolean = true,
     val isApproving: Boolean = false,
     val isRejecting: Boolean = false,
@@ -51,7 +53,14 @@ class ReviewViewModel @Inject constructor(
 
         viewModelScope.launch {
             noteRepository.getProviderNote(visitId).collect { note ->
-                _uiState.update { it.copy(providerNote = note, isLoading = note == null) }
+                val suggestions = AiStructuredSuggestions.parseOrNull(note?.structuredData)
+                _uiState.update {
+                    it.copy(
+                        providerNote = note,
+                        suggestions = suggestions,
+                        isLoading = note == null,
+                    )
+                }
             }
         }
 

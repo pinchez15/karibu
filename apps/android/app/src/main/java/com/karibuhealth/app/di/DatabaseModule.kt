@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.karibuhealth.app.data.local.db.KaribuDatabase
 import com.karibuhealth.app.data.local.db.dao.*
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_2_3
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,7 +27,9 @@ object DatabaseModule {
             // Offline-first means unsynced patient/visit/payment rows live only
             // in this DB until the next sync. fallbackToDestructiveMigration()
             // would wipe all of that on every schema bump. Only allow destructive
-            // wipe on downgrade. Schema upgrades MUST add a real Migration object.
+            // wipe on downgrade. Schema upgrades MUST register a real Migration
+            // here or Room will throw on first open.
+            .addMigrations(MIGRATION_2_3)
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }

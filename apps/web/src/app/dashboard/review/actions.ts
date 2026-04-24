@@ -60,14 +60,18 @@ export async function approveVisit(
       .eq('visit_id', visitId),
   ])
 
-  // Mark visit as approved and ready to print
+  // Mark visit as approved and ready to print. review_status='reviewed' is
+  // the canonical "clinician signed off on the AI output" state in the
+  // dictation-only enum (pending | pending_review | reviewed | rejected) —
+  // matches what the Android approve-dictation edge function writes.
   const { error: statusError } = await supabase
     .from('visits')
     .update({
-      review_status: 'approved',
+      review_status: 'reviewed',
       reviewed_by: staff.id,
       reviewed_at: now,
       status: 'sent',
+      finalized_at: now,
     })
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
