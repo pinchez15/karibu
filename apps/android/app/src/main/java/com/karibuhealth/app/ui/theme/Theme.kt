@@ -7,10 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-// Karibu Health brand colors
-val KaribuBlue = Color(0xFF0369A1)
-val KaribuBlueDark = Color(0xFF075985)
-val KaribuBlueLight = Color(0xFF0EA5E9)
+// Karibu Health brand colors — derived from logo (#1E3BAA)
+val KaribuBlue = Color(0xFF1E3BAA)
+val KaribuBlueDark = Color(0xFF152A7A)
+val KaribuBlueLight = Color(0xFF7B8DD9)
+val KaribuBlueContainer = Color(0xFFE8EBF7)
 val KaribuGreen = Color(0xFF16A34A)
 val KaribuBackground = Color(0xFFF9FAFB)
 val KaribuSurface = Color(0xFFFFFFFF)
@@ -20,7 +21,7 @@ val KaribuWarning = Color(0xFFF59E0B)
 private val LightColorScheme = lightColorScheme(
     primary = KaribuBlue,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE0F2FE),
+    primaryContainer = KaribuBlueContainer,
     onPrimaryContainer = KaribuBlueDark,
     secondary = KaribuGreen,
     onSecondary = Color.White,
@@ -36,9 +37,9 @@ private val LightColorScheme = lightColorScheme(
 
 private val DarkColorScheme = darkColorScheme(
     primary = KaribuBlueLight,
-    onPrimary = Color(0xFF003258),
+    onPrimary = Color(0xFF0B1556),
     primaryContainer = KaribuBlueDark,
-    onPrimaryContainer = Color(0xFFE0F2FE),
+    onPrimaryContainer = KaribuBlueContainer,
     secondary = Color(0xFF4ADE80),
     onSecondary = Color(0xFF003D1A),
     background = Color(0xFF111827),

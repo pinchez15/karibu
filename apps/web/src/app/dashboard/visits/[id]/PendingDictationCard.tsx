@@ -185,12 +185,12 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
       />
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 flex items-start justify-between gap-2">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start justify-between gap-2">
           <span className="flex-1">{error}</span>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="text-red-700 hover:text-red-900 text-xs underline"
+            className="text-destructive hover:opacity-80 text-xs underline"
           >
             Dismiss
           </button>

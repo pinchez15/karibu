@@ -43,7 +43,10 @@ export default function Home() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <img src="/logos/shortname-and-icon.png" alt="Karibu" className="h-8" />
+          <div className="flex items-center gap-2">
+            <img src="/logos/icon-only.svg" alt="" className="h-8 w-8" />
+            <span className="text-lg font-semibold tracking-tight">Karibu<span className="text-primary">.health</span></span>
+          </div>
           <Button size="sm" asChild>
             <Link href="/dashboard">Sign In</Link>
           </Button>
@@ -53,8 +56,9 @@ export default function Home() {
       {/* Hero */}
       <section className="flex flex-col items-center justify-center px-4 py-20">
         <div className="w-full max-w-4xl text-center space-y-8">
-          <div className="flex justify-center">
-            <img src="/logos/icon-and-name.png" alt="Karibu.health" className="h-32" />
+          <div className="flex flex-col items-center gap-4">
+            <img src="/logos/icon-only.svg" alt="Karibu" className="h-24 w-24" />
+            <img src="/logos/name-only.png" alt="Karibu.health" className="h-12" />
           </div>
 
           <div className="space-y-4">
@@ -107,7 +111,8 @@ export default function Home() {
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto text-center text-sm text-muted-foreground space-y-2">
           <div className="flex items-center justify-center gap-2">
-            <img src="/logos/shortname-and-icon.png" alt="Karibu" className="h-6" />
+            <img src="/logos/icon-only.svg" alt="" className="h-6 w-6" />
+            <span className="font-semibold tracking-tight text-foreground">Karibu<span className="text-primary">.health</span></span>
           </div>
           <p>Mobile-first healthcare for Uganda</p>
           <p>CappaWork LLC &copy; {new Date().getFullYear()}</p>

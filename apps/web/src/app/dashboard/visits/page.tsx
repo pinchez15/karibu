@@ -60,11 +60,11 @@ async function getVisits(
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'To Dictate', color: 'text-violet-700', bg: 'bg-violet-100' },
-  review: { label: 'Review', color: 'text-primary', bg: 'bg-secondary' },
-  sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
+  pending: { label: 'To Dictate', color: 'text-primary', bg: 'bg-primary/10' },
+  review: { label: 'Review', color: 'text-primary', bg: 'bg-primary/10' },
+  sent: { label: 'Sent', color: 'text-accent', bg: 'bg-accent/10' },
   completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
-  error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
+  error: { label: 'Error', color: 'text-destructive', bg: 'bg-destructive/10' },
 }
 
 export default async function VisitsPage({
@@ -141,7 +141,7 @@ export default async function VisitsPage({
                     {new Date(visit.visit_date).toLocaleDateString()} &middot; {visit.doctor?.display_name || 'Unassigned'}
                   </Link>
                   {visit.status === 'error' && visit.error_message && (
-                    <p className="text-xs text-red-600 mt-1 truncate">
+                    <p className="text-xs text-destructive mt-1 truncate">
                       {visit.error_message}
                     </p>
                   )}

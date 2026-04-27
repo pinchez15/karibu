@@ -40,9 +40,9 @@ interface QueueDashboardClientProps {
 
 const priorityConfig = {
   low: { label: 'Low', color: 'text-muted-foreground', bg: 'bg-muted' },
-  normal: { label: 'Normal', color: 'text-primary', bg: 'bg-secondary' },
-  high: { label: 'High', color: 'text-amber-700', bg: 'bg-amber-100' },
-  urgent: { label: 'Urgent', color: 'text-red-700', bg: 'bg-red-100' },
+  normal: { label: 'Normal', color: 'text-primary', bg: 'bg-primary/10' },
+  high: { label: 'High', color: 'text-amber-700', bg: 'bg-amber-500/15' },
+  urgent: { label: 'Urgent', color: 'text-destructive', bg: 'bg-destructive/10' },
 }
 
 function getWaitTime(minutes: number): string {
@@ -225,9 +225,9 @@ export function QueueDashboardClient({
         )
 
     return (
-      <Wrapper className={`bg-card border rounded-lg p-4 space-y-3 ${
-        isUrgent ? 'border-red-300 bg-red-50/50' :
-        isHigh ? 'border-amber-300 bg-amber-50/30' :
+      <Wrapper className={`bg-card border rounded-xl p-4 space-y-3 ${
+        isUrgent ? 'border-destructive/40 bg-destructive/5' :
+        isHigh ? 'border-amber-500/40 bg-amber-500/5' :
         'border-border'
       }`}>
         <div className="flex items-start justify-between gap-2">
@@ -240,10 +240,11 @@ export function QueueDashboardClient({
               >
                 {item.patient_name || 'Unknown Patient'}
               </Link>
-              {(isUrgent || isHigh) && (
-                <Badge variant="destructive" className="text-xs">
-                  {isUrgent ? 'Urgent' : 'High'}
-                </Badge>
+              {isUrgent && (
+                <Badge variant="urgent" className="text-xs">Urgent</Badge>
+              )}
+              {isHigh && !isUrgent && (
+                <Badge variant="warning" className="text-xs">High</Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
@@ -277,7 +278,7 @@ export function QueueDashboardClient({
                 size="sm"
                 onClick={() => handleMarkReady(item.visit_id)}
                 disabled={loading === item.visit_id}
-                className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700"
+                className="flex-1 h-10 bg-accent text-accent-foreground hover:bg-accent/90"
               >
                 {loading === item.visit_id ? 'Updating...' : 'Send to Doctor'}
               </Button>
@@ -326,16 +327,16 @@ export function QueueDashboardClient({
       {/* Queue stats strip */}
       <div className="bg-muted/30 border-b border-border px-4 py-3">
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-card rounded-lg p-3 text-center border border-border">
+          <div className="bg-card rounded-xl p-3 text-center border border-border">
             <p className="text-2xl font-semibold text-amber-600">{waitingNurse.length}</p>
             <p className="text-xs text-muted-foreground mt-1">Waiting</p>
           </div>
-          <div className="bg-card rounded-lg p-3 text-center border border-border">
+          <div className="bg-card rounded-xl p-3 text-center border border-border">
             <p className="text-2xl font-semibold text-primary">{readyForDoctor.length}</p>
             <p className="text-xs text-muted-foreground mt-1">Ready for Doctor</p>
           </div>
-          <div className="bg-card rounded-lg p-3 text-center border border-border">
-            <p className="text-2xl font-semibold text-emerald-600">{completed.length}</p>
+          <div className="bg-card rounded-xl p-3 text-center border border-border">
+            <p className="text-2xl font-semibold text-accent">{completed.length}</p>
             <p className="text-xs text-muted-foreground mt-1">Done Today</p>
           </div>
         </div>
@@ -344,25 +345,25 @@ export function QueueDashboardClient({
         {reviewCount > 0 && (
           <Link
             href="/dashboard/review"
-            className="mt-3 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg p-3"
+            className="mt-3 flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3 hover:bg-primary/10 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-amber-600" />
-              <span className="text-sm font-medium text-amber-800">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
                 {reviewCount} visit{reviewCount > 1 ? 's' : ''} to review
               </span>
             </div>
-            <span className="text-sm text-amber-600">Review &rarr;</span>
+            <span className="text-sm text-primary">Review &rarr;</span>
           </Link>
         )}
       </div>
 
       {/* Add patient message */}
       {addMessage && !showAddPatient && (
-        <div className={`mx-4 mt-3 p-3 rounded-lg text-sm ${
+        <div className={`mx-4 mt-3 p-3 rounded-xl text-sm border ${
           addMessage.type === 'success'
-            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-            : 'bg-red-50 text-red-800 border border-red-200'
+            ? 'bg-accent/10 text-accent border-accent/30'
+            : 'bg-destructive/10 text-destructive border-destructive/30'
         }`}>
           {addMessage.text}
         </div>
@@ -379,8 +380,8 @@ export function QueueDashboardClient({
           </div>
 
           {addMessage && (
-            <div className={`p-3 rounded-lg text-sm ${
-              addMessage.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'
+            <div className={`p-3 rounded-xl text-sm ${
+              addMessage.type === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-accent/10 text-accent'
             }`}>
               {addMessage.text}
             </div>

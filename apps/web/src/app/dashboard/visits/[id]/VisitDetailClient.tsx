@@ -49,11 +49,11 @@ interface VisitDetailClientProps {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'To Dictate', color: 'text-violet-700', bg: 'bg-violet-100' },
-  review: { label: 'Review', color: 'text-primary', bg: 'bg-secondary' },
-  sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
+  pending: { label: 'To Dictate', color: 'text-primary', bg: 'bg-primary/10' },
+  review: { label: 'Review', color: 'text-primary', bg: 'bg-primary/10' },
+  sent: { label: 'Sent', color: 'text-accent', bg: 'bg-accent/10' },
   completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
-  error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
+  error: { label: 'Error', color: 'text-destructive', bg: 'bg-destructive/10' },
 }
 
 export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
@@ -83,12 +83,12 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         </div>
 
         {visit.status === 'error' && (
-          <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200 space-y-2">
-            <p className="text-sm font-medium text-red-800">AI structuring failed</p>
+          <div className="mt-4 p-4 bg-destructive/5 rounded-xl border border-destructive/20 space-y-2">
+            <p className="text-sm font-medium text-destructive">AI structuring failed</p>
             {visit.error_message && (
-              <p className="text-sm text-red-700">{visit.error_message}</p>
+              <p className="text-sm text-destructive/90">{visit.error_message}</p>
             )}
-            <p className="text-sm text-red-700">
+            <p className="text-sm text-destructive/90">
               Re-dictate to clear the error and try again. The original transcript is preserved.
             </p>
           </div>
@@ -126,9 +126,9 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
           <PendingDictationCard visitId={visit.id} />
         )}
       {visit.status === 'pending' && visit.provider_notes?.transcript && (
-        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
-          <p className="font-medium text-violet-900">AI is structuring this dictation…</p>
-          <p className="text-sm text-violet-800 mt-1">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+          <p className="font-medium text-primary">AI is structuring this dictation…</p>
+          <p className="text-sm text-primary/90 mt-1">
             Usually under a minute. The visit will move to Review when it&apos;s ready.
           </p>
         </div>
@@ -221,10 +221,10 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold">Payment</h3>
             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              payment.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-              payment.status === 'waived' ? 'bg-gray-100 text-gray-600' :
-              payment.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-              'bg-red-100 text-red-700'
+              payment.status === 'paid' ? 'bg-accent/10 text-accent' :
+              payment.status === 'waived' ? 'bg-muted text-muted-foreground' :
+              payment.status === 'pending' ? 'bg-amber-500/15 text-amber-700' :
+              'bg-destructive/10 text-destructive'
             }`}>
               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
             </span>
@@ -269,7 +269,7 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         <div className="flex items-center gap-3">
           <Button
             onClick={handlePrintPatientNote}
-            className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+            className="gap-2"
           >
             <Printer className="h-4 w-4" />
             Print patient note

@@ -7,11 +7,11 @@ import { ArrowLeft } from 'lucide-react'
 import { PatientSexEditor } from './PatientSexEditor'
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'To Dictate', color: 'text-violet-700', bg: 'bg-violet-100' },
-  review: { label: 'Review', color: 'text-primary', bg: 'bg-secondary' },
-  sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
+  pending: { label: 'To Dictate', color: 'text-primary', bg: 'bg-primary/10' },
+  review: { label: 'Review', color: 'text-primary', bg: 'bg-primary/10' },
+  sent: { label: 'Sent', color: 'text-accent', bg: 'bg-accent/10' },
   completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
-  error: { label: 'Error', color: 'text-red-700', bg: 'bg-red-100' },
+  error: { label: 'Error', color: 'text-destructive', bg: 'bg-destructive/10' },
 }
 
 export default async function PatientProfilePage({
@@ -113,9 +113,9 @@ export default async function PatientProfilePage({
                   <div className="flex-shrink-0 mt-1">
                     <div className={`w-[10px] h-[10px] rounded-full border-2 ${
                       visit.status === 'sent' || visit.status === 'completed'
-                        ? 'bg-emerald-500 border-emerald-600'
+                        ? 'bg-accent border-accent'
                         : visit.status === 'error'
-                        ? 'bg-red-500 border-red-600'
+                        ? 'bg-destructive border-destructive'
                         : 'bg-primary border-primary'
                     }`} />
                   </div>
@@ -159,10 +159,10 @@ export default async function PatientProfilePage({
                     {/* Note indicators */}
                     <div className="flex gap-3 text-xs text-muted-foreground">
                       {hasSOAP && (
-                        <span className="text-emerald-600">SOAP note ✓</span>
+                        <span className="text-accent">SOAP note ✓</span>
                       )}
                       {hasPatientNote && (
-                        <span className="text-blue-600">Patient note ✓</span>
+                        <span className="text-primary">Patient note ✓</span>
                       )}
                     </div>
                   </Link>

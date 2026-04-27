@@ -37,11 +37,11 @@ export default async function StaffManagementPage() {
   const staffList = await getStaffList(staff.clinic_id)
 
   return (
-    <div>
+    <div className="p-4">
       <div className="mb-6">
         <Link
           href="/dashboard/admin"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -52,22 +52,22 @@ export default async function StaffManagementPage() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-semibold tracking-tight">Staff Management</h2>
+          <p className="text-muted-foreground mt-1">
             {staffList.filter((s) => s.is_active).length} active staff members
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Staff</h3>
-        <p className="text-gray-600 mb-4">
+      <div className="bg-card rounded-xl p-6 border border-border mb-6">
+        <h3 className="text-lg font-semibold mb-4">Invite Staff</h3>
+        <p className="text-muted-foreground mb-4">
           Staff provisioning now happens from the internal provisioning workspace.
           Use that page to create clinics, send invitations, and keep Clerk + Supabase aligned.
         </p>
         <Link
           href="/dashboard/superadmin"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
         >
           Open Provisioning Workspace
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

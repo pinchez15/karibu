@@ -43,14 +43,14 @@ export function DataQualitySummary({ quality }: DataQualitySummaryProps) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`rounded-lg border p-3 ${
+          className={`rounded-xl border p-3 ${
             card.warn
-              ? 'border-amber-200 bg-amber-50'
+              ? 'border-amber-500/30 bg-amber-500/10'
               : 'border-border bg-card'
           }`}
         >
           <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
-          <p className={`text-2xl font-bold mt-0.5 ${card.warn ? 'text-amber-800' : ''}`}>
+          <p className={`text-2xl font-semibold mt-0.5 ${card.warn ? 'text-amber-700' : ''}`}>
             {card.value}
           </p>
           <p className={`text-xs mt-0.5 ${card.warn ? 'text-amber-700' : 'text-muted-foreground'}`}>

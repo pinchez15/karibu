@@ -63,7 +63,7 @@ export default async function SettingsPage() {
 
       {/* Sign out */}
       <SignOutButton redirectUrl="/">
-        <Button variant="outline" className="w-full h-12 gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+        <Button variant="outline" className="w-full h-12 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10">
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>

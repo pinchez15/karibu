@@ -168,7 +168,7 @@ export function DiagnosisCoder({ visitId }: DiagnosisCoderProps) {
                 size="sm"
                 onClick={() => handleRemove(code)}
                 disabled={saving}
-                className="text-xs h-7 text-red-600 hover:text-red-700"
+                className="text-xs h-7 text-destructive hover:text-destructive/80"
               >
                 Remove
               </Button>

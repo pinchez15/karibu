@@ -150,10 +150,10 @@ export function PrintView({ visit }: { visit: PrintVisit }) {
           }
           .toolbar button {
             padding: 12px 20px;
-            background: #059669;
+            background: #1E3BAA;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -161,7 +161,7 @@ export function PrintView({ visit }: { visit: PrintVisit }) {
           }
           .toolbar button.secondary {
             background: white;
-            color: #374151;
+            color: #111827;
             border: 1px solid #d1d5db;
           }
           .preview-note {

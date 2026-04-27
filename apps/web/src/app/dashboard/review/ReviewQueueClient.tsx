@@ -211,8 +211,8 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <Check className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
+            <Check className="w-8 h-8 text-accent" />
           </div>
           <div>
             <h2 className="text-xl font-medium mb-2">All caught up!</h2>
@@ -229,10 +229,10 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
   return (
     <div className="p-4 space-y-3">
       {message && (
-        <div className={`p-4 rounded-lg border ${
+        <div className={`p-4 rounded-xl border ${
           message.type === 'success'
-            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-            : 'bg-red-50 text-red-800 border-red-200'
+            ? 'bg-accent/10 text-accent border-accent/30'
+            : 'bg-destructive/10 text-destructive border-destructive/30'
         }`}>
           {message.text}
         </div>
@@ -242,8 +242,8 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
       {paymentVisitId && (
         <div className="bg-card border-2 border-primary/30 rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <Check className="w-5 h-5 text-green-600" />
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <Check className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h3 className="font-semibold">Record Payment</h3>
@@ -253,7 +253,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
             <input
               type="checkbox"
               id="waive-payment"
@@ -261,7 +261,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
               onChange={(e) => setPaymentWaived(e.target.checked)}
               className="h-4 w-4"
             />
-            <Label htmlFor="waive-payment" className="text-sm text-amber-800 cursor-pointer">
+            <Label htmlFor="waive-payment" className="text-sm text-amber-700 cursor-pointer">
               Waive payment (patient unable to pay)
             </Label>
           </div>
@@ -372,25 +372,25 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                   {visit.diagnosis && (
                     <p>
                       <span className="text-muted-foreground">Dx:</span>{' '}
-                      {visit.diagnosis} <span className="text-green-600">&#10003;</span>
+                      {visit.diagnosis} <span className="text-accent">&#10003;</span>
                     </p>
                   )}
                   {visit.medications && (
                     <p>
                       <span className="text-muted-foreground">Rx:</span>{' '}
-                      {visit.medications} <span className="text-green-600">&#10003;</span>
+                      {visit.medications} <span className="text-accent">&#10003;</span>
                     </p>
                   )}
                   {visit.follow_up_instructions && (
                     <p>
                       <span className="text-muted-foreground">Follow-up:</span>{' '}
-                      {visit.follow_up_instructions} <span className="text-green-600">&#10003;</span>
+                      {visit.follow_up_instructions} <span className="text-accent">&#10003;</span>
                     </p>
                   )}
                   {visit.tests_ordered && (
                     <p>
                       <span className="text-muted-foreground">Tests:</span>{' '}
-                      {visit.tests_ordered} <span className="text-green-600">&#10003;</span>
+                      {visit.tests_ordered} <span className="text-accent">&#10003;</span>
                     </p>
                   )}
                 </div>
@@ -426,11 +426,10 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                                 <span className="text-xs text-muted-foreground font-mono">{dx.icd10}</span>
                               )}
                               <Badge
-                                variant="outline"
-                                className={
-                                  dx.confidence === 'high' ? 'border-emerald-300 text-emerald-700' :
-                                  dx.confidence === 'medium' ? 'border-amber-300 text-amber-700' :
-                                  'border-gray-300 text-gray-600'
+                                variant={
+                                  dx.confidence === 'high' ? 'success' :
+                                  dx.confidence === 'medium' ? 'warning' :
+                                  'neutral'
                                 }
                               >
                                 {dx.confidence} confidence
@@ -468,14 +467,14 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                   )}
 
                   {s.learning_note && (
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
                       <span className="font-medium">Worth a read: </span>
                       {s.learning_note}
                     </div>
                   )}
 
                   {s.missing_info && s.missing_info.length > 0 && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm text-accent">
                       <p className="font-medium mb-1">Worth confirming:</p>
                       <ul className="list-disc pl-5 space-y-0.5">
                         {s.missing_info.map((m, i) => (
@@ -544,7 +543,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
             {visit.patient_notes?.content && (
               <div className="space-y-2">
                 <h3 className="font-medium text-sm text-muted-foreground">PATIENT NOTE (Preview)</h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
                   <div className="text-sm leading-relaxed whitespace-pre-wrap">
                     {visit.patient_notes.content}
                   </div>

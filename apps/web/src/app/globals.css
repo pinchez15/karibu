@@ -3,28 +3,28 @@
 @tailwind utilities;
 
 :root {
-  /* Figma design system - RGB triplets for Tailwind alpha support */
-  --background: 255 255 255;
-  --foreground: 26 26 26;
+  /* Brand palette — primary derived from Karibu logo (#1E3BAA) */
+  --background: 249 250 251;
+  --foreground: 17 24 39;
   --card: 255 255 255;
-  --card-foreground: 26 26 26;
-  --primary: 0 102 204;
+  --card-foreground: 17 24 39;
+  --primary: 30 59 170;
   --primary-foreground: 255 255 255;
-  --secondary: 232 244 253;
-  --secondary-foreground: 0 102 204;
-  --muted: 245 245 245;
-  --muted-foreground: 102 102 102;
-  --accent: 0 168 150;
+  --secondary: 232 235 247;
+  --secondary-foreground: 30 59 170;
+  --muted: 243 244 246;
+  --muted-foreground: 107 114 128;
+  --accent: 22 163 74;
   --accent-foreground: 255 255 255;
   --destructive: 220 38 38;
   --destructive-foreground: 255 255 255;
-  --border: 224 224 224;
-  --input: 224 224 224;
-  --input-background: 249 249 249;
-  --ring: 0 102 204;
-  --radius: 0.5rem;
+  --border: 229 231 235;
+  --input: 209 213 219;
+  --input-background: 249 250 251;
+  --ring: 30 59 170;
+  --radius: 0.75rem;
 
-  /* Status colors (used via CSS var()) */
+  /* Status colors */
   --status-synced: #16a34a;
   --status-pending: #f59e0b;
   --status-offline: #dc2626;
@@ -32,7 +32,7 @@
   /* Pin/alert colors */
   --pin-critical: #dc2626;
   --pin-warning: #f59e0b;
-  --pin-info: #0066cc;
+  --pin-info: #1e3baa;
 }
 
 @layer base {
@@ -48,12 +48,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1 { font-size: 1.5rem; font-weight: 500; line-height: 1.5; }
-  h2 { font-size: 1.25rem; font-weight: 500; line-height: 1.5; }
-  h3 { font-size: 1.125rem; font-weight: 500; line-height: 1.5; }
-  h4 { font-size: 1rem; font-weight: 500; line-height: 1.5; }
-  label { font-size: 1rem; font-weight: 500; line-height: 1.5; }
-  button { font-size: 1rem; font-weight: 500; line-height: 1.5; }
+  h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
+  h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
+  h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.4; }
+  h4 { font-size: 1rem; font-weight: 600; line-height: 1.5; }
+  label { font-size: 0.875rem; font-weight: 500; line-height: 1.5; }
+  button { font-size: 0.9375rem; font-weight: 500; line-height: 1.5; }
   input { font-size: 1rem; font-weight: 400; line-height: 1.5; }
 }
 
@@ -71,7 +71,7 @@
   }
 
   .btn-success {
-    @apply btn bg-success text-white hover:bg-emerald-700 focus:ring-success;
+    @apply btn bg-accent text-accent-foreground hover:bg-accent/90 focus:ring-accent;
   }
 
   .btn-secondary {
@@ -79,12 +79,12 @@
   }
 
   .btn-danger {
-    @apply btn bg-destructive text-white hover:bg-red-700 focus:ring-destructive;
+    @apply btn bg-destructive text-white hover:bg-destructive/90 focus:ring-destructive;
   }
 
   /* Clinical card */
   .card {
-    @apply bg-card rounded-lg border border-border p-4;
+    @apply bg-card rounded-xl border border-border p-4;
   }
 
   /* Data display */
@@ -103,6 +103,16 @@
   .skeleton {
     @apply bg-muted rounded animate-pulse;
   }
+
+  /* Android-style soft status chip — 12% tint background, full-saturation label */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .chip-info     { @apply bg-primary/10 text-primary; }
+  .chip-success  { @apply bg-accent/10 text-accent; }
+  .chip-warning  { color: #b45309; background-color: rgb(245 158 11 / 0.12); }
+  .chip-danger   { @apply bg-destructive/10 text-destructive; }
+  .chip-neutral  { @apply bg-muted text-muted-foreground; }
 }
 
 /* Print styles */

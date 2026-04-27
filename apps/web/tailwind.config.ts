@@ -47,9 +47,9 @@ const config: Config = {
         // Pin/alert colors
         'pin-critical': '#dc2626',
         'pin-warning': '#f59e0b',
-        'pin-info': '#0066cc',
+        'pin-info': '#1e3baa',
         // Legacy aliases
-        success: '#059669',
+        success: '#16a34a',
         warning: '#D97706',
         error: '#DC2626',
       },

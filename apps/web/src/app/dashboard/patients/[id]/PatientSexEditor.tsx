@@ -31,7 +31,7 @@ export function PatientSexEditor({
         Sex: {currentSex === 'M' ? 'Male' : 'Female'}
         <button
           onClick={() => setEditing(true)}
-          className="ml-1 text-blue-600 hover:underline"
+          className="ml-1 text-primary hover:underline"
         >
           edit
         </button>
@@ -45,7 +45,7 @@ export function PatientSexEditor({
         Sex: Not set{' '}
         <button
           onClick={() => setEditing(true)}
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           set now
         </button>
@@ -61,8 +61,8 @@ export function PatientSexEditor({
         disabled={saving}
         className={`px-2 py-0.5 rounded text-xs font-medium border ${
           currentSex === 'M'
-            ? 'bg-blue-100 border-blue-300 text-blue-800'
-            : 'border-gray-300 hover:bg-gray-100'
+            ? 'bg-primary/10 border-primary/30 text-primary'
+            : 'border-input hover:bg-secondary'
         }`}
       >
         Male
@@ -72,15 +72,15 @@ export function PatientSexEditor({
         disabled={saving}
         className={`px-2 py-0.5 rounded text-xs font-medium border ${
           currentSex === 'F'
-            ? 'bg-pink-100 border-pink-300 text-pink-800'
-            : 'border-gray-300 hover:bg-gray-100'
+            ? 'bg-primary/10 border-primary/30 text-primary'
+            : 'border-input hover:bg-secondary'
         }`}
       >
         Female
       </button>
       <button
         onClick={() => setEditing(false)}
-        className="text-xs text-gray-500 hover:underline"
+        className="text-xs text-muted-foreground hover:underline"
       >
         cancel
       </button>
