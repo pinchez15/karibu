@@ -10,6 +10,8 @@ import com.clerk.api.session.GetTokenOptions
 import com.clerk.api.session.fetchToken
 import com.clerk.api.signin.SignIn
 import com.clerk.api.signin.attemptFirstFactor
+import com.clerk.api.signin.attemptSecondFactor
+import com.clerk.api.signin.prepareSecondFactor
 import com.karibuhealth.app.BuildConfig
 import com.karibuhealth.app.data.repository.AuthManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,15 +29,16 @@ import javax.inject.Singleton
 sealed interface ClerkAuthState {
     data object Loading : ClerkAuthState
     data object SignedOut : ClerkAuthState
+    data class NeedsCode(val destinationHint: String) : ClerkAuthState
     data class SignedIn(val userId: String) : ClerkAuthState
     data class Error(val message: String) : ClerkAuthState
 }
 
-/**
- * Clerk owns the native sign-in UX and session persistence. This manager bridges
- * that session into the app's own AuthManager by fetching a Supabase JWT from
- * the configured Clerk template and caching linked staff data locally.
- */
+private enum class PendingCodeStep {
+    SECOND_FACTOR_EMAIL,
+    SECOND_FACTOR_PHONE,
+}
+
 @Singleton
 class ClerkAuthManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -50,6 +53,8 @@ class ClerkAuthManager @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var observeJob: Job? = null
+    private var pendingSignIn: SignIn? = null
+    private var pendingCodeStep: PendingCodeStep? = null
 
     fun initialize() {
         if (BuildConfig.CLERK_PUBLISHABLE_KEY.isBlank()) {
@@ -71,6 +76,12 @@ class ClerkAuthManager @Inject constructor(
         initialize()
     }
 
+    fun resetPendingSignIn() {
+        pendingSignIn = null
+        pendingCodeStep = null
+        _state.value = ClerkAuthState.SignedOut
+    }
+
     private fun observeUserSession() {
         observeJob?.cancel()
         observeJob = scope.launch {
@@ -78,7 +89,9 @@ class ClerkAuthManager @Inject constructor(
                 try {
                     if (user == null) {
                         authManager.signOut()
-                        _state.value = ClerkAuthState.SignedOut
+                        if (pendingSignIn == null) {
+                            _state.value = ClerkAuthState.SignedOut
+                        }
                     } else {
                         handleActiveSession(user.id)
                     }
@@ -105,6 +118,8 @@ class ClerkAuthManager @Inject constructor(
             return
         }
 
+        pendingSignIn = null
+        pendingCodeStep = null
         authManager.onClerkSignIn(userId, token)
         _state.value = ClerkAuthState.SignedIn(userId)
     }
@@ -112,44 +127,103 @@ class ClerkAuthManager @Inject constructor(
     suspend fun signInWithPassword(email: String, password: String) {
         val identifier = email.trim().lowercase()
         val createResult = SignIn.create(
-            SignIn.CreateParams.Strategy.Identifier(identifier = identifier)
+            SignIn.CreateParams.Strategy.Password(
+                identifier = identifier,
+                password = password,
+            )
         )
 
-        val signIn = when (createResult) {
-            is ClerkResult.Success -> createResult.value
+        when (createResult) {
+            is ClerkResult.Success -> handleSignInResult(createResult.value)
             is ClerkResult.Failure -> {
                 val message = createResult.throwable?.message
                     ?.takeIf { it.isNotBlank() }
                     ?: "Invalid email or password"
-                Log.w(TAG, "Sign-in creation failed for $identifier: $message", createResult.throwable)
+                Log.w(TAG, "Password sign-in failed for $identifier: $message", createResult.throwable)
                 throw IllegalStateException(message, createResult.throwable)
             }
         }
+    }
 
-        val attemptResult = signIn.attemptFirstFactor(
-            SignIn.AttemptFirstFactorParams.Password(password = password)
-        )
+    suspend fun submitVerificationCode(code: String) {
+        val signIn = pendingSignIn ?: throw IllegalStateException("Start sign-in again.")
+        val step = pendingCodeStep ?: throw IllegalStateException("No verification step is pending.")
 
-        when (attemptResult) {
+        val result = when (step) {
+            PendingCodeStep.SECOND_FACTOR_EMAIL -> signIn.attemptSecondFactor(
+                SignIn.AttemptSecondFactorParams.EmailCode(code = code)
+            )
+            PendingCodeStep.SECOND_FACTOR_PHONE -> signIn.attemptSecondFactor(
+                SignIn.AttemptSecondFactorParams.PhoneCode(code = code)
+            )
+        }
+
+        when (result) {
+            is ClerkResult.Success -> handleSignInResult(result.value)
+            is ClerkResult.Failure -> {
+                val message = result.throwable?.message
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Invalid verification code"
+                Log.w(TAG, "Verification failed: $message", result.throwable)
+                throw IllegalStateException(message, result.throwable)
+            }
+        }
+    }
+
+    private suspend fun handleSignInResult(signIn: SignIn) {
+        val sessionId = signIn.createdSessionId
+        if (!sessionId.isNullOrBlank()) {
+            val active = Clerk.setActive(sessionId, null)
+            if (active !is ClerkResult.Success) {
+                throw IllegalStateException("Signed in, but failed to activate session")
+            }
+            return
+        }
+
+        when (signIn.status) {
+            SignIn.Status.NEEDS_SECOND_FACTOR -> prepareSecondFactor(signIn)
+            else -> {
+                val status = signIn.status.name.lowercase()
+                throw IllegalStateException("Sign-in requires a step the app does not support yet ($status)")
+            }
+        }
+    }
+
+    private suspend fun prepareSecondFactor(signIn: SignIn) {
+        val preparedResult = signIn.prepareSecondFactor()
+        when (preparedResult) {
             is ClerkResult.Success -> {
-                val completedSignIn = attemptResult.value
-                val sessionId = completedSignIn.createdSessionId
-                if (!sessionId.isNullOrBlank()) {
-                    val active = Clerk.setActive(sessionId, null)
-                    if (active !is ClerkResult.Success) {
-                        throw IllegalStateException("Signed in, but failed to activate session")
-                    }
-                } else {
-                    val status = completedSignIn.status.name.lowercase()
-                    throw IllegalStateException("Sign-in is not complete yet ($status)")
+                val prepared = preparedResult.value
+                val emailFactor = prepared.supportedSecondFactors
+                    ?.firstOrNull { it.strategy == SignIn.PrepareSecondFactorParams.EMAIL_CODE }
+                val phoneFactor = prepared.supportedSecondFactors
+                    ?.firstOrNull { it.strategy == SignIn.PrepareSecondFactorParams.PHONE_CODE }
+
+                pendingSignIn = prepared
+                pendingCodeStep = when {
+                    emailFactor != null -> PendingCodeStep.SECOND_FACTOR_EMAIL
+                    phoneFactor != null -> PendingCodeStep.SECOND_FACTOR_PHONE
+                    else -> null
                 }
+
+                val hint = when {
+                    emailFactor != null -> "Check your email for the code from Clerk."
+                    phoneFactor != null -> "Check your phone for the code from Clerk."
+                    else -> null
+                }
+
+                if (pendingCodeStep == null || hint == null) {
+                    throw IllegalStateException("Clerk requested MFA, but no email or phone code factor was available.")
+                }
+
+                _state.value = ClerkAuthState.NeedsCode(hint)
             }
             is ClerkResult.Failure -> {
-                val message = attemptResult.throwable?.message
+                val message = preparedResult.throwable?.message
                     ?.takeIf { it.isNotBlank() }
-                    ?: "Invalid email or password"
-                Log.w(TAG, "Password sign-in failed for $identifier: $message", attemptResult.throwable)
-                throw IllegalStateException(message, attemptResult.throwable)
+                    ?: "Failed to send verification code"
+                Log.w(TAG, "Preparing second factor failed: $message", preparedResult.throwable)
+                throw IllegalStateException(message, preparedResult.throwable)
             }
         }
     }
@@ -176,10 +250,14 @@ class ClerkAuthManager @Inject constructor(
         try {
             Clerk.signOut()
             authManager.signOut()
+            pendingSignIn = null
+            pendingCodeStep = null
             _state.value = ClerkAuthState.SignedOut
         } catch (e: Exception) {
             Log.e(TAG, "Sign out failed", e)
             authManager.signOut()
+            pendingSignIn = null
+            pendingCodeStep = null
             _state.value = ClerkAuthState.SignedOut
         }
     }

@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
@@ -45,7 +45,10 @@ fun AuthScreen(
         uiState = uiState,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
+        onCodeChange = viewModel::updateCode,
         onSignIn = viewModel::signIn,
+        onVerifyCode = viewModel::verifyCode,
+        onStartOver = viewModel::startOver,
         onRetry = viewModel::retryInitialize,
     )
 }
@@ -55,7 +58,10 @@ private fun AuthScreenContent(
     uiState: AuthUiState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onCodeChange: (String) -> Unit,
     onSignIn: () -> Unit,
+    onVerifyCode: () -> Unit,
+    onStartOver: () -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(
@@ -80,6 +86,45 @@ private fun AuthScreenContent(
                 text = if (uiState.isAuthenticated) "Finishing sign-in..." else "Loading sign-in...",
                 style = MaterialTheme.typography.bodyMedium,
             )
+        } else if (uiState.awaitingCode) {
+            Text(
+                text = uiState.codeDestinationHint
+                    ?: "Enter the code Clerk sent you to finish sign-in.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = uiState.code,
+                onValueChange = onCodeChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Verification code") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                enabled = !uiState.isSubmitting,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = onVerifyCode,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isSubmitting,
+            ) {
+                Text(if (uiState.isSubmitting) "Verifying..." else "Continue")
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = onStartOver,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isSubmitting,
+            ) {
+                Text("Use a different account")
+            }
         } else {
             OutlinedTextField(
                 value = uiState.email,
@@ -88,6 +133,7 @@ private fun AuthScreenContent(
                 label = { Text("Email") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                enabled = !uiState.isSubmitting,
             )
 
             Spacer(Modifier.height(12.dp))
@@ -100,6 +146,7 @@ private fun AuthScreenContent(
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                enabled = !uiState.isSubmitting,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -146,7 +193,7 @@ private fun AuthScreenContent(
 
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 @Composable
-private fun AuthScreenPreview() {
+private fun AuthPasswordPreview() {
     KaribuHealthTheme {
         AuthScreenContent(
             uiState = AuthUiState(
@@ -155,7 +202,30 @@ private fun AuthScreenPreview() {
             ),
             onEmailChange = {},
             onPasswordChange = {},
+            onCodeChange = {},
             onSignIn = {},
+            onVerifyCode = {},
+            onStartOver = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 393, heightDp = 852)
+@Composable
+private fun AuthCodePreview() {
+    KaribuHealthTheme {
+        AuthScreenContent(
+            uiState = AuthUiState(
+                awaitingCode = true,
+                codeDestinationHint = "Check your email for the code from Clerk.",
+            ),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onCodeChange = {},
+            onSignIn = {},
+            onVerifyCode = {},
+            onStartOver = {},
             onRetry = {},
         )
     }

@@ -13,10 +13,13 @@ import javax.inject.Inject
 data class AuthUiState(
     val email: String = "",
     val password: String = "",
+    val code: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val isAuthenticated: Boolean = false,
     val isSubmitting: Boolean = false,
+    val awaitingCode: Boolean = false,
+    val codeDestinationHint: String? = null,
 )
 
 @HiltViewModel
@@ -35,13 +38,42 @@ class AuthViewModel @Inject constructor(
                         it.copy(isLoading = true, error = null, isAuthenticated = false)
                     }
                     ClerkAuthState.SignedOut -> _uiState.update {
-                        it.copy(isLoading = false, error = null, isAuthenticated = false, isSubmitting = false)
+                        it.copy(
+                            isLoading = false,
+                            error = null,
+                            isAuthenticated = false,
+                            isSubmitting = false,
+                            awaitingCode = false,
+                            code = "",
+                            codeDestinationHint = null,
+                        )
+                    }
+                    is ClerkAuthState.NeedsCode -> _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = null,
+                            isAuthenticated = false,
+                            isSubmitting = false,
+                            awaitingCode = true,
+                            code = "",
+                            codeDestinationHint = state.destinationHint,
+                        )
                     }
                     is ClerkAuthState.SignedIn -> _uiState.update {
-                        it.copy(isLoading = false, error = null, isAuthenticated = true, isSubmitting = false)
+                        it.copy(
+                            isLoading = false,
+                            error = null,
+                            isAuthenticated = true,
+                            isSubmitting = false,
+                        )
                     }
                     is ClerkAuthState.Error -> _uiState.update {
-                        it.copy(isLoading = false, error = state.message, isAuthenticated = false, isSubmitting = false)
+                        it.copy(
+                            isLoading = false,
+                            error = state.message,
+                            isAuthenticated = false,
+                            isSubmitting = false,
+                        )
                     }
                 }
             }
@@ -54,6 +86,10 @@ class AuthViewModel @Inject constructor(
 
     fun updatePassword(password: String) {
         _uiState.update { it.copy(password = password, error = null) }
+    }
+
+    fun updateCode(code: String) {
+        _uiState.update { it.copy(code = code, error = null) }
     }
 
     fun signIn() {
@@ -73,10 +109,45 @@ class AuthViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        error = e.message ?: "Invalid email or password",
+                        error = e.message ?: "Sign-in failed",
                     )
                 }
             }
+        }
+    }
+
+    fun verifyCode() {
+        val code = _uiState.value.code.trim()
+        if (code.length < 4) {
+            _uiState.update { it.copy(error = "Enter the code from Clerk") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true, error = null) }
+            try {
+                clerkAuthManager.submitVerificationCode(code)
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        error = e.message ?: "Code verification failed",
+                    )
+                }
+            }
+        }
+    }
+
+    fun startOver() {
+        clerkAuthManager.resetPendingSignIn()
+        _uiState.update {
+            it.copy(
+                awaitingCode = false,
+                code = "",
+                codeDestinationHint = null,
+                error = null,
+                isSubmitting = false,
+            )
         }
     }
 

@@ -22,7 +22,7 @@ fun localProperty(name: String, defaultValue: String = ""): String {
 
 android {
     namespace = "com.karibuhealth.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.karibuhealth.app"
