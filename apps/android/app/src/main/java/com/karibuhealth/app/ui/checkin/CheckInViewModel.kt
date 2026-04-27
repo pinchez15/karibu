@@ -69,6 +69,7 @@ class CheckInViewModel @Inject constructor(
             _uiState.update { it.copy(isCheckingIn = true, error = null) }
             try {
                 val clinicId = authTokenStore.getClinicId() ?: throw Exception("No clinic ID")
+                val staffId = authTokenStore.getStaffId() ?: throw Exception("No staff ID")
                 val state = _uiState.value
 
                 // Find or create patient. Phone-only check-in (the common queue
@@ -98,7 +99,7 @@ class CheckInViewModel @Inject constructor(
                     operationType = "queue_op",
                     entityType = "visits",
                     entityId = visit.id,
-                    payload = """{"rpc":"check_in_patient","params":{"p_patient_id":"${patient.id}","p_clinic_id":"$clinicId","p_chief_complaint":"${state.chiefComplaint}","p_priority":"${state.priority.name}"}}""",
+                    payload = """{"rpc":"check_in_patient","params":{"p_patient_id":"${patient.id}","p_clinic_id":"$clinicId","p_chief_complaint":"${state.chiefComplaint}","p_priority":"${state.priority.name}","p_staff_id":"$staffId","p_department":"opd"}}""",
                     status = "pending",
                     attempts = 0,
                     createdAt = System.currentTimeMillis(),

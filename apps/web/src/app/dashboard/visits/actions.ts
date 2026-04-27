@@ -4,6 +4,55 @@ import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
+type DuplicateCandidate = {
+  id: string
+  patient_id: number | null
+  first_name: string | null
+  last_name: string | null
+  display_name: string | null
+  date_of_birth: string | null
+}
+
+function validateDateOfBirth(dateOfBirth: string) {
+  const dob = new Date(`${dateOfBirth}T00:00:00Z`)
+  if (Number.isNaN(dob.getTime())) return 'Enter a valid date of birth'
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  if (dob > today) return 'Date of birth cannot be in the future'
+  const oldest = new Date(today)
+  oldest.setUTCFullYear(oldest.getUTCFullYear() - 120)
+  if (dob < oldest) return 'Date of birth looks too far in the past'
+  return null
+}
+
+function formatPatientWriteError(error: { message?: string | null; details?: string | null; hint?: string | null } | null) {
+  const text = [error?.message, error?.details, error?.hint].filter(Boolean).join(' ')
+  if (/whatsapp_number/i.test(text) && /null/i.test(text)) {
+    return 'Patient creation is blocked because this Supabase project still requires a phone number. Apply the latest patient schema migration.'
+  }
+  return error?.message || 'Failed to create patient'
+}
+
+async function findLikelyDuplicatePatient(
+  clinicId: string,
+  firstName: string,
+  lastName: string,
+  dateOfBirth: string,
+): Promise<DuplicateCandidate | null> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('patients')
+    .select('id, patient_id, first_name, last_name, display_name, date_of_birth')
+    .eq('clinic_id', clinicId)
+    .eq('date_of_birth', dateOfBirth)
+    .ilike('first_name', firstName)
+    .ilike('last_name', lastName)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  return (data?.[0] as DuplicateCandidate | undefined) ?? null
+}
+
 export async function createPatientWithVisit(formData: FormData) {
   const staff = await getStaff()
   if (!staff) throw new Error('Not authenticated')
@@ -11,11 +60,19 @@ export async function createPatientWithVisit(formData: FormData) {
   const rawPhone = formData.get('whatsapp_number') as string
   const firstName = (formData.get('first_name') as string)?.trim() || null
   const lastName = (formData.get('last_name') as string)?.trim() || null
+  const dateOfBirth = (formData.get('date_of_birth') as string)?.trim() || null
   const sex = (formData.get('sex') as string) || null
+  const existingPatientId = (formData.get('existing_patient_id') as string)?.trim() || null
+  const confirmDuplicate = formData.get('confirm_duplicate') === 'true'
 
   if (!rawPhone) {
     return { error: 'Phone number is required' }
   }
+  if (!firstName || !lastName || !dateOfBirth) {
+    return { error: 'First name, last name, and date of birth are required' }
+  }
+  const dobError = validateDateOfBirth(dateOfBirth)
+  if (dobError) return { error: dobError }
 
   const whatsappNumber = formatPhoneNumber(rawPhone)
   if (!isValidUgandaPhone(whatsappNumber)) {
@@ -34,9 +91,21 @@ export async function createPatientWithVisit(formData: FormData) {
 
   let patientId: string
 
-  if (existing) {
+  if (existingPatientId) {
+    patientId = existingPatientId
+  } else if (existing) {
     patientId = existing.id
   } else {
+    const duplicateCandidate = await findLikelyDuplicatePatient(
+      staff.clinic_id,
+      firstName,
+      lastName,
+      dateOfBirth,
+    )
+    if (duplicateCandidate && !confirmDuplicate) {
+      return { duplicateCandidate }
+    }
+
     const { data: newPatient, error: patientError } = await supabase
       .from('patients')
       .insert({
@@ -44,6 +113,7 @@ export async function createPatientWithVisit(formData: FormData) {
         whatsapp_number: whatsappNumber,
         first_name: firstName,
         last_name: lastName,
+        date_of_birth: dateOfBirth,
         ...(sex === 'M' || sex === 'F' ? { sex } : {}),
       })
       .select('id')
@@ -51,7 +121,7 @@ export async function createPatientWithVisit(formData: FormData) {
 
     if (patientError) {
       console.error('Failed to create patient:', patientError)
-      return { error: 'Failed to create patient' }
+      return { error: formatPatientWriteError(patientError) }
     }
     patientId = newPatient.id
   }

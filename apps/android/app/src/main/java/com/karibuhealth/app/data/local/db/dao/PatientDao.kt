@@ -32,6 +32,17 @@ interface PatientDao {
     @Query("SELECT * FROM patients WHERE clinic_id = :clinicId AND whatsapp_number = :phone")
     suspend fun getByPhone(clinicId: String, phone: String): PatientEntity?
 
+    @Query("""
+        SELECT * FROM patients
+        WHERE clinic_id = :clinicId
+          AND date_of_birth = :dateOfBirth
+          AND first_name = :firstName COLLATE NOCASE
+          AND last_name = :lastName COLLATE NOCASE
+        ORDER BY created_at DESC
+        LIMIT 1
+    """)
+    suspend fun findLikelyDuplicate(clinicId: String, firstName: String, lastName: String, dateOfBirth: String): PatientEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(patient: PatientEntity)
 

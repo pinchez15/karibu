@@ -1,5 +1,6 @@
 package com.karibuhealth.app.data.repository
 
+import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.KaribuDatabase
 import com.karibuhealth.app.data.local.db.converter.*
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
@@ -9,8 +10,10 @@ import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.domain.model.*
 import com.karibuhealth.app.util.NetworkMonitor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
@@ -35,6 +38,49 @@ class VisitRepository @Inject constructor(
     fun getRecentByDoctor(doctorId: String, limit: Int = 20): Flow<List<VisitWithPatient>> =
         visitDao.getRecentByDoctor(doctorId, limit)
 
+    // Clinician home (CO / midwife / nurse with self-triage). All four flows are
+    // backed by Room, so the home renders instantly from cache; remote sync
+    // refreshes are handled by SyncEngine + PullSyncManager.
+    fun getTodayClinicianQueue(clinicId: String, clinicianId: String): Flow<List<VisitWithPatient>> {
+        val today = LocalDate.now().toString()
+        return visitDao.getTodayClinicianQueue(clinicId, today, clinicianId)
+    }
+
+    fun getMyPendingDictations(clinicianId: String): Flow<List<VisitWithPatient>> {
+        val today = LocalDate.now().toString()
+        return visitDao.getMyPendingDictations(clinicianId, today)
+    }
+
+    fun getMyVisitsToReview(clinicianId: String): Flow<List<VisitWithPatient>> {
+        val today = LocalDate.now().toString()
+        return visitDao.getMyVisitsToReview(clinicianId, today)
+    }
+
+    fun getMyDoneTodayCount(clinicianId: String): Flow<Int> {
+        val today = LocalDate.now().toString()
+        return visitDao.getMyDoneTodayCount(clinicianId, today)
+    }
+
+    // One-tap "Start visit" for a clinician who self-triages. Optimistic local
+    // update (so the UI reflects the change instantly even offline) plus a
+    // queued sync entry so the server-side state machine catches up when online.
+    suspend fun startVisitSelfTriage(visitId: String, clinicianId: String) {
+        val now = Instant.now().toString()
+        visitDao.updateQueueStatus(visitId, QueueStatus.with_doctor.name, now)
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "queue_op",
+            entityType = "visits",
+            entityId = visitId,
+            payload = """{"rpc":"start_visit_self_triage","params":{"p_visit_id":"$visitId","p_clinician_id":"$clinicianId"}}""",
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+        )
+        syncQueueDao.insert(syncEntry)
+    }
+
     fun getVisitById(id: String): Flow<Visit?> =
         visitDao.getById(id).map { it?.toDomain() }
 
@@ -49,7 +95,7 @@ class VisitRepository @Inject constructor(
         doctorId: String?,
         chiefComplaint: String? = null,
         patientSyncEntryId: String? = null,
-    ): Visit {
+    ): Visit = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
         val today = LocalDate.now().toString()
 
@@ -97,14 +143,12 @@ class VisitRepository @Inject constructor(
             dependsOn = patientSyncEntryId,
         )
 
-        database.runInTransaction {
-            kotlinx.coroutines.runBlocking {
-                visitDao.upsert(entity)
-                syncQueueDao.insert(syncEntry)
-            }
+        database.withTransaction {
+            visitDao.upsert(entity)
+            syncQueueDao.insert(syncEntry)
         }
 
-        return visit
+        visit
     }
 
     suspend fun updateStatus(visitId: String, status: VisitStatus) {

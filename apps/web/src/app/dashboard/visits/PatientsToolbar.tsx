@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Search, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,16 @@ export function PatientsToolbar() {
   const [showNewPatient, setShowNewPatient] = useState(false)
   const [creating, startCreating] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{
+    id: string
+    patient_id: number | null
+    first_name: string | null
+    last_name: string | null
+    display_name: string | null
+    date_of_birth: string | null
+  } | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const formRef = useRef<HTMLFormElement>(null)
 
   const updateSearch = (term: string) => {
     setSearch(term)
@@ -35,14 +44,29 @@ export function PatientsToolbar() {
 
   const handleCreatePatient = (formData: FormData) => {
     setError(null)
+    setDuplicateCandidate(null)
     startCreating(async () => {
       const result = await createPatientWithVisit(formData)
       if (result.error) {
         setError(result.error)
+      } else if (result.duplicateCandidate) {
+        setDuplicateCandidate(result.duplicateCandidate)
       } else if (result.visitId) {
         router.push(`/dashboard/visits/${result.visitId}`)
       }
     })
+  }
+
+  const submitWithDuplicateChoice = (choice: 'existing' | 'new') => {
+    const form = formRef.current
+    if (!form || !duplicateCandidate) return
+    const formData = new FormData(form)
+    if (choice === 'existing') {
+      formData.set('existing_patient_id', duplicateCandidate.id)
+    } else {
+      formData.set('confirm_duplicate', 'true')
+    }
+    handleCreatePatient(formData)
   }
 
   return (
@@ -70,8 +94,8 @@ export function PatientsToolbar() {
       </div>
 
       {showNewPatient && (
-        <form action={handleCreatePatient} className="bg-card border border-border rounded-lg p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <form ref={formRef} action={handleCreatePatient} className="bg-card border border-border rounded-lg p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="whatsapp_number">WhatsApp Number *</Label>
               <Input
@@ -82,11 +106,30 @@ export function PatientsToolbar() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="display_name">Patient Name</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
-                id="display_name"
-                name="display_name"
-                placeholder="Patient name"
+                id="first_name"
+                name="first_name"
+                placeholder="Given name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="last_name">Last Name</Label>
+              <Input
+                id="last_name"
+                name="last_name"
+                placeholder="Family name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="date_of_birth">Date of Birth *</Label>
+              <Input
+                id="date_of_birth"
+                name="date_of_birth"
+                type="date"
+                min={`${new Date().getFullYear() - 120}-01-01`}
+                max={new Date().toISOString().split('T')[0]}
+                required
               />
             </div>
             <div className="space-y-1.5">
@@ -103,6 +146,23 @@ export function PatientsToolbar() {
               </div>
             </div>
           </div>
+          {duplicateCandidate && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 space-y-3">
+              <p className="text-sm text-amber-900">
+                Possible existing patient found: {[duplicateCandidate.first_name, duplicateCandidate.last_name].filter(Boolean).join(' ') || duplicateCandidate.display_name || 'Unknown'}
+                {duplicateCandidate.patient_id ? ` (#${duplicateCandidate.patient_id})` : ''}
+                {duplicateCandidate.date_of_birth ? ` · DOB ${duplicateCandidate.date_of_birth}` : ''}
+              </p>
+              <div className="flex gap-2">
+                <Button type="button" onClick={() => submitWithDuplicateChoice('existing')} disabled={creating}>
+                  Use Existing Patient
+                </Button>
+                <Button type="button" variant="outline" onClick={() => submitWithDuplicateChoice('new')} disabled={creating}>
+                  Create New Anyway
+                </Button>
+              </div>
+            </div>
+          )}
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}

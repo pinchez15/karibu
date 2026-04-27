@@ -29,6 +29,9 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { QueueItem, QueueStatus, Patient } from '@karibu/shared'
 
+const todayIso = new Date().toISOString().split('T')[0]
+const oldestDobIso = `${new Date().getFullYear() - 120}-01-01`
+
 interface QueueDashboardClientProps {
   initialQueue: QueueItem[]
   reviewCount: number
@@ -69,6 +72,7 @@ export function QueueDashboardClient({
   const [patientSearch, setPatientSearch] = useState('')
   const [searchResults, setSearchResults] = useState<Patient[]>([])
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [duplicateCandidate, setDuplicateCandidate] = useState<Patient | null>(null)
   const [newPatient, setNewPatient] = useState({
     first_name: '',
     last_name: '',
@@ -161,6 +165,7 @@ export function QueueDashboardClient({
 
   const handleSelectExisting = (patient: Patient) => {
     setSelectedPatient(patient)
+    setDuplicateCandidate(null)
     setNewPatient({
       first_name: patient.first_name || '',
       last_name: patient.last_name || '',
@@ -175,10 +180,11 @@ export function QueueDashboardClient({
 
   const handleClearSelected = () => {
     setSelectedPatient(null)
+    setDuplicateCandidate(null)
     setNewPatient({ first_name: '', last_name: '', date_of_birth: '', sex: '', whatsapp_number: '', chief_complaint: '' })
   }
 
-  const handleAddToQueue = async () => {
+  const handleAddToQueue = async (options?: { existing_patient_id?: string; confirm_duplicate?: boolean }) => {
     if (!newPatient.first_name || !newPatient.last_name || !newPatient.date_of_birth || !newPatient.sex) {
       setAddMessage({ type: 'error', text: 'First name, last name, date of birth, and sex are required' })
       return
@@ -194,12 +200,19 @@ export function QueueDashboardClient({
       sex: newPatient.sex as 'M' | 'F',
       whatsapp_number: newPatient.whatsapp_number || undefined,
       chief_complaint: newPatient.chief_complaint || undefined,
-      existing_patient_id: selectedPatient?.id,
+      existing_patient_id: options?.existing_patient_id ?? selectedPatient?.id,
+      confirm_duplicate: options?.confirm_duplicate,
     })
 
     setAddingPatient(false)
 
-    if (result.error) {
+    if (result.duplicateCandidate) {
+      setDuplicateCandidate(result.duplicateCandidate as Patient)
+      setAddMessage({
+        type: 'error',
+        text: `Possible existing patient found: ${result.duplicateCandidate.display_name || [result.duplicateCandidate.first_name, result.duplicateCandidate.last_name].filter(Boolean).join(' ')}${result.duplicateCandidate.patient_id ? ` (#${result.duplicateCandidate.patient_id})` : ''}.`,
+      })
+    } else if (result.error) {
       setAddMessage({ type: 'error', text: result.error })
     } else {
       setAddMessage({
@@ -431,6 +444,27 @@ export function QueueDashboardClient({
             </div>
           )}
 
+          {duplicateCandidate && !selectedPatient && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3 space-y-3">
+              <div className="text-sm text-amber-900">
+                <p className="font-medium">Possible existing patient</p>
+                <p>
+                  {[duplicateCandidate.first_name, duplicateCandidate.last_name].filter(Boolean).join(' ') || duplicateCandidate.display_name || 'Unknown'}
+                  {duplicateCandidate.patient_id ? ` (#${duplicateCandidate.patient_id})` : ''}
+                  {duplicateCandidate.date_of_birth ? ` · DOB ${duplicateCandidate.date_of_birth}` : ''}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => handleAddToQueue({ existing_patient_id: duplicateCandidate.id })} disabled={addingPatient}>
+                  Use Existing Patient
+                </Button>
+                <Button type="button" variant="outline" onClick={() => handleAddToQueue({ confirm_duplicate: true })} disabled={addingPatient}>
+                  Create New Anyway
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Patient fields */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -455,6 +489,8 @@ export function QueueDashboardClient({
                 type="date"
                 value={newPatient.date_of_birth}
                 onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })}
+                min={oldestDobIso}
+                max={todayIso}
               />
             </div>
             <div className="space-y-1.5">
@@ -502,7 +538,7 @@ export function QueueDashboardClient({
           </div>
 
           <Button
-            onClick={handleAddToQueue}
+            onClick={() => { void handleAddToQueue() }}
             disabled={addingPatient}
             className="w-full h-11"
             size="lg"

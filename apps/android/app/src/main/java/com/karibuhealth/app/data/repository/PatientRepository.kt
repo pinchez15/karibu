@@ -1,5 +1,6 @@
 package com.karibuhealth.app.data.repository
 
+import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.KaribuDatabase
 import com.karibuhealth.app.data.local.db.converter.*
 import com.karibuhealth.app.data.local.db.dao.PatientDao
@@ -8,8 +9,10 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.util.NetworkMonitor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.util.UUID
@@ -40,6 +43,13 @@ class PatientRepository @Inject constructor(
     suspend fun lookupByPhone(clinicId: String, phone: String): Patient? =
         patientDao.getByPhone(clinicId, phone)?.toDomain()
 
+    suspend fun findLikelyDuplicate(
+        clinicId: String,
+        firstName: String,
+        lastName: String,
+        dateOfBirth: String,
+    ): Patient? = patientDao.findLikelyDuplicate(clinicId, firstName, lastName, dateOfBirth)?.toDomain()
+
     suspend fun createPatient(
         clinicId: String,
         firstName: String,
@@ -47,7 +57,7 @@ class PatientRepository @Inject constructor(
         whatsappNumber: String? = null,
         dateOfBirth: String? = null,
         sex: String? = null,
-    ): Patient {
+    ): Patient = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
         val patient = Patient(
             id = UUID.randomUUID().toString(),
@@ -80,14 +90,12 @@ class PatientRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
         )
 
-        database.runInTransaction {
-            kotlinx.coroutines.runBlocking {
-                patientDao.upsert(entity)
-                syncQueueDao.insert(syncEntry)
-            }
+        database.withTransaction {
+            patientDao.upsert(entity)
+            syncQueueDao.insert(syncEntry)
         }
 
-        return patient
+        patient
     }
 
     suspend fun refreshPatients(clinicId: String) {

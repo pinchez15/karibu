@@ -5,6 +5,58 @@ import { getStaff } from '@/lib/auth'
 import type { QueueItem, Patient } from '@karibu/shared'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
+type DuplicateCandidate = {
+  id: string
+  patient_id: number | null
+  first_name: string | null
+  last_name: string | null
+  display_name: string | null
+  date_of_birth: string | null
+}
+
+function validateDateOfBirth(dateOfBirth: string) {
+  const dob = new Date(`${dateOfBirth}T00:00:00Z`)
+  if (Number.isNaN(dob.getTime())) return 'Enter a valid date of birth'
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  if (dob > today) return 'Date of birth cannot be in the future'
+
+  const oldest = new Date(today)
+  oldest.setUTCFullYear(oldest.getUTCFullYear() - 120)
+  if (dob < oldest) return 'Date of birth looks too far in the past'
+
+  return null
+}
+
+function formatPatientWriteError(error: { message?: string | null; details?: string | null; hint?: string | null } | null) {
+  const text = [error?.message, error?.details, error?.hint].filter(Boolean).join(' ')
+  if (/whatsapp_number/i.test(text) && /null/i.test(text)) {
+    return 'Patient creation is blocked because this Supabase project still requires a phone number. Apply the latest patient schema migration.'
+  }
+  return error?.message || 'Failed to create patient record'
+}
+
+async function findLikelyDuplicatePatient(
+  clinicId: string,
+  firstName: string,
+  lastName: string,
+  dateOfBirth: string,
+): Promise<DuplicateCandidate | null> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('patients')
+    .select('id, patient_id, first_name, last_name, display_name, date_of_birth')
+    .eq('clinic_id', clinicId)
+    .eq('date_of_birth', dateOfBirth)
+    .ilike('first_name', firstName)
+    .ilike('last_name', lastName)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  return (data?.[0] as DuplicateCandidate | undefined) ?? null
+}
+
 async function broadcastQueueUpdate(clinicId: string) {
   const supabase = createServiceClient()
   const channel = supabase.channel(`queue-updates:${clinicId}`)
@@ -121,11 +173,14 @@ export async function addPatientToQueue(data: {
   chief_complaint?: string
   priority?: string
   existing_patient_id?: string
-}): Promise<{ success?: boolean; error?: string; patient_id?: number }> {
+  confirm_duplicate?: boolean
+}): Promise<{ success?: boolean; error?: string; patient_id?: number; duplicateCandidate?: DuplicateCandidate }> {
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
   const supabase = createServiceClient()
+  const dobError = validateDateOfBirth(data.date_of_birth)
+  if (dobError) return { error: dobError }
 
   let patientId: string
   let numericPatientId: number | null = null
@@ -153,6 +208,16 @@ export async function addPatientToQueue(data: {
       .single()
     numericPatientId = existing?.patient_id || null
   } else {
+    const duplicateCandidate = await findLikelyDuplicatePatient(
+      staff.clinic_id,
+      data.first_name.trim(),
+      data.last_name.trim(),
+      data.date_of_birth,
+    )
+    if (duplicateCandidate && !data.confirm_duplicate) {
+      return { duplicateCandidate }
+    }
+
     // New patient
     let formattedPhone: string | null = null
     if (data.whatsapp_number) {
@@ -189,25 +254,28 @@ export async function addPatientToQueue(data: {
 
     if (patientError || !newPatient) {
       console.error('Failed to create patient:', patientError)
-      return { error: 'Failed to create patient record' }
+      return { error: formatPatientWriteError(patientError) }
     }
 
     patientId = newPatient.id
     numericPatientId = newPatient.patient_id
   }
 
-  // Add to queue via check_in_patient RPC
-  // Note: don't pass p_staff_id — PostgREST only matches the 4-param signature
+  // Add to queue via the current check_in_patient RPC signature. Older hosted
+  // projects may still have overloaded legacy variants; passing all current
+  // named params keeps the client aligned with the dictation-first schema.
   const { error: rpcError } = await supabase.rpc('check_in_patient', {
     p_clinic_id: staff.clinic_id,
     p_patient_id: patientId,
     p_chief_complaint: data.chief_complaint || null,
     p_priority: data.priority || 'normal',
+    p_staff_id: staff.id,
+    p_department: 'opd',
   })
 
   if (rpcError) {
     console.error('Failed to add to queue:', rpcError)
-    return { error: 'Failed to add patient to queue' }
+    return { error: rpcError.message || 'Failed to add patient to queue' }
   }
 
   broadcastQueueUpdate(staff.clinic_id).catch(() => {})
