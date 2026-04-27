@@ -343,7 +343,7 @@ export default async function SuperadminProvisioningPage() {
                                 <form action={updateProvisionedStaffAction} className="flex flex-wrap items-center gap-2">
                                   <input type="hidden" name="staff_id" value={member.id} />
                                   <input type="hidden" name="clinic_id" value={clinic.id} />
-                                  <select name="role" defaultValue={member.role} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                                  <select name="role" defaultValue={member.role} className="rounded-md border border-input bg-background px-2 py-1 text-sm">
                                     {STAFF_ROLES.map((role) => (
                                       <option key={role} value={role}>
                                         {role.replace(/_/g, ' ')}

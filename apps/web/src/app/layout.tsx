@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Karibu Health',
   description: 'AI-native clinical documentation for Uganda',
   icons: {
-    icon: '/logos/icon-only.png',
+    icon: '/logos/icon-only.svg',
     apple: '/logos/icon-only.png',
   },
 }

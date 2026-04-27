@@ -474,7 +474,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
                   )}
 
                   {s.missing_info && s.missing_info.length > 0 && (
-                    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm text-accent">
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-900">
                       <p className="font-medium mb-1">Worth confirming:</p>
                       <ul className="list-disc pl-5 space-y-0.5">
                         {s.missing_info.map((m, i) => (
