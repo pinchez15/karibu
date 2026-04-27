@@ -7,9 +7,7 @@ import { ArrowLeft } from 'lucide-react'
 import { PatientSexEditor } from './PatientSexEditor'
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  recording: { label: 'Recording', color: 'text-amber-700', bg: 'bg-amber-100' },
-  uploading: { label: 'Uploading', color: 'text-sky-700', bg: 'bg-sky-100' },
-  processing: { label: 'Processing', color: 'text-violet-700', bg: 'bg-violet-100' },
+  pending: { label: 'To Dictate', color: 'text-violet-700', bg: 'bg-violet-100' },
   review: { label: 'Review', color: 'text-primary', bg: 'bg-secondary' },
   sent: { label: 'Sent', color: 'text-emerald-700', bg: 'bg-emerald-100' },
   completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },

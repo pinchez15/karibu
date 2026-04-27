@@ -7,6 +7,19 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
+fun localProperty(name: String, defaultValue: String = ""): String {
+    return localProperties.getProperty(name)?.trim()?.removeSurrounding("\"") ?: defaultValue
+}
+
 android {
     namespace = "com.karibuhealth.app"
     compileSdk = 35
@@ -21,11 +34,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Supabase config (populated from local.properties or CI secrets)
-        buildConfigField("String", "SUPABASE_URL", "\"${findProperty("SUPABASE_URL") ?: ""}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
-        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${findProperty("CLERK_PUBLISHABLE_KEY") ?: ""}\"")
-        buildConfigField("String", "POSTHOG_API_KEY", "\"${findProperty("POSTHOG_API_KEY") ?: ""}\"")
-        buildConfigField("String", "POSTHOG_HOST", "\"${findProperty("POSTHOG_HOST") ?: "https://us.i.posthog.com"}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperty("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperty("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"${localProperty("CLERK_PUBLISHABLE_KEY")}\"")
+        buildConfigField("String", "POSTHOG_API_KEY", "\"${localProperty("POSTHOG_API_KEY")}\"")
+        buildConfigField("String", "POSTHOG_HOST", "\"${localProperty("POSTHOG_HOST", "https://us.i.posthog.com")}\"")
     }
 
     buildTypes {

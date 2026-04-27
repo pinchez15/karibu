@@ -1,6 +1,6 @@
 // approve-dictation: clinician reviewed the AI-structured note and is happy
 // with it. Marks the provider + patient notes as finalized and flips the
-// visit to 'sent' / review_status='approved' so it can be printed.
+// visit to 'sent' / review_status='reviewed' so it can be printed.
 //
 // Used by Android ReviewScreen "Approve" button. The web has its own
 // equivalent in dashboard/review/actions.ts approveVisit() which also

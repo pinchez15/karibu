@@ -125,7 +125,7 @@ export function ReviewQueueClient({ visits: initialVisits, staffId }: ReviewQueu
         setMessage({ type: 'error', text: result.error })
       } else {
         setVisits(prev => prev.filter(v => v.id !== visitId))
-        setMessage({ type: 'success', text: 'Visit sent back for re-processing' })
+        setMessage({ type: 'success', text: 'Visit sent back for re-dictation' })
       }
     } catch (error) {
       console.error('Failed to reject:', error)

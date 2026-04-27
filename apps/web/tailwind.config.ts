@@ -44,7 +44,6 @@ const config: Config = {
         'status-synced': '#16a34a',
         'status-pending': '#f59e0b',
         'status-offline': '#dc2626',
-        'status-processing': '#3b82f6',
         // Pin/alert colors
         'pin-critical': '#dc2626',
         'pin-warning': '#f59e0b',

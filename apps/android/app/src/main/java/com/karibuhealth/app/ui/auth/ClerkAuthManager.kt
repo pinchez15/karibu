@@ -9,6 +9,7 @@ import com.clerk.api.network.serialization.ClerkResult
 import com.clerk.api.session.GetTokenOptions
 import com.clerk.api.session.fetchToken
 import com.clerk.api.signin.SignIn
+import com.clerk.api.signin.attemptFirstFactor
 import com.karibuhealth.app.BuildConfig
 import com.karibuhealth.app.data.repository.AuthManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -109,25 +110,46 @@ class ClerkAuthManager @Inject constructor(
     }
 
     suspend fun signInWithPassword(email: String, password: String) {
-        val result = SignIn.create(
-            SignIn.CreateParams.Strategy.Password(
-                identifier = email.trim(),
-                password = password,
-            )
+        val identifier = email.trim().lowercase()
+        val createResult = SignIn.create(
+            SignIn.CreateParams.Strategy.Identifier(identifier = identifier)
         )
 
-        when (result) {
+        val signIn = when (createResult) {
+            is ClerkResult.Success -> createResult.value
+            is ClerkResult.Failure -> {
+                val message = createResult.throwable?.message
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Invalid email or password"
+                Log.w(TAG, "Sign-in creation failed for $identifier: $message", createResult.throwable)
+                throw IllegalStateException(message, createResult.throwable)
+            }
+        }
+
+        val attemptResult = signIn.attemptFirstFactor(
+            SignIn.AttemptFirstFactorParams.Password(password = password)
+        )
+
+        when (attemptResult) {
             is ClerkResult.Success -> {
-                val sessionId = result.value.createdSessionId
+                val completedSignIn = attemptResult.value
+                val sessionId = completedSignIn.createdSessionId
                 if (!sessionId.isNullOrBlank()) {
                     val active = Clerk.setActive(sessionId, null)
                     if (active !is ClerkResult.Success) {
                         throw IllegalStateException("Signed in, but failed to activate session")
                     }
+                } else {
+                    val status = completedSignIn.status.name.lowercase()
+                    throw IllegalStateException("Sign-in is not complete yet ($status)")
                 }
             }
             is ClerkResult.Failure -> {
-                throw result.throwable ?: IllegalStateException("Invalid email or password")
+                val message = attemptResult.throwable?.message
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Invalid email or password"
+                Log.w(TAG, "Password sign-in failed for $identifier: $message", attemptResult.throwable)
+                throw IllegalStateException(message, attemptResult.throwable)
             }
         }
     }

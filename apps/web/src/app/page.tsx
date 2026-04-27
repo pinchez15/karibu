@@ -15,7 +15,7 @@ const benefits = [
     icon: Stethoscope,
     title: 'Empowers Nurses & Clinicians',
     description:
-      'Voice recording replaces manual documentation. AI generates SOAP notes and patient summaries.',
+      'Post-visit dictation replaces manual documentation. AI generates SOAP notes and patient summaries.',
   },
   {
     icon: Smartphone,

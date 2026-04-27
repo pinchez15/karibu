@@ -23,7 +23,7 @@ export default function PrintNotFound() {
           No patient note to print
         </h1>
         <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px', lineHeight: 1.5 }}>
-          This visit doesn&apos;t have an approved patient note yet. Approve it from the
+          This visit doesn&apos;t have a reviewed patient note yet. Approve it from the
           review queue first, then come back here to print.
         </p>
         <Link

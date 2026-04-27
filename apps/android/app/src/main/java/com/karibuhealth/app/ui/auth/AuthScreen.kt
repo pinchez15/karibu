@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.ui.theme.KaribuHealthTheme
 
 @Composable
 fun AuthScreen(
@@ -39,6 +41,23 @@ fun AuthScreen(
         if (uiState.isAuthenticated) onAuthenticated()
     }
 
+    AuthScreenContent(
+        uiState = uiState,
+        onEmailChange = viewModel::updateEmail,
+        onPasswordChange = viewModel::updatePassword,
+        onSignIn = viewModel::signIn,
+        onRetry = viewModel::retryInitialize,
+    )
+}
+
+@Composable
+private fun AuthScreenContent(
+    uiState: AuthUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSignIn: () -> Unit,
+    onRetry: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,19 +71,6 @@ fun AuthScreen(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
         )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "EHR for Uganda",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = "Clinic staff sign in with Clerk. Once signed in, the app keeps working from local storage when the network drops.",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         Spacer(Modifier.height(24.dp))
 
         if (uiState.isLoading || uiState.isAuthenticated) {
@@ -77,7 +83,7 @@ fun AuthScreen(
         } else {
             OutlinedTextField(
                 value = uiState.email,
-                onValueChange = viewModel::updateEmail,
+                onValueChange = onEmailChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Email") },
                 singleLine = true,
@@ -88,7 +94,7 @@ fun AuthScreen(
 
             OutlinedTextField(
                 value = uiState.password,
-                onValueChange = viewModel::updatePassword,
+                onValueChange = onPasswordChange,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Password") },
                 singleLine = true,
@@ -99,7 +105,7 @@ fun AuthScreen(
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = viewModel::signIn,
+                onClick = onSignIn,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isSubmitting,
             ) {
@@ -108,7 +114,7 @@ fun AuthScreen(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Accounts are managed centrally in Clerk. Contact your clinic administrator if you need access.",
+                text = "Contact your clinic administrator for access.",
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -131,9 +137,26 @@ fun AuthScreen(
             }
 
             Spacer(Modifier.height(12.dp))
-            OutlinedButton(onClick = viewModel::retryInitialize) {
+            OutlinedButton(onClick = onRetry) {
                 Text("Retry")
             }
         }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 393, heightDp = 852)
+@Composable
+private fun AuthScreenPreview() {
+    KaribuHealthTheme {
+        AuthScreenContent(
+            uiState = AuthUiState(
+                email = "nurse@clinic.org",
+                password = "password123",
+            ),
+            onEmailChange = {},
+            onPasswordChange = {},
+            onSignIn = {},
+            onRetry = {},
+        )
     }
 }

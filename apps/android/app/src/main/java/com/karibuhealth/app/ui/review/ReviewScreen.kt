@@ -174,7 +174,7 @@ fun ReviewScreen(
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                     } else {
-                        Text("Approve & Send to Patient")
+                        Text("Approve & Continue to Payment")
                     }
                 }
                 // Reject = AI got it wrong. Server clears the structured note +
