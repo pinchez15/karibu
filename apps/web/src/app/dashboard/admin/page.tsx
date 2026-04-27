@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasProvisioningAccess, isAdmin } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -65,6 +65,7 @@ export default async function AdminPage() {
   }
 
   const stats = await getClinicStats(staff.clinic_id)
+  const provisioningAccess = await hasProvisioningAccess()
 
   // Generate last 7 days for chart
   const days: { date: string; label: string; count: number }[] = []
@@ -191,6 +192,17 @@ export default async function AdminPage() {
           </div>
         </Link>
       </div>
+
+      {provisioningAccess && (
+        <div className="mt-6">
+          <Link
+            href="/dashboard/superadmin"
+            className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-900 hover:bg-indigo-100"
+          >
+            Open Provisioning Workspace
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

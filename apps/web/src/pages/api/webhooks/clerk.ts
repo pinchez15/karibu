@@ -56,6 +56,17 @@ interface OrganizationEvent {
 
 type WebhookEvent = OrganizationMembershipEvent | OrganizationEvent
 
+type StaffRole =
+  | 'admin'
+  | 'doctor'
+  | 'nurse'
+  | 'clinical_officer'
+  | 'midwife'
+  | 'nursing_assistant'
+  | 'records_officer'
+  | 'lab_tech'
+  | 'dispenser'
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -213,7 +224,7 @@ async function handleMembershipCreated(
       clinicId: newClinic.id,
       email,
       displayName,
-      role: mapClerkRole(role),
+      role: await resolveStaffRole(supabase, newClinic.id, email, role),
     })
   } else {
     // Clinic exists, upsert the staff member
@@ -222,7 +233,7 @@ async function handleMembershipCreated(
       clinicId: clinic.id,
       email,
       displayName,
-      role: mapClerkRole(role),
+      role: await resolveStaffRole(supabase, clinic.id, email, role),
     })
   }
 }
@@ -270,6 +281,7 @@ async function handleMembershipUpdated(
 ) {
   const { organization, public_user_data, role } = event.data
   const clerkUserId = public_user_data.user_id
+  const email = public_user_data.identifier
 
   console.log(`Updating staff ${clerkUserId} in org ${organization.id}`)
 
@@ -285,10 +297,12 @@ async function handleMembershipUpdated(
     return
   }
 
+  const desiredRole = await resolveStaffRole(supabase, clinic.id, email, role)
+
   // Update staff role if changed
   const { error } = await supabase
     .from('staff')
-    .update({ role: mapClerkRole(role) })
+    .update({ role: desiredRole })
     .eq('clerk_user_id', clerkUserId)
     .eq('clinic_id', clinic.id)
 
@@ -305,7 +319,7 @@ async function upsertStaff(
     clinicId: string
     email: string
     displayName: string
-    role: 'admin' | 'doctor' | 'nurse'
+    role: StaffRole
   }
 ) {
   const { clerkUserId, clinicId, email, displayName, role } = params
@@ -354,17 +368,76 @@ async function upsertStaff(
     }
     console.log(`Created staff ${clerkUserId}`)
   }
+
+  await markInvitationAccepted(supabase, clinicId, email)
 }
 
-function mapClerkRole(clerkRole: string): 'admin' | 'doctor' | 'nurse' {
+async function resolveStaffRole(
+  supabase: ReturnType<typeof createServiceClient>,
+  clinicId: string,
+  email: string,
+  clerkRole: string
+): Promise<StaffRole> {
+  const { data: invitation } = await supabase
+    .from('staff_invitations')
+    .select('id, role')
+    .eq('clinic_id', clinicId)
+    .eq('email', email)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (invitation?.role) {
+    return invitation.role as StaffRole
+  }
+
+  return mapClerkRole(clerkRole)
+}
+
+async function markInvitationAccepted(
+  supabase: ReturnType<typeof createServiceClient>,
+  clinicId: string,
+  email: string
+) {
+  await supabase
+    .from('staff_invitations')
+    .update({
+      status: 'accepted',
+      accepted_at: new Date().toISOString(),
+    })
+    .eq('clinic_id', clinicId)
+    .eq('email', email)
+    .eq('status', 'pending')
+}
+
+function mapClerkRole(clerkRole: string): StaffRole {
   // Clerk organization roles: org:admin, org:member, etc.
   switch (clerkRole.toLowerCase()) {
     case 'org:admin':
     case 'admin':
       return 'admin'
+    case 'org:clinical_officer':
+    case 'clinical_officer':
+      return 'clinical_officer'
+    case 'org:midwife':
+    case 'midwife':
+      return 'midwife'
     case 'org:nurse':
     case 'nurse':
       return 'nurse'
+    case 'org:nursing_assistant':
+    case 'nursing_assistant':
+      return 'nursing_assistant'
+    case 'org:records_officer':
+    case 'records_officer':
+      return 'records_officer'
+    case 'org:lab_tech':
+    case 'lab_tech':
+      return 'lab_tech'
+    case 'org:dispenser':
+    case 'dispenser':
+      return 'dispenser'
     case 'org:doctor':
     case 'doctor':
     case 'org:member':

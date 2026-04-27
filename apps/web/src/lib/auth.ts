@@ -70,3 +70,61 @@ export async function isAdmin(): Promise<boolean> {
   const staff = await getStaff()
   return staff?.role === 'admin'
 }
+
+export async function isSuperadmin(): Promise<boolean> {
+  const { userId } = await auth()
+  if (!userId) return false
+
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('superadmins')
+    .select('id')
+    .eq('clerk_user_id', userId)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  return Boolean(data)
+}
+
+export async function hasProvisioningAccess(): Promise<boolean> {
+  if (await isSuperadmin()) {
+    return true
+  }
+
+  const supabase = createServiceClient()
+  const { count } = await supabase
+    .from('superadmins')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true)
+
+  // Bootstrap fallback before the first superadmin row is seeded.
+  if ((count ?? 0) === 0) {
+    return isAdmin()
+  }
+
+  return false
+}
+
+export async function requireProvisioningAccess(): Promise<{ userId: string; email: string | null; displayName: string | null }> {
+  const { userId } = await auth()
+  if (!userId) {
+    throw new Error('Unauthorized')
+  }
+
+  const allowed = await hasProvisioningAccess()
+  if (!allowed) {
+    throw new Error('Not authorized')
+  }
+
+  const user = await currentUser()
+  const email = user?.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress
+    ?? user?.emailAddresses[0]?.emailAddress
+    ?? null
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username || null
+
+  return {
+    userId,
+    email,
+    displayName,
+  }
+}

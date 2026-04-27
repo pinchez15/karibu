@@ -62,20 +62,18 @@ export default async function StaffManagementPage() {
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Staff</h3>
         <p className="text-gray-600 mb-4">
-          Staff members join your clinic by being invited to your Clerk Organization.
-          When they accept the invitation, their account is automatically created here.
+          Staff provisioning now happens from the internal provisioning workspace.
+          Use that page to create clinics, send invitations, and keep Clerk + Supabase aligned.
         </p>
-        <a
-          href="https://dashboard.clerk.com"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/dashboard/superadmin"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700"
         >
-          Open Clerk Dashboard
+          Open Provisioning Workspace
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-        </a>
+        </Link>
       </div>
 
       <StaffList initialStaff={staffList} clinicId={staff.clinic_id} />
