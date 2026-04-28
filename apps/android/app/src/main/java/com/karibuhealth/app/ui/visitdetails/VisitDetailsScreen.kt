@@ -95,6 +95,22 @@ fun VisitDetailsScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            if (uiState.hasPendingVisitSync) {
+                                Spacer(Modifier.height(12.dp))
+                                OutlinedButton(
+                                    onClick = { viewModel.trySync(visitId) },
+                                    enabled = !uiState.isSyncing && uiState.connectionStatus.isOnline,
+                                ) {
+                                    if (uiState.isSyncing) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp,
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                    }
+                                    Text(if (uiState.isSyncing) "Syncing…" else "Try Sync")
+                                }
+                            }
                         }
                     }
 
@@ -177,23 +193,28 @@ fun VisitDetailsScreen(
                                         }
                                     }
 
-                                    OutlinedButton(
-                                        onClick = { onNavigateToDictation(visitId, false) },
+                                    Row(
                                         modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     ) {
-                                        Icon(Icons.Default.Mic, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Open Local Draft")
-                                    }
+                                        OutlinedButton(
+                                            onClick = { onNavigateToDictation(visitId, false) },
+                                            modifier = Modifier.weight(1f),
+                                        ) {
+                                            Icon(Icons.Default.Mic, contentDescription = null)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Local")
+                                        }
 
-                                    Button(
-                                        onClick = { onNavigateToDictation(visitId, true) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        enabled = uiState.canUseAiDictation,
-                                    ) {
-                                        Icon(Icons.Default.Mic, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Send Draft to AI")
+                                        Button(
+                                            onClick = { onNavigateToDictation(visitId, true) },
+                                            modifier = Modifier.weight(1f),
+                                            enabled = uiState.canUseAiDictation,
+                                        ) {
+                                            Icon(Icons.Default.Mic, contentDescription = null)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("AI")
+                                        }
                                     }
                                 }
                             } else if (uiState.providerNote?.transcript?.isNotBlank() == true) {
@@ -217,24 +238,27 @@ fun VisitDetailsScreen(
                                     }
                                 }
                             } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
                                     OutlinedButton(
                                         onClick = { onNavigateToDictation(visitId, false) },
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.weight(1f),
                                     ) {
                                         Icon(Icons.Default.Mic, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Local Dictation")
+                                        Text("Local")
                                     }
 
                                     Button(
                                         onClick = { onNavigateToDictation(visitId, true) },
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.weight(1f),
                                         enabled = uiState.canUseAiDictation,
                                     ) {
                                         Icon(Icons.Default.Mic, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("AI Dictation")
+                                        Text("AI")
                                     }
                                 }
                             }
@@ -250,24 +274,27 @@ fun VisitDetailsScreen(
                             }
                         }
                         VisitStatus.error -> {
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
                                 OutlinedButton(
                                     onClick = { onNavigateToDictation(visitId, false) },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.weight(1f),
                                 ) {
                                     Icon(Icons.Default.Mic, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Edit Local Draft")
+                                    Text("Local")
                                 }
 
                                 Button(
                                     onClick = { onNavigateToDictation(visitId, true) },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.weight(1f),
                                     enabled = uiState.canUseAiDictation,
                                 ) {
                                     Icon(Icons.Default.Mic, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Retry AI Dictation")
+                                    Text("AI")
                                 }
                             }
                         }

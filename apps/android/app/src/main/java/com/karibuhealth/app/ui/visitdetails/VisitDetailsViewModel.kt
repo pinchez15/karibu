@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ data class VisitDetailsUiState(
     val providerNote: ProviderNote? = null,
     val patientNote: PatientNote? = null,
     val isLoading: Boolean = true,
+    val isSyncing: Boolean = false,
     val connectionStatus: NetworkMonitor.ConnectionStatus = NetworkMonitor.ConnectionStatus(
         isOnline = false,
         quality = NetworkMonitor.ConnectionQuality.offline,
@@ -50,6 +52,7 @@ class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
     private val noteRepository: NoteRepository,
     private val networkMonitor: NetworkMonitor,
+    private val syncEngine: SyncEngine,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
@@ -82,6 +85,19 @@ class VisitDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             visitRepository.refreshVisit(visitId)
             noteRepository.refreshNotes(visitId)
+        }
+    }
+
+    fun trySync(visitId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSyncing = true) }
+            try {
+                syncEngine.processQueue()
+                visitRepository.refreshVisit(visitId)
+                noteRepository.refreshNotes(visitId)
+            } finally {
+                _uiState.update { it.copy(isSyncing = false) }
+            }
         }
     }
 }
