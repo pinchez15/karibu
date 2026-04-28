@@ -29,7 +29,7 @@ data class NewVisitUiState(
     val firstName: String = "",
     val lastName: String = "",
     val sex: PatientSex? = null,
-    val dateOfBirth: String? = null, // ISO yyyy-MM-dd
+    val dateOfBirth: String? = null, // Display format dd-MM-yyyy
     val searchResults: List<Patient> = emptyList(),
     val foundPatient: Patient? = null,
     val duplicateCandidate: Patient? = null,
@@ -79,8 +79,35 @@ class NewVisitViewModel @Inject constructor(
         _uiState.update { it.copy(sex = sex, duplicateCandidate = null, fieldErrors = it.fieldErrors.copy(sex = null)) }
     }
 
-    fun updateDateOfBirth(isoDate: String) {
-        _uiState.update { it.copy(dateOfBirth = isoDate, duplicateCandidate = null, fieldErrors = it.fieldErrors.copy(dateOfBirth = null)) }
+    fun updateDateOfBirth(input: String) {
+        val digits = input.filter(Char::isDigit).take(8)
+        val formatted = buildString {
+            digits.forEachIndexed { index, char ->
+                append(char)
+                if ((index == 1 || index == 3) && index != digits.lastIndex) {
+                    append('-')
+                }
+            }
+        }
+
+        _uiState.update {
+            it.copy(
+                dateOfBirth = formatted,
+                duplicateCandidate = null,
+                fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
+            )
+        }
+    }
+
+    fun setDateOfBirthFromPicker(isoDate: String) {
+        val display = isoToDisplayDate(isoDate) ?: return
+        _uiState.update {
+            it.copy(
+                dateOfBirth = display,
+                duplicateCandidate = null,
+                fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
+            )
+        }
     }
 
     fun selectPatient(patient: Patient) {
@@ -141,6 +168,15 @@ class NewVisitViewModel @Inject constructor(
                 _uiState.update { it.copy(error = "No active clinic — please sign in again") }
                 return null
             }
+        val dateOfBirthIso = displayToIsoDate(state.dateOfBirth!!) ?: run {
+            _uiState.update {
+                it.copy(
+                    fieldErrors = it.fieldErrors.copy(dateOfBirth = "Enter a valid date"),
+                    error = null,
+                )
+            }
+            return null
+        }
         val phone = if (state.searchQuery.isNotBlank()) formatPhoneNumber(state.searchQuery) else null
 
         _uiState.update { it.copy(isCreating = true, error = null) }
@@ -149,7 +185,7 @@ class NewVisitViewModel @Inject constructor(
                 clinicId = clinicId,
                 firstName = state.firstName.trim(),
                 lastName = state.lastName.trim(),
-                dateOfBirth = state.dateOfBirth!!,
+                dateOfBirth = dateOfBirthIso,
             )
             if (duplicateCandidate != null && !confirmDuplicate) {
                 _uiState.update { it.copy(duplicateCandidate = duplicateCandidate, isCreating = false) }
@@ -161,7 +197,7 @@ class NewVisitViewModel @Inject constructor(
                 firstName = state.firstName.trim(),
                 lastName = state.lastName.trim(),
                 whatsappNumber = phone,
-                dateOfBirth = state.dateOfBirth,
+                dateOfBirth = dateOfBirthIso,
                 sex = state.sex?.name,
             )
             val staffId = authTokenStore.getStaffId()
@@ -181,11 +217,29 @@ class NewVisitViewModel @Inject constructor(
     private fun validateDateOfBirth(dateOfBirth: String?): String? {
         if (dateOfBirth.isNullOrBlank()) return "Required"
 
-        val dob = runCatching { LocalDate.parse(dateOfBirth) }.getOrNull()
+        val dob = displayToIsoDate(dateOfBirth)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
             ?: return "Enter a valid date"
         val today = LocalDate.now()
         if (dob.isAfter(today)) return "Date of birth cannot be in the future"
         if (dob.isBefore(today.minusYears(120))) return "Date of birth looks too far in the past"
         return null
+    }
+
+    private fun displayToIsoDate(dateOfBirth: String): String? {
+        val parts = dateOfBirth.split('-')
+        if (parts.size != 3 || parts.any { it.isBlank() }) return null
+        val (day, month, year) = parts
+        if (day.length != 2 || month.length != 2 || year.length != 4) return null
+
+        return runCatching {
+            LocalDate.of(year.toInt(), month.toInt(), day.toInt()).toString()
+        }.getOrNull()
+    }
+
+    private fun isoToDisplayDate(isoDate: String): String? {
+        return runCatching {
+            val date = LocalDate.parse(isoDate)
+            "%02d-%02d-%04d".format(date.dayOfMonth, date.monthValue, date.year)
+        }.getOrNull()
     }
 }

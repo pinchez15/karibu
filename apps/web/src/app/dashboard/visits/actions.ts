@@ -13,8 +13,32 @@ type DuplicateCandidate = {
   date_of_birth: string | null
 }
 
+function parseUgandaDateOfBirth(dateOfBirth: string) {
+  const digits = dateOfBirth.replace(/\D/g, '')
+  if (digits.length !== 8) return null
+
+  const day = Number(digits.slice(0, 2))
+  const month = Number(digits.slice(2, 4))
+  const year = Number(digits.slice(4, 8))
+  const dob = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    Number.isNaN(dob.getTime()) ||
+    dob.getUTCFullYear() !== year ||
+    dob.getUTCMonth() !== month - 1 ||
+    dob.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return dob.toISOString().slice(0, 10)
+}
+
 function validateDateOfBirth(dateOfBirth: string) {
-  const dob = new Date(`${dateOfBirth}T00:00:00Z`)
+  const parsed = parseUgandaDateOfBirth(dateOfBirth)
+  if (!parsed) return 'Enter date of birth as DD-MM-YYYY'
+
+  const dob = new Date(`${parsed}T00:00:00Z`)
   if (Number.isNaN(dob.getTime())) return 'Enter a valid date of birth'
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
@@ -60,7 +84,7 @@ export async function createPatientWithVisit(formData: FormData) {
   const rawPhone = formData.get('whatsapp_number') as string
   const firstName = (formData.get('first_name') as string)?.trim() || null
   const lastName = (formData.get('last_name') as string)?.trim() || null
-  const dateOfBirth = (formData.get('date_of_birth') as string)?.trim() || null
+  const dateOfBirthInput = (formData.get('date_of_birth') as string)?.trim() || null
   const sex = (formData.get('sex') as string) || null
   const existingPatientId = (formData.get('existing_patient_id') as string)?.trim() || null
   const confirmDuplicate = formData.get('confirm_duplicate') === 'true'
@@ -68,11 +92,13 @@ export async function createPatientWithVisit(formData: FormData) {
   if (!rawPhone) {
     return { error: 'Phone number is required' }
   }
-  if (!firstName || !lastName || !dateOfBirth) {
+  if (!firstName || !lastName || !dateOfBirthInput) {
     return { error: 'First name, last name, and date of birth are required' }
   }
-  const dobError = validateDateOfBirth(dateOfBirth)
+  const dobError = validateDateOfBirth(dateOfBirthInput)
   if (dobError) return { error: dobError }
+  const dateOfBirth = parseUgandaDateOfBirth(dateOfBirthInput)
+  if (!dateOfBirth) return { error: 'Enter date of birth as DD-MM-YYYY' }
 
   const whatsappNumber = formatPhoneNumber(rawPhone)
   if (!isValidUgandaPhone(whatsappNumber)) {

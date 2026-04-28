@@ -8,6 +8,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createPatientWithVisit } from './actions'
 
+function formatUgandaDateInput(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`
+}
+
+function formatUgandaDateDisplay(value: string | null | undefined) {
+  if (!value) return ''
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return value
+  return `${match[3]}-${match[2]}-${match[1]}`
+}
+
 export function PatientsToolbar() {
   const router = useRouter()
   const pathname = usePathname()
@@ -126,9 +140,12 @@ export function PatientsToolbar() {
               <Input
                 id="date_of_birth"
                 name="date_of_birth"
-                type="date"
-                min={`${new Date().getFullYear() - 120}-01-01`}
-                max={new Date().toISOString().split('T')[0]}
+                type="text"
+                placeholder="DD-MM-YYYY"
+                inputMode="numeric"
+                onChange={(e) => {
+                  e.currentTarget.value = formatUgandaDateInput(e.currentTarget.value)
+                }}
                 required
               />
             </div>
@@ -151,7 +168,7 @@ export function PatientsToolbar() {
               <p className="text-sm text-amber-900">
                 Possible existing patient found: {[duplicateCandidate.first_name, duplicateCandidate.last_name].filter(Boolean).join(' ') || duplicateCandidate.display_name || 'Unknown'}
                 {duplicateCandidate.patient_id ? ` (#${duplicateCandidate.patient_id})` : ''}
-                {duplicateCandidate.date_of_birth ? ` · DOB ${duplicateCandidate.date_of_birth}` : ''}
+                {duplicateCandidate.date_of_birth ? ` · DOB ${formatUgandaDateDisplay(duplicateCandidate.date_of_birth)}` : ''}
               </p>
               <div className="flex gap-2">
                 <Button type="button" onClick={() => submitWithDuplicateChoice('existing')} disabled={creating}>

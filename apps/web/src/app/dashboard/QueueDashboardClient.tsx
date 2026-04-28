@@ -29,8 +29,19 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { QueueItem, QueueStatus, Patient } from '@karibu/shared'
 
-const todayIso = new Date().toISOString().split('T')[0]
-const oldestDobIso = `${new Date().getFullYear() - 120}-01-01`
+function formatUgandaDateInput(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`
+}
+
+function formatUgandaDateDisplay(value: string | null | undefined) {
+  if (!value) return ''
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return value
+  return `${match[3]}-${match[2]}-${match[1]}`
+}
 
 interface QueueDashboardClientProps {
   initialQueue: QueueItem[]
@@ -169,7 +180,7 @@ export function QueueDashboardClient({
     setNewPatient({
       first_name: patient.first_name || '',
       last_name: patient.last_name || '',
-      date_of_birth: patient.date_of_birth || '',
+      date_of_birth: formatUgandaDateDisplay(patient.date_of_birth),
       sex: (patient.sex as 'M' | 'F') || '',
       whatsapp_number: patient.whatsapp_number || '',
       chief_complaint: '',
@@ -451,7 +462,7 @@ export function QueueDashboardClient({
                 <p>
                   {[duplicateCandidate.first_name, duplicateCandidate.last_name].filter(Boolean).join(' ') || duplicateCandidate.display_name || 'Unknown'}
                   {duplicateCandidate.patient_id ? ` (#${duplicateCandidate.patient_id})` : ''}
-                  {duplicateCandidate.date_of_birth ? ` · DOB ${duplicateCandidate.date_of_birth}` : ''}
+                  {duplicateCandidate.date_of_birth ? ` · DOB ${formatUgandaDateDisplay(duplicateCandidate.date_of_birth)}` : ''}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -486,11 +497,10 @@ export function QueueDashboardClient({
             <div className="space-y-1.5">
               <Label>Date of Birth *</Label>
               <Input
-                type="date"
                 value={newPatient.date_of_birth}
-                onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: e.target.value })}
-                min={oldestDobIso}
-                max={todayIso}
+                onChange={(e) => setNewPatient({ ...newPatient, date_of_birth: formatUgandaDateInput(e.target.value) })}
+                placeholder="DD-MM-YYYY"
+                inputMode="numeric"
               />
             </div>
             <div className="space-y-1.5">

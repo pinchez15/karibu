@@ -14,8 +14,32 @@ type DuplicateCandidate = {
   date_of_birth: string | null
 }
 
+function parseUgandaDateOfBirth(dateOfBirth: string) {
+  const digits = dateOfBirth.replace(/\D/g, '')
+  if (digits.length !== 8) return null
+
+  const day = Number(digits.slice(0, 2))
+  const month = Number(digits.slice(2, 4))
+  const year = Number(digits.slice(4, 8))
+  const dob = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    Number.isNaN(dob.getTime()) ||
+    dob.getUTCFullYear() !== year ||
+    dob.getUTCMonth() !== month - 1 ||
+    dob.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return dob.toISOString().slice(0, 10)
+}
+
 function validateDateOfBirth(dateOfBirth: string) {
-  const dob = new Date(`${dateOfBirth}T00:00:00Z`)
+  const parsed = parseUgandaDateOfBirth(dateOfBirth)
+  if (!parsed) return 'Enter date of birth as DD-MM-YYYY'
+
+  const dob = new Date(`${parsed}T00:00:00Z`)
   if (Number.isNaN(dob.getTime())) return 'Enter a valid date of birth'
 
   const today = new Date()
@@ -181,6 +205,8 @@ export async function addPatientToQueue(data: {
   const supabase = createServiceClient()
   const dobError = validateDateOfBirth(data.date_of_birth)
   if (dobError) return { error: dobError }
+  const dateOfBirthIso = parseUgandaDateOfBirth(data.date_of_birth)
+  if (!dateOfBirthIso) return { error: 'Enter date of birth as DD-MM-YYYY' }
 
   let patientId: string
   let numericPatientId: number | null = null
@@ -195,7 +221,7 @@ export async function addPatientToQueue(data: {
       .update({
         first_name: data.first_name,
         last_name: data.last_name,
-        date_of_birth: data.date_of_birth,
+        date_of_birth: dateOfBirthIso,
         sex: data.sex,
         ...(data.whatsapp_number ? { whatsapp_number: formatPhoneNumber(data.whatsapp_number) } : {}),
       })
@@ -212,7 +238,7 @@ export async function addPatientToQueue(data: {
       staff.clinic_id,
       data.first_name.trim(),
       data.last_name.trim(),
-      data.date_of_birth,
+      dateOfBirthIso,
     )
     if (duplicateCandidate && !data.confirm_duplicate) {
       return { duplicateCandidate }
@@ -245,7 +271,7 @@ export async function addPatientToQueue(data: {
         clinic_id: staff.clinic_id,
         first_name: data.first_name,
         last_name: data.last_name,
-        date_of_birth: data.date_of_birth,
+        date_of_birth: dateOfBirthIso,
         sex: data.sex,
         whatsapp_number: formattedPhone,
       })

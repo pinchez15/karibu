@@ -80,7 +80,7 @@ export default async function PatientProfilePage({
         <p className="text-muted-foreground font-mono">{patient.whatsapp_number}</p>
         <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
           {patient.date_of_birth && (
-            <span>DOB: {new Date(patient.date_of_birth).toLocaleDateString()}</span>
+            <span>DOB: {new Date(patient.date_of_birth).toLocaleDateString('en-GB')}</span>
           )}
           <PatientSexEditor patientId={patient.id} currentSex={patient.sex} />
         </div>

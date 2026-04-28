@@ -97,7 +97,7 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div>
             <p className="text-sm text-muted-foreground">Visit Date</p>
-            <p className="font-medium font-mono">{new Date(visit.visit_date).toLocaleDateString()}</p>
+            <p className="font-medium font-mono">{new Date(visit.visit_date).toLocaleDateString('en-GB')}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Doctor</p>

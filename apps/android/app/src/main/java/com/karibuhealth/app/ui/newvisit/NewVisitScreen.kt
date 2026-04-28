@@ -125,21 +125,22 @@ fun NewVisitScreen(
             // records officer can pick an approximate Jan 1 of the birth year.
             OutlinedTextField(
                 value = uiState.dateOfBirth ?: "",
-                onValueChange = { /* picker only */ },
-                readOnly = true,
+                onValueChange = { viewModel.updateDateOfBirth(it) },
                 label = { Text("Date of birth *") },
-                placeholder = { Text("YYYY-MM-DD") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { datePickerOpen = true },
+                placeholder = { Text("DD-MM-YYYY") },
+                modifier = Modifier.fillMaxWidth(),
                 isError = uiState.fieldErrors.dateOfBirth != null,
                 supportingText = uiState.fieldErrors.dateOfBirth?.let { { Text(it) } }
-                    ?: { Text("If unknown, pick approximate year") },
+                    ?: { Text("Type DDMMYYYY or tap the calendar") },
                 trailingIcon = {
                     IconButton(onClick = { datePickerOpen = true }) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Pick date")
                     }
                 },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next,
+                ),
                 singleLine = true,
             )
 
@@ -204,7 +205,7 @@ fun NewVisitScreen(
                         Text("Possible existing patient", style = MaterialTheme.typography.labelLarge)
                         Text(patient.fullName.ifBlank { "Unknown" })
                         patient.patientId?.let { Text("ID: #$it") }
-                        patient.dateOfBirth?.let { Text("DOB: $it") }
+                        patient.dateOfBirth?.let { Text("DOB: ${it.toUgandaDisplayDate()}") }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = {
                                 scope.launch {
@@ -255,7 +256,7 @@ fun NewVisitScreen(
             current = uiState.dateOfBirth,
             onDismiss = { datePickerOpen = false },
             onConfirm = { iso ->
-                viewModel.updateDateOfBirth(iso)
+                viewModel.setDateOfBirthFromPicker(iso)
                 datePickerOpen = false
             },
         )
@@ -271,7 +272,10 @@ private fun DobPickerDialog(
 ) {
     val initialMillis = current?.let {
         runCatching {
-            LocalDate.parse(it)
+            it.toIsoDateFromUgandaDisplay()?.let(LocalDate::parse)
+                ?: LocalDate.parse(it)
+        }.map {
+            it
                 .atStartOfDay(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli()
@@ -279,13 +283,7 @@ private fun DobPickerDialog(
     }
     val state = rememberDatePickerState(
         initialSelectedDateMillis = initialMillis,
-        // Default to typed numeric entry — clinicians prefer keying YYYY-MM-DD
-        // over scrolling through a calendar grid, especially for older patients
-        // whose birth year is decades back. The dialog still has a toggle to
-        // switch to the calendar view.
         initialDisplayMode = DisplayMode.Input,
-        // Most patients are <120 years old; cap the picker at today (no future
-        // DOBs) and a reasonable lower bound to keep the picker usable.
         yearRange = (LocalDate.now().year - 120)..LocalDate.now().year,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean =
@@ -311,4 +309,22 @@ private fun DobPickerDialog(
     ) {
         DatePicker(state = state)
     }
+}
+
+private fun String.toUgandaDisplayDate(): String {
+    return runCatching {
+        val date = LocalDate.parse(this)
+        "%02d-%02d-%04d".format(date.dayOfMonth, date.monthValue, date.year)
+    }.getOrDefault(this)
+}
+
+private fun String.toIsoDateFromUgandaDisplay(): String? {
+    val parts = split('-')
+    if (parts.size != 3) return null
+    val (day, month, year) = parts
+    if (day.length != 2 || month.length != 2 || year.length != 4) return null
+
+    return runCatching {
+        LocalDate.of(year.toInt(), month.toInt(), day.toInt()).toString()
+    }.getOrNull()
 }
