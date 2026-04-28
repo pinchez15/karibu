@@ -80,22 +80,24 @@ class NewVisitViewModel @Inject constructor(
     }
 
     fun updateDateOfBirth(input: String) {
+        _uiState.update {
+            it.copy(
+                dateOfBirth = input,
+                duplicateCandidate = null,
+                fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
+            )
+        }
+    }
+
+    fun formatDateOfBirthInput(input: String): String {
         val digits = input.filter(Char::isDigit).take(8)
-        val formatted = buildString {
+        return buildString {
             digits.forEachIndexed { index, char ->
                 append(char)
                 if ((index == 1 || index == 3) && index != digits.lastIndex) {
                     append('-')
                 }
             }
-        }
-
-        _uiState.update {
-            it.copy(
-                dateOfBirth = formatted,
-                duplicateCandidate = null,
-                fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
-            )
         }
     }
 

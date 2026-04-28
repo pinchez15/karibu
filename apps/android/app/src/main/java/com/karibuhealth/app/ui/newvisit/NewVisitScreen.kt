@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +35,24 @@ fun NewVisitScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     var datePickerOpen by remember { mutableStateOf(false) }
+    var dobFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = uiState.dateOfBirth.orEmpty(),
+                selection = TextRange(uiState.dateOfBirth.orEmpty().length),
+            )
+        )
+    }
+
+    LaunchedEffect(uiState.dateOfBirth) {
+        val latest = uiState.dateOfBirth.orEmpty()
+        if (dobFieldValue.text != latest) {
+            dobFieldValue = TextFieldValue(
+                text = latest,
+                selection = TextRange(latest.length),
+            )
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -124,8 +144,15 @@ fun NewVisitScreen(
             // Date of Birth — required by HMIS 105 age bands. If unknown, the
             // records officer can pick an approximate Jan 1 of the birth year.
             OutlinedTextField(
-                value = uiState.dateOfBirth ?: "",
-                onValueChange = { viewModel.updateDateOfBirth(it) },
+                value = dobFieldValue,
+                onValueChange = { value ->
+                    val formatted = viewModel.formatDateOfBirthInput(value.text)
+                    dobFieldValue = TextFieldValue(
+                        text = formatted,
+                        selection = TextRange(formatted.length),
+                    )
+                    viewModel.updateDateOfBirth(formatted)
+                },
                 label = { Text("Date of birth *") },
                 placeholder = { Text("DD-MM-YYYY") },
                 modifier = Modifier.fillMaxWidth(),
