@@ -14,7 +14,24 @@ import kotlinx.serialization.Serializable
 //   completed-> payment recorded, visit closed
 //   error    -> something failed in the AI structuring step
 
-enum class StaffRole { admin, doctor, nurse }
+// Legacy roles ('admin', 'doctor', 'nurse') stay valid for back-compat with the
+// web app + Clerk webhook. HC III rollout adds clinical_officer/midwife/etc.
+// alongside them. A future cleanup migration can rename 'doctor' once web
+// catches up.
+enum class StaffRole {
+    admin,
+    doctor,
+    nurse,
+    clinical_officer,
+    midwife,
+    nursing_assistant,
+    records_officer,
+    lab_tech,
+    dispenser;
+
+    val isLeadClinician: Boolean
+        get() = this == doctor || this == clinical_officer || this == midwife || this == nurse || this == admin
+}
 
 enum class VisitStatus { pending, review, sent, completed, error }
 
@@ -69,6 +86,7 @@ data class Patient(
     val sex: String?,
     val createdAt: String,
     val updatedAt: String,
+    val isSynced: Boolean = true,
 ) {
     val fullName: String get() = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { displayName ?: "" }
 }
@@ -98,6 +116,7 @@ data class Visit(
     val finalizedAt: String?,
     val errorMessage: String?,
     val errorAt: String?,
+    val isSynced: Boolean = true,
 )
 
 data class ProviderNote(

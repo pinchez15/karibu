@@ -56,6 +56,7 @@ fun PatientEntity.toDomain() = Patient(
     whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
     createdAt = createdAt, updatedAt = updatedAt,
+    isSynced = isSynced,
 )
 
 fun Patient.toEntity(isSynced: Boolean = true, localCreatedAt: Long? = null) = PatientEntity(
@@ -106,6 +107,7 @@ fun VisitEntity.toDomain() = Visit(
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
+    isSynced = isSynced,
 )
 
 fun Visit.toCreateDto() = VisitCreateDto(

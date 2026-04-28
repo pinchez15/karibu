@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,12 +18,38 @@ data class VisitDetailsUiState(
     val providerNote: ProviderNote? = null,
     val patientNote: PatientNote? = null,
     val isLoading: Boolean = true,
+    val connectionStatus: NetworkMonitor.ConnectionStatus = NetworkMonitor.ConnectionStatus(
+        isOnline = false,
+        quality = NetworkMonitor.ConnectionQuality.offline,
+        downKbps = 0,
+        upKbps = 0,
+        transportLabel = "No signal",
+    ),
 )
+
+val VisitDetailsUiState.hasLocalDraft: Boolean
+    get() = providerNote?.transcript?.isNotBlank() == true && visit?.status == VisitStatus.pending
+
+val VisitDetailsUiState.hasPendingVisitSync: Boolean
+    get() = visit?.isSynced == false || patient?.isSynced == false
+
+val VisitDetailsUiState.canUseAiDictation: Boolean
+    get() = connectionStatus.isGoodForAi && !hasPendingVisitSync
+
+val VisitDetailsUiState.aiAvailabilityMessage: String
+    get() = when {
+        !connectionStatus.isOnline -> "AI unavailable: offline"
+        hasPendingVisitSync -> "AI unavailable until patient and visit finish syncing"
+        !connectionStatus.isGoodForAi ->
+            "AI unavailable: weak ${connectionStatus.transportLabel.lowercase()} signal (${connectionStatus.barsLabel})"
+        else -> "AI ready on ${connectionStatus.transportLabel} (${connectionStatus.barsLabel})"
+    }
 
 @HiltViewModel
 class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
     private val noteRepository: NoteRepository,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
@@ -42,6 +69,12 @@ class VisitDetailsViewModel @Inject constructor(
                         )
                     }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            networkMonitor.connectionStatusFlow.collect { status ->
+                _uiState.update { it.copy(connectionStatus = status) }
             }
         }
 

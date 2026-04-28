@@ -4,12 +4,17 @@ import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity
 import com.karibuhealth.app.data.local.db.dao.PatientNoteDao
 import com.karibuhealth.app.data.local.db.dao.ProviderNoteDao
+import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.domain.model.PatientNote
 import com.karibuhealth.app.domain.model.ProviderNote
 import com.karibuhealth.app.util.NetworkMonitor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,8 +28,31 @@ class NoteRepository @Inject constructor(
     fun getProviderNote(visitId: String): Flow<ProviderNote?> =
         providerNoteDao.getByVisitId(visitId).map { it?.toDomain() }
 
+    suspend fun getProviderNoteOnce(visitId: String): ProviderNote? =
+        withContext(Dispatchers.IO) { providerNoteDao.getByVisitIdOnce(visitId)?.toDomain() }
+
     fun getPatientNote(visitId: String): Flow<PatientNote?> =
         patientNoteDao.getByVisitId(visitId).map { it?.toDomain() }
+
+    suspend fun saveDraftTranscript(visitId: String, transcript: String): ProviderNote =
+        withContext(Dispatchers.IO) {
+            val existing = providerNoteDao.getByVisitIdOnce(visitId)
+            val now = Instant.now().toString()
+            val entity = ProviderNoteEntity(
+                id = existing?.id ?: UUID.randomUUID().toString(),
+                visitId = visitId,
+                transcript = transcript,
+                noteContent = existing?.noteContent,
+                structuredData = existing?.structuredData,
+                status = existing?.status ?: "draft",
+                createdAt = existing?.createdAt ?: now,
+                updatedAt = now,
+                finalizedAt = existing?.finalizedAt,
+                finalizedBy = existing?.finalizedBy,
+            )
+            providerNoteDao.upsert(entity)
+            entity.toDomain()
+        }
 
     suspend fun refreshNotes(visitId: String) {
         if (!networkMonitor.isOnline()) return

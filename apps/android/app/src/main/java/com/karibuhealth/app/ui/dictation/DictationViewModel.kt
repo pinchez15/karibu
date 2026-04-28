@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.DictationException
+import com.karibuhealth.app.data.repository.NoteRepository
+import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import com.karibuhealth.app.util.Analytics
 import com.karibuhealth.app.util.DictationRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,11 +25,13 @@ import javax.inject.Inject
 
 data class DictationUiState(
     val transcript: String = "",
+    val aiMode: Boolean = false,
     val isRecording: Boolean = false,
     val isTranscribing: Boolean = false,
     val isSubmitting: Boolean = false,
     val submitted: Boolean = false,
     val error: String? = null,
+    val savedLocally: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() = transcript.trim().length >= 10 && !isRecording && !isTranscribing && !isSubmitting
@@ -37,6 +41,8 @@ data class DictationUiState(
 class DictationViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dictationApi: DictationApiClient,
+    private val noteRepository: NoteRepository,
+    private val clerkAuthManager: ClerkAuthManager,
     private val analytics: Analytics,
 ) : ViewModel() {
 
@@ -44,6 +50,21 @@ class DictationViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(DictationUiState())
     val uiState: StateFlow<DictationUiState> = _uiState.asStateFlow()
+
+    fun load(visitId: String, aiMode: Boolean) {
+        viewModelScope.launch {
+            val existing = noteRepository.getProviderNoteOnce(visitId)
+            _uiState.update {
+                it.copy(
+                    transcript = existing?.transcript.orEmpty(),
+                    aiMode = aiMode,
+                    savedLocally = existing?.transcript?.isNotBlank() == true,
+                    submitted = false,
+                    error = null,
+                )
+            }
+        }
+    }
 
     fun hasMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -76,6 +97,7 @@ class DictationViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val text = withContext(Dispatchers.IO) {
+                    clerkAuthManager.refreshToken()
                     dictationApi.transcribeChunk(file)
                 }
                 // Append to existing transcript with a space separator, trimming
@@ -99,11 +121,12 @@ class DictationViewModel @Inject constructor(
     }
 
     fun updateTranscript(text: String) {
-        _uiState.update { it.copy(transcript = text) }
+        _uiState.update { it.copy(transcript = text, savedLocally = false) }
     }
 
     fun submit(visitId: String) {
         val transcript = _uiState.value.transcript.trim()
+        val aiMode = _uiState.value.aiMode
         if (transcript.length < 10) {
             _uiState.update { it.copy(error = "Dictate a bit more before submitting.") }
             return
@@ -113,13 +136,27 @@ class DictationViewModel @Inject constructor(
             _uiState.update { it.copy(isSubmitting = true, error = null) }
             try {
                 withContext(Dispatchers.IO) {
-                    dictationApi.submitDictation(visitId, transcript)
+                    noteRepository.saveDraftTranscript(visitId, transcript)
+                    if (aiMode) {
+                        clerkAuthManager.refreshToken()
+                        dictationApi.submitDictation(visitId, transcript)
+                    }
                 }
-                analytics.capture(Analytics.Events.DICTATION_COMPLETED, mapOf(
-                    "visit_id" to visitId,
-                    "transcript_length" to transcript.length,
-                ))
-                _uiState.update { it.copy(isSubmitting = false, submitted = true) }
+                analytics.capture(
+                    Analytics.Events.DICTATION_COMPLETED,
+                    mapOf(
+                        "visit_id" to visitId,
+                        "transcript_length" to transcript.length,
+                        "mode" to if (aiMode) "ai" else "local",
+                    ),
+                )
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        submitted = true,
+                        savedLocally = true,
+                    )
+                }
             } catch (e: DictationException) {
                 _uiState.update { it.copy(isSubmitting = false, error = e.message) }
             } catch (e: Exception) {

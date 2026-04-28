@@ -21,7 +21,7 @@ import com.karibuhealth.app.domain.model.VisitStatus
 fun VisitDetailsScreen(
     visitId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToDictation: (String) -> Unit,
+    onNavigateToDictation: (String, Boolean) -> Unit,
     onNavigateToReview: (String) -> Unit,
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
@@ -81,6 +81,23 @@ fun VisitDetailsScreen(
 
                 // Visit info
                 uiState.visit?.let { visit ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("AI dictation", style = MaterialTheme.typography.labelMedium)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                uiState.aiAvailabilityMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Visit", style = MaterialTheme.typography.labelMedium)
@@ -126,7 +143,7 @@ fun VisitDetailsScreen(
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    note.noteContent ?: "Pending...",
+                                    note.noteContent ?: note.transcript ?: "Pending...",
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
@@ -138,12 +155,48 @@ fun VisitDetailsScreen(
 
                     when (visit.status) {
                         VisitStatus.pending -> {
-                            // Dictation may have been submitted but Inngest is
-                            // still structuring the note — show a non-blocking
-                            // "AI working" hint when the provider note already
-                            // has a transcript. Otherwise prompt to dictate.
-                            val hasTranscript = uiState.providerNote?.transcript?.isNotBlank() == true
-                            if (hasTranscript) {
+                            if (uiState.hasLocalDraft) {
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text(
+                                                "Draft saved locally",
+                                                fontWeight = FontWeight.Medium,
+                                            )
+                                            Spacer(Modifier.height(4.dp))
+                                            Text(
+                                                "You can keep editing offline. Use AI Dictation when sync and signal are ready.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { onNavigateToDictation(visitId, false) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Icon(Icons.Default.Mic, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Open Local Draft")
+                                    }
+
+                                    Button(
+                                        onClick = { onNavigateToDictation(visitId, true) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = uiState.canUseAiDictation,
+                                    ) {
+                                        Icon(Icons.Default.Mic, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Send Draft to AI")
+                                    }
+                                }
+                            } else if (uiState.providerNote?.transcript?.isNotBlank() == true) {
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -164,13 +217,25 @@ fun VisitDetailsScreen(
                                     }
                                 }
                             } else {
-                                Button(
-                                    onClick = { onNavigateToDictation(visitId) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Icon(Icons.Default.Mic, contentDescription = null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Dictate Note")
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedButton(
+                                        onClick = { onNavigateToDictation(visitId, false) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Icon(Icons.Default.Mic, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Local Dictation")
+                                    }
+
+                                    Button(
+                                        onClick = { onNavigateToDictation(visitId, true) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = uiState.canUseAiDictation,
+                                    ) {
+                                        Icon(Icons.Default.Mic, contentDescription = null)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("AI Dictation")
+                                    }
                                 }
                             }
                         }
@@ -185,13 +250,25 @@ fun VisitDetailsScreen(
                             }
                         }
                         VisitStatus.error -> {
-                            Button(
-                                onClick = { onNavigateToDictation(visitId) },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Icon(Icons.Default.Mic, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Re-dictate Note")
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedButton(
+                                    onClick = { onNavigateToDictation(visitId, false) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(Icons.Default.Mic, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Edit Local Draft")
+                                }
+
+                                Button(
+                                    onClick = { onNavigateToDictation(visitId, true) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = uiState.canUseAiDictation,
+                                ) {
+                                    Icon(Icons.Default.Mic, contentDescription = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Retry AI Dictation")
+                                }
                             }
                         }
                         else -> {}

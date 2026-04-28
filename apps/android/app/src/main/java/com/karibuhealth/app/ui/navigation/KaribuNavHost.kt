@@ -83,8 +83,8 @@ fun KaribuNavHost(
             VisitDetailsScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToDictation = { visitId ->
-                    navController.navigate(NavRoute.Dictation(visitId))
+                onNavigateToDictation = { visitId, aiMode ->
+                    navController.navigate(NavRoute.Dictation(visitId, aiMode))
                 },
                 onNavigateToReview = { visitId ->
                     navController.navigate(NavRoute.Review(visitId))
@@ -96,6 +96,7 @@ fun KaribuNavHost(
             val route = backStackEntry.toRoute<NavRoute.Dictation>()
             DictationScreen(
                 visitId = route.visitId,
+                aiMode = route.aiMode,
                 onNavigateBack = { navController.popBackStack() },
                 onSubmitted = { visitId ->
                     // Dictation submitted; visit is now in 'pending' while
@@ -122,7 +123,7 @@ fun KaribuNavHost(
                     // Back to dictation so the clinician can edit the kept
                     // transcript and re-submit. Inngest will run again on the
                     // new transcript.
-                    navController.navigate(NavRoute.Dictation(visitId)) {
+                    navController.navigate(NavRoute.Dictation(visitId, true)) {
                         popUpTo(NavRoute.Home)
                     }
                 },
