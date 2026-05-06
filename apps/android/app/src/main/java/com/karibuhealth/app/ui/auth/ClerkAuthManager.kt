@@ -106,14 +106,16 @@ class ClerkAuthManager @Inject constructor(
     private suspend fun handleActiveSession(userId: String) {
         Log.d(TAG, "Active session for user: $userId")
 
+        // Supabase project validates Clerk JWTs via JWKS (CLERK_ISSUER), so
+        // we use the default Clerk session token rather than a shared-secret
+        // "supabase" JWT template. Specifying a template that isn't
+        // configured in Clerk dashboard returns null and bricks sign-in.
         val token = tokenFrom(
-            Clerk.session?.fetchToken(
-                GetTokenOptions(template = AuthManager.SUPABASE_JWT_TEMPLATE)
-            )
+            Clerk.session?.fetchToken(GetTokenOptions())
         )
 
         if (token.isNullOrBlank()) {
-            Log.w(TAG, "Failed to get Supabase token from Clerk auth state")
+            Log.w(TAG, "Failed to get Clerk session token from auth state")
             _state.value = ClerkAuthState.Error("Failed to get auth token")
             return
         }
@@ -232,10 +234,7 @@ class ClerkAuthManager @Inject constructor(
         try {
             val token = tokenFrom(
                 Clerk.session?.fetchToken(
-                    GetTokenOptions(
-                        template = AuthManager.SUPABASE_JWT_TEMPLATE,
-                        skipCache = true,
-                    )
+                    GetTokenOptions(skipCache = true)
                 )
             )
             if (!token.isNullOrBlank()) {
