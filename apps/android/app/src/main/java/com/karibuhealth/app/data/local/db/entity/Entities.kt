@@ -106,6 +106,20 @@ data class VisitEntity(
     // True once the clinician taps Save in the offline-first flow.
     @ColumnInfo(name = "documentation_complete") val documentationComplete: Boolean = false,
     @ColumnInfo(name = "documentation_completed_at") val documentationCompletedAt: String? = null,
+    // Pharmacy MVP — workflow state for dispensing the clinician's `medications`
+    // text. Set on the web by the dispenser; synced read-only to Android so
+    // the clinician can see whether their orders were actually filled.
+    @ColumnInfo(name = "dispensing_status") val dispensingStatus: String = "not_started",
+    @ColumnInfo(name = "dispense_notes") val dispenseNotes: String? = null,
+    @ColumnInfo(name = "dispensed_at") val dispensedAt: String? = null,
+    @ColumnInfo(name = "dispensed_by") val dispensedBy: String? = null,
+    // Lab MVP — workflow state for completing the clinician's `tests_ordered`
+    // text. Set on the web by the lab tech; synced read-only to Android.
+    @ColumnInfo(name = "lab_status") val labStatus: String = "not_ordered",
+    @ColumnInfo(name = "lab_results") val labResults: String? = null,
+    @ColumnInfo(name = "lab_abnormal") val labAbnormal: Boolean = false,
+    @ColumnInfo(name = "lab_completed_at") val labCompletedAt: String? = null,
+    @ColumnInfo(name = "lab_completed_by") val labCompletedBy: String? = null,
     // Local-only field
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )

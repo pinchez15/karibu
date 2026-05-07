@@ -159,8 +159,16 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
             )}
             {visit.medications && (
               <div>
-                <p className="text-sm text-muted-foreground">Medications</p>
-                <p className="font-medium">{visit.medications}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  Medications
+                  <DispensingBadge status={visit.dispensing_status} />
+                </p>
+                <p className="font-medium whitespace-pre-wrap">{visit.medications}</p>
+                {visit.dispense_notes && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Dispenser note: {visit.dispense_notes}
+                  </p>
+                )}
               </div>
             )}
             {visit.follow_up_instructions && (
@@ -171,8 +179,17 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
             )}
             {visit.tests_ordered && (
               <div>
-                <p className="text-sm text-muted-foreground">Tests Ordered</p>
-                <p className="font-medium">{visit.tests_ordered}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  Tests Ordered
+                  <LabBadge status={visit.lab_status} abnormal={visit.lab_abnormal} />
+                </p>
+                <p className="font-medium whitespace-pre-wrap">{visit.tests_ordered}</p>
+                {visit.lab_results && (
+                  <div className={`mt-2 rounded-md p-2.5 text-sm ${visit.lab_abnormal ? 'bg-amber-soft border border-amber/30' : 'bg-muted'}`}>
+                    <p className="text-xs text-muted-foreground mb-1">Result</p>
+                    <p className="whitespace-pre-wrap">{visit.lab_results}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -289,5 +306,52 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         </div>
       )}
     </div>
+  )
+}
+
+function DispensingBadge({ status }: { status: Visit['dispensing_status'] }) {
+  if (status === 'not_started') return null
+  const map: Record<Visit['dispensing_status'], { label: string; cls: string }> = {
+    not_started: { label: 'Pending', cls: 'bg-line-soft text-muted-foreground' },
+    in_progress: { label: 'In progress', cls: 'bg-cobalt-soft text-cobalt' },
+    dispensed: { label: 'Dispensed', cls: 'bg-green-soft text-green' },
+    partial: { label: 'Partial', cls: 'bg-amber-soft text-amber-ink' },
+    out_of_stock: { label: 'Out of stock', cls: 'bg-red-soft text-red' },
+  }
+  const c = map[status]
+  return (
+    <span className={`inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold ${c.cls}`}>
+      {c.label}
+    </span>
+  )
+}
+
+function LabBadge({
+  status,
+  abnormal,
+}: {
+  status: Visit['lab_status']
+  abnormal: boolean
+}) {
+  if (status === 'not_ordered') return null
+  if (abnormal) {
+    return (
+      <span className="inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold bg-amber-soft text-amber-ink">
+        Abnormal
+      </span>
+    )
+  }
+  const map: Record<Visit['lab_status'], { label: string; cls: string }> = {
+    not_ordered: { label: '—', cls: 'bg-line-soft text-muted-foreground' },
+    pending: { label: 'Pending', cls: 'bg-line-soft text-muted-foreground' },
+    running: { label: 'Running', cls: 'bg-cobalt-soft text-cobalt' },
+    done: { label: 'Done', cls: 'bg-green-soft text-green' },
+    abnormal: { label: 'Abnormal', cls: 'bg-amber-soft text-amber-ink' },
+  }
+  const c = map[status]
+  return (
+    <span className={`inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold ${c.cls}`}>
+      {c.label}
+    </span>
   )
 }

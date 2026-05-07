@@ -85,6 +85,15 @@ data class VisitDto(
     @SerialName("error_at") val errorAt: String? = null,
     @SerialName("documentation_complete") val documentationComplete: Boolean = false,
     @SerialName("documentation_completed_at") val documentationCompletedAt: String? = null,
+    @SerialName("dispensing_status") val dispensingStatus: String = "not_started",
+    @SerialName("dispense_notes") val dispenseNotes: String? = null,
+    @SerialName("dispensed_at") val dispensedAt: String? = null,
+    @SerialName("dispensed_by") val dispensedBy: String? = null,
+    @SerialName("lab_status") val labStatus: String = "not_ordered",
+    @SerialName("lab_results") val labResults: String? = null,
+    @SerialName("lab_abnormal") val labAbnormal: Boolean = false,
+    @SerialName("lab_completed_at") val labCompletedAt: String? = null,
+    @SerialName("lab_completed_by") val labCompletedBy: String? = null,
 )
 
 // Used as the payload for sync queue entries of type "create_visit". The

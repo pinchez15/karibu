@@ -121,6 +121,15 @@ data class Visit(
     val errorAt: String?,
     val documentationComplete: Boolean = false,
     val documentationCompletedAt: String? = null,
+    val dispensingStatus: String = "not_started",
+    val dispenseNotes: String? = null,
+    val dispensedAt: String? = null,
+    val dispensedBy: String? = null,
+    val labStatus: String = "not_ordered",
+    val labResults: String? = null,
+    val labAbnormal: Boolean = false,
+    val labCompletedAt: String? = null,
+    val labCompletedBy: String? = null,
     val isSynced: Boolean = true,
 )
 

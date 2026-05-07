@@ -52,6 +52,12 @@ export default async function DashboardPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
+  // Role-aware landing: lab_tech / dispenser see their own surface, not the
+  // clinician dashboard. They can still navigate elsewhere via the sidebar
+  // (and /dashboard pages they don't have access to redirect them back here).
+  if (staff.role === 'lab_tech') redirect('/dashboard/lab')
+  if (staff.role === 'dispenser') redirect('/dashboard/pharmacy')
+
   const [queue, reviewCount, visitsToday, pendingSync] = await Promise.all([
     getQueueData(staff.clinic_id),
     getReviewCount(staff.clinic_id),

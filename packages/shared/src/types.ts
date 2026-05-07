@@ -124,6 +124,19 @@ export interface Visit {
   // True once the clinician taps Save in the offline-first flow.
   documentation_complete: boolean;
   documentation_completed_at: string | null;
+  // Pharmacy MVP — workflow state for dispensing the clinician's `medications`
+  // text. Set by the dispenser via /dashboard/pharmacy actions.
+  dispensing_status: 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock';
+  dispense_notes: string | null;
+  dispensed_at: string | null;
+  dispensed_by: string | null;
+  // Lab MVP — workflow state for completing the clinician's `tests_ordered`
+  // text. Set by the lab tech via /dashboard/lab actions.
+  lab_status: 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal';
+  lab_results: string | null;
+  lab_abnormal: boolean;
+  lab_completed_at: string | null;
+  lab_completed_by: string | null;
 }
 
 export interface VisitWithPatient extends Visit {

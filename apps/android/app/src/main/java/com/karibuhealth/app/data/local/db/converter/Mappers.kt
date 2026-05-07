@@ -93,6 +93,10 @@ fun VisitDto.toEntity(isSynced: Boolean = true) = VisitEntity(
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
     documentationComplete = documentationComplete,
     documentationCompletedAt = documentationCompletedAt,
+    dispensingStatus = dispensingStatus, dispenseNotes = dispenseNotes,
+    dispensedAt = dispensedAt, dispensedBy = dispensedBy,
+    labStatus = labStatus, labResults = labResults, labAbnormal = labAbnormal,
+    labCompletedAt = labCompletedAt, labCompletedBy = labCompletedBy,
     isSynced = isSynced,
 )
 
@@ -113,6 +117,10 @@ fun VisitEntity.toDomain() = Visit(
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
     documentationComplete = documentationComplete,
     documentationCompletedAt = documentationCompletedAt,
+    dispensingStatus = dispensingStatus, dispenseNotes = dispenseNotes,
+    dispensedAt = dispensedAt, dispensedBy = dispensedBy,
+    labStatus = labStatus, labResults = labResults, labAbnormal = labAbnormal,
+    labCompletedAt = labCompletedAt, labCompletedBy = labCompletedBy,
     isSynced = isSynced,
 )
 
@@ -145,6 +153,10 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
     documentationComplete = documentationComplete,
     documentationCompletedAt = documentationCompletedAt,
+    dispensingStatus = dispensingStatus, dispenseNotes = dispenseNotes,
+    dispensedAt = dispensedAt, dispensedBy = dispensedBy,
+    labStatus = labStatus, labResults = labResults, labAbnormal = labAbnormal,
+    labCompletedAt = labCompletedAt, labCompletedBy = labCompletedBy,
     isSynced = isSynced,
 )
 

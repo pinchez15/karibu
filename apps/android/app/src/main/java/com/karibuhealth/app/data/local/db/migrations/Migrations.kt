@@ -3,6 +3,24 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v4 -> v5: pharmacy + lab MVP. Read-only on Android — these columns are
+// written on the web by dispenser/lab_tech and synced back via the regular
+// visit refresh path so the clinician sees outcomes in their visit details.
+// Strictly additive.
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE visits ADD COLUMN dispensing_status TEXT NOT NULL DEFAULT 'not_started'")
+        db.execSQL("ALTER TABLE visits ADD COLUMN dispense_notes TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN dispensed_at TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN dispensed_by TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN lab_status TEXT NOT NULL DEFAULT 'not_ordered'")
+        db.execSQL("ALTER TABLE visits ADD COLUMN lab_results TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN lab_abnormal INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE visits ADD COLUMN lab_completed_at TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN lab_completed_by TEXT")
+    }
+}
+
 // v3 -> v4: offline-first foundation. Strictly additive.
 //
 // Adds:

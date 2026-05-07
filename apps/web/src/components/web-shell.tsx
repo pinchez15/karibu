@@ -8,9 +8,7 @@ import {
   ClipboardList,
   BarChart3,
   Pill,
-  ArrowRight,
   FlaskConical,
-  Settings,
   Sparkles,
   Bell,
   type LucideIcon,
@@ -39,20 +37,16 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
     { id: 'reports', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ],
   pharmacy: [
-    { id: 'orders', label: 'Orders', href: '/dashboard/pharmacy', icon: Pill },
-    { id: 'dispensing', label: 'Dispensing', href: '/dashboard/pharmacy/dispensing', icon: ArrowRight },
-    { id: 'stock', label: 'Stock', href: '/dashboard/pharmacy/stock', icon: BarChart3, amber: true },
+    { id: 'orders', label: 'Today', href: '/dashboard/pharmacy', icon: Pill },
     { id: 'history', label: 'History', href: '/dashboard/pharmacy/history', icon: Users },
   ],
   lab: [
-    { id: 'orders', label: 'Orders', href: '/dashboard/lab', icon: FlaskConical },
-    { id: 'running', label: 'Running', href: '/dashboard/lab/running', icon: ArrowRight },
-    { id: 'results', label: 'Results', href: '/dashboard/lab/results', icon: BarChart3 },
-    { id: 'controls', label: 'QC', href: '/dashboard/lab/qc', icon: Settings },
+    { id: 'orders', label: 'Today', href: '/dashboard/lab', icon: FlaskConical },
+    { id: 'history', label: 'History', href: '/dashboard/lab/history', icon: Users },
   ],
   analyst: [
     { id: 'overview', label: 'Overview', href: '/dashboard/admin/reports', icon: Home },
-    { id: 'workbench', label: 'Workbench', href: '/dashboard/admin/reports/workbench', icon: BarChart3 },
+    { id: 'workbench', label: 'Workbench', href: '/dashboard/admin/reports/coming-soon/workbench', icon: BarChart3 },
     { id: 'hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
     { id: 'quality', label: 'Data quality', href: '/dashboard/admin/reports/data-quality', icon: Sparkles, amber: true },
   ],
@@ -69,6 +63,8 @@ interface WebShellProps {
   role: WebShellRole
   /** Display name + role of the signed-in user, shown in the bottom-of-sidebar account cell. */
   staff?: { displayName: string; role: string; initials: string }
+  /** Raw staff role from the staff table (lowercase, e.g. 'admin', 'doctor', 'lab_tech'). */
+  staffRole?: string
   /** Clinic name shown in the sidebar header. */
   clinicName?: string
   /** Optional: override per-route counts (e.g. live review-queue count). */
@@ -88,12 +84,19 @@ interface WebShellProps {
 export function WebShell({
   role,
   staff,
+  staffRole,
   clinicName = 'Susunga HC III',
   counts,
   children,
 }: WebShellProps) {
   const pathname = usePathname() || ''
-  const nav = NAV_BY_ROLE[role]
+  const fullNav = NAV_BY_ROLE[role]
+  // Reports landing is admin-gated. For non-admin clinicians, the link silently
+  // bounces back to /dashboard — better to just not show it.
+  const nav = fullNav.filter((item) => {
+    if (item.id === 'reports' && role === 'clinician' && staffRole !== 'admin') return false
+    return true
+  })
 
   return (
     <div className="min-h-screen bg-background flex">

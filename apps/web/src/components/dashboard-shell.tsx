@@ -5,6 +5,8 @@ import { WebShell, type WebShellRole } from '@/components/web-shell'
 
 interface DashboardShellProps {
   staff: { displayName: string; role: string; initials: string }
+  /** Raw staff role from the staff table — drives admin-gated nav items. */
+  staffRole?: string
   clinicName?: string
   children: React.ReactNode
 }
@@ -20,11 +22,11 @@ interface DashboardShellProps {
  * Putting the path detection in a client component lets the server layout
  * (which fetches staff + clinic data) stay simple and async.
  */
-export function DashboardShell({ staff, clinicName, children }: DashboardShellProps) {
+export function DashboardShell({ staff, staffRole, clinicName, children }: DashboardShellProps) {
   const pathname = usePathname() || ''
   const role = roleForPath(pathname)
   return (
-    <WebShell role={role} clinicName={clinicName} staff={staff}>
+    <WebShell role={role} clinicName={clinicName} staff={staff} staffRole={staffRole}>
       {children}
     </WebShell>
   )

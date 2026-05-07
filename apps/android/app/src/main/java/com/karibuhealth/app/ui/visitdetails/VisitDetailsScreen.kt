@@ -196,6 +196,19 @@ fun VisitDetailsScreen(
                         HmisCodesCard(suggestions = suggestions)
                     }
 
+                // Care delivered — lab + pharmacy outcomes (read-only).
+                // Renders only when there's something to show: tests ordered,
+                // a lab result, medications, or a dispensing decision.
+                uiState.visit?.let { visit ->
+                    val hasLab =
+                        !visit.testsOrdered.isNullOrBlank() || !visit.labResults.isNullOrBlank()
+                    val hasPharmacy =
+                        !visit.medications.isNullOrBlank() || visit.dispensingStatus != "not_started"
+                    if (hasLab || hasPharmacy) {
+                        CareDeliveredCard(visit = visit)
+                    }
+                }
+
                 // Sync card — only when there are actually pending syncs.
                 if (uiState.hasPendingVisitSync || uiState.syncErrors.isNotEmpty()) {
                     SyncCard(
@@ -452,6 +465,136 @@ private fun Pulses(color: Color) {
             if (i < 2) Spacer(Modifier.width(3.dp))
         }
     }
+}
+
+@Composable
+private fun CareDeliveredCard(visit: Visit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Column {
+            KhMetaText(text = "CARE DELIVERED")
+
+            // Pharmacy block
+            if (!visit.medications.isNullOrBlank() || visit.dispensingStatus != "not_started") {
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Medications",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Ink,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    DispensingPill(status = visit.dispensingStatus)
+                }
+                if (!visit.medications.isNullOrBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = visit.medications,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Ink,
+                    )
+                }
+                if (!visit.dispenseNotes.isNullOrBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Dispenser note: ${visit.dispenseNotes}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                }
+            }
+
+            // Lab block
+            if (!visit.testsOrdered.isNullOrBlank() || !visit.labResults.isNullOrBlank()) {
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Tests",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Ink,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    LabPill(status = visit.labStatus, abnormal = visit.labAbnormal)
+                }
+                if (!visit.testsOrdered.isNullOrBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = visit.testsOrdered,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Ink,
+                    )
+                }
+                if (!visit.labResults.isNullOrBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (visit.labAbnormal) AmberSoft else MaterialTheme.colorScheme.surfaceVariant)
+                            .border(
+                                1.dp,
+                                if (visit.labAbnormal) Amber.copy(alpha = 0.3f) else Line,
+                                RoundedCornerShape(8.dp),
+                            )
+                            .padding(10.dp),
+                    ) {
+                        Column {
+                            KhMetaText(
+                                text = "RESULT",
+                                color = if (visit.labAbnormal) Amber else Muted,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = visit.labResults,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Ink,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DispensingPill(status: String) {
+    val (label, fg, bg) = when (status) {
+        "dispensed" -> Triple("Dispensed", Green, com.karibuhealth.app.ui.theme.GreenSoft)
+        "in_progress" -> Triple("In progress", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
+        "partial" -> Triple("Partial", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
+        "out_of_stock" -> Triple("Out of stock", com.karibuhealth.app.ui.theme.Red, com.karibuhealth.app.ui.theme.RedSoft)
+        else -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+    }
+    com.karibuhealth.app.ui.components.KhAccentPill(label = label, fg = fg, bg = bg)
+}
+
+@Composable
+private fun LabPill(status: String, abnormal: Boolean) {
+    if (abnormal) {
+        com.karibuhealth.app.ui.components.KhAccentPill(
+            label = "Abnormal",
+            fg = com.karibuhealth.app.ui.theme.AmberInk,
+            bg = AmberSoft,
+        )
+        return
+    }
+    val (label, fg, bg) = when (status) {
+        "running" -> Triple("Running", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
+        "done" -> Triple("Done", Green, com.karibuhealth.app.ui.theme.GreenSoft)
+        "abnormal" -> Triple("Abnormal", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
+        "pending" -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+        else -> Triple("—", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+    }
+    com.karibuhealth.app.ui.components.KhAccentPill(label = label, fg = fg, bg = bg)
 }
 
 @Composable

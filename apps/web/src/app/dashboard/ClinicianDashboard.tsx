@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Search, Filter, Sparkles } from 'lucide-react'
+import { Search, Filter, Sparkles, Smartphone } from 'lucide-react'
 import { WebTopBar } from '@/components/web-shell'
 import { cn } from '@/lib/utils'
 import type { QueueItem } from '@karibu/shared'
@@ -59,12 +59,13 @@ export function ClinicianDashboard({
                 ⌘K
               </span>
             </div>
-            <Link
-              href="/dashboard"
-              className="bg-cobalt text-white border-0 rounded-md px-3.5 py-[9px] font-semibold text-[13px] hover:bg-cobalt-deep transition-colors"
+            <div
+              className="bg-card text-muted-foreground border border-border rounded-md px-3 py-2 font-medium text-[13px] inline-flex items-center gap-1.5"
+              title="Visits are created on the Android clinician app"
             >
-              + New visit
-            </Link>
+              <Smartphone className="h-3.5 w-3.5" />
+              New visit on Android
+            </div>
           </>
         }
       />

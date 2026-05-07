@@ -38,6 +38,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       clinicName={clinic?.name}
+      staffRole={staff.role}
       staff={{
         displayName: staff.display_name,
         role: roleLabel(staff.role),
