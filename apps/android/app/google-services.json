@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "789531948352",
+    "project_id": "karibu-prod-d4c55",
+    "storage_bucket": "karibu-prod-d4c55.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:789531948352:android:a2e120cff6da1b357376a5",
+        "android_client_info": {
+          "package_name": "com.karibuhealth.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeM2Ab74xfpcE0rHyA1bF6li7qtwEwfwA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

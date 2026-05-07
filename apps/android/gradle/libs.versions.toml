@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.3"
+agp = "8.13.2"
 kotlin = "2.1.0"
 coreKtx = "1.15.0"
 lifecycleRuntimeKtx = "2.8.7"
@@ -20,6 +20,10 @@ datastore = "1.1.1"
 securityCrypto = "1.1.0-alpha06"
 clerk = "0.1.25"
 posthog = "3.8.2"
+googleServices = "4.4.4"
+firebaseBom = "34.12.0"
+firebaseCrashlyticsPlugin = "3.0.3"
+firebaseAppDistributionPlugin = "5.0.0"
 junit = "4.13.2"
 junitExt = "1.2.1"
 espresso = "3.6.1"
@@ -86,6 +90,11 @@ clerk-android-api = { group = "com.clerk", name = "clerk-android-api", version.r
 # Analytics
 posthog-android = { group = "com.posthog", name = "posthog-android", version.ref = "posthog" }
 
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
@@ -100,3 +109,6 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+firebase-appdistribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistributionPlugin" }
