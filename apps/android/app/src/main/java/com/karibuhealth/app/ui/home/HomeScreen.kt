@@ -1,12 +1,14 @@
 package com.karibuhealth.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -18,14 +20,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.domain.model.Staff
+import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.components.KhStatusKind
+import com.karibuhealth.app.ui.components.KhStatusPill
+import com.karibuhealth.app.ui.theme.Amber
+import com.karibuhealth.app.ui.theme.Cobalt
+import com.karibuhealth.app.ui.theme.CobaltSoft
+import com.karibuhealth.app.ui.theme.Green
+import com.karibuhealth.app.ui.theme.Ink
+import com.karibuhealth.app.ui.theme.Line
+import com.karibuhealth.app.ui.theme.Muted
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,46 +60,17 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        // The outer Scaffold in MainActivity already applies status-bar insets
-        // for the OfflineBanner. Reapplying them here doubles the top gap.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToNewVisit) {
+            FloatingActionButton(
+                onClick = onNavigateToNewVisit,
+                modifier = Modifier.imePadding(),
+                containerColor = Cobalt,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(20.dp),
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "New patient")
             }
-        },
-        topBar = {
-            // Compact single-line top bar. Profile menu is the only top-bar
-            // action — destructive sign-out lives behind it, not as a sibling
-            // to the primary "+ New visit" target.
-            TopAppBar(
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                title = {
-                    Text(
-                        text = uiState.clinic?.name ?: "Karibu Health",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                actions = {
-                    Box {
-                        ProfileAvatar(
-                            staff = uiState.staff,
-                            onClick = { profileMenuOpen = true },
-                        )
-                        ProfileMenu(
-                            expanded = profileMenuOpen,
-                            staff = uiState.staff,
-                            clinicName = uiState.clinic?.name,
-                            onDismiss = { profileMenuOpen = false },
-                            onSignOut = {
-                                profileMenuOpen = false
-                                viewModel.signOut()
-                            },
-                        )
-                    }
-                },
-            )
         },
     ) { innerPadding ->
         PullToRefreshBox(
@@ -97,20 +86,78 @@ fun HomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 item {
-                    OutlinedTextField(
-                        value = uiState.searchQuery,
-                        onValueChange = viewModel::updateSearch,
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Search patients by name or phone") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
+                    HomeAppBar(
+                        clinicName = uiState.clinic?.name,
+                        staff = uiState.staff,
+                        onAvatarClick = { profileMenuOpen = true },
+                        profileMenuOpen = profileMenuOpen,
+                        onDismissMenu = { profileMenuOpen = false },
+                        onSignOut = {
+                            profileMenuOpen = false
+                            viewModel.signOut()
                         },
-                        singleLine = true,
                     )
+                }
+
+                item {
+                    HomeHero(
+                        seen = uiState.doneTodayCount,
+                        waiting = uiState.queue.size,
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        StatTile(
+                            label = "TO REVIEW",
+                            value = uiState.toReview.size.toString(),
+                            modifier = Modifier.weight(1f),
+                        )
+                        StatTile(
+                            label = "TO SYNC",
+                            value = uiState.pendingSyncCount.toString(),
+                            modifier = Modifier.weight(1f),
+                            indicatorColor = if (uiState.pendingSyncCount > 0) Amber else null,
+                        )
+                        StatTile(
+                            label = "DRAFTS",
+                            value = uiState.toDictate.size.toString(),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = viewModel::updateSearch,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Find patient by phone or name", color = Muted) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = null, tint = Muted)
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Cobalt,
+                                unfocusedBorderColor = Line,
+                            ),
+                        )
+                    }
                 }
 
                 if (uiState.searchQuery.isNotBlank()) {
@@ -127,7 +174,7 @@ fun HomeScreen(
                         }
                     } else if (uiState.searchResults.isEmpty()) {
                         item {
-                            EmptyHint("No matching patients. Use + to register a new one.")
+                            EmptyHint("No matching patients. Tap + to register a new one.")
                         }
                     } else {
                         items(uiState.searchResults, key = { "p-${it.id}" }) { patient ->
@@ -143,76 +190,234 @@ fun HomeScreen(
                     }
                 }
 
-                // ------- Today's Queue -------
                 item {
-                    SectionHeader(
-                        title = "Today",
-                        countSuffix = uiState.todayEncounterCount.takeIf { it > 0 },
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Queue",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        KhMetaText(
+                            text = if (uiState.queue.size == 1) "1 PATIENT" else "${uiState.queue.size} PATIENTS",
+                        )
+                    }
                 }
 
                 if (uiState.queue.isEmpty()) {
                     item {
                         EmptyHint(
-                            text = if (uiState.isLoading) "Loading..." else "No patients in the queue. Tap + New to register one.",
+                            text = if (uiState.isLoading) "Loading..." else "No patients in the queue. Tap + to register one.",
                         )
                     }
                 } else {
                     items(uiState.queue, key = { "q-${it.visit.id}" }) { v ->
-                        QueueCard(
-                            visit = v,
-                            onClick = {
-                                if (v.visit.queueStatus == "with_doctor") {
-                                    onNavigateToVisitDetails(v.visit.id)
-                                } else {
-                                    viewModel.startVisit(v.visit.id)
-                                    onNavigateToVisitDetails(v.visit.id)
-                                }
-                            },
-                        )
+                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                            QueueCard(
+                                visit = v,
+                                onClick = {
+                                    if (v.visit.queueStatus == "with_doctor") {
+                                        onNavigateToVisitDetails(v.visit.id)
+                                    } else {
+                                        viewModel.startVisit(v.visit.id)
+                                        onNavigateToVisitDetails(v.visit.id)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
 
-                // ------- Needs Dictation -------
-                if (uiState.toDictate.isNotEmpty()) {
-                    item { SectionHeader(title = "Needs Dictation", countSuffix = uiState.toDictate.size) }
-                    items(uiState.toDictate, key = { "d-${it.visit.id}" }) { v ->
-                        StatusCard(
-                            visit = v,
-                            statusLabel = "To Dictate",
-                            statusColor = MaterialTheme.colorScheme.tertiary,
-                            onClick = { onNavigateToVisitDetails(v.visit.id) },
-                        )
-                    }
-                }
-
-                // ------- Needs Review -------
                 if (uiState.toReview.isNotEmpty()) {
-                    item { SectionHeader(title = "Needs Review", countSuffix = uiState.toReview.size) }
-                    items(uiState.toReview, key = { "r-${it.visit.id}" }) { v ->
-                        StatusCard(
-                            visit = v,
-                            statusLabel = "Review",
-                            statusColor = MaterialTheme.colorScheme.primary,
-                            onClick = { onNavigateToVisitDetails(v.visit.id) },
-                        )
-                    }
-                }
-
-                // ------- Done Today (compact footer) -------
-                if (uiState.doneTodayCount > 0) {
                     item {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "${uiState.doneTodayCount} completed today",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp, bottom = 16.dp)
-                                .clickable(onClick = onNavigateToQueue),
-                        )
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "AI review",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            KhMetaText(text = "${uiState.toReview.size} READY")
+                        }
                     }
+                    items(uiState.toReview, key = { "r-${it.visit.id}" }) { v ->
+                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                            StatusCard(
+                                visit = v,
+                                kind = KhStatusKind.Review,
+                                statusLabel = "Review",
+                                onClick = { onNavigateToVisitDetails(v.visit.id) },
+                            )
+                        }
+                    }
+                }
+
+                if (uiState.toDictate.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Drafts",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            KhMetaText(text = "${uiState.toDictate.size} TO FINISH")
+                        }
+                    }
+                    items(uiState.toDictate, key = { "d-${it.visit.id}" }) { v ->
+                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                            StatusCard(
+                                visit = v,
+                                kind = KhStatusKind.InNote,
+                                statusLabel = "Draft",
+                                onClick = { onNavigateToVisitDetails(v.visit.id) },
+                            )
+                        }
+                    }
+                }
+
+                if (uiState.doneTodayCount > 0) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(top = 12.dp, bottom = 16.dp)
+                                .clickable(onClick = onNavigateToQueue),
+                        ) {
+                            Text(
+                                text = "${uiState.doneTodayCount} completed today",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Muted,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeAppBar(
+    clinicName: String?,
+    staff: Staff?,
+    onAvatarClick: () -> Unit,
+    profileMenuOpen: Boolean,
+    onDismissMenu: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            KhMetaText(text = (clinicName ?: "Karibu Health").uppercase())
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = staff?.displayName ?: "—",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Ink,
+            )
+        }
+
+        Box {
+            ProfileAvatar(staff = staff, onClick = onAvatarClick)
+            ProfileMenu(
+                expanded = profileMenuOpen,
+                staff = staff,
+                clinicName = clinicName,
+                onDismiss = onDismissMenu,
+                onSignOut = onSignOut,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeHero(
+    seen: Int,
+    waiting: Int,
+) {
+    val today = LocalDate.now()
+    val datePretty = today.format(DateTimeFormatter.ofPattern("EEE d MMM"))
+
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+        Text(
+            text = "Today, $datePretty",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Muted,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(color = Ink, fontWeight = FontWeight.SemiBold)) {
+                    append("$seen seen.")
+                }
+                append(" ")
+                withStyle(SpanStyle(color = Cobalt, fontWeight = FontWeight.SemiBold)) {
+                    append("$waiting waiting.")
+                }
+            },
+            fontSize = 30.sp,
+            lineHeight = 34.sp,
+        )
+    }
+}
+
+@Composable
+private fun StatTile(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    indicatorColor: Color? = null,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Column {
+            KhMetaText(text = label)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink,
+                )
+                if (indicatorColor != null) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(indicatorColor),
+                    )
                 }
             }
         }
@@ -228,17 +433,16 @@ private fun ProfileAvatar(staff: Staff?, onClick: () -> Unit) {
         ?.ifBlank { null } ?: "?"
     Box(
         modifier = Modifier
-            .padding(end = 8.dp)
             .size(36.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(CobaltSoft)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = initials,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = Cobalt,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -253,8 +457,6 @@ private fun ProfileMenu(
     onSignOut: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        // Header (read-only): name, role, clinic. Mirrors what was in the
-        // top-bar subtitle before; just a less hazardous home for it.
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Text(
                 text = staff?.displayName ?: "—",
@@ -265,13 +467,13 @@ private fun ProfileMenu(
                 text = staff?.role?.name?.replace('_', ' ')?.replaceFirstChar { it.titlecase() }
                     ?: "",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Muted,
             )
             clinicName?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Muted,
                 )
             }
         }
@@ -288,35 +490,31 @@ private fun ProfileMenu(
 private fun SectionHeader(
     title: String,
     countSuffix: Int? = null,
-    actionLabel: String? = null,
-    onActionClick: (() -> Unit)? = null,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = if (countSuffix != null) "$title ($countSuffix)" else title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f),
+            color = Ink,
         )
-        if (actionLabel != null && onActionClick != null) {
-            TextButton(onClick = onActionClick) {
-                Text(actionLabel)
-            }
-        }
     }
 }
 
 @Composable
 private fun EmptyHint(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 8.dp),
-    )
+    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Muted,
+        )
+    }
 }
 
 @Composable
@@ -329,42 +527,49 @@ private fun SearchResultCard(
         .ifBlank { patient.displayName ?: "Unknown" }
     val age = patient.dateOfBirth?.let(::formatAgeFromDob)
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
+    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, Line, RoundedCornerShape(14.dp))
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink,
+                )
+                val meta = listOfNotNull(
+                    age,
+                    patient.whatsappNumber,
+                ).joinToString(" · ")
+                if (meta.isNotBlank()) {
                     Text(
-                        text = name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
+                        text = meta,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
                     )
-                    val meta = listOfNotNull(
-                        age,
-                        patient.whatsappNumber,
-                    ).joinToString(" · ")
-                    if (meta.isNotBlank()) {
-                        Text(
-                            text = meta,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    patient.dateOfBirth?.let {
-                        Text(
-                            text = "DOB: ${formatDobForDisplay(it)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
+                patient.dateOfBirth?.let {
+                    Text(
+                        text = "DOB: ${formatDobForDisplay(it)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Muted,
+                    )
+                }
+            }
 
-                Button(onClick = onStartVisit) {
-                    Text("Start Visit")
-                }
+            Button(
+                onClick = onStartVisit,
+                colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                Text("Start Visit")
             }
         }
     }
@@ -378,59 +583,67 @@ private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
         .joinToString(" ")
         .ifBlank { p.displayName ?: p.whatsappNumber ?: "Unknown" }
 
-    val (statusLabel, statusColor) = when (v.queueStatus) {
-        "waiting" -> "Waiting" to MaterialTheme.colorScheme.outline
-        "with_nurse" -> "Triage" to MaterialTheme.colorScheme.tertiary
-        "ready_for_doctor" -> "Ready" to MaterialTheme.colorScheme.secondary
-        "with_doctor" -> "With me" to MaterialTheme.colorScheme.primary
-        else -> v.queueStatus to MaterialTheme.colorScheme.outline
+    val (kind, statusLabel) = when {
+        v.priority == "urgent" || v.priority == "high" -> KhStatusKind.Urgent to "Urgent"
+        v.queueStatus == "with_nurse" -> KhStatusKind.Vitals to "In vitals"
+        v.queueStatus == "ready_for_doctor" -> KhStatusKind.Ready to "Ready"
+        v.queueStatus == "with_doctor" -> KhStatusKind.InNote to "With me"
+        else -> KhStatusKind.Waiting to "Waiting"
     }
-    val priorityColor = when (v.priority) {
-        "urgent" -> MaterialTheme.colorScheme.error
-        "high" -> MaterialTheme.colorScheme.tertiary
-        else -> null
+    val accentColor: Color = when (kind) {
+        KhStatusKind.Urgent -> Amber
+        KhStatusKind.Vitals -> Green
+        KhStatusKind.InNote, KhStatusKind.Ready, KhStatusKind.Review -> Cobalt
+        KhStatusKind.Sent -> Green
+        KhStatusKind.Lab -> Cobalt
+        KhStatusKind.Waiting, KhStatusKind.Done -> Cobalt
     }
+    val patientId = p.patientNumber ?: "PT-${p.id.take(6)}"
+    val ageBand = listOfNotNull(
+        p.dateOfBirth?.let(::formatAgeFromDob),
+        p.sex?.firstOrNull()?.uppercaseChar()?.toString(),
+    ).joinToString("")
+    val waitText = v.checkedInAt?.let { "${formatWaitTime(it)} ago" } ?: "—"
 
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    priorityColor?.let {
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(it),
-                        )
-                    }
-                }
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(64.dp)
+                .background(accentColor),
+        )
+        Column(modifier = Modifier.padding(12.dp).weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: "—",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink,
+                    modifier = Modifier.weight(1f),
                 )
-                v.checkedInAt?.let {
-                    Text(
-                        text = "${formatWaitTime(it)} ago",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                if (ageBand.isNotBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    KhMetaText(text = ageBand)
                 }
+                Spacer(Modifier.width(8.dp))
+                KhStatusPill(kind = kind, label = statusLabel)
             }
-            StatusChip(label = statusLabel, color = statusColor)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: "—",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink,
+            )
+            Spacer(Modifier.height(6.dp))
+            KhMetaText(text = "$patientId · $waitText")
         }
     }
 }
@@ -438,8 +651,8 @@ private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
 @Composable
 private fun StatusCard(
     visit: VisitWithPatient,
+    kind: KhStatusKind,
     statusLabel: String,
-    statusColor: Color,
     onClick: () -> Unit,
 ) {
     val v = visit.visit
@@ -448,42 +661,31 @@ private fun StatusCard(
         .joinToString(" ")
         .ifBlank { p.displayName ?: p.whatsappNumber ?: "Unknown" }
 
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: v.visitDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            StatusChip(label = statusLabel, color = statusColor)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = Ink,
+            )
+            Text(
+                text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: v.visitDate,
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
         }
+        KhStatusPill(kind = kind, label = statusLabel)
     }
-}
-
-@Composable
-private fun StatusChip(label: String, color: Color) {
-    SuggestionChip(
-        onClick = {},
-        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = color.copy(alpha = 0.12f),
-            labelColor = color,
-        ),
-    )
 }
 
 private fun formatWaitTime(checkedInAt: String): String {
@@ -507,8 +709,8 @@ private fun formatDobForDisplay(isoDate: String): String {
 
 private fun formatAgeFromDob(isoDate: String): String? {
     return try {
-        val dob = java.time.LocalDate.parse(isoDate)
-        val today = java.time.LocalDate.now()
+        val dob = LocalDate.parse(isoDate)
+        val today = LocalDate.now()
         val period = java.time.Period.between(dob, today)
         when {
             period.years > 0 -> "${period.years}y"

@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
@@ -28,6 +29,7 @@ data class HomeUiState(
     val toDictate: List<VisitWithPatient> = emptyList(),
     val toReview: List<VisitWithPatient> = emptyList(),
     val doneTodayCount: Int = 0,
+    val pendingSyncCount: Int = 0,
     val searchQuery: String = "",
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
@@ -49,6 +51,7 @@ class HomeViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val authTokenStore: AuthTokenStore,
     private val clerkAuthManager: ClerkAuthManager,
+    private val syncQueueDao: SyncQueueDao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -83,6 +86,11 @@ class HomeViewModel @Inject constructor(
             launch {
                 visitRepository.getMyDoneTodayCount(staff.id).collect { count ->
                     _uiState.update { it.copy(doneTodayCount = count) }
+                }
+            }
+            launch {
+                syncQueueDao.getPendingCount().collect { count ->
+                    _uiState.update { it.copy(pendingSyncCount = count) }
                 }
             }
         }

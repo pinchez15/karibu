@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.data.repository.VitalsRepository
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
@@ -19,6 +20,7 @@ data class VisitDetailsUiState(
     val patient: Patient? = null,
     val providerNote: ProviderNote? = null,
     val patientNote: PatientNote? = null,
+    val latestVitals: PatientVitals? = null,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val connectionStatus: NetworkMonitor.ConnectionStatus = NetworkMonitor.ConnectionStatus(
@@ -59,6 +61,7 @@ val VisitDetailsUiState.aiAvailabilityMessage: String
 class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
     private val noteRepository: NoteRepository,
+    private val vitalsRepository: VitalsRepository,
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
     private val syncQueueDao: SyncQueueDao,
@@ -103,6 +106,14 @@ class VisitDetailsViewModel @Inject constructor(
                         },
                     )
                 }
+            }
+        }
+
+        // Latest vitals for this visit — surfaced as inline chips on the
+        // designed visit-details screen.
+        viewModelScope.launch {
+            vitalsRepository.getByVisit(visitId).collect { list ->
+                _uiState.update { it.copy(latestVitals = list.firstOrNull()) }
             }
         }
 

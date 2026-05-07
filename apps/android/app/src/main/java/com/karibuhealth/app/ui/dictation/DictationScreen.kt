@@ -3,35 +3,58 @@ package com.karibuhealth.app.ui.dictation
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.theme.Amber
+import com.karibuhealth.app.ui.theme.AmberInk
+import com.karibuhealth.app.ui.theme.AmberSoft
+import com.karibuhealth.app.ui.theme.Body
+import com.karibuhealth.app.ui.theme.Cobalt
+import com.karibuhealth.app.ui.theme.Green
+import com.karibuhealth.app.ui.theme.Ink
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
+import com.karibuhealth.app.ui.theme.Line
+import com.karibuhealth.app.ui.theme.Muted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DictationScreen(
     visitId: String,
-    aiMode: Boolean,    // legacy nav param, ignored — Save flow no longer toggles AI here
+    aiMode: Boolean,
     onNavigateBack: () -> Unit,
     onSubmitted: (String) -> Unit,
     viewModel: DictationViewModel = hiltViewModel(),
 ) {
     @Suppress("UNUSED_PARAMETER")
-    val ignoredAiMode = aiMode    // silence unused-param lint
+    val ignoredAiMode = aiMode
 
     val uiState by viewModel.uiState.collectAsState()
     val micPermissionLauncher = rememberLauncherForActivityResult(
@@ -88,162 +111,152 @@ private fun DictationScreenContent(
         .size
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("Visit note") },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                title = {
+                    Column {
+                        Text(
+                            "Note",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Ink,
+                        )
+                        KhMetaText(text = "DICTATION")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 16.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Wifi,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Green,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "ONLINE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Green,
+                            fontSize = 11.sp,
+                        )
+                    }
+                },
             )
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .imePadding(),
-                tonalElevation = 2.dp,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (uiState.savedLocally) "Note saved" else "$wordCount words",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Text(
-                            text = if (uiState.savedLocally)
-                                "Pushes to Supabase when you have data."
-                            else
-                                "Type or use Google keyboard voice typing.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    Button(
-                        onClick = onSubmit,
-                        enabled = uiState.canSubmit,
-                    ) {
-                        if (uiState.isSubmitting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                }
-            }
-        }
+            DictationBottomToolbar(
+                uiState = uiState,
+                onToggleWhisper = onToggleWhisper,
+                onSubmit = onSubmit,
+                wordCount = wordCount,
+            )
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                "Write or dictate the note in your own words. Tap Save when you're done — works offline. AI structuring is optional after saving.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                FilledTonalButton(
-                    onClick = onToggleWhisper,
-                    enabled = !uiState.isSubmitting && !uiState.isTranscribing,
-                ) {
-                    if (uiState.isRecording) {
-                        Icon(Icons.Default.Stop, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Stop & transcribe")
-                    } else {
-                        Icon(Icons.Default.Mic, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Record with Whisper")
-                    }
-                }
-                Text(
-                    text = when {
-                        uiState.isRecording -> "Recording… tap again to stop."
-                        uiState.isTranscribing -> "Whisper is transcribing…"
-                        else -> "Or use the Google keyboard microphone."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            OutlinedTextField(
+            // Focus-mode body — large, calm typography.
+            BasicTextField(
                 value = uiState.transcript,
                 onValueChange = onTranscriptChange,
-                label = { Text("Note") },
+                textStyle = TextStyle(
+                    color = Ink,
+                    fontSize = 17.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight.Normal,
+                ),
+                cursorBrush = SolidColor(Cobalt),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 320.dp),
-                placeholder = {
-                    Text("Type the note here, or tap the microphone on the Google keyboard to dictate.")
-                },
+                    .heightIn(min = 240.dp),
                 enabled = !uiState.isSubmitting,
+                decorationBox = { inner ->
+                    if (uiState.transcript.isEmpty()) {
+                        Text(
+                            text = "Type or use Google keyboard voice typing. Save when done — works offline.",
+                            color = Muted,
+                            style = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
+                        )
+                    }
+                    inner()
+                },
             )
 
-            // Small, low-emphasis "Structure with AI" button — secondary
-            // affordance, only shown after the note has been saved at least once.
+            // Soft AI hint card — only after a save (non-empty + savedLocally).
             if (uiState.savedLocally) {
-                Row(
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = AmberSoft,
+                    border = BorderStroke(1.dp, Amber.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(
-                        onClick = onStructureWithAi,
-                        enabled = !uiState.isStructuringWithAi && uiState.transcript.trim().length >= 10,
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (uiState.isStructuringWithAi) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(14.dp),
-                                strokeWidth = 2.dp,
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = Amber,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Structure with AI",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = AmberInk,
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Sending…", style = MaterialTheme.typography.labelSmall)
-                        } else {
-                            Icon(
-                                Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                            Text(
+                                text = if (uiState.isStructuringWithAi) "Sending to AI…" else "Optional · ~15s",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Muted,
                             )
-                            Spacer(Modifier.width(6.dp))
-                            Text("Structure with AI", style = MaterialTheme.typography.labelSmall)
+                        }
+                        TextButton(
+                            onClick = onStructureWithAi,
+                            enabled = !uiState.isStructuringWithAi && uiState.transcript.trim().length >= 10,
+                            colors = ButtonDefaults.textButtonColors(contentColor = AmberInk),
+                        ) {
+                            if (uiState.isStructuringWithAi) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    strokeWidth = 2.dp,
+                                    color = AmberInk,
+                                )
+                            } else {
+                                Text("Structure", fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }
             }
 
             uiState.error?.let { error ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                    ),
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -255,6 +268,98 @@ private fun DictationScreenContent(
                         TextButton(onClick = onDismissError) {
                             Text("Dismiss")
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DictationBottomToolbar(
+    uiState: DictationUiState,
+    onToggleWhisper: () -> Unit,
+    onSubmit: () -> Unit,
+    wordCount: Int,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding(),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+    ) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Line, RoundedCornerShape(0.dp))
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Big primary mic button — 56dp per design.
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(if (uiState.isRecording) Amber else Cobalt)
+                        .clickable(
+                            enabled = !uiState.isSubmitting && !uiState.isTranscribing,
+                            onClick = onToggleWhisper,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (uiState.isTranscribing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.5.dp,
+                            color = Color.White,
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                            contentDescription = if (uiState.isRecording) "Stop" else "Record",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = when {
+                            uiState.isRecording -> "Recording… tap to stop"
+                            uiState.isTranscribing -> "Whisper transcribing…"
+                            uiState.savedLocally -> "Saved · ready to print"
+                            else -> "Tap mic, or use keyboard voice"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Body,
+                    )
+                    KhMetaText(
+                        text = "$wordCount WORDS" + if (uiState.savedLocally) " · AUTO-SAVED" else "",
+                    )
+                }
+
+                Button(
+                    onClick = onSubmit,
+                    enabled = uiState.canSubmit,
+                    colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    if (uiState.isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White,
+                        )
+                    } else {
+                        Text("Save", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -280,3 +385,4 @@ private fun DictationScreenPreview() {
         )
     }
 }
+
