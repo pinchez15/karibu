@@ -17,13 +17,26 @@ export interface Clinic {
   updated_at: string;
 }
 
+// Mirrors the staff_role_check constraint in
+// packages/supabase/migrations/024_hc3_roles_and_departments.sql.
+export type StaffRole =
+  | 'admin'
+  | 'doctor'
+  | 'nurse'
+  | 'clinical_officer'
+  | 'midwife'
+  | 'nursing_assistant'
+  | 'records_officer'
+  | 'lab_tech'
+  | 'dispenser';
+
 export interface Staff {
   id: string;
   clerk_user_id: string;
   clinic_id: string;
   email: string;
   display_name: string;
-  role: 'admin' | 'doctor' | 'nurse';
+  role: StaffRole;
   is_active: boolean;
   deactivated_at: string | null;
   created_at: string;

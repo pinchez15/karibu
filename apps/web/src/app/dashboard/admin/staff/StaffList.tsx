@@ -9,11 +9,20 @@ interface StaffListProps {
   clinicId: string
 }
 
-const roleConfig = {
+// Mirrors StaffRole in packages/shared/src/types.ts
+const roleConfig: Record<string, { label: string; color: string; bg: string }> = {
   admin: { label: 'Admin', color: 'text-primary', bg: 'bg-primary/10' },
   doctor: { label: 'Doctor', color: 'text-primary', bg: 'bg-primary/10' },
   nurse: { label: 'Nurse', color: 'text-accent', bg: 'bg-accent/10' },
+  clinical_officer: { label: 'Clinical officer', color: 'text-cobalt', bg: 'bg-cobalt-soft' },
+  midwife: { label: 'Midwife', color: 'text-slate', bg: 'bg-slate-soft' },
+  nursing_assistant: { label: 'Nursing assistant', color: 'text-accent', bg: 'bg-accent/10' },
+  records_officer: { label: 'Records officer', color: 'text-muted-foreground', bg: 'bg-muted' },
+  lab_tech: { label: 'Lab technician', color: 'text-amber-ink', bg: 'bg-amber-soft' },
+  dispenser: { label: 'Dispenser', color: 'text-green', bg: 'bg-green-soft' },
 }
+
+const FALLBACK_ROLE_CONFIG = { label: '—', color: 'text-muted-foreground', bg: 'bg-muted' }
 
 export function StaffList({ initialStaff, clinicId }: StaffListProps) {
   const [staffList, setStaffList] = useState(initialStaff)
@@ -109,7 +118,7 @@ export function StaffList({ initialStaff, clinicId }: StaffListProps) {
           </thead>
           <tbody className="divide-y divide-border">
             {activeStaff.map((member) => {
-              const config = roleConfig[member.role]
+              const config = roleConfig[member.role] ?? FALLBACK_ROLE_CONFIG
               return (
                 <tr key={member.id} className="hover:bg-muted">
                   <td className="px-6 py-4">
@@ -182,7 +191,7 @@ export function StaffList({ initialStaff, clinicId }: StaffListProps) {
             </thead>
             <tbody className="divide-y divide-border">
               {inactiveStaff.map((member) => {
-                const config = roleConfig[member.role]
+                const config = roleConfig[member.role] ?? FALLBACK_ROLE_CONFIG
                 return (
                   <tr key={member.id} className="hover:bg-muted opacity-60">
                     <td className="px-6 py-4">
