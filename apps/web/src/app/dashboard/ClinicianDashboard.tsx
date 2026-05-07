@@ -177,17 +177,11 @@ export function ClinicianDashboard({
               </Link>
             </div>
 
-            {/* Sync status */}
+            {/* Sync status — placeholder body until field-device telemetry ships */}
             <div className="bg-card border border-border rounded-xl p-[18px]">
               <div className="kh-meta mb-2">OFFLINE SYNC</div>
-              <div className="text-[13px] text-body mb-3">
-                {pendingSync === 0
-                  ? 'All field devices synced.'
-                  : `${pendingSync} ${pendingSync === 1 ? 'visit' : 'visits'} from field devices waiting to push.`}
-              </div>
-              <div className="flex flex-col gap-1.5 text-[12px]">
-                <SyncRow label="Pixel devices" status="Synced 09:38" tone="green" />
-                <SyncRow label="Galaxy A14" status={`${pendingSync} pending`} tone={pendingSync ? 'amber' : 'green'} />
+              <div className="text-[13px] text-muted-foreground">
+                Field-device sync telemetry coming soon.
               </div>
             </div>
           </div>
@@ -258,11 +252,3 @@ function mapStatus(item: QueueItem): { kind: StatusKind; label: string } {
   }
 }
 
-function SyncRow({ label, status, tone }: { label: string; status: string; tone: 'green' | 'amber' }) {
-  return (
-    <div className="flex justify-between text-body">
-      <span>{label}</span>
-      <span className={cn('font-mono', tone === 'amber' ? 'text-amber' : 'text-green')}>{status}</span>
-    </div>
-  )
-}
