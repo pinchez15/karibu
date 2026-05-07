@@ -1,82 +1,65 @@
-'use client'
+import { redirect } from 'next/navigation'
+import { getStaff } from '@/lib/auth'
+import { createServiceClient } from '@/lib/supabase'
+import { DashboardShell } from '@/components/dashboard-shell'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import {
-  Users,
-  Stethoscope,
-  ClipboardList,
-  Settings,
-  Menu,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-
-const navigation = [
-  { name: "Today's Queue", href: '/dashboard', icon: Users },
-  { name: 'Review', href: '/dashboard/review', icon: ClipboardList },
-  { name: 'Patients', href: '/dashboard/visits', icon: Stethoscope },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-]
-
-export default function DashboardLayout({
+/**
+ * Dashboard layout — wraps every /dashboard/* page in the role-aware web shell.
+ * The DashboardShell client component picks which sidebar to render based on
+ * pathname:
+ *   /dashboard/pharmacy/*       → pharmacy
+ *   /dashboard/lab/*            → lab
+ *   /dashboard/admin/reports/*  → analyst
+ *   everything else             → clinician
+ */
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname()
+  const staff = await getStaff()
+  if (!staff) redirect('/')
 
-  const currentPage = navigation.find(
-    n => pathname === n.href || (n.href !== '/dashboard' && pathname?.startsWith(n.href))
-  )
+  const supabase = createServiceClient()
+  const { data: clinic } = await supabase
+    .from('clinics')
+    .select('name')
+    .eq('id', staff.clinic_id)
+    .single()
+
+  const initials = staff.display_name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/logos/icon-only.svg" alt="" className="h-7 w-7" />
-            <h1 className="text-lg font-semibold tracking-tight">
-              {currentPage?.name || 'Karibu Health'}
-            </h1>
-          </div>
-
-          {/* Hamburger menu */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <div className="py-6 space-y-1">
-                {navigation.map((item) => {
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== '/dashboard' && pathname?.startsWith(item.href))
-                  return (
-                    <Link key={item.name} href={item.href}>
-                      <Button
-                        variant={isActive ? 'secondary' : 'ghost'}
-                        className="w-full justify-start h-12 gap-3"
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.name}
-                      </Button>
-                    </Link>
-                  )
-                })}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
-
-      {/* Page content */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+    <DashboardShell
+      clinicName={clinic?.name}
+      staff={{
+        displayName: staff.display_name,
+        role: roleLabel(staff.role),
+        initials,
+      }}
+    >
+      {children}
+    </DashboardShell>
   )
+}
+
+function roleLabel(role: string): string {
+  switch (role) {
+    case 'admin': return 'Admin'
+    case 'doctor': return 'Doctor'
+    case 'nurse': return 'Nurse'
+    case 'clinical_officer': return 'Clinical officer'
+    case 'midwife': return 'Midwife'
+    case 'nursing_assistant': return 'Nursing assistant'
+    case 'records_officer': return 'Records officer'
+    case 'lab_tech': return 'Lab technician'
+    case 'dispenser': return 'Dispenser'
+    default: return role
+  }
 }
