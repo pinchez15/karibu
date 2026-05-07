@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.karibuhealth.app.ui.theme.KaribuWarning
+import com.karibuhealth.app.ui.theme.Amber as KaribuWarning
 
 @Composable
 fun OfflineBanner(

@@ -2,131 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Karibu Health design tokens — see karibu_design_files/brand.jsx
+  Cobalt anchors trust + energy. Slate carries type. Amber is reserved (urgency / AI).
+  All values are RGB triples so Tailwind's `/<alpha-value>` syntax works
+  (e.g. `bg-cobalt-soft/60`).
+*/
 :root {
-  /* Brand palette — primary derived from Karibu logo (#1E3BAA) */
-  --background: 249 250 251;
-  --foreground: 17 24 39;
-  --card: 255 255 255;
-  --card-foreground: 17 24 39;
-  --primary: 30 59 170;
+  /* ---- Karibu palette (raw) ---------------------------------- */
+  --kh-cobalt:        31 54 199;    /* #1F36C7 — primary brand */
+  --kh-cobalt-deep:   21 37 154;    /* #15259A — pressed / headers */
+  --kh-cobalt-soft:   232 236 251;  /* #E8ECFB — surfaces */
+  --kh-cobalt-ink:    11 20 82;     /* #0B1452 — deep nav / dark hero */
+  --kh-slate:         40 97 122;    /* #28617A — secondary chrome */
+  --kh-slate-deep:    27 70 89;     /* #1B4659 */
+  --kh-slate-soft:    229 238 242;  /* #E5EEF2 */
+  --kh-amber:         245 165 36;   /* #F5A524 — AI / urgency only */
+  --kh-amber-soft:    253 241 216;  /* #FDF1D8 */
+  --kh-amber-ink:     122 74 0;     /* #7A4A00 */
+  --kh-green:         14 138 95;    /* #0E8A5F — success / dispense */
+  --kh-green-soft:    220 241 231;  /* #DCF1E7 */
+  --kh-red:           200 54 43;    /* #C8362B — critical only */
+  --kh-red-soft:      251 229 226;  /* #FBE5E2 */
+  --kh-ink:           14 21 48;     /* #0E1530 — headings */
+  --kh-body:          58 66 86;     /* #3A4256 — body text */
+  --kh-muted:         107 115 133;  /* #6B7385 — labels */
+  --kh-line:          229 231 238;  /* #E5E7EE — dividers */
+  --kh-line-soft:     239 241 246;  /* #EFF1F6 — soft dividers */
+  --kh-bg:            247 248 251;  /* #F7F8FB — page */
+  --kh-surface:       255 255 255;  /* #FFFFFF — cards */
+
+  /* Android-dark variants (also usable on web for outdoor / low-power demos) */
+  --kh-dark-bg:        10 15 38;
+  --kh-dark-surface:   18 25 53;
+  --kh-dark-surface-hi: 26 35 71;
+  --kh-dark-line:      36 48 102;
+  --kh-dark-ink:       245 247 255;
+  --kh-dark-body:      184 192 218;
+  --kh-dark-muted:     122 133 168;
+  --kh-dark-amber:     255 194 87;
+
+  /* ---- shadcn semantic tokens, mapped to KH ------------------ */
+  --background: var(--kh-bg);
+  --foreground: var(--kh-ink);
+  --card: var(--kh-surface);
+  --card-foreground: var(--kh-ink);
+  --primary: var(--kh-cobalt);
   --primary-foreground: 255 255 255;
-  --secondary: 232 235 247;
-  --secondary-foreground: 30 59 170;
-  --muted: 243 244 246;
-  --muted-foreground: 107 114 128;
-  --accent: 22 163 74;
+  --secondary: var(--kh-slate-soft);
+  --secondary-foreground: var(--kh-slate-deep);
+  --muted: var(--kh-line-soft);
+  --muted-foreground: var(--kh-muted);
+  --accent: var(--kh-green);
   --accent-foreground: 255 255 255;
-  --destructive: 220 38 38;
+  --destructive: var(--kh-red);
   --destructive-foreground: 255 255 255;
-  --border: 229 231 235;
-  --input: 209 213 219;
-  --input-background: 249 250 251;
-  --ring: 30 59 170;
-  --radius: 0.75rem;
+  --border: var(--kh-line);
+  --input: var(--kh-line);
+  --input-background: var(--kh-surface);
+  --ring: var(--kh-cobalt);
+  --radius: 0.625rem;
 
-  /* Status colors */
-  --status-synced: #16a34a;
-  --status-pending: #f59e0b;
-  --status-offline: #dc2626;
-
-  /* Pin/alert colors */
-  --pin-critical: #dc2626;
-  --pin-warning: #f59e0b;
-  --pin-info: #1e3baa;
+  /* Status / signal — kept as direct hex for legacy callsites */
+  --status-synced: #0E8A5F;
+  --status-pending: #F5A524;
+  --status-offline: #C8362B;
+  --pin-critical: #C8362B;
+  --pin-warning: #F5A524;
+  --pin-info: #1F36C7;
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';   /* Inter visual tweaks */
   }
 
-  h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
-  h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
-  h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.4; }
-  h4 { font-size: 1rem; font-weight: 600; line-height: 1.5; }
-  label { font-size: 0.875rem; font-weight: 500; line-height: 1.5; }
-  button { font-size: 0.9375rem; font-weight: 500; line-height: 1.5; }
-  input { font-size: 1rem; font-weight: 400; line-height: 1.5; }
+  h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; color: rgb(var(--kh-ink)); }
+  h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; color: rgb(var(--kh-ink)); }
+  h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.3; color: rgb(var(--kh-ink)); }
+  h4 { font-size: 1rem; font-weight: 600; line-height: 1.4; color: rgb(var(--kh-ink)); }
+  label { font-size: 0.875rem; font-weight: 500; line-height: 1.5; color: rgb(var(--kh-body)); }
+  button { font-size: 0.9375rem; font-weight: 600; line-height: 1.5; }
+  input { font-size: 0.9375rem; font-weight: 400; line-height: 1.5; }
+
+  /* Tiny uppercase mono labels, used everywhere in designs (e.g. PT-100015 · 34F · DR. AKELLO) */
+  .kh-meta {
+    font-family: var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: rgb(var(--kh-muted));
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
 }
 
 @layer components {
-  /* Touch-friendly button variants (legacy compat) */
   .btn {
-    @apply min-h-touch min-w-touch px-4 py-3 font-medium rounded-lg
+    @apply min-h-touch min-w-touch px-4 py-3 font-semibold rounded-lg
            inline-flex items-center justify-center
            transition-colors duration-150
            focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
+  .btn-primary { @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary; }
+  .btn-success { @apply btn bg-accent text-accent-foreground hover:bg-accent/90 focus:ring-accent; }
+  .btn-secondary { @apply btn bg-muted text-foreground hover:bg-muted/80 focus:ring-ring; }
+  .btn-danger { @apply btn bg-destructive text-white hover:bg-destructive/90 focus:ring-destructive; }
 
-  .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary;
-  }
+  .card { @apply bg-card rounded-xl border border-border p-4; }
 
-  .btn-success {
-    @apply btn bg-accent text-accent-foreground hover:bg-accent/90 focus:ring-accent;
-  }
+  .data-label { @apply text-sm font-medium text-muted-foreground; }
+  .data-value { @apply text-base font-medium text-foreground mt-0.5; }
+  .data-value-mono { @apply text-base font-medium text-foreground mt-0.5 font-mono; }
 
-  .btn-secondary {
-    @apply btn bg-muted text-foreground hover:bg-muted/80 focus:ring-ring;
-  }
+  .skeleton { @apply bg-muted rounded animate-pulse; }
 
-  .btn-danger {
-    @apply btn bg-destructive text-white hover:bg-destructive/90 focus:ring-destructive;
-  }
-
-  /* Clinical card */
-  .card {
-    @apply bg-card rounded-xl border border-border p-4;
-  }
-
-  /* Data display */
-  .data-label {
-    @apply text-sm font-medium text-muted-foreground;
-  }
-
-  .data-value {
-    @apply text-base font-medium text-foreground mt-0.5;
-  }
-
-  .data-value-mono {
-    @apply text-base font-medium text-foreground mt-0.5 font-mono;
-  }
-
-  .skeleton {
-    @apply bg-muted rounded animate-pulse;
-  }
-
-  /* Android-style soft status chip — 12% tint background, full-saturation label */
-  .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
-  .chip-info     { @apply bg-primary/10 text-primary; }
-  .chip-success  { @apply bg-accent/10 text-accent; }
-  .chip-warning  { color: #b45309; background-color: rgb(245 158 11 / 0.12); }
-  .chip-danger   { @apply bg-destructive/10 text-destructive; }
-  .chip-neutral  { @apply bg-muted text-muted-foreground; }
+  /* Status pills — KH design: 12% tint background, full-saturation label */
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .chip-info { background-color: rgb(var(--kh-cobalt-soft)); color: rgb(var(--kh-cobalt)); }
+  .chip-success { background-color: rgb(var(--kh-green-soft)); color: rgb(var(--kh-green)); }
+  .chip-warning { background-color: rgb(var(--kh-amber-soft)); color: rgb(var(--kh-amber-ink)); }
+  .chip-danger { background-color: rgb(var(--kh-red-soft)); color: rgb(var(--kh-red)); }
+  .chip-neutral { background-color: rgb(var(--kh-line-soft)); color: rgb(var(--kh-muted)); }
 }
 
-/* Print styles */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    background: white;
-  }
-
-  .print-full-width {
-    max-width: 100% !important;
-    padding: 0 !important;
-  }
+  .no-print { display: none !important; }
+  body { background: white; }
+  .print-full-width { max-width: 100% !important; padding: 0 !important; }
 }

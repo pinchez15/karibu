@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Figma design system - CSS variable-based for theming
+        // shadcn semantic tokens (mapped to Karibu palette in globals.css)
         background: 'rgb(var(--background) / <alpha-value>)',
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
         card: {
@@ -40,22 +40,56 @@ const config: Config = {
         input: 'rgb(var(--input) / <alpha-value>)',
         'input-background': 'rgb(var(--input-background) / <alpha-value>)',
         ring: 'rgb(var(--ring) / <alpha-value>)',
-        // Status colors (direct hex - no opacity needed)
-        'status-synced': '#16a34a',
-        'status-pending': '#f59e0b',
-        'status-offline': '#dc2626',
-        // Pin/alert colors
-        'pin-critical': '#dc2626',
-        'pin-warning': '#f59e0b',
-        'pin-info': '#1e3baa',
-        // Legacy aliases
-        success: '#16a34a',
-        warning: '#D97706',
-        error: '#DC2626',
+
+        // Karibu Health palette — direct access (preserves hierarchy + semantic intent)
+        cobalt: {
+          DEFAULT: 'rgb(var(--kh-cobalt) / <alpha-value>)',
+          deep: 'rgb(var(--kh-cobalt-deep) / <alpha-value>)',
+          soft: 'rgb(var(--kh-cobalt-soft) / <alpha-value>)',
+          ink: 'rgb(var(--kh-cobalt-ink) / <alpha-value>)',
+        },
+        slate: {
+          DEFAULT: 'rgb(var(--kh-slate) / <alpha-value>)',
+          deep: 'rgb(var(--kh-slate-deep) / <alpha-value>)',
+          soft: 'rgb(var(--kh-slate-soft) / <alpha-value>)',
+        },
+        amber: {
+          DEFAULT: 'rgb(var(--kh-amber) / <alpha-value>)',
+          soft: 'rgb(var(--kh-amber-soft) / <alpha-value>)',
+          ink: 'rgb(var(--kh-amber-ink) / <alpha-value>)',
+        },
+        green: {
+          DEFAULT: 'rgb(var(--kh-green) / <alpha-value>)',
+          soft: 'rgb(var(--kh-green-soft) / <alpha-value>)',
+        },
+        red: {
+          DEFAULT: 'rgb(var(--kh-red) / <alpha-value>)',
+          soft: 'rgb(var(--kh-red-soft) / <alpha-value>)',
+        },
+        ink: 'rgb(var(--kh-ink) / <alpha-value>)',
+        body: 'rgb(var(--kh-body) / <alpha-value>)',
+        line: {
+          DEFAULT: 'rgb(var(--kh-line) / <alpha-value>)',
+          soft: 'rgb(var(--kh-line-soft) / <alpha-value>)',
+        },
+
+        // Status / signal colors — direct hex
+        'status-synced': '#0E8A5F',
+        'status-pending': '#F5A524',
+        'status-offline': '#C8362B',
+        'pin-critical': '#C8362B',
+        'pin-warning': '#F5A524',
+        'pin-info': '#1F36C7',
+
+        // Legacy aliases (kept so existing components don't break)
+        success: '#0E8A5F',
+        warning: '#F5A524',
+        error: '#C8362B',
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['ui-monospace', 'monospace'],
+        // Wired through next/font in app/layout.tsx — fallbacks remain for SSR safety
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'Geist Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       fontSize: {
         base: ['1rem', { lineHeight: '1.5' }],
@@ -65,11 +99,10 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      minHeight: {
-        touch: '48px',
-      },
-      minWidth: {
-        touch: '48px',
+      minHeight: { touch: '48px' },
+      minWidth: { touch: '48px' },
+      letterSpacing: {
+        tightest: '-0.025em',
       },
     },
   },

@@ -1,7 +1,20 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter, Geist_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { PostHogProvider } from '@/components/PostHogProvider'
 import './globals.css'
+
+// Karibu type system. Inter for everything; Geist Mono for IDs / timestamps / vitals values.
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Karibu Health',
@@ -25,7 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
         <body className="min-h-screen bg-background text-foreground">
           <PostHogProvider>
             {children}
