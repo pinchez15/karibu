@@ -46,7 +46,7 @@ async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchR
       follow_up_instructions,
       tests_ordered,
       patient:patients(display_name, first_name, last_name, patient_id),
-      patient_notes(content),
+      patient_notes(content, source),
       doctor:staff!visits_doctor_id_fkey(display_name),
       clinic:clinics(name, phone, umdpc_number, timezone)
     `)
@@ -57,7 +57,7 @@ async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchR
   if (error || !visit) return { kind: 'missing_visit' }
 
   // Supabase returns nested relations as arrays even for one-to-one
-  const patientNotesArr = visit.patient_notes as unknown as { content: string | null }[] | null
+  const patientNotesArr = visit.patient_notes as unknown as { content: string | null; source: string | null }[] | null
   const patientArr = visit.patient as unknown as Array<{
     display_name: string | null
     first_name: string | null
@@ -72,7 +72,12 @@ async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchR
     timezone: string
   }> | null
 
-  const patientNote = patientNotesArr?.[0] ?? null
+  // Receipt always prints the clinician's words, never the AI version. The
+  // clinician is the receipt-of-record. Fall back to AI only if no clinician
+  // row exists (legacy visits before migration 032).
+  const clinicianNote = patientNotesArr?.find((n) => n.source === 'clinician_fallback') ?? null
+  const aiNote = patientNotesArr?.find((n) => n.source === 'ai_generated') ?? null
+  const patientNote = clinicianNote ?? aiNote ?? patientNotesArr?.[0] ?? null
   if (!patientNote?.content || patientNote.content.trim().length === 0) {
     return { kind: 'missing_note' }
   }

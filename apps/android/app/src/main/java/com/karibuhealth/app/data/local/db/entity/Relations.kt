@@ -18,6 +18,14 @@ data class VisitWithDetails(
     val patient: PatientEntity,
     @Relation(parentColumn = "id", entityColumn = "visit_id")
     val providerNote: ProviderNoteEntity?,
+    // Up to two rows per visit since migration 032 (clinician_fallback +
+    // ai_generated). Callers split by `source`.
     @Relation(parentColumn = "id", entityColumn = "visit_id")
-    val patientNote: PatientNoteEntity?,
-)
+    val patientNotes: List<PatientNoteEntity> = emptyList(),
+) {
+    val clinicianPatientNote: PatientNoteEntity?
+        get() = patientNotes.firstOrNull { it.source == "clinician_fallback" }
+            ?: patientNotes.firstOrNull()
+    val aiPatientNote: PatientNoteEntity?
+        get() = patientNotes.firstOrNull { it.source == "ai_generated" }
+}

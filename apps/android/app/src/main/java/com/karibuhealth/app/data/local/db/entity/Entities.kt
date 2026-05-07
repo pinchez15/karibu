@@ -106,6 +106,13 @@ data class VisitEntity(
     // True once the clinician taps Save in the offline-first flow.
     @ColumnInfo(name = "documentation_complete") val documentationComplete: Boolean = false,
     @ColumnInfo(name = "documentation_completed_at") val documentationCompletedAt: String? = null,
+    // AI structuring lifecycle — independent of `status`. Driven server-side by
+    // the Inngest poll-ai-queue scheduler. Read-only on Android.
+    @ColumnInfo(name = "ai_structure_status") val aiStructureStatus: String = "not_started",
+    @ColumnInfo(name = "ai_structure_started_at") val aiStructureStartedAt: String? = null,
+    @ColumnInfo(name = "ai_structure_completed_at") val aiStructureCompletedAt: String? = null,
+    @ColumnInfo(name = "ai_structure_error") val aiStructureError: String? = null,
+    @ColumnInfo(name = "ai_structure_attempts") val aiStructureAttempts: Int = 0,
     // Pharmacy MVP — workflow state for dispensing the clinician's `medications`
     // text. Set on the web by the dispenser; synced read-only to Android so
     // the clinician can see whether their orders were actually filled.
@@ -143,7 +150,11 @@ data class ProviderNoteEntity(
 
 @Entity(
     tableName = "patient_notes",
-    indices = [Index("visit_id", unique = true)],
+    // Two rows per visit allowed since migration 032: one
+    // 'clinician_fallback' (the receipt-of-record) and one 'ai_generated'
+    // (the AI plain-language summary). Composite unique enforces "at most
+    // one row per (visit, source)".
+    indices = [Index(value = ["visit_id", "source"], unique = true)],
 )
 data class PatientNoteEntity(
     @PrimaryKey val id: String,

@@ -198,7 +198,10 @@ private fun DictationScreenContent(
                 },
             )
 
-            // Soft AI hint card — only after a save (non-empty + savedLocally).
+            // AI structuring is now automatic — runs server-side after Save
+            // for any input mode (typed, Whisper, keyboard mic). The clinician
+            // sees the result on the visit-details screen as a collapsible
+            // "AI structured note" card. No manual trigger needed.
             if (uiState.savedLocally) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -220,31 +223,16 @@ private fun DictationScreenContent(
                         Spacer(Modifier.width(8.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Structure with AI",
+                                text = "Saved — AI is structuring in the background",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = AmberInk,
                             )
                             Text(
-                                text = if (uiState.isStructuringWithAi) "Sending to AI…" else "Optional · ~15s",
+                                text = "Open the visit to see SOAP, HMIS suggestions, and the patient summary.",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Muted,
                             )
-                        }
-                        TextButton(
-                            onClick = onStructureWithAi,
-                            enabled = !uiState.isStructuringWithAi && uiState.transcript.trim().length >= 10,
-                            colors = ButtonDefaults.textButtonColors(contentColor = AmberInk),
-                        ) {
-                            if (uiState.isStructuringWithAi) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
-                                    strokeWidth = 2.dp,
-                                    color = AmberInk,
-                                )
-                            } else {
-                                Text("Structure", fontWeight = FontWeight.SemiBold)
-                            }
                         }
                     }
                 }

@@ -1,11 +1,14 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Mic, Printer } from 'lucide-react'
+import { Mic, Printer, Sparkles, ChevronDown, ChevronRight, RotateCw, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
+import { retryAiStructure } from './ai-actions'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
+import { cn } from '@/lib/utils'
 
 // Visit detail page. Two paths converge here:
 //
@@ -35,6 +38,11 @@ interface VisitWithRelations extends Visit {
   nurse: { id: string; display_name: string } | null
   provider_notes: ProviderNote | null
   patient_notes: PatientNote | null
+  // Split by source on the server (apps/web/src/app/dashboard/visits/[id]/page.tsx).
+  // patient_notes_clinician is the receipt-of-record; patient_notes_ai is the
+  // AI summary, surfaced as collapsible reference material.
+  patient_notes_clinician: PatientNote | null
+  patient_notes_ai: PatientNote | null
 }
 
 interface PaymentData {
@@ -202,35 +210,34 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         <DiagnosisCoder visitId={visit.id} />
       )}
 
-      {/* Provider Note (read-only — edits happen in the review queue) */}
-      {visit.provider_notes?.note_content && (
+      {/* Clinician note (always shown, expanded — receipt-of-record) */}
+      {(visit.patient_notes_clinician?.content || visit.provider_notes?.transcript) && (
         <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-3">Provider Note (SOAP)</h3>
-          <pre className="text-sm whitespace-pre-wrap font-mono bg-muted rounded-lg p-3 border border-border">
-            {visit.provider_notes.note_content}
-          </pre>
-          {visit.status === 'review' && (
-            <p className="text-sm text-muted-foreground mt-3">
-              Edits and approve/reject happen in the{' '}
-              <Link href="/dashboard/review" className="underline">review queue</Link>.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Patient Note (read-only — what gets printed on the receipt) */}
-      {visit.patient_notes?.content && (
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-3">Patient Note</h3>
+          <h3 className="text-lg font-semibold mb-3">Clinician note</h3>
           <p className="text-sm whitespace-pre-wrap leading-relaxed">
-            {visit.patient_notes.content}
+            {visit.patient_notes_clinician?.content || visit.provider_notes?.transcript}
           </p>
         </div>
       )}
 
-      {/* Original dictation transcript — preserved through reject/error so
-          the clinician can see what they originally said. */}
-      {visit.provider_notes?.transcript && (
+      {/* AI structured note — collapsible, appears beneath. The clinician's
+          note is the source of truth; this section is reference material. */}
+      <AiStructuredSection
+        visitId={visit.id}
+        status={visit.ai_structure_status}
+        error={visit.ai_structure_error}
+        attempts={visit.ai_structure_attempts}
+        soap={visit.provider_notes?.note_content ?? null}
+        patientSummary={visit.patient_notes_ai?.content ?? null}
+      />
+
+      {/* Raw transcript — surfaced only when the clinician's `patient_notes`
+          row hasn't been written yet (mid-sync), or when the clinician used
+          Whisper and wants to see the raw words separately. The "Clinician
+          note" card above prefers patient_notes_clinician.content, which is
+          the same content but explicitly authored. */}
+      {visit.provider_notes?.transcript &&
+        !visit.patient_notes_clinician?.content && (
         <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <Mic className="w-4 h-4 text-muted-foreground" />
@@ -303,6 +310,169 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
             <Printer className="h-4 w-4" />
             Print patient note
           </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface AiStructuredSectionProps {
+  visitId: string
+  status: Visit['ai_structure_status']
+  error: string | null
+  attempts: number
+  soap: string | null
+  patientSummary: string | null
+}
+
+/**
+ * AI-structured note card. Collapsed by default — the clinician's note above
+ * is the receipt-of-record. Surfaces SOAP + plain-language patient summary
+ * + retry button on failure.
+ */
+function AiStructuredSection({
+  visitId,
+  status,
+  error,
+  attempts,
+  soap,
+  patientSummary,
+}: AiStructuredSectionProps) {
+  const [expanded, setExpanded] = useState(status === 'completed' || status === 'failed')
+  const [pending, startTransition] = useTransition()
+  const [retryError, setRetryError] = useState<string | null>(null)
+
+  // Don't render at all if there's nothing to say (e.g. visit was created but
+  // documentation_complete=false, AI hasn't been queued).
+  if (status === 'not_started' && !soap && !patientSummary) {
+    return null
+  }
+
+  function handleRetry() {
+    setRetryError(null)
+    startTransition(async () => {
+      const r = await retryAiStructure(visitId)
+      if (!r.success) setRetryError(r.error)
+    })
+  }
+
+  const headerInfo = (() => {
+    switch (status) {
+      case 'pending':
+        return { label: 'Queued for AI', cls: 'bg-line-soft text-muted-foreground' }
+      case 'running':
+        return { label: 'Structuring…', cls: 'bg-cobalt-soft text-cobalt' }
+      case 'completed':
+        return { label: 'Done', cls: 'bg-green-soft text-green' }
+      case 'failed':
+        return { label: 'Failed', cls: 'bg-amber-soft text-amber-ink' }
+      case 'skipped':
+        return { label: 'Skipped', cls: 'bg-line-soft text-muted-foreground' }
+      default:
+        return { label: 'Pending', cls: 'bg-line-soft text-muted-foreground' }
+    }
+  })()
+
+  const isInFlight = status === 'pending' || status === 'running'
+
+  return (
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-background/60 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="h-4 w-4 text-amber" />
+          <span className="font-semibold">AI structured note</span>
+          <span className={cn('inline-flex items-center px-2 py-px rounded-full text-[11px] font-semibold', headerInfo.cls)}>
+            {headerInfo.label}
+          </span>
+          {attempts > 1 && (
+            <span className="text-[11px] text-muted-foreground">attempt {attempts}</span>
+          )}
+        </div>
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-border pt-4 space-y-4">
+          {isInFlight && (
+            <div className="text-sm text-muted-foreground">
+              Karibu AI is reading the note and structuring it into SOAP, suggesting HMIS
+              codes, and writing a plain-language summary for the patient. Usually under 15s.
+            </div>
+          )}
+
+          {status === 'failed' && (
+            <div className="bg-amber-soft border border-amber/30 rounded-md p-3 text-sm space-y-2">
+              <div className="flex items-center gap-2 text-amber-ink font-semibold">
+                <RotateCw className="h-3.5 w-3.5" />
+                AI couldn't structure this visit
+              </div>
+              {error && (
+                <div className="text-xs text-body font-mono break-all">{error}</div>
+              )}
+              <Button
+                onClick={handleRetry}
+                disabled={pending}
+                size="sm"
+                variant="outline"
+              >
+                {pending ? 'Retrying…' : 'Retry AI structuring'}
+              </Button>
+              {retryError && (
+                <div className="text-xs text-destructive">{retryError}</div>
+              )}
+            </div>
+          )}
+
+          {soap && (
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                SOAP
+              </h4>
+              <pre className="text-sm whitespace-pre-wrap font-mono bg-muted rounded-md p-3 border border-border">
+                {soap}
+              </pre>
+            </div>
+          )}
+
+          {patientSummary && (
+            <div>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                Plain-language summary
+                <CheckCircle2 className="h-3 w-3 text-green" />
+              </h4>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/50 rounded-md p-3 border border-border">
+                {patientSummary}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                The receipt prints the clinician note above; this AI version is reference for the clinician.
+              </p>
+            </div>
+          )}
+
+          {status === 'completed' && !soap && !patientSummary && (
+            <div className="text-sm text-muted-foreground">
+              AI ran but produced no structured output. Try retrying.
+            </div>
+          )}
+
+          {status === 'completed' && (
+            <Button
+              onClick={handleRetry}
+              disabled={pending}
+              size="sm"
+              variant="outline"
+            >
+              {pending ? 'Re-running…' : 'Re-run AI structuring'}
+            </Button>
+          )}
         </div>
       )}
     </div>

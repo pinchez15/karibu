@@ -124,6 +124,20 @@ export interface Visit {
   // True once the clinician taps Save in the offline-first flow.
   documentation_complete: boolean;
   documentation_completed_at: string | null;
+  // AI structuring lifecycle — independent of `status`. Driven by the Inngest
+  // poll-ai-queue scheduler; AI augments the clinician's note rather than
+  // gating clinical workflow.
+  ai_structure_status:
+    | 'not_started'
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'skipped';
+  ai_structure_started_at: string | null;
+  ai_structure_completed_at: string | null;
+  ai_structure_error: string | null;
+  ai_structure_attempts: number;
   // Pharmacy MVP — workflow state for dispensing the clinician's `medications`
   // text. Set by the dispenser via /dashboard/pharmacy actions.
   dispensing_status: 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock';

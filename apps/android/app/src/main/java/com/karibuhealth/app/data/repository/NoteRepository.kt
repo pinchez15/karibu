@@ -143,30 +143,22 @@ class NoteRepository @Inject constructor(
         content: String,
         predecessorSyncId: String? = null,
     ): Pair<PatientNote, String?> = withContext(Dispatchers.IO) {
-        val existing = patientNoteDao.getByVisitIdOnce(visitId)
+        // Post migration 032 there can be up to two rows per visit. We always
+        // operate on the 'clinician_fallback' row — the AI row is owned by
+        // the Inngest pipeline and is read-only on Android.
+        val existing = patientNoteDao.getByVisitAndSourceOnce(visitId, "clinician_fallback")
         val now = Instant.now().toString()
-        // Local row: only overwrite an existing clinician_fallback (mirrors
-        // server-side guard). If existing is ai_generated we leave it alone
-        // locally and skip the queue entirely.
-        val canOverwriteLocal = existing == null || existing.source == "clinician_fallback"
         val entity = PatientNoteEntity(
             id = existing?.id ?: UUID.randomUUID().toString(),
             visitId = visitId,
-            content = if (canOverwriteLocal) content else existing!!.content,
+            content = content,
             language = existing?.language ?: "en",
             status = existing?.status ?: "draft",
-            source = if (canOverwriteLocal) "clinician_fallback" else existing!!.source,
+            source = "clinician_fallback",
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
         )
-        if (canOverwriteLocal) {
-            patientNoteDao.upsert(entity)
-        }
-
-        if (!canOverwriteLocal) {
-            // Existing row is AI-generated — don't touch server, don't queue.
-            return@withContext entity.toDomain() to null
-        }
+        patientNoteDao.upsert(entity)
 
         val rpcBody = PatientNoteSummaryUpsertDto(
             id = entity.id,
@@ -206,8 +198,13 @@ class NoteRepository @Inject constructor(
             val providerNotes = supabaseApi.getProviderNote("eq.$visitId")
             providerNotes.firstOrNull()?.let { providerNoteDao.upsert(it.toEntity()) }
 
+            // patient_notes can return up to two rows since migration 032
+            // (clinician + AI). Upsert all of them so the visit-details UI
+            // can render both.
             val patientNotes = supabaseApi.getPatientNote("eq.$visitId")
-            patientNotes.firstOrNull()?.let { patientNoteDao.upsert(it.toEntity()) }
+            if (patientNotes.isNotEmpty()) {
+                patientNoteDao.upsertAll(patientNotes.map { it.toEntity() })
+            }
         } catch (_: Exception) {}
     }
 }

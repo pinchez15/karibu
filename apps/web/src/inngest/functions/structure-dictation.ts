@@ -1,7 +1,33 @@
 import { NonRetriableError } from 'inngest'
 import { createServiceClient } from '@/lib/supabase'
 import { inngest } from '../client'
-import { MEDICAL_MODEL, openai } from '../openai'
+import { MEDICAL_MODEL, STRUCTURING_MODEL, openai } from '../openai'
+
+/**
+ * Update visits.ai_structure_status to 'failed' and stamp the error message.
+ * Best-effort — never throws — so it doesn't block the NonRetriableError that
+ * follows.
+ */
+async function markStructureFailed(
+  visit_id: string,
+  clinic_id: string,
+  reason: string,
+): Promise<void> {
+  try {
+    const supabase = createServiceClient()
+    await supabase
+      .from('visits')
+      .update({
+        ai_structure_status: 'failed',
+        ai_structure_error: reason.slice(0, 500),
+        ai_structure_completed_at: new Date().toISOString(),
+      })
+      .eq('id', visit_id)
+      .eq('clinic_id', clinic_id)
+  } catch {
+    // Swallow — the calling NonRetriableError is the user-visible signal.
+  }
+}
 
 // When a clinician finishes dictating, Inngest fans this out:
 //
@@ -86,10 +112,51 @@ export const structureDictation = inngest.createFunction(
       limit: 1,
     },
     retries: 3,
+    // After all retries exhaust, mark the visit's AI status 'failed' so the
+    // visit-details UI surfaces a retry button. Without this, a visit would
+    // sit in 'running' forever after Inngest gives up.
+    onFailure: async ({ event, error }) => {
+      const data = (event.data as { event?: { data?: { visit_id?: string; clinic_id?: string } } } )?.event?.data
+        ?? (event as unknown as { data: { visit_id: string; clinic_id: string } }).data
+      const visit_id = data?.visit_id
+      const clinic_id = data?.clinic_id
+      if (visit_id && clinic_id) {
+        await markStructureFailed(visit_id, clinic_id, error?.message ?? 'unknown error')
+      }
+    },
   },
   { event: 'note.dictated' },
   async ({ event, step, logger }) => {
     const { visit_id, clinic_id } = event.data
+
+    // -------------------------------------------------------- mark running
+    // Flip ai_structure_status to 'running' and bump attempts. Done first so
+    // retries (including Inngest's automatic ones) increment attempts even
+    // if subsequent steps fail terminally.
+    await step.run('mark-running', async () => {
+      const supabase = createServiceClient()
+      const { data: current } = await supabase
+        .from('visits')
+        .select('ai_structure_attempts')
+        .eq('id', visit_id)
+        .eq('clinic_id', clinic_id)
+        .maybeSingle()
+      const attempts = (current?.ai_structure_attempts ?? 0) + 1
+
+      const { error } = await supabase
+        .from('visits')
+        .update({
+          ai_structure_status: 'running',
+          ai_structure_started_at: new Date().toISOString(),
+          ai_structure_attempts: attempts,
+          ai_structure_error: null,
+        })
+        .eq('id', visit_id)
+        .eq('clinic_id', clinic_id)
+      if (error) {
+        throw new NonRetriableError(`mark-running failed: ${error.message}`)
+      }
+    })
 
     // ---------------------------------------------------------------- load
     const context = await step.run('load-context', async () => {
@@ -108,24 +175,45 @@ export const structureDictation = inngest.createFunction(
       if (error || !visit) {
         // Cross-clinic or missing visit: don't retry, this is a data problem
         // not a transient one.
+        await markStructureFailed(visit_id, clinic_id, `visit not found: ${error?.message ?? 'no row'}`)
         throw new NonRetriableError(`Visit ${visit_id} not found for clinic ${clinic_id}: ${error?.message ?? 'no row'}`)
       }
 
-      const providerNotesArr = visit.provider_notes as unknown as Array<{ id: string; transcript: string | null }> | null
-      const providerNote = providerNotesArr?.[0] ?? null
+      // PostgREST may return the nested provider_notes either as a singular
+      // object (one-to-one via the UNIQUE constraint on visit_id from migration
+      // 001) or as an array (FK-detection quirk). Handle both.
+      const rawProviderNotes = visit.provider_notes as unknown
+      const providerNote = Array.isArray(rawProviderNotes)
+        ? (rawProviderNotes[0] as { id: string; transcript: string | null } | undefined) ?? null
+        : (rawProviderNotes as { id: string; transcript: string | null } | null)
+
       if (!providerNote?.transcript || providerNote.transcript.trim().length === 0) {
+        await markStructureFailed(
+          visit_id,
+          clinic_id,
+          `no transcript (provider_note=${providerNote?.id ?? 'null'})`,
+        )
         throw new NonRetriableError(`Visit ${visit_id} has no dictation transcript`)
       }
 
-      const patientArr = visit.patient as unknown as Array<{
-        id: string
-        first_name: string | null
-        last_name: string | null
-        display_name: string | null
-        date_of_birth: string | null
-        sex: string | null
-      }> | null
-      const patient = patientArr?.[0] ?? null
+      const rawPatient = visit.patient as unknown
+      const patient = Array.isArray(rawPatient)
+        ? (rawPatient[0] as {
+            id: string
+            first_name: string | null
+            last_name: string | null
+            display_name: string | null
+            date_of_birth: string | null
+            sex: string | null
+          } | undefined) ?? null
+        : (rawPatient as {
+            id: string
+            first_name: string | null
+            last_name: string | null
+            display_name: string | null
+            date_of_birth: string | null
+            sex: string | null
+          } | null)
 
       return {
         visit_id,
@@ -144,7 +232,7 @@ export const structureDictation = inngest.createFunction(
         : 'Patient demographics unavailable.'
 
       const response = await openai().chat.completions.create({
-        model: MEDICAL_MODEL,
+        model: STRUCTURING_MODEL,
         response_format: { type: 'json_object' },
         temperature: 0.3,
         messages: [
@@ -173,6 +261,7 @@ export const structureDictation = inngest.createFunction(
       } catch (e) {
         // Surface the raw output so the clinician can see what happened in the
         // error state, instead of silently retrying on bad JSON forever.
+        await markStructureFailed(visit_id, clinic_id, `model returned non-JSON: ${raw.slice(0, 200)}`)
         throw new NonRetriableError(`structure-note: model returned non-JSON: ${raw.slice(0, 200)}`)
       }
 
@@ -256,11 +345,9 @@ export const structureDictation = inngest.createFunction(
         .eq('visit_id', context.visit_id)
       if (providerErr) throw new Error(`persist: provider_notes update failed: ${providerErr.message}`)
 
-      // Upsert patient_notes — there's a unique index on visit_id so insert-
-      // or-update keeps this step idempotent if Inngest replays.
-      // source='ai_generated' lets this overwrite a clinician_fallback row
-      // (raw transcript saved by Android at point-of-care). The inverse is
-      // blocked by rpc_upsert_patient_note_summary's WHERE clause.
+      // Upsert the AI patient-summary row. (visit_id, source) is the conflict
+      // target since migration 032 — this never overwrites the clinician's
+      // 'clinician_fallback' row, which is the receipt-of-record.
       const { error: patientErr } = await supabase
         .from('patient_notes')
         .upsert(
@@ -272,12 +359,22 @@ export const structureDictation = inngest.createFunction(
             source: 'ai_generated',
             updated_at: now,
           },
-          { onConflict: 'visit_id' },
+          { onConflict: 'visit_id,source' },
         )
       if (patientErr) throw new Error(`persist: patient_notes upsert failed: ${patientErr.message}`)
 
-      // Also flatten the most likely diagnosis + med list into visits.diagnosis
-      // / medications so the print view can render without joining JSON.
+      // visits.diagnosis / medications / tests_ordered / follow_up_instructions
+      // are flattened convenience fields. We deliberately DO NOT touch
+      // tests_ordered or medications if the clinician already filled them in,
+      // because those drive the lab + pharmacy queues — overwriting could
+      // erase a clinician's order. AI populates them only if blank.
+      const { data: existingFlat } = await supabase
+        .from('visits')
+        .select('diagnosis, medications, tests_ordered, follow_up_instructions')
+        .eq('id', context.visit_id)
+        .eq('clinic_id', context.clinic_id)
+        .maybeSingle()
+
       const primaryDiagnosis = structured.diagnoses.find(d => d.confidence === 'high')
         ?? structured.diagnoses[0]
       const medSummary = structured.medications
@@ -286,17 +383,30 @@ export const structureDictation = inngest.createFunction(
       const testSummary = structured.tests_ordered.map(t => t.name).join('; ')
       const followUpSummary = structured.follow_up.map(f => `${f.when}: ${f.what}`).join('; ')
 
+      const blank = (s: string | null | undefined) => !s || s.trim().length === 0
+
+      const visitUpdate: Record<string, unknown> = {
+        ai_structure_status: 'completed',
+        ai_structure_completed_at: now,
+        ai_structure_error: null,
+        updated_at: now,
+      }
+      if (blank(existingFlat?.diagnosis) && primaryDiagnosis?.name) {
+        visitUpdate.diagnosis = primaryDiagnosis.name
+      }
+      if (blank(existingFlat?.medications) && medSummary) {
+        visitUpdate.medications = medSummary
+      }
+      if (blank(existingFlat?.tests_ordered) && testSummary) {
+        visitUpdate.tests_ordered = testSummary
+      }
+      if (blank(existingFlat?.follow_up_instructions) && followUpSummary) {
+        visitUpdate.follow_up_instructions = followUpSummary
+      }
+
       const { error: visitErr } = await supabase
         .from('visits')
-        .update({
-          status: 'review',
-          review_status: 'pending_review',
-          diagnosis: primaryDiagnosis?.name ?? null,
-          medications: medSummary || null,
-          tests_ordered: testSummary || null,
-          follow_up_instructions: followUpSummary || null,
-          updated_at: now,
-        })
+        .update(visitUpdate)
         .eq('id', context.visit_id)
         .eq('clinic_id', context.clinic_id)
       if (visitErr) throw new Error(`persist: visits update failed: ${visitErr.message}`)
@@ -387,6 +497,6 @@ export const structureDictation = inngest.createFunction(
       return { coded: codedIds.size }
     })
 
-    return { visit_id, status: 'review' }
+    return { visit_id, ai_structure_status: 'completed' as const }
   },
 )

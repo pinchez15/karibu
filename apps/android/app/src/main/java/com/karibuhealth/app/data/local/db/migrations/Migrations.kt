@@ -3,6 +3,33 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v5 -> v6: AI as augmentation. Adds AI-structuring lifecycle columns on
+// visits (read-only on Android — written server-side by the Inngest pipeline
+// and synced down on refresh). Also drops the unique index on
+// patient_notes.visit_id and replaces it with a composite unique on
+// (visit_id, source) so both the clinician-fallback row and the AI row can
+// coexist locally.
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. AI-structure columns on visits.
+        db.execSQL("ALTER TABLE visits ADD COLUMN ai_structure_status TEXT NOT NULL DEFAULT 'not_started'")
+        db.execSQL("ALTER TABLE visits ADD COLUMN ai_structure_started_at TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN ai_structure_completed_at TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN ai_structure_error TEXT")
+        db.execSQL("ALTER TABLE visits ADD COLUMN ai_structure_attempts INTEGER NOT NULL DEFAULT 0")
+
+        // 2. patient_notes: drop the implicit visit_id-only unique that Room
+        //    created from `Index("visit_id", unique = true)`; replace with
+        //    a composite (visit_id, source) unique. Room names the implicit
+        //    index `index_patient_notes_visit_id` (table_name + column).
+        db.execSQL("DROP INDEX IF EXISTS index_patient_notes_visit_id")
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS index_patient_notes_visit_id_source " +
+                "ON patient_notes(visit_id, source)",
+        )
+    }
+}
+
 // v4 -> v5: pharmacy + lab MVP. Read-only on Android — these columns are
 // written on the web by dispenser/lab_tech and synced back via the regular
 // visit refresh path so the clinician sees outcomes in their visit details.

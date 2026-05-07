@@ -20,6 +20,8 @@ data class VisitDetailsUiState(
     val patient: Patient? = null,
     val providerNote: ProviderNote? = null,
     val patientNote: PatientNote? = null,
+    /** Plain-language AI summary, distinct from the clinician's `patientNote`. */
+    val aiPatientNote: PatientNote? = null,
     val latestVitals: PatientVitals? = null,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
@@ -79,7 +81,8 @@ class VisitDetailsViewModel @Inject constructor(
                             visit = details.visit.toDomain(),
                             patient = details.patient.toDomain(),
                             providerNote = details.providerNote?.toDomain(),
-                            patientNote = details.patientNote?.toDomain(),
+                            patientNote = details.clinicianPatientNote?.toDomain(),
+                            aiPatientNote = details.aiPatientNote?.toDomain(),
                             isLoading = false,
                         )
                     }

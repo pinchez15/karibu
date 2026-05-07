@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -179,22 +181,37 @@ fun VisitDetailsScreen(
                     )
                 }
 
-                // AI structured note card with shimmer
+                // Clinician note (always expanded — receipt-of-record).
+                // Prefers patient_notes.content when source='clinician_fallback';
+                // falls back to provider_notes.transcript while the clinician
+                // hasn't fully synced.
+                run {
+                    val clinicianText = uiState.patientNote?.content
+                        ?.takeIf { it.isNotBlank() }
+                        ?: uiState.providerNote?.transcript?.takeIf { it.isNotBlank() }
+                    if (clinicianText != null) {
+                        ClinicianNoteCard(content = clinicianText)
+                    }
+                }
+
+                // AI structured note — collapsible, driven by visits.ai_structure_status.
                 uiState.visit?.let { visit ->
                     AiNoteCard(
                         visit = visit,
-                        transcript = uiState.providerNote?.transcript,
                         structured = AiStructuredSuggestions.parseOrNull(uiState.providerNote?.structuredData),
-                        noteContent = uiState.providerNote?.noteContent,
+                        soapText = uiState.providerNote?.noteContent,
+                        aiPatientSummary = uiState.aiPatientNote?.content,
                     )
                 }
 
-                // HMIS codes — only render once AI has produced suggestions.
-                AiStructuredSuggestions.parseOrNull(uiState.providerNote?.structuredData)
-                    ?.takeIf { it.diagnoses.any { d -> !d.icd10.isNullOrBlank() } }
-                    ?.let { suggestions ->
-                        HmisCodesCard(suggestions = suggestions)
-                    }
+                // HMIS codes — render once AI completed and produced suggestions.
+                if (uiState.visit?.aiStructureStatus == "completed") {
+                    AiStructuredSuggestions.parseOrNull(uiState.providerNote?.structuredData)
+                        ?.takeIf { it.diagnoses.any { d -> !d.icd10.isNullOrBlank() } }
+                        ?.let { suggestions ->
+                            HmisCodesCard(suggestions = suggestions)
+                        }
+                }
 
                 // Care delivered — lab + pharmacy outcomes (read-only).
                 // Renders only when there's something to show: tests ordered,
@@ -333,34 +350,79 @@ private fun PatientCard(
 }
 
 @Composable
+private fun ClinicianNoteCard(content: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Column {
+            KhMetaText(text = "CLINICIAN NOTE")
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink,
+            )
+        }
+    }
+}
+
+@Composable
 private fun AiNoteCard(
     visit: Visit,
-    transcript: String?,
     structured: AiStructuredSuggestions?,
-    noteContent: String?,
+    soapText: String?,
+    aiPatientSummary: String?,
 ) {
-    val isStreaming = visit.status == VisitStatus.pending && visit.documentationComplete
-    val isPending = visit.status == VisitStatus.pending && !visit.documentationComplete
-    val isError = visit.status == VisitStatus.error
-    val isReady = visit.status == VisitStatus.review || visit.status == VisitStatus.sent
+    val status = visit.aiStructureStatus
+    val isPending = status == "pending"
+    val isRunning = status == "running"
+    val isFailed = status == "failed"
+    val isCompleted = status == "completed"
+    val isInFlight = isPending || isRunning
+
+    // Default expanded only on terminal states. Pending/running stays
+    // collapsed — the clinician's note above is the source of truth.
+    var expanded by rememberSaveable(visit.id) {
+        mutableStateOf(isCompleted || isFailed)
+    }
+
+    val (statusLabel, statusFg, statusBg) = when (status) {
+        "pending" -> Triple("Queued", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+        "running" -> Triple("Structuring…", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
+        "completed" -> Triple("Done", Green, com.karibuhealth.app.ui.theme.GreenSoft)
+        "failed" -> Triple("Failed", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
+        "skipped" -> Triple("Skipped", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+        else -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+    }
 
     val borderColor = when {
-        isStreaming -> Amber
-        isError -> MaterialTheme.colorScheme.error
+        isRunning -> Amber
+        isFailed -> com.karibuhealth.app.ui.theme.Red
         else -> Line
     }
-    val borderWidth = if (isStreaming) 1.5.dp else 1.dp
+    val borderWidth = if (isRunning) 1.5.dp else 1.dp
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(borderWidth, borderColor, RoundedCornerShape(14.dp))
-            .padding(16.dp),
+            .border(borderWidth, borderColor, RoundedCornerShape(14.dp)),
     ) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Header — tappable to toggle expand.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = null,
@@ -369,48 +431,107 @@ private fun AiNoteCard(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "SOAP note",
+                    text = "AI structured note",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Ink,
+                    modifier = Modifier.weight(1f),
                 )
-                if (isStreaming) {
-                    Spacer(Modifier.weight(1f))
+                com.karibuhealth.app.ui.components.KhAccentPill(
+                    label = statusLabel,
+                    fg = statusFg,
+                    bg = statusBg,
+                )
+                if (isRunning) {
+                    Spacer(Modifier.width(6.dp))
                     Pulses(color = Amber)
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            if (expanded) {
+                Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
+                    when {
+                        isInFlight -> {
+                            Text(
+                                text = "Karibu AI is reading the note and structuring it into SOAP, suggesting HMIS codes, and writing a plain-language summary. Usually under 15 seconds.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Muted,
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            SoapSection(label = "SUBJECTIVE", body = "Awaiting…", streaming = true)
+                            SoapSection(label = "ASSESSMENT", body = "Awaiting…", streaming = true)
+                            SoapSection(label = "PLAN", body = "Awaiting…", streaming = true)
+                        }
+                        isFailed -> {
+                            Text(
+                                text = "AI couldn't structure this visit. The clinician note above is the receipt-of-record.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = com.karibuhealth.app.ui.theme.Red,
+                            )
+                            visit.errorMessage?.takeIf { it.isNotBlank() }?.let {
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Muted,
+                                )
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            // Show whatever partial output exists.
+                            if (!soapText.isNullOrBlank()) {
+                                val sections = parseSoap(soapText, structured, null)
+                                sections.forEach { (label, body) ->
+                                    SoapSection(label = label, body = body, streaming = false)
+                                }
+                            }
+                        }
+                        isCompleted -> {
+                            val sections = parseSoap(soapText, structured, null)
+                            if (sections.isEmpty()) {
+                                Text(
+                                    text = "AI ran but produced no structured output.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Muted,
+                                )
+                            } else {
+                                sections.forEach { (label, body) ->
+                                    SoapSection(label = label, body = body, streaming = false)
+                                }
+                            }
 
-            when {
-                isPending -> {
-                    Text(
-                        text = "Awaiting dictation. Tap the mic below to start.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Muted,
-                    )
-                }
-                isStreaming -> {
-                    SoapSection(label = "SUBJECTIVE", body = "Awaiting structure…", streaming = true)
-                    SoapSection(label = "OBJECTIVE", body = "Awaiting structure…", streaming = true)
-                    SoapSection(label = "ASSESSMENT", body = "Awaiting structure…", streaming = true)
-                    SoapSection(label = "PLAN", body = "Awaiting structure…", streaming = true)
-                }
-                isError -> {
-                    Text(
-                        text = "AI structuring failed. Edit the note and retry, or proceed without structuring.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    transcript?.takeIf { it.isNotBlank() }?.let {
-                        SoapSection(label = "RAW", body = it, streaming = false)
-                    }
-                }
-                isReady -> {
-                    val sections = parseSoap(noteContent, structured, transcript)
-                    sections.forEach { (label, body) ->
-                        SoapSection(label = label, body = body, streaming = false)
+                            if (!aiPatientSummary.isNullOrBlank()) {
+                                Spacer(Modifier.height(8.dp))
+                                KhMetaText(text = "PLAIN-LANGUAGE SUMMARY")
+                                Spacer(Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .border(1.dp, Line, RoundedCornerShape(8.dp))
+                                        .padding(10.dp),
+                                ) {
+                                    Text(
+                                        text = aiPatientSummary,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Ink,
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "Receipt prints the clinician note above; this AI version is reference material.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Muted,
+                                )
+                            }
+                        }
+                        status == "skipped" || status == "not_started" -> {
+                            Text(
+                                text = "AI structuring hasn't been queued for this visit yet.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Muted,
+                            )
+                        }
                     }
                 }
             }

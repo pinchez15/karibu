@@ -1,9 +1,19 @@
 import OpenAI from 'openai'
 
-// Healthcare-tuned model. Set via env so we can swap models without code change
-// when OpenAI ships a newer healthcare release. Falls back to gpt-4o so dev
-// envs without the medical-tier model still work.
-export const MEDICAL_MODEL = process.env.OPENAI_MEDICAL_MODEL || 'gpt-4o'
+// Two models, tuned to cost vs. capability:
+//
+//   STRUCTURING_MODEL — runs on every visit. SOAP formatting from a
+//                       clinician's free-text note. gpt-4o-mini handles this
+//                       reliably at ~10× lower cost than gpt-4o, which matters
+//                       at HC III scale (every visit gets touched by an LLM).
+//
+//   MEDICAL_MODEL     — reserved for the patient-summary translation step
+//                       and any clinician-flagged complex case. Higher tier
+//                       for the patient-facing prose.
+//
+// Both are env-overridable so we can swap models without redeploying.
+export const STRUCTURING_MODEL = process.env.OPENAI_STRUCTURING_MODEL || 'gpt-4o-mini'
+export const MEDICAL_MODEL = process.env.OPENAI_MEDICAL_MODEL || 'gpt-4o-mini'
 
 let _client: OpenAI | null = null
 export function openai(): OpenAI {

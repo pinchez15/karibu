@@ -25,7 +25,24 @@ async function getVisitDetails(visitId: string, clinicId: string) {
     return null
   }
 
-  return visit
+  // patient_notes can return either a singular object (legacy single-row
+  // schema) or an array (post-migration 032 with one row per source). Split
+  // into clinician + AI versions so the UI doesn't have to.
+  const rawNotes = visit.patient_notes as unknown
+  const notesArr = Array.isArray(rawNotes)
+    ? (rawNotes as Array<{ source?: string; content?: string | null } & Record<string, unknown>>)
+    : rawNotes
+      ? [(rawNotes as { source?: string; content?: string | null } & Record<string, unknown>)]
+      : []
+
+  const clinicianNote = notesArr.find((n) => n.source === 'clinician_fallback') ?? null
+  const aiNote = notesArr.find((n) => n.source === 'ai_generated') ?? null
+
+  return {
+    ...visit,
+    patient_notes_clinician: clinicianNote,
+    patient_notes_ai: aiNote,
+  }
 }
 
 export default async function VisitDetailPage({
