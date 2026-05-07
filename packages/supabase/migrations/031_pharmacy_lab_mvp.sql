@@ -103,10 +103,8 @@ CREATE INDEX IF NOT EXISTS idx_visits_lab_abnormal
 -- ============================================================================
 
 COMMENT ON COLUMN visits.dispensing_status IS
-  'Pharmacy MVP — workflow state for dispensing the clinician''s `medications` text. ' ||
-  'Replaced by structured prescriptions + dispense_records in a future migration.';
+  'Pharmacy MVP — workflow state for dispensing the clinician''s `medications` text. Replaced by structured prescriptions + dispense_records in a future migration.';
 COMMENT ON COLUMN visits.lab_status IS
-  'Lab MVP — workflow state for completing the clinician''s `tests_ordered` text. ' ||
-  'Replaced by structured lab_orders + lab_results in a future migration.';
+  'Lab MVP — workflow state for completing the clinician''s `tests_ordered` text. Replaced by structured lab_orders + lab_results in a future migration.';
 COMMENT ON COLUMN visits.lab_abnormal IS
   'Lab tech sets this when entering results that should ping the ordering clinician.';
