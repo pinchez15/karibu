@@ -56,8 +56,11 @@ interface SupabaseApi {
         @Query("select") select: String = "*",
     ): List<VisitDto>
 
-    @POST("visits")
-    suspend fun createVisit(@Body visit: VisitCreateDto): List<VisitDto>
+    // Visit creation goes through the SECURITY DEFINER RPC instead of a direct
+    // INSERT — direct inserts were returning 404 from PostgREST's INSERT-with-
+    // RETURNING flow even with Prefer: return=minimal.
+    @POST("rpc/rpc_create_visit")
+    suspend fun rpcCreateVisit(@Body request: VisitCreateRpcDto): Response<ResponseBody>
 
     @PATCH("visits")
     suspend fun updateVisit(
@@ -98,4 +101,17 @@ interface SupabaseApi {
 
     @POST("rpc/get_clinic_queue")
     suspend fun getClinicQueue(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+
+    // Offline-first foundation (migration 029) RPCs
+    @POST("rpc/rpc_upsert_provider_note")
+    suspend fun rpcUpsertProviderNote(@Body request: ProviderNoteUpsertDto): Response<ResponseBody>
+
+    @POST("rpc/rpc_upsert_patient_note_summary")
+    suspend fun rpcUpsertPatientNoteSummary(@Body request: PatientNoteSummaryUpsertDto): Response<ResponseBody>
+
+    @POST("rpc/rpc_insert_patient_vitals")
+    suspend fun rpcInsertPatientVitals(@Body request: PatientVitalsCreateDto): Response<ResponseBody>
+
+    @POST("rpc/rpc_mark_documentation_complete")
+    suspend fun rpcMarkDocumentationComplete(@Body request: MarkDocumentationCompleteDto): Response<ResponseBody>
 }

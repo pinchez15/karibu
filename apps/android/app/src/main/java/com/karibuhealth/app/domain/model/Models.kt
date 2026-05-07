@@ -91,6 +91,8 @@ data class Patient(
     val fullName: String get() = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { displayName ?: "" }
 }
 
+enum class Department { opd, anc, maternity, family_planning, immunization }
+
 data class Visit(
     val id: String,
     val clinicId: String,
@@ -103,6 +105,7 @@ data class Visit(
     val priority: VisitPriority,
     val chiefComplaint: String?,
     val checkedInAt: String?,
+    val department: Department = Department.opd,
     val reviewStatus: ReviewStatus,
     val reviewedBy: String?,
     val reviewedAt: String?,
@@ -116,6 +119,8 @@ data class Visit(
     val finalizedAt: String?,
     val errorMessage: String?,
     val errorAt: String?,
+    val documentationComplete: Boolean = false,
+    val documentationCompletedAt: String? = null,
     val isSynced: Boolean = true,
 )
 
@@ -135,14 +140,36 @@ data class ProviderNote(
     val finalizedBy: String?,
 )
 
+enum class PatientNoteSource { ai_generated, clinician_fallback }
+
 data class PatientNote(
     val id: String,
     val visitId: String,
     val content: String?,
     val language: String,
     val status: NoteStatus,
+    val source: PatientNoteSource = PatientNoteSource.ai_generated,
     val createdAt: String,
     val updatedAt: String,
+)
+
+data class PatientVitals(
+    val id: String,
+    val patientId: String,
+    val visitId: String?,
+    val recordedAt: String,
+    val recordedBy: String?,
+    val weightKg: Double?,
+    val heightCm: Double?,
+    val tempC: Double?,
+    val bpSystolic: Int?,
+    val bpDiastolic: Int?,
+    val pulseBpm: Int?,
+    val respRate: Int?,
+    val spo2Pct: Int?,
+    val muacCm: Double?,
+    val notes: String?,
+    val isSynced: Boolean = true,
 )
 
 data class Payment(

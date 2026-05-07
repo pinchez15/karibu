@@ -27,7 +27,14 @@ class AuthInterceptor @Inject constructor(
                     header("Authorization", "Bearer ${BuildConfig.SUPABASE_ANON_KEY}")
                 }
             }
-            .header("Prefer", "return=representation")
+            // Only set Prefer if the request didn't already supply one.
+            // Endpoints that need return=minimal (e.g. visits POST) annotate
+            // it via Retrofit @Headers; overriding here would clobber that.
+            .apply {
+                if (originalRequest.header("Prefer") == null) {
+                    header("Prefer", "return=representation")
+                }
+            }
 
         // Only force Content-Type when the request body hasn't set one. The
         // dictation flow uploads multipart/form-data audio to /functions/v1/dictate

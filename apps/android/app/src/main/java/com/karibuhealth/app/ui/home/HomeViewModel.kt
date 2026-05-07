@@ -125,10 +125,12 @@ class HomeViewModel @Inject constructor(
         val clinicId = authTokenStore.getClinicId() ?: return null
         val staffId = authTokenStore.getStaffId()
         return runCatching {
-            val visit = visitRepository.createVisit(
+            // Existing patient looked up from search — already in Supabase.
+            val (visit, _) = visitRepository.createVisit(
                 clinicId = clinicId,
                 patientId = patientId,
                 doctorId = staffId,
+                patientSyncEntryId = null,
             )
             _uiState.update { it.copy(searchQuery = "", searchResults = emptyList(), isSearching = false) }
             visit.id

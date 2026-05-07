@@ -86,6 +86,9 @@ data class VisitEntity(
     val priority: String,
     @ColumnInfo(name = "chief_complaint") val chiefComplaint: String?,
     @ColumnInfo(name = "checked_in_at") val checkedInAt: String?,
+    // Department: opd | anc | maternity | family_planning | immunization.
+    // Server-side since migration 024; mirrored locally in MIGRATION_3_4.
+    val department: String = "opd",
     @ColumnInfo(name = "review_status") val reviewStatus: String,
     @ColumnInfo(name = "reviewed_by") val reviewedBy: String?,
     @ColumnInfo(name = "reviewed_at") val reviewedAt: String?,
@@ -99,6 +102,10 @@ data class VisitEntity(
     @ColumnInfo(name = "finalized_at") val finalizedAt: String?,
     @ColumnInfo(name = "error_message") val errorMessage: String?,
     @ColumnInfo(name = "error_at") val errorAt: String?,
+    // Documentation completion (independent of AI/review state).
+    // True once the clinician taps Save in the offline-first flow.
+    @ColumnInfo(name = "documentation_complete") val documentationComplete: Boolean = false,
+    @ColumnInfo(name = "documentation_completed_at") val documentationCompletedAt: String? = null,
     // Local-only field
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )
@@ -130,6 +137,10 @@ data class PatientNoteEntity(
     val content: String?,
     val language: String,
     val status: String,
+    // 'ai_generated' | 'clinician_fallback'. Server default 'ai_generated' so
+    // pre-029 rows on disk read as AI; new clinician fallback rows written
+    // locally use 'clinician_fallback'.
+    val source: String = "ai_generated",
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
 )
@@ -156,6 +167,34 @@ data class PaymentEntity(
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     // Local-only
+    @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
+)
+
+@Entity(
+    tableName = "patient_vitals",
+    indices = [
+        Index(value = ["patient_id", "recorded_at"]),
+        Index("visit_id"),
+    ],
+)
+data class PatientVitalsEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "patient_id") val patientId: String,
+    // Nullable: inpatient longitudinal readings can attach to a patient
+    // without a single owning visit row.
+    @ColumnInfo(name = "visit_id") val visitId: String?,
+    @ColumnInfo(name = "recorded_at") val recordedAt: String,
+    @ColumnInfo(name = "recorded_by") val recordedBy: String?,
+    @ColumnInfo(name = "weight_kg") val weightKg: Double?,
+    @ColumnInfo(name = "height_cm") val heightCm: Double?,
+    @ColumnInfo(name = "temp_c") val tempC: Double?,
+    @ColumnInfo(name = "bp_systolic") val bpSystolic: Int?,
+    @ColumnInfo(name = "bp_diastolic") val bpDiastolic: Int?,
+    @ColumnInfo(name = "pulse_bpm") val pulseBpm: Int?,
+    @ColumnInfo(name = "resp_rate") val respRate: Int?,
+    @ColumnInfo(name = "spo2_pct") val spo2Pct: Int?,
+    @ColumnInfo(name = "muac_cm") val muacCm: Double?,
+    val notes: String?,
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )
 

@@ -9,9 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.DictationException
 import com.karibuhealth.app.data.repository.NoteRepository
+import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import com.karibuhealth.app.util.Analytics
 import com.karibuhealth.app.util.DictationRecorder
+import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -25,10 +28,10 @@ import javax.inject.Inject
 
 data class DictationUiState(
     val transcript: String = "",
-    val aiMode: Boolean = false,
     val isRecording: Boolean = false,
     val isTranscribing: Boolean = false,
     val isSubmitting: Boolean = false,
+    val isStructuringWithAi: Boolean = false,
     val submitted: Boolean = false,
     val error: String? = null,
     val savedLocally: Boolean = false,
@@ -42,7 +45,10 @@ class DictationViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dictationApi: DictationApiClient,
     private val noteRepository: NoteRepository,
+    private val visitRepository: VisitRepository,
+    private val syncEngine: SyncEngine,
     private val clerkAuthManager: ClerkAuthManager,
+    private val networkMonitor: NetworkMonitor,
     private val analytics: Analytics,
 ) : ViewModel() {
 
@@ -51,13 +57,12 @@ class DictationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DictationUiState())
     val uiState: StateFlow<DictationUiState> = _uiState.asStateFlow()
 
-    fun load(visitId: String, aiMode: Boolean) {
+    fun load(visitId: String) {
         viewModelScope.launch {
             val existing = noteRepository.getProviderNoteOnce(visitId)
             _uiState.update {
                 it.copy(
                     transcript = existing?.transcript.orEmpty(),
-                    aiMode = aiMode,
                     savedLocally = existing?.transcript?.isNotBlank() == true,
                     submitted = false,
                     error = null,
@@ -124,11 +129,25 @@ class DictationViewModel @Inject constructor(
         _uiState.update { it.copy(transcript = text, savedLocally = false) }
     }
 
+    fun onMicrophonePermissionDenied() {
+        _uiState.update { it.copy(error = "Microphone permission is required for Whisper recording.") }
+    }
+
+    /**
+     * Save the visit. Always offline-safe — no AI involvement.
+     *
+     * Pipeline (each step direct-writes when online + no upstream queue
+     * dependency, otherwise queues with a linear `dependsOn` chain):
+     *   1. provider_notes.transcript (the clinician's actual words)
+     *   2. patient_notes.content (clinician fallback for the receipt; copies
+     *      the transcript verbatim so print/pharmacy works without AI)
+     *   3. visits.documentation_complete = true (and status pending → sent
+     *      atomically server-side, making the visit reachable for payment)
+     */
     fun submit(visitId: String) {
         val transcript = _uiState.value.transcript.trim()
-        val aiMode = _uiState.value.aiMode
         if (transcript.length < 10) {
-            _uiState.update { it.copy(error = "Dictate a bit more before submitting.") }
+            _uiState.update { it.copy(error = "Add a bit more to the note before saving.") }
             return
         }
 
@@ -136,18 +155,27 @@ class DictationViewModel @Inject constructor(
             _uiState.update { it.copy(isSubmitting = true, error = null) }
             try {
                 withContext(Dispatchers.IO) {
-                    noteRepository.saveDraftTranscript(visitId, transcript)
-                    if (aiMode) {
-                        clerkAuthManager.refreshToken()
-                        dictationApi.submitDictation(visitId, transcript)
-                    }
+                    val (_, providerSyncId) = noteRepository.saveNoteAndQueue(
+                        visitId = visitId,
+                        transcript = transcript,
+                        predecessorSyncId = null,
+                    )
+                    val (_, summarySyncId) = noteRepository.saveSummaryFallback(
+                        visitId = visitId,
+                        content = transcript,
+                        predecessorSyncId = providerSyncId,
+                    )
+                    visitRepository.markDocumentationComplete(
+                        visitId = visitId,
+                        predecessorSyncId = summarySyncId ?: providerSyncId,
+                    )
                 }
                 analytics.capture(
                     Analytics.Events.DICTATION_COMPLETED,
                     mapOf(
                         "visit_id" to visitId,
                         "transcript_length" to transcript.length,
-                        "mode" to if (aiMode) "ai" else "local",
+                        "mode" to "save",
                     ),
                 )
                 _uiState.update {
@@ -157,10 +185,50 @@ class DictationViewModel @Inject constructor(
                         savedLocally = true,
                     )
                 }
-            } catch (e: DictationException) {
-                _uiState.update { it.copy(isSubmitting = false, error = e.message) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSubmitting = false, error = "Could not submit: ${e.message}") }
+                _uiState.update { it.copy(isSubmitting = false, error = "Could not save: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * Opt-in: structure the saved note with AI. Fires the existing
+     * submit-dictation edge function which dispatches the structure-dictation
+     * Inngest workflow. Returns immediately; the workflow runs in the
+     * background and writes back to provider_notes.note_content +
+     * patient_notes.content + visit_diagnosis_codes.
+     *
+     * Requires online — tells the user to come back online if not.
+     */
+    fun structureWithAi(visitId: String) {
+        if (_uiState.value.isStructuringWithAi) return
+        viewModelScope.launch {
+            if (!networkMonitor.isOnline()) {
+                _uiState.update {
+                    it.copy(error = "AI needs Wi-Fi or data. Try again when you're online.")
+                }
+                return@launch
+            }
+            _uiState.update { it.copy(isStructuringWithAi = true, error = null) }
+            try {
+                withContext(Dispatchers.IO) {
+                    val transcript = _uiState.value.transcript.trim()
+                    if (transcript.isNotEmpty()) {
+                        clerkAuthManager.refreshToken()
+                        dictationApi.submitDictation(visitId, transcript)
+                    }
+                }
+                analytics.capture(
+                    Analytics.Events.DICTATION_COMPLETED,
+                    mapOf("visit_id" to visitId, "mode" to "ai_structure"),
+                )
+                _uiState.update { it.copy(isStructuringWithAi = false) }
+            } catch (e: DictationException) {
+                _uiState.update { it.copy(isStructuringWithAi = false, error = e.message) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isStructuringWithAi = false, error = "AI request failed: ${e.message}")
+                }
             }
         }
     }

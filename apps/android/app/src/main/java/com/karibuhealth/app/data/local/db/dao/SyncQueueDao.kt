@@ -33,6 +33,15 @@ interface SyncQueueDao {
     @Query("SELECT COUNT(*) FROM sync_queue WHERE status IN ('pending', 'failed') AND attempts < max_attempts")
     fun getPendingCount(): Flow<Int>
 
+    @Query("""
+        SELECT * FROM sync_queue
+        WHERE status IN ('pending', 'failed')
+        AND last_error IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 10
+    """)
+    fun observeFailingEntries(): Flow<List<SyncQueueEntry>>
+
     @Insert
     suspend fun insert(entry: SyncQueueEntry)
 
@@ -41,4 +50,11 @@ interface SyncQueueDao {
 
     @Query("DELETE FROM sync_queue WHERE status = 'completed' AND created_at < :before")
     suspend fun deleteCompleted(before: Long)
+
+    @Query("""
+        UPDATE sync_queue
+        SET status = 'pending', attempts = 0, next_retry_at = NULL
+        WHERE status = 'failed' OR (status = 'pending' AND attempts >= max_attempts)
+    """)
+    suspend fun resetFailed(): Int
 }

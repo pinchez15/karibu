@@ -8,6 +8,8 @@ import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.MarkDocumentationCompleteDto
+import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.domain.model.*
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -65,37 +67,51 @@ class VisitRepository @Inject constructor(
     // update (so the UI reflects the change instantly even offline) plus a
     // queued sync entry so the server-side state machine catches up when online.
     suspend fun startVisitSelfTriage(visitId: String, clinicianId: String) {
-        val now = Instant.now().toString()
-        visitDao.updateQueueStatus(visitId, QueueStatus.with_doctor.name, now)
+        withContext(Dispatchers.IO) {
+            val now = Instant.now().toString()
+            visitDao.updateQueueStatus(visitId, QueueStatus.with_doctor.name, now)
 
-        val syncEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
-            operationType = "queue_op",
-            entityType = "visits",
-            entityId = visitId,
-            payload = """{"rpc":"start_visit_self_triage","params":{"p_visit_id":"$visitId","p_clinician_id":"$clinicianId"}}""",
-            status = "pending",
-            attempts = 0,
-            createdAt = System.currentTimeMillis(),
-        )
-        syncQueueDao.insert(syncEntry)
+            val syncEntry = SyncQueueEntry(
+                id = UUID.randomUUID().toString(),
+                operationType = "queue_op",
+                entityType = "visits",
+                entityId = visitId,
+                payload = """{"rpc":"start_visit_self_triage","params":{"p_visit_id":"$visitId","p_clinician_id":"$clinicianId"}}""",
+                status = "pending",
+                attempts = 0,
+                createdAt = System.currentTimeMillis(),
+            )
+            syncQueueDao.insert(syncEntry)
+        }
     }
 
     fun getVisitById(id: String): Flow<Visit?> =
         visitDao.getById(id).map { it?.toDomain() }
 
     suspend fun getVisitByIdOnce(id: String): Visit? =
-        visitDao.getByIdOnce(id)?.toDomain()
+        withContext(Dispatchers.IO) {
+            visitDao.getByIdOnce(id)?.toDomain()
+        }
 
     fun getVisitWithDetails(id: String) = visitDao.getWithDetails(id)
 
+    /**
+     * Create a visit. Direct-write via SECURITY DEFINER RPC `rpc_create_visit`
+     * when online; queue on failure / offline. Returns (visit, syncEntryId?)
+     * — null syncEntryId means the row already landed in Supabase.
+     *
+     * `patientSyncEntryId` linearizes the patient → visit dependency in the
+     * sync queue (only used when this visit ends up queued). `department`
+     * defaults to 'opd' to match visits.department (migration 024).
+     */
     suspend fun createVisit(
         clinicId: String,
         patientId: String,
         doctorId: String?,
         chiefComplaint: String? = null,
+        department: Department = Department.opd,
         patientSyncEntryId: String? = null,
-    ): Visit = withContext(Dispatchers.IO) {
+    ): Pair<Visit, String?> = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
         val today = LocalDate.now().toString()
 
@@ -111,6 +127,7 @@ class VisitRepository @Inject constructor(
             priority = VisitPriority.normal,
             chiefComplaint = chiefComplaint,
             checkedInAt = now,
+            department = department,
             reviewStatus = ReviewStatus.pending,
             reviewedBy = null,
             reviewedAt = null,
@@ -124,53 +141,111 @@ class VisitRepository @Inject constructor(
             finalizedAt = null,
             errorMessage = null,
             errorAt = null,
+            documentationComplete = false,
+            documentationCompletedAt = null,
         )
 
-        val entity = visit.toEntity(isSynced = false)
-        val createDto = visit.toCreateDto()
+        val rpcDto = visit.toCreateRpcDto()
+        visitDao.upsert(visit.toEntity(isSynced = false))
+
+        // Direct-write first when online + no upstream queue dependency. If
+        // patientSyncEntryId is non-null, the patient is still queued, so we
+        // must queue too — otherwise the FK on the server-side INSERT would
+        // fail. Same logic for any other chain prerequisite.
+        if (networkMonitor.isOnline() && patientSyncEntryId == null) {
+            try {
+                val response = supabaseApi.rpcCreateVisit(rpcDto)
+                if (response.isSuccessful) {
+                    visitDao.updateSyncState(visit.id, true)
+                    return@withContext visit to null
+                }
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
         val syncEntry = SyncQueueEntry(
             id = UUID.randomUUID().toString(),
             operationType = "create_visit",
             entityType = "visits",
             entityId = visit.id,
-            payload = json.encodeToString(
-                com.karibuhealth.app.data.remote.dto.VisitCreateDto.serializer(),
-                createDto,
-            ),
+            payload = json.encodeToString(VisitCreateRpcDto.serializer(), rpcDto),
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
             dependsOn = patientSyncEntryId,
         )
+        syncQueueDao.insert(syncEntry)
+        visit to syncEntry.id
+    }
 
-        database.withTransaction {
-            visitDao.upsert(entity)
-            syncQueueDao.insert(syncEntry)
+    /**
+     * Mark a visit as documentation-complete (clinician tapped Save).
+     * The server-side RPC also advances status pending → sent atomically,
+     * making the visit reachable for payment without going through AI review.
+     * `predecessorSyncId` linearizes against the patient-note summary (or
+     * provider-note) queue entry if those are still pending.
+     */
+    suspend fun markDocumentationComplete(
+        visitId: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        // Optimistic local update so UI reflects "done" immediately.
+        visitDao.updateDocumentationComplete(visitId, true, now)
+
+        val rpcBody = MarkDocumentationCompleteDto(visitId = visitId)
+
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcMarkDocumentationComplete(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
         }
 
-        visit
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "mark_documentation_complete",
+            entityType = "visits",
+            entityId = visitId,
+            payload = json.encodeToString(MarkDocumentationCompleteDto.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
     }
 
     suspend fun updateStatus(visitId: String, status: VisitStatus) {
-        visitDao.updateStatus(visitId, status.name, Instant.now().toString())
+        withContext(Dispatchers.IO) {
+            visitDao.updateStatus(visitId, status.name, Instant.now().toString())
+        }
     }
 
     suspend fun refreshTodayVisits(clinicId: String) {
         if (!networkMonitor.isOnline()) return
-        try {
-            val today = LocalDate.now().toString()
-            val remote = supabaseApi.getVisits("eq.$clinicId", "eq.$today")
-            visitDao.upsertAll(remote.map { it.toEntity(isSynced = true) })
-        } catch (_: Exception) {
-            // Offline-first: silently use cache
+        withContext(Dispatchers.IO) {
+            try {
+                val today = LocalDate.now().toString()
+                val remote = supabaseApi.getVisits("eq.$clinicId", "eq.$today")
+                visitDao.upsertAll(remote.map { it.toEntity(isSynced = true) })
+            } catch (_: Exception) {
+                // Offline-first: silently use cache
+            }
         }
     }
 
     suspend fun refreshVisit(visitId: String) {
         if (!networkMonitor.isOnline()) return
-        try {
-            val remote = supabaseApi.getVisitById("eq.$visitId")
-            remote.firstOrNull()?.let { visitDao.upsert(it.toEntity(isSynced = true)) }
-        } catch (_: Exception) {}
+        withContext(Dispatchers.IO) {
+            try {
+                val remote = supabaseApi.getVisitById("eq.$visitId")
+                remote.firstOrNull()?.let { visitDao.upsert(it.toEntity(isSynced = true)) }
+            } catch (_: Exception) {}
+        }
     }
 }

@@ -23,6 +23,7 @@ fun VisitDetailsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDictation: (String, Boolean) -> Unit,
     onNavigateToReview: (String) -> Unit,
+    onNavigateToPayment: (String) -> Unit,
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -111,6 +112,22 @@ fun VisitDetailsScreen(
                                     Text(if (uiState.isSyncing) "Syncing…" else "Try Sync")
                                 }
                             }
+                            if (uiState.syncErrors.isNotEmpty()) {
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    "Sync errors (debug)",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                uiState.syncErrors.forEach { err ->
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "${err.operationType} (attempt ${err.attempts}): ${err.lastError}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -166,104 +183,67 @@ fun VisitDetailsScreen(
                         }
                     }
 
-                    // Actions based on visit status
+                    // Actions based on visit status + documentation flag.
                     Spacer(Modifier.height(8.dp))
 
-                    when (visit.status) {
-                        VisitStatus.pending -> {
-                            if (uiState.hasLocalDraft) {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Card(
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        ),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Column(modifier = Modifier.padding(16.dp)) {
-                                            Text(
-                                                "Draft saved locally",
-                                                fontWeight = FontWeight.Medium,
-                                            )
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(
-                                                "You can keep editing offline. Use AI Dictation when sync and signal are ready.",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                    }
+                    val docComplete = visit.documentationComplete
 
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                        OutlinedButton(
-                                            onClick = { onNavigateToDictation(visitId, false) },
-                                            modifier = Modifier.weight(1f),
-                                        ) {
-                                            Icon(Icons.Default.Mic, contentDescription = null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("Local")
-                                        }
-
-                                        Button(
-                                            onClick = { onNavigateToDictation(visitId, true) },
-                                            modifier = Modifier.weight(1f),
-                                            enabled = uiState.canUseAiDictation,
-                                        ) {
-                                            Icon(Icons.Default.Mic, contentDescription = null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("AI")
-                                        }
-                                    }
-                                }
-                            } else if (uiState.providerNote?.transcript?.isNotBlank() == true) {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text(
-                                            "AI is structuring your dictation…",
-                                            fontWeight = FontWeight.Medium,
-                                        )
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            "This usually takes under a minute. The visit will move to Review when it's ready.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            } else {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    OutlinedButton(
-                                        onClick = { onNavigateToDictation(visitId, false) },
-                                        modifier = Modifier.weight(1f),
-                                    ) {
-                                        Icon(Icons.Default.Mic, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Local")
-                                    }
-
-                                    Button(
-                                        onClick = { onNavigateToDictation(visitId, true) },
-                                        modifier = Modifier.weight(1f),
-                                        enabled = uiState.canUseAiDictation,
-                                    ) {
-                                        Icon(Icons.Default.Mic, contentDescription = null)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("AI")
-                                    }
+                    when {
+                        // Documentation not yet captured: primary CTA to write
+                        // the note. No AI gating.
+                        visit.status == VisitStatus.pending && !docComplete -> {
+                            Button(
+                                onClick = { onNavigateToDictation(visitId, false) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (uiState.hasLocalDraft) "Continue note" else "Write note")
+                            }
+                        }
+                        // Direct-saved visit (clinician hit Save → status='sent')
+                        // OR an AI-approved visit. Either way, the visit is
+                        // ready for payment.
+                        visit.status == VisitStatus.sent -> {
+                            Button(
+                                onClick = { onNavigateToPayment(visitId) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Proceed to payment")
+                            }
+                            OutlinedButton(
+                                onClick = { onNavigateToDictation(visitId, false) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Edit note")
+                            }
+                        }
+                        // AI workflow: clinician triggered Structure with AI
+                        // and Inngest is mid-flight. Status reverts to pending
+                        // until the workflow flips to review (or error).
+                        visit.status == VisitStatus.pending && docComplete -> {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("AI is structuring your note…", fontWeight = FontWeight.Medium)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "Should be ready in under a minute. The visit will move to Review.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         }
-                        VisitStatus.review -> {
+                        // Existing AI flow: clinician reviews AI output before
+                        // approving / rejecting.
+                        visit.status == VisitStatus.review -> {
                             Button(
                                 onClick = { onNavigateToReview(visitId) },
                                 modifier = Modifier.fillMaxWidth(),
@@ -273,31 +253,18 @@ fun VisitDetailsScreen(
                                 Text("Review Notes")
                             }
                         }
-                        VisitStatus.error -> {
-                            Row(
+                        // AI failed — let the clinician re-edit and retry.
+                        visit.status == VisitStatus.error -> {
+                            Button(
+                                onClick = { onNavigateToDictation(visitId, false) },
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                OutlinedButton(
-                                    onClick = { onNavigateToDictation(visitId, false) },
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Icon(Icons.Default.Mic, contentDescription = null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Local")
-                                }
-
-                                Button(
-                                    onClick = { onNavigateToDictation(visitId, true) },
-                                    modifier = Modifier.weight(1f),
-                                    enabled = uiState.canUseAiDictation,
-                                ) {
-                                    Icon(Icons.Default.Mic, contentDescription = null)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("AI")
-                                }
+                                Icon(Icons.Default.Mic, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Edit and retry")
                             }
                         }
+                        // completed: nothing to do.
                         else -> {}
                     }
 

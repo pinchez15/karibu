@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.util.NetworkMonitor
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -19,6 +20,7 @@ class SyncEngine @Inject constructor(
     private val patientDao: PatientDao,
     private val visitDao: VisitDao,
     private val paymentDao: PaymentDao,
+    private val patientVitalsDao: PatientVitalsDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
@@ -80,13 +82,13 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun processEntry(entry: SyncQueueEntry) {
-        // Operation set is intentionally small for the dictation-first product:
-        // patient/visit creation, queue ops via SECURITY DEFINER RPCs, and
-        // cash payment recording. No audio upload (dictation streams direct
-        // to OpenAI via the dictate edge function), no DPPA consent records.
         when (entry.operationType) {
             "create_patient" -> syncCreatePatient(entry)
             "create_visit" -> syncCreateVisit(entry)
+            "upsert_provider_note" -> syncUpsertProviderNote(entry)
+            "upsert_patient_note_summary" -> syncUpsertPatientNoteSummary(entry)
+            "insert_patient_vitals" -> syncInsertPatientVitals(entry)
+            "mark_documentation_complete" -> syncMarkDocumentationComplete(entry)
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
@@ -126,15 +128,62 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncCreateVisit(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(VisitCreateDto.serializer(), entry.payload)
-        Log.d(TAG, "Syncing create_visit: ${entry.entityId}")
+        val dto = decodeVisitCreatePayload(entry)
+        Log.d(TAG, "Syncing create_visit (rpc): ${entry.entityId}")
 
-        val result = supabaseApi.createVisit(dto)
-        val serverVisit = result.firstOrNull()
-        if (serverVisit != null) {
-            visitDao.upsert(serverVisit.toEntity(isSynced = true))
-            Log.d(TAG, "Visit synced: ${serverVisit.id}")
+        val result = supabaseApi.rpcCreateVisit(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("create_visit HTTP ${result.code()} ${body.take(300)}".trim())
         }
+
+        visitDao.updateSyncState(entry.entityId, true)
+        Log.d(TAG, "Visit synced: ${entry.entityId}")
+    }
+
+    private suspend fun syncUpsertProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(ProviderNoteUpsertDto.serializer(), entry.payload)
+        Log.d(TAG, "Syncing upsert_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcUpsertProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("upsert_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note synced: ${entry.entityId}")
+    }
+
+    private suspend fun syncUpsertPatientNoteSummary(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(PatientNoteSummaryUpsertDto.serializer(), entry.payload)
+        Log.d(TAG, "Syncing upsert_patient_note_summary: ${entry.entityId}")
+        val result = supabaseApi.rpcUpsertPatientNoteSummary(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("upsert_patient_note_summary HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Patient note summary synced: ${entry.entityId}")
+    }
+
+    private suspend fun syncInsertPatientVitals(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(PatientVitalsCreateDto.serializer(), entry.payload)
+        Log.d(TAG, "Syncing insert_patient_vitals: ${entry.entityId}")
+        val result = supabaseApi.rpcInsertPatientVitals(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("insert_patient_vitals HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        patientVitalsDao.updateSyncState(entry.entityId, true)
+        Log.d(TAG, "Vitals synced: ${entry.entityId}")
+    }
+
+    private suspend fun syncMarkDocumentationComplete(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(MarkDocumentationCompleteDto.serializer(), entry.payload)
+        Log.d(TAG, "Syncing mark_documentation_complete: ${entry.entityId}")
+        val result = supabaseApi.rpcMarkDocumentationComplete(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("mark_documentation_complete HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Documentation completion synced: ${entry.entityId}")
     }
 
     private suspend fun syncQueueOperation(entry: SyncQueueEntry) {
@@ -170,6 +219,29 @@ class SyncEngine @Inject constructor(
         if (serverPayment != null) {
             paymentDao.upsert(serverPayment.toEntity(isSynced = true))
             Log.d(TAG, "Payment synced: ${serverPayment.id}, receipt: ${serverPayment.receiptNumber}")
+        }
+    }
+
+    private suspend fun decodeVisitCreatePayload(entry: SyncQueueEntry): VisitCreateRpcDto {
+        return try {
+            json.decodeFromString(VisitCreateRpcDto.serializer(), entry.payload)
+        } catch (_: SerializationException) {
+            val legacy = json.decodeFromString(VisitCreateDto.serializer(), entry.payload)
+            val migrated = VisitCreateRpcDto(
+                id = legacy.id,
+                clinicId = legacy.clinicId,
+                patientId = legacy.patientId,
+                doctorId = legacy.doctorId,
+                chiefComplaint = legacy.chiefComplaint,
+                visitDate = legacy.visitDate,
+                department = legacy.department,
+            )
+            syncQueueDao.update(
+                entry.copy(
+                    payload = json.encodeToString(VisitCreateRpcDto.serializer(), migrated),
+                )
+            )
+            migrated
         }
     }
 

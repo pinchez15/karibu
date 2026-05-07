@@ -30,6 +30,7 @@ data class NewVisitUiState(
     val lastName: String = "",
     val sex: PatientSex? = null,
     val dateOfBirth: String? = null, // Display format dd-MM-yyyy
+    val chiefComplaint: String = "",
     val searchResults: List<Patient> = emptyList(),
     val foundPatient: Patient? = null,
     val duplicateCandidate: Patient? = null,
@@ -40,6 +41,11 @@ data class NewVisitUiState(
 ) {
     val phoneValid: Boolean get() = searchQuery.isBlank() || isValidUgandaPhone(searchQuery)
 }
+
+data class VisitStartResult(
+    val visitId: String,
+    val patientId: String,
+)
 
 @HiltViewModel
 class NewVisitViewModel @Inject constructor(
@@ -116,32 +122,40 @@ class NewVisitViewModel @Inject constructor(
         _uiState.update { it.copy(foundPatient = patient, duplicateCandidate = null) }
     }
 
-    suspend fun startVisitForDuplicateCandidate(): String? {
+    fun updateChiefComplaint(text: String) {
+        _uiState.update { it.copy(chiefComplaint = text) }
+    }
+
+    suspend fun startVisitForDuplicateCandidate(): VisitStartResult? {
         val patient = _uiState.value.duplicateCandidate ?: return null
         _uiState.update { it.copy(foundPatient = patient, duplicateCandidate = null) }
         return startVisitForSelectedPatient()
     }
 
-    suspend fun startVisitForSelectedPatient(): String? {
+    suspend fun startVisitForSelectedPatient(): VisitStartResult? {
         val patient = _uiState.value.foundPatient ?: return null
         val clinicId = authTokenStore.getClinicId() ?: return null
+        val chiefComplaint = _uiState.value.chiefComplaint.trim().takeIf { it.isNotBlank() }
         return runCatching {
             _uiState.update { it.copy(isCreating = true) }
             val staffId = authTokenStore.getStaffId()
-            val visit = visitRepository.createVisit(
+            // Existing patient — already synced. No patient sync entry to chain.
+            val (visit, _) = visitRepository.createVisit(
                 clinicId = clinicId,
                 patientId = patient.id,
                 doctorId = staffId,
+                chiefComplaint = chiefComplaint,
+                patientSyncEntryId = null,
             )
             _uiState.update { it.copy(isCreating = false) }
-            visit.id
+            VisitStartResult(visitId = visit.id, patientId = patient.id)
         }.getOrElse { e ->
             _uiState.update { it.copy(error = e.message ?: "Failed to start visit", isCreating = false) }
             null
         }
     }
 
-    suspend fun createPatientAndStartVisit(confirmDuplicate: Boolean = false): String? {
+    suspend fun createPatientAndStartVisit(confirmDuplicate: Boolean = false): VisitStartResult? {
         val state = _uiState.value
         if (state.foundPatient != null) return startVisitForSelectedPatient()
 
@@ -194,7 +208,7 @@ class NewVisitViewModel @Inject constructor(
                 return null
             }
 
-            val patient = patientRepository.createPatient(
+            val (patient, patientSyncId) = patientRepository.createPatient(
                 clinicId = clinicId,
                 firstName = state.firstName.trim(),
                 lastName = state.lastName.trim(),
@@ -203,13 +217,16 @@ class NewVisitViewModel @Inject constructor(
                 sex = state.sex?.name,
             )
             val staffId = authTokenStore.getStaffId()
-            val visit = visitRepository.createVisit(
+            val chiefComplaint = state.chiefComplaint.trim().takeIf { it.isNotBlank() }
+            val (visit, _) = visitRepository.createVisit(
                 clinicId = clinicId,
                 patientId = patient.id,
                 doctorId = staffId,
+                chiefComplaint = chiefComplaint,
+                patientSyncEntryId = patientSyncId,
             )
             _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
-            visit.id
+            VisitStartResult(visitId = visit.id, patientId = patient.id)
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message ?: "Failed to create patient", isCreating = false) }
             null

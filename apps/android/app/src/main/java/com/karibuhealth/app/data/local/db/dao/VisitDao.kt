@@ -23,6 +23,66 @@ interface VisitDao {
     @Query("SELECT * FROM visits WHERE doctor_id = :doctorId ORDER BY created_at DESC LIMIT :limit")
     fun getRecentByDoctor(doctorId: String, limit: Int = 20): Flow<List<VisitWithPatient>>
 
+    // Today's queue: anyone in this clinic still in flight (waiting / triage /
+    // ready / with-clinician), with this clinician or unclaimed. Sorted by
+    // priority then queue_position so urgent cases float to the top.
+    @Transaction
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND queue_status IN ('waiting', 'with_nurse', 'ready_for_doctor', 'with_doctor')
+          AND (doctor_id IS NULL OR doctor_id = :clinicianId)
+        ORDER BY
+          CASE priority
+            WHEN 'urgent' THEN 0
+            WHEN 'high' THEN 1
+            WHEN 'normal' THEN 2
+            WHEN 'low' THEN 3
+            ELSE 4
+          END,
+          queue_position ASC
+    """)
+    fun getTodayClinicianQueue(
+        clinicId: String,
+        date: String,
+        clinicianId: String,
+    ): Flow<List<VisitWithPatient>>
+
+    // Visits I'm leading that still need documentation. Predicate switched
+    // from status='pending' to documentation_complete=0 so direct-saved visits
+    // (which advance to status='sent' on save) are correctly excluded —
+    // matches the offline-first refactor's "Save advances status" semantics.
+    @Transaction
+    @Query("""
+        SELECT * FROM visits
+        WHERE doctor_id = :clinicianId
+          AND visit_date = :date
+          AND documentation_complete = 0
+          AND queue_status = 'with_doctor'
+        ORDER BY checked_in_at ASC
+    """)
+    fun getMyPendingDictations(clinicianId: String, date: String): Flow<List<VisitWithPatient>>
+
+    // AI-structured notes awaiting my review.
+    @Transaction
+    @Query("""
+        SELECT * FROM visits
+        WHERE doctor_id = :clinicianId
+          AND visit_date = :date
+          AND status = 'review'
+        ORDER BY checked_in_at ASC
+    """)
+    fun getMyVisitsToReview(clinicianId: String, date: String): Flow<List<VisitWithPatient>>
+
+    @Query("""
+        SELECT COUNT(*) FROM visits
+        WHERE doctor_id = :clinicianId
+          AND visit_date = :date
+          AND status IN ('sent', 'completed')
+    """)
+    fun getMyDoneTodayCount(clinicianId: String, date: String): Flow<Int>
+
     @Query("SELECT * FROM visits WHERE id = :id")
     fun getById(id: String): Flow<VisitEntity?>
 
@@ -44,6 +104,18 @@ interface VisitDao {
 
     @Query("UPDATE visits SET queue_status = :queueStatus, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateQueueStatus(id: String, queueStatus: String, updatedAt: String)
+
+    @Query("UPDATE visits SET is_synced = :isSynced WHERE id = :id")
+    suspend fun updateSyncState(id: String, isSynced: Boolean)
+
+    @Query("""
+        UPDATE visits
+        SET documentation_complete = :complete,
+            documentation_completed_at = :completedAt,
+            updated_at = :completedAt
+        WHERE id = :id
+    """)
+    suspend fun updateDocumentationComplete(id: String, complete: Boolean, completedAt: String)
 
     @Query("SELECT COUNT(*) FROM visits WHERE clinic_id = :clinicId AND is_synced = 0")
     suspend fun getUnsyncedCount(clinicId: String): Int

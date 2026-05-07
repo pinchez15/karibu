@@ -7,22 +7,27 @@ import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
 
-// Visit detail in the dictation-only product is a read-only summary, not an
-// editor. The flow is:
+// Visit detail page. Two paths converge here:
 //
-//   pending  -> PendingDictationCard (record + submit) — or "AI structuring..."
-//                while Inngest processes the submitted dictation
-//   review   -> review queue handles edit + approve/reject (this page just
-//                shows the AI output; the queue is where decisions happen)
-//   sent     -> show the print button + AI-generated content
-//   completed-> show the receipt + payment
-//   error    -> let the clinician re-dictate (clears AI output server-side
-//                via the same path as Reject)
+//   AI path (existing): pending -> review -> sent -> completed
+//      pending  -> PendingDictationCard (web record/submit) OR
+//                  "AI structuring..." while Inngest runs
+//      review   -> review queue handles edit + approve/reject
+//      sent     -> print + payment
+//      completed-> receipt
+//      error    -> re-dictate
 //
-// No per-textarea dictation, no manual saveVisitNotes — those were the
-// pre-pivot dual-note model and would create a parallel editing surface
-// alongside PendingDictationCard. Bug fixes / clinician overrides happen on
-// the review queue.
+//   Offline-first / direct save path (Android, since migration 029):
+//      pending + !documentation_complete -> dictation in progress
+//      pending + documentation_complete  -> AI was triggered post-save and
+//                                            Inngest is mid-flight
+//      sent                              -> direct-saved (skips AI review),
+//                                            print + payment available
+//      completed -> receipt
+//
+// `documentation_complete` is the durable signal from rpc_mark_documentation_complete
+// (also flips status pending -> sent atomically). PendingDictationCard is
+// gated on !documentation_complete so direct-saved visits never show it.
 
 interface VisitWithRelations extends Visit {
   patient: { id: string; display_name: string | null; whatsapp_number: string; date_of_birth: string | null }
@@ -118,21 +123,28 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         </div>
       </div>
 
-      {/* Pending visit: dictation card OR "AI is working" hint, depending on
-          whether a dictation has been submitted yet. Errored visits also get
-          the dictation card so the clinician can re-dictate. */}
+      {/* Pending visit + clinician hasn't finished documenting yet: show the
+          web dictation card so a desktop clinician can capture the note.
+          Direct-saved Android visits have documentation_complete=true and
+          status='sent', so this card is correctly skipped for them. */}
       {(visit.status === 'pending' || visit.status === 'error') &&
+        !visit.documentation_complete &&
         !(visit.status === 'pending' && visit.provider_notes?.transcript) && (
           <PendingDictationCard visitId={visit.id} />
         )}
-      {visit.status === 'pending' && visit.provider_notes?.transcript && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-          <p className="font-medium text-primary">AI is structuring this dictation…</p>
-          <p className="text-sm text-primary/90 mt-1">
-            Usually under a minute. The visit will move to Review when it&apos;s ready.
-          </p>
-        </div>
-      )}
+      {/* AI is mid-flight: clinician submitted via "Structure with AI" so a
+          transcript exists and Inngest is structuring. Only relevant if the
+          clinician hasn't documentation-completed via the offline-first path. */}
+      {visit.status === 'pending' &&
+        !visit.documentation_complete &&
+        visit.provider_notes?.transcript && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <p className="font-medium text-primary">AI is structuring this dictation…</p>
+            <p className="text-sm text-primary/90 mt-1">
+              Usually under a minute. The visit will move to Review when it&apos;s ready.
+            </p>
+          </div>
+        )}
 
       {/* Visit Details (flattened by Inngest persist step) */}
       {(visit.diagnosis || visit.medications || visit.follow_up_instructions || visit.tests_ordered) && (

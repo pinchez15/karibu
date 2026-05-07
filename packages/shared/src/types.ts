@@ -72,6 +72,13 @@ export type VisitPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export type ReviewStatus = 'pending' | 'pending_review' | 'reviewed' | 'rejected';
 
+export type VisitDepartment =
+  | 'opd'
+  | 'anc'
+  | 'maternity'
+  | 'family_planning'
+  | 'immunization';
+
 export interface Visit {
   id: string;
   clinic_id: string;
@@ -84,6 +91,7 @@ export interface Visit {
   priority: VisitPriority;
   chief_complaint: string | null;
   checked_in_at: string | null;
+  department: VisitDepartment;
   // Clinician review of AI-generated content
   review_status: ReviewStatus;
   reviewed_by: string | null;
@@ -99,6 +107,10 @@ export interface Visit {
   finalized_at: string | null;
   error_message: string | null;
   error_at: string | null;
+  // Documentation completion (independent of AI/review state).
+  // True once the clinician taps Save in the offline-first flow.
+  documentation_complete: boolean;
+  documentation_completed_at: string | null;
 }
 
 export interface VisitWithPatient extends Visit {
@@ -123,14 +135,40 @@ export interface ProviderNote {
   finalized_by: string | null;
 }
 
+export type PatientNoteSource = 'ai_generated' | 'clinician_fallback';
+
 export interface PatientNote {
   id: string;
   visit_id: string;
   content: string | null;
   language: string;
   status: NoteStatus;
+  // 'clinician_fallback' = raw transcript saved by the clinician at point-of-care.
+  // 'ai_generated' = polished summary produced by the structure-dictation Inngest
+  // workflow. AI is allowed to overwrite a clinician_fallback row; the inverse
+  // is forbidden by rpc_upsert_patient_note_summary.
+  source: PatientNoteSource;
   created_at: string;
   updated_at: string;
+}
+
+export interface PatientVitals {
+  id: string;
+  patient_id: string;
+  visit_id: string | null;
+  recorded_at: string;
+  recorded_by: string | null;
+  weight_kg: number | null;
+  height_cm: number | null;
+  temp_c: number | null;
+  bp_systolic: number | null;
+  bp_diastolic: number | null;
+  pulse_bpm: number | null;
+  resp_rate: number | null;
+  spo2_pct: number | null;
+  muac_cm: number | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface AuditLog {

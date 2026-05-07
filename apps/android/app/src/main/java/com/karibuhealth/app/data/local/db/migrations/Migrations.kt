@@ -3,6 +3,62 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v3 -> v4: offline-first foundation. Strictly additive.
+//
+// Adds:
+//   - patient_vitals table for longitudinal vitals (inpatient maternal pattern)
+//   - visits.department (server-side since migration 024; mirrored locally)
+//   - visits.documentation_complete + documentation_completed_at
+//   - patient_notes.source (discriminator for clinician_fallback vs ai_generated)
+//
+// All ALTER TABLE ADD COLUMN calls are NOT NULL DEFAULT-safe; SQLite back-fills
+// existing rows with the default.
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. visits.department
+        db.execSQL("ALTER TABLE visits ADD COLUMN department TEXT NOT NULL DEFAULT 'opd'")
+
+        // 2. visits.documentation_complete + documentation_completed_at
+        db.execSQL("ALTER TABLE visits ADD COLUMN documentation_complete INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE visits ADD COLUMN documentation_completed_at TEXT")
+
+        // 3. patient_notes.source
+        db.execSQL("ALTER TABLE patient_notes ADD COLUMN source TEXT NOT NULL DEFAULT 'ai_generated'")
+
+        // 4. patient_vitals
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS patient_vitals (
+                id TEXT NOT NULL PRIMARY KEY,
+                patient_id TEXT NOT NULL,
+                visit_id TEXT,
+                recorded_at TEXT NOT NULL,
+                recorded_by TEXT,
+                weight_kg REAL,
+                height_cm REAL,
+                temp_c REAL,
+                bp_systolic INTEGER,
+                bp_diastolic INTEGER,
+                pulse_bpm INTEGER,
+                resp_rate INTEGER,
+                spo2_pct INTEGER,
+                muac_cm REAL,
+                notes TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_patient_vitals_patient_id_recorded_at " +
+                "ON patient_vitals(patient_id, recorded_at)",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_patient_vitals_visit_id " +
+                "ON patient_vitals(visit_id)",
+        )
+    }
+}
+
 // v2 -> v3: dictation-only product pivot.
 //
 // What v2 had that v3 doesn't:

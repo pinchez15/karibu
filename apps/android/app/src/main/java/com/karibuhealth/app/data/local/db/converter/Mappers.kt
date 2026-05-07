@@ -84,12 +84,15 @@ fun VisitDto.toEntity(isSynced: Boolean = true) = VisitEntity(
     status = status, queueStatus = queueStatus,
     queuePosition = queuePosition, priority = priority,
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
+    department = department,
     reviewStatus = reviewStatus,
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
+    documentationComplete = documentationComplete,
+    documentationCompletedAt = documentationCompletedAt,
     isSynced = isSynced,
 )
 
@@ -101,12 +104,15 @@ fun VisitEntity.toDomain() = Visit(
     queuePosition = queuePosition,
     priority = VisitPriority.valueOf(priority),
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
+    department = runCatching { Department.valueOf(department) }.getOrDefault(Department.opd),
     reviewStatus = ReviewStatus.valueOf(reviewStatus),
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
+    documentationComplete = documentationComplete,
+    documentationCompletedAt = documentationCompletedAt,
     isSynced = isSynced,
 )
 
@@ -114,6 +120,14 @@ fun Visit.toCreateDto() = VisitCreateDto(
     id = id, clinicId = clinicId, patientId = patientId,
     doctorId = doctorId, visitDate = visitDate,
     chiefComplaint = chiefComplaint,
+    department = department.name,
+)
+
+fun Visit.toCreateRpcDto() = VisitCreateRpcDto(
+    id = id, clinicId = clinicId, patientId = patientId,
+    doctorId = doctorId, visitDate = visitDate,
+    chiefComplaint = chiefComplaint,
+    department = department.name,
 )
 
 fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
@@ -122,12 +136,15 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
     status = status.name, queueStatus = queueStatus.name,
     queuePosition = queuePosition, priority = priority.name,
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
+    department = department.name,
     reviewStatus = reviewStatus.name,
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
     visitDate = visitDate, createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, errorMessage = errorMessage, errorAt = errorAt,
+    documentationComplete = documentationComplete,
+    documentationCompletedAt = documentationCompletedAt,
     isSynced = isSynced,
 )
 
@@ -153,14 +170,54 @@ fun ProviderNoteEntity.toDomain() = ProviderNote(
 
 fun PatientNoteDto.toEntity() = PatientNoteEntity(
     id = id, visitId = visitId, content = content,
-    language = language, status = status,
+    language = language, status = status, source = source,
     createdAt = createdAt, updatedAt = updatedAt,
 )
 
 fun PatientNoteEntity.toDomain() = PatientNote(
     id = id, visitId = visitId, content = content,
     language = language, status = NoteStatus.valueOf(status),
+    source = runCatching { PatientNoteSource.valueOf(source) }
+        .getOrDefault(PatientNoteSource.ai_generated),
     createdAt = createdAt, updatedAt = updatedAt,
+)
+
+// ========== PatientVitals ==========
+
+fun PatientVitalsDto.toEntity(isSynced: Boolean = true) = PatientVitalsEntity(
+    id = id, patientId = patientId, visitId = visitId,
+    recordedAt = recordedAt, recordedBy = recordedBy,
+    weightKg = weightKg, heightCm = heightCm, tempC = tempC,
+    bpSystolic = bpSystolic, bpDiastolic = bpDiastolic,
+    pulseBpm = pulseBpm, respRate = respRate, spo2Pct = spo2Pct,
+    muacCm = muacCm, notes = notes, isSynced = isSynced,
+)
+
+fun PatientVitalsEntity.toDomain() = PatientVitals(
+    id = id, patientId = patientId, visitId = visitId,
+    recordedAt = recordedAt, recordedBy = recordedBy,
+    weightKg = weightKg, heightCm = heightCm, tempC = tempC,
+    bpSystolic = bpSystolic, bpDiastolic = bpDiastolic,
+    pulseBpm = pulseBpm, respRate = respRate, spo2Pct = spo2Pct,
+    muacCm = muacCm, notes = notes, isSynced = isSynced,
+)
+
+fun PatientVitals.toEntity(isSynced: Boolean = true) = PatientVitalsEntity(
+    id = id, patientId = patientId, visitId = visitId,
+    recordedAt = recordedAt, recordedBy = recordedBy,
+    weightKg = weightKg, heightCm = heightCm, tempC = tempC,
+    bpSystolic = bpSystolic, bpDiastolic = bpDiastolic,
+    pulseBpm = pulseBpm, respRate = respRate, spo2Pct = spo2Pct,
+    muacCm = muacCm, notes = notes, isSynced = isSynced,
+)
+
+fun PatientVitals.toCreateDto() = PatientVitalsCreateDto(
+    id = id, patientId = patientId, visitId = visitId,
+    weightKg = weightKg, heightCm = heightCm, tempC = tempC,
+    bpSystolic = bpSystolic, bpDiastolic = bpDiastolic,
+    pulseBpm = pulseBpm, respRate = respRate, spo2Pct = spo2Pct,
+    muacCm = muacCm, notes = notes,
+    recordedAt = recordedAt,
 )
 
 // ========== Payment ==========

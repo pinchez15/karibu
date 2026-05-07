@@ -12,6 +12,7 @@ import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
 import com.karibuhealth.app.ui.dictation.DictationScreen
+import com.karibuhealth.app.ui.vitals.VitalsScreen
 import com.karibuhealth.app.ui.visitdetails.VisitDetailsScreen
 import com.karibuhealth.app.ui.review.ReviewScreen
 import com.karibuhealth.app.ui.payment.PaymentScreen
@@ -70,8 +71,26 @@ fun KaribuNavHost(
         composable<NavRoute.NewVisit> {
             NewVisitScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onVisitCreated = { visitId ->
-                    navController.navigate(NavRoute.VisitDetails(visitId)) {
+                // After patient + visit is created, route through the vitals
+                // capture screen, then dictation. Both are skippable.
+                onVisitCreated = { visitId, patientId ->
+                    navController.navigate(NavRoute.Vitals(visitId, patientId)) {
+                        popUpTo(NavRoute.Home)
+                    }
+                },
+            )
+        }
+
+        composable<NavRoute.Vitals> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.Vitals>()
+            VitalsScreen(
+                visitId = route.visitId,
+                patientId = route.patientId,
+                onNavigateBack = { navController.popBackStack() },
+                onContinue = { visitId ->
+                    // Whether the clinician saved vitals or skipped, next is the
+                    // note. aiMode=false — Save flow no longer toggles AI here.
+                    navController.navigate(NavRoute.Dictation(visitId, false)) {
                         popUpTo(NavRoute.Home)
                     }
                 },
@@ -88,6 +107,11 @@ fun KaribuNavHost(
                 },
                 onNavigateToReview = { visitId ->
                     navController.navigate(NavRoute.Review(visitId))
+                },
+                // Direct-saved visits (status='sent', documentation_complete=true)
+                // skip the AI review screen and go straight to payment.
+                onNavigateToPayment = { visitId ->
+                    navController.navigate(NavRoute.Payment(visitId))
                 },
             )
         }

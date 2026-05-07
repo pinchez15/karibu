@@ -75,7 +75,9 @@ class CheckInViewModel @Inject constructor(
                 // Find or create patient. Phone-only check-in (the common queue
                 // path) doesn't capture names — the server's display_name trigger
                 // will leave display_name blank until a clinician edits it later.
-                val patient = state.foundPatient ?: run {
+                val (patient, patientSyncId) = if (state.foundPatient != null) {
+                    state.foundPatient to null
+                } else {
                     val phone = formatPhoneNumber(state.phoneNumber)
                     patientRepository.createPatient(
                         clinicId = clinicId,
@@ -86,11 +88,12 @@ class CheckInViewModel @Inject constructor(
                 }
 
                 // Create a visit in waiting queue status
-                val visit = visitRepository.createVisit(
+                val (visit, _) = visitRepository.createVisit(
                     clinicId = clinicId,
                     patientId = patient.id,
                     doctorId = null,
                     chiefComplaint = state.chiefComplaint.takeIf { it.isNotBlank() },
+                    patientSyncEntryId = patientSyncId,
                 )
 
                 // Queue the check_in RPC as a sync operation

@@ -29,7 +29,7 @@ import java.time.ZoneId
 @Composable
 fun NewVisitScreen(
     onNavigateBack: () -> Unit,
-    onVisitCreated: (String) -> Unit,
+    onVisitCreated: (visitId: String, patientId: String) -> Unit,
     viewModel: NewVisitViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -171,7 +171,7 @@ fun NewVisitScreen(
                 singleLine = true,
             )
 
-            // ---- Phone (optional, last) ----
+            // ---- Phone (optional) ----
             // Also drives the existing-patient lookup. Optional because many
             // patients in the catchment don't carry a phone.
             OutlinedTextField(
@@ -184,6 +184,19 @@ fun NewVisitScreen(
                 supportingText = uiState.fieldErrors.phone?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
+            )
+
+            // ---- Chief complaint (optional) ----
+            // Captures the reason for the visit. Stored on visits.chief_complaint
+            // (server column already exists). Used for triage and queue display.
+            OutlinedTextField(
+                value = uiState.chiefComplaint,
+                onValueChange = { viewModel.updateChiefComplaint(it) },
+                label = { Text("Chief complaint (optional)") },
+                placeholder = { Text("e.g. Fever for 3 days, headache") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+                minLines = 2,
             )
 
             if (uiState.searchResults.isNotEmpty()) {
@@ -204,8 +217,8 @@ fun NewVisitScreen(
                             modifier = Modifier.clickable {
                                 viewModel.selectPatient(patient)
                                 scope.launch {
-                                    val visitId = viewModel.startVisitForSelectedPatient()
-                                    if (visitId != null) onVisitCreated(visitId)
+                                    val result = viewModel.startVisitForSelectedPatient()
+                                    if (result != null) onVisitCreated(result.visitId, result.patientId)
                                 }
                             },
                         )
@@ -236,16 +249,18 @@ fun NewVisitScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = {
                                 scope.launch {
-                                    val visitId = viewModel.startVisitForDuplicateCandidate()
-                                    if (visitId != null) onVisitCreated(visitId)
+                                    val result = viewModel.startVisitForDuplicateCandidate()
+                                    if (result != null) onVisitCreated(result.visitId, result.patientId)
                                 }
                             }) {
                                 Text("Use Existing")
                             }
                             OutlinedButton(onClick = {
                                 scope.launch {
-                                    val visitId = viewModel.createPatientAndStartVisit(confirmDuplicate = true)
-                                    if (visitId != null) onVisitCreated(visitId)
+                                    val result = viewModel.createPatientAndStartVisit(confirmDuplicate = true)
+                                    if (result != null) {
+                                        onVisitCreated(result.visitId, result.patientId)
+                                    }
                                 }
                             }) {
                                 Text("Create New Anyway")
@@ -262,8 +277,10 @@ fun NewVisitScreen(
             Button(
                 onClick = {
                     scope.launch {
-                        val visitId = viewModel.createPatientAndStartVisit()
-                        if (visitId != null) onVisitCreated(visitId)
+                        val result = viewModel.createPatientAndStartVisit()
+                        if (result != null) {
+                            onVisitCreated(result.visitId, result.patientId)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

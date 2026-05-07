@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.visitdetails
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
+import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.sync.SyncEngine
@@ -27,6 +28,13 @@ data class VisitDetailsUiState(
         upKbps = 0,
         transportLabel = "No signal",
     ),
+    val syncErrors: List<SyncErrorInfo> = emptyList(),
+)
+
+data class SyncErrorInfo(
+    val operationType: String,
+    val attempts: Int,
+    val lastError: String,
 )
 
 val VisitDetailsUiState.hasLocalDraft: Boolean
@@ -36,12 +44,12 @@ val VisitDetailsUiState.hasPendingVisitSync: Boolean
     get() = visit?.isSynced == false || patient?.isSynced == false
 
 val VisitDetailsUiState.canUseAiDictation: Boolean
-    get() = connectionStatus.isGoodForAi && !hasPendingVisitSync
+    get() = connectionStatus.isGoodForAi
 
 val VisitDetailsUiState.aiAvailabilityMessage: String
     get() = when {
         !connectionStatus.isOnline -> "AI unavailable: offline"
-        hasPendingVisitSync -> "AI unavailable until patient and visit finish syncing"
+        hasPendingVisitSync -> "AI will sync patient and visit before submit"
         !connectionStatus.isGoodForAi ->
             "AI unavailable: weak ${connectionStatus.transportLabel.lowercase()} signal (${connectionStatus.barsLabel})"
         else -> "AI ready on ${connectionStatus.transportLabel} (${connectionStatus.barsLabel})"
@@ -53,6 +61,7 @@ class VisitDetailsViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
+    private val syncQueueDao: SyncQueueDao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
@@ -81,6 +90,22 @@ class VisitDetailsViewModel @Inject constructor(
             }
         }
 
+        viewModelScope.launch {
+            syncQueueDao.observeFailingEntries().collect { entries ->
+                _uiState.update {
+                    it.copy(
+                        syncErrors = entries.map { e ->
+                            SyncErrorInfo(
+                                operationType = e.operationType,
+                                attempts = e.attempts,
+                                lastError = e.lastError.orEmpty(),
+                            )
+                        },
+                    )
+                }
+            }
+        }
+
         // Also try to refresh from server
         viewModelScope.launch {
             visitRepository.refreshVisit(visitId)
@@ -92,6 +117,10 @@ class VisitDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true) }
             try {
+                // Manual sync is also "give up and retry" — un-fail any
+                // entries that hit max_attempts so a server-side fix has a
+                // chance to land without uninstalling the app.
+                syncQueueDao.resetFailed()
                 syncEngine.processQueue()
                 visitRepository.refreshVisit(visitId)
                 noteRepository.refreshNotes(visitId)

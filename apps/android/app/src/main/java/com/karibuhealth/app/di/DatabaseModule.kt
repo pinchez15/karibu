@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.karibuhealth.app.data.local.db.KaribuDatabase
 import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_2_3
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_3_4
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,7 +30,7 @@ object DatabaseModule {
             // would wipe all of that on every schema bump. Only allow destructive
             // wipe on downgrade. Schema upgrades MUST register a real Migration
             // here or Room will throw on first open.
-            .addMigrations(MIGRATION_2_3)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }
@@ -40,6 +41,7 @@ object DatabaseModule {
     @Provides fun provideVisitDao(db: KaribuDatabase): VisitDao = db.visitDao()
     @Provides fun provideProviderNoteDao(db: KaribuDatabase): ProviderNoteDao = db.providerNoteDao()
     @Provides fun providePatientNoteDao(db: KaribuDatabase): PatientNoteDao = db.patientNoteDao()
+    @Provides fun providePatientVitalsDao(db: KaribuDatabase): PatientVitalsDao = db.patientVitalsDao()
     @Provides fun providePaymentDao(db: KaribuDatabase): PaymentDao = db.paymentDao()
     @Provides fun provideSyncQueueDao(db: KaribuDatabase): SyncQueueDao = db.syncQueueDao()
 }
