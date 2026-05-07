@@ -258,6 +258,9 @@ export const structureDictation = inngest.createFunction(
 
       // Upsert patient_notes — there's a unique index on visit_id so insert-
       // or-update keeps this step idempotent if Inngest replays.
+      // source='ai_generated' lets this overwrite a clinician_fallback row
+      // (raw transcript saved by Android at point-of-care). The inverse is
+      // blocked by rpc_upsert_patient_note_summary's WHERE clause.
       const { error: patientErr } = await supabase
         .from('patient_notes')
         .upsert(
@@ -266,6 +269,7 @@ export const structureDictation = inngest.createFunction(
             content: patientSummary,
             language: 'en',
             status: 'draft',
+            source: 'ai_generated',
             updated_at: now,
           },
           { onConflict: 'visit_id' },
