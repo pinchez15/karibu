@@ -3,7 +3,6 @@ package com.karibuhealth.app.ui.dictation
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Wifi
@@ -34,8 +32,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.theme.Amber
-import com.karibuhealth.app.ui.theme.AmberInk
-import com.karibuhealth.app.ui.theme.AmberSoft
 import com.karibuhealth.app.ui.theme.Body
 import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.Green
@@ -189,7 +185,7 @@ private fun DictationScreenContent(
                 decorationBox = { inner ->
                     if (uiState.transcript.isEmpty()) {
                         Text(
-                            text = "Type or use Google keyboard voice typing. Save when done — works offline.",
+                            text = "Patient reports fever and headache for 3 days. T 38.4°C. RDT positive (Pf). Plan: AL 4 tabs BD x 3d, ORS, follow-up 48h.",
                             color = Muted,
                             style = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
                         )
@@ -197,46 +193,6 @@ private fun DictationScreenContent(
                     inner()
                 },
             )
-
-            // AI structuring is now automatic — runs server-side after Save
-            // for any input mode (typed, Whisper, keyboard mic). The clinician
-            // sees the result on the visit-details screen as a collapsible
-            // "AI structured note" card. No manual trigger needed.
-            if (uiState.savedLocally) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = AmberSoft,
-                    border = BorderStroke(1.dp, Amber.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = Amber,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Saved — AI is structuring in the background",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AmberInk,
-                            )
-                            Text(
-                                text = "Open the visit to see SOAP, HMIS suggestions, and the patient summary.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Muted,
-                            )
-                        }
-                    }
-                }
-            }
 
             uiState.error?.let { error ->
                 Surface(

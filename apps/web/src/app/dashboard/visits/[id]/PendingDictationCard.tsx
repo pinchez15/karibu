@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useTransition } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { Loader2, Mic, Square, Sparkles } from 'lucide-react'
+import { Loader2, Mic, Square, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { saveClinicianNote } from './note-actions'
@@ -213,11 +213,6 @@ export function PendingDictationCard({
         <h3 className="text-lg font-semibold">
           {mode === 'editing' ? 'Edit clinician note' : 'Clinician note'}
         </h3>
-        <p className="text-sm text-muted-foreground">
-          Type the note in your own words, or hold the microphone and dictate. Words appear here as
-          you speak — there's a ~3 second lag while we transcribe each segment. Save when you're
-          done.
-        </p>
       </div>
 
       <div className="relative">
@@ -298,18 +293,12 @@ export function PendingDictationCard({
             </>
           ) : (
             <>
-              <Sparkles className="w-3.5 h-3.5" />
+              <Save className="w-3.5 h-3.5" />
               Save
             </>
           )}
         </Button>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        After saving, AI checks your work against Uganda HC III guidelines. If it has no concerns,
-        you proceed. If it would disagree, it surfaces a question with the source. Rare — most
-        notes pass without a peep.
-      </p>
     </div>
   )
 }

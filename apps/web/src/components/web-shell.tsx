@@ -6,6 +6,7 @@ import {
   Home,
   Users,
   ClipboardList,
+  ClipboardCheck,
   BarChart3,
   Pill,
   FlaskConical,
@@ -33,7 +34,7 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
   clinician: [
     { id: 'home', label: 'Today', href: '/dashboard', icon: Home },
     { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
-    { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: Sparkles, amber: true },
+    { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
     { id: 'reports', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ],
   pharmacy: [
