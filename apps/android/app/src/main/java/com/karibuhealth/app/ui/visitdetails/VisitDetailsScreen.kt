@@ -164,6 +164,19 @@ fun VisitDetailsScreen(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                // Sync error surface — top of screen so it's the first thing
+                // the clinician sees if items are stuck. Tells them which RPC
+                // failed and why, instead of just an opaque "X items pending
+                // sync" badge.
+                if (uiState.syncErrors.isNotEmpty()) {
+                    SyncErrorBanner(
+                        errors = uiState.syncErrors,
+                        canSync = !uiState.isSyncing && uiState.connectionStatus.isOnline,
+                        isSyncing = uiState.isSyncing,
+                        onRetry = { viewModel.trySync(visitId) },
+                    )
+                }
+
                 // Patient card with inline vital chips
                 uiState.patient?.let { patient ->
                     PatientCard(
@@ -408,223 +421,6 @@ private fun ClinicianNoteCard(content: String) {
 }
 
 @Composable
-private fun AiNoteCard(
-    visit: Visit,
-    structured: AiStructuredSuggestions?,
-    soapText: String?,
-    aiPatientSummary: String?,
-) {
-    val status = visit.aiStructureStatus
-    val isPending = status == "pending"
-    val isRunning = status == "running"
-    val isFailed = status == "failed"
-    val isCompleted = status == "completed"
-    val isInFlight = isPending || isRunning
-
-    // Default expanded only on terminal states. Pending/running stays
-    // collapsed — the clinician's note above is the source of truth.
-    var expanded by rememberSaveable(visit.id) {
-        mutableStateOf(isCompleted || isFailed)
-    }
-
-    val (statusLabel, statusFg, statusBg) = when (status) {
-        "pending" -> Triple("Queued", Muted, com.karibuhealth.app.ui.theme.LineSoft)
-        "running" -> Triple("Structuring…", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
-        "completed" -> Triple("Done", Green, com.karibuhealth.app.ui.theme.GreenSoft)
-        "failed" -> Triple("Failed", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
-        "skipped" -> Triple("Skipped", Muted, com.karibuhealth.app.ui.theme.LineSoft)
-        else -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
-    }
-
-    val borderColor = when {
-        isRunning -> Amber
-        isFailed -> com.karibuhealth.app.ui.theme.Red
-        else -> Line
-    }
-    val borderWidth = if (isRunning) 1.5.dp else 1.dp
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(borderWidth, borderColor, RoundedCornerShape(14.dp)),
-    ) {
-        Column {
-            // Header — tappable to toggle expand.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded }
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = null,
-                    tint = Amber,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "AI structured note",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                com.karibuhealth.app.ui.components.KhAccentPill(
-                    label = statusLabel,
-                    fg = statusFg,
-                    bg = statusBg,
-                )
-                if (isRunning) {
-                    Spacer(Modifier.width(6.dp))
-                    Pulses(color = Amber)
-                }
-            }
-
-            if (expanded) {
-                Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
-                    when {
-                        isInFlight -> {
-                            Text(
-                                text = "Karibu AI is reading the note and structuring it into SOAP, suggesting HMIS codes, and writing a plain-language summary. Usually under 15 seconds.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Muted,
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            SoapSection(label = "SUBJECTIVE", body = "Awaiting…", streaming = true)
-                            SoapSection(label = "ASSESSMENT", body = "Awaiting…", streaming = true)
-                            SoapSection(label = "PLAN", body = "Awaiting…", streaming = true)
-                        }
-                        isFailed -> {
-                            Text(
-                                text = "AI couldn't structure this visit. The clinician note above is the receipt-of-record.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = com.karibuhealth.app.ui.theme.Red,
-                            )
-                            visit.errorMessage?.takeIf { it.isNotBlank() }?.let {
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Muted,
-                                )
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            // Show whatever partial output exists.
-                            if (!soapText.isNullOrBlank()) {
-                                val sections = parseSoap(soapText, structured, null)
-                                sections.forEach { (label, body) ->
-                                    SoapSection(label = label, body = body, streaming = false)
-                                }
-                            }
-                        }
-                        isCompleted -> {
-                            val sections = parseSoap(soapText, structured, null)
-                            if (sections.isEmpty()) {
-                                Text(
-                                    text = "AI ran but produced no structured output.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Muted,
-                                )
-                            } else {
-                                sections.forEach { (label, body) ->
-                                    SoapSection(label = label, body = body, streaming = false)
-                                }
-                            }
-
-                            if (!aiPatientSummary.isNullOrBlank()) {
-                                Spacer(Modifier.height(8.dp))
-                                KhMetaText(text = "PLAIN-LANGUAGE SUMMARY")
-                                Spacer(Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .border(1.dp, Line, RoundedCornerShape(8.dp))
-                                        .padding(10.dp),
-                                ) {
-                                    Text(
-                                        text = aiPatientSummary,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Ink,
-                                    )
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = "Receipt prints the clinician note above; this AI version is reference material.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Muted,
-                                )
-                            }
-                        }
-                        status == "skipped" || status == "not_started" -> {
-                            Text(
-                                text = "AI structuring hasn't been queued for this visit yet.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Muted,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SoapSection(
-    label: String,
-    body: String,
-    streaming: Boolean,
-) {
-    Column(modifier = Modifier.padding(bottom = 14.dp)) {
-        KhMetaText(
-            text = label,
-            color = if (streaming) Amber else Muted,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (streaming) Muted else Ink,
-            modifier = Modifier.alpha(if (streaming) 0.6f else 1f),
-        )
-    }
-}
-
-@Composable
-private fun Pulses(color: Color) {
-    val transition = rememberInfiniteTransition(label = "pulses")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "pulse-phase",
-    )
-    Row {
-        repeat(3) { i ->
-            val offset = (i * 0.15f)
-            val a = ((kotlin.math.sin((phase + offset) * 2 * Math.PI) + 1) / 2).coerceIn(0.3, 1.0)
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .alpha(a.toFloat()),
-            )
-            if (i < 2) Spacer(Modifier.width(3.dp))
-        }
-    }
-}
-
-@Composable
 private fun CareDeliveredCard(visit: Visit) {
     Box(
         modifier = Modifier
@@ -814,6 +610,84 @@ private fun HmisCodeRow(
 }
 
 @Composable
+private fun SyncErrorBanner(
+    errors: List<SyncErrorInfo>,
+    canSync: Boolean,
+    isSyncing: Boolean,
+    onRetry: () -> Unit,
+) {
+    // Show the most recent failing entry up top — that's almost always the
+    // root cause. The chain of dependent operations can't proceed past it.
+    val first = errors.first()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(com.karibuhealth.app.ui.theme.RedSoft)
+            .border(1.dp, com.karibuhealth.app.ui.theme.Red.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Sync stuck",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = com.karibuhealth.app.ui.theme.Red,
+                )
+                Spacer(Modifier.weight(1f))
+                KhMetaText(
+                    text = if (errors.size == 1) "1 OPERATION" else "${errors.size} OPERATIONS",
+                    color = com.karibuhealth.app.ui.theme.Red,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = first.operationType,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Ink,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = first.lastError.ifBlank { "(no error message)" },
+                style = MaterialTheme.typography.labelSmall,
+                color = Body,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+            KhMetaText(text = "ATTEMPTS: ${first.attempts}")
+
+            if (errors.size > 1) {
+                Spacer(Modifier.height(8.dp))
+                errors.drop(1).take(2).forEach { err ->
+                    Text(
+                        text = "${err.operationType}: ${err.lastError.take(80)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Muted,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onRetry,
+                enabled = canSync,
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                if (isSyncing) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(if (isSyncing) "Retrying…" else "Retry sync")
+            }
+        }
+    }
+}
+
+@Composable
 private fun SyncCard(
     statusMessage: String,
     canSync: Boolean,
@@ -990,62 +864,3 @@ private fun formatAgeFromDob(isoDate: String): String? {
         null
     }
 }
-
-/**
- * Render the AI note as ordered SOAP sections. Falls back to the raw transcript
- * (or a single block of note_content) when the structured payload is missing.
- */
-private fun parseSoap(
-    noteContent: String?,
-    structured: AiStructuredSuggestions?,
-    transcript: String?,
-): List<Pair<String, String>> {
-    val sections = mutableListOf<Pair<String, String>>()
-
-    // Try to split the noteContent into SOAP sections by header keywords.
-    if (!noteContent.isNullOrBlank()) {
-        val parts = splitSoap(noteContent)
-        if (parts.isNotEmpty()) return parts
-        return listOf("NOTE" to noteContent)
-    }
-
-    if (structured != null && structured.diagnoses.isNotEmpty()) {
-        val assessment = structured.diagnoses.joinToString(", ") { d ->
-            listOfNotNull(d.name.takeIf { it.isNotBlank() }, d.icd10).joinToString(" · ")
-        }
-        sections += "ASSESSMENT" to assessment
-        if (structured.medications.isNotEmpty()) {
-            val plan = structured.medications.joinToString("; ") { m ->
-                listOfNotNull(
-                    m.name.takeIf { it.isNotBlank() },
-                    m.dosage.takeIf { it.isNotBlank() },
-                    m.duration.takeIf { it.isNotBlank() },
-                ).joinToString(" ")
-            }
-            sections += "PLAN" to plan
-        }
-    }
-
-    if (sections.isEmpty() && !transcript.isNullOrBlank()) {
-        sections += "NOTE" to transcript
-    }
-
-    return sections
-}
-
-private fun splitSoap(text: String): List<Pair<String, String>> {
-    val markers = listOf("SUBJECTIVE", "OBJECTIVE", "ASSESSMENT", "PLAN")
-    val regex = Regex("(?im)^\\s*(${markers.joinToString("|")})\\s*:?\\s*$")
-    val matches = regex.findAll(text).toList()
-    if (matches.isEmpty()) return emptyList()
-
-    val out = mutableListOf<Pair<String, String>>()
-    matches.forEachIndexed { i, m ->
-        val start = m.range.last + 1
-        val end = if (i + 1 < matches.size) matches[i + 1].range.first else text.length
-        val body = text.substring(start, end).trim()
-        if (body.isNotEmpty()) out += m.groupValues[1].uppercase() to body
-    }
-    return out
-}
-
