@@ -61,6 +61,11 @@ async function getDocument(
   return { doc: doc as DocumentRow, chunks: (chunks ?? []) as ChunkRow[] }
 }
 
+// Always render fresh — corpus chunks land via the embed script outside
+// the build cycle and we want the page to surface them immediately.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function generateMetadata({ params }: DocumentPageProps) {
   const { slug } = await params
   const result = await getDocument(slug)

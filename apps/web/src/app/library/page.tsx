@@ -88,6 +88,12 @@ export const metadata = {
     'The medical references Karibu Health AI uses to check clinicians\' work. Uganda HC III treatment guidelines, WHO IMCI, national protocols.',
 }
 
+// Always render fresh — the published doc set changes when the embed
+// script runs, and we don't want clinicians (or the public) reading a
+// stale snapshot from build time.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function LibraryPage() {
   const documents = await getDocuments()
 
