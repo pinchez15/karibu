@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils'
 // gated on !documentation_complete so direct-saved visits never show it.
 
 interface VisitWithRelations extends Visit {
-  patient: { id: string; display_name: string | null; whatsapp_number: string; date_of_birth: string | null }
+  patient: { id: string; display_name: string | null; whatsapp_number: string | null; date_of_birth: string | null }
   doctor: { id: string; display_name: string } | null
   nurse: { id: string; display_name: string } | null
   provider_notes: ProviderNote | null
@@ -88,7 +88,9 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
             >
               {visit.patient?.display_name || 'Unknown Patient'}
             </Link>
-            <p className="text-muted-foreground font-mono">{visit.patient?.whatsapp_number}</p>
+            {visit.patient?.whatsapp_number && (
+              <p className="text-muted-foreground font-mono">{visit.patient.whatsapp_number}</p>
+            )}
           </div>
           <span className={`px-3 py-1 text-sm font-medium rounded-full ${config.bg} ${config.color}`}>
             {config.label}

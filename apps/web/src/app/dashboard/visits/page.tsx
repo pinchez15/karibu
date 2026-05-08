@@ -6,7 +6,7 @@ import type { Visit, VisitStatus } from '@karibu/shared'
 import { PatientsToolbar } from './PatientsToolbar'
 
 interface VisitWithPatient extends Visit {
-  patient: { id: string; first_name: string | null; last_name: string | null; display_name: string | null; whatsapp_number: string }
+  patient: { id: string; first_name: string | null; last_name: string | null; display_name: string | null; whatsapp_number: string | null }
   doctor: { display_name: string } | null
 }
 

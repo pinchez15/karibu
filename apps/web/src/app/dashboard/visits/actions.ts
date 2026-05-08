@@ -89,9 +89,6 @@ export async function createPatientWithVisit(formData: FormData) {
   const existingPatientId = (formData.get('existing_patient_id') as string)?.trim() || null
   const confirmDuplicate = formData.get('confirm_duplicate') === 'true'
 
-  if (!rawPhone) {
-    return { error: 'Phone number is required' }
-  }
   if (!firstName || !lastName || !dateOfBirthInput) {
     return { error: 'First name, last name, and date of birth are required' }
   }
@@ -100,20 +97,31 @@ export async function createPatientWithVisit(formData: FormData) {
   const dateOfBirth = parseUgandaDateOfBirth(dateOfBirthInput)
   if (!dateOfBirth) return { error: 'Enter date of birth as DD-MM-YYYY' }
 
-  const whatsappNumber = formatPhoneNumber(rawPhone)
-  if (!isValidUgandaPhone(whatsappNumber)) {
-    return { error: 'Invalid Uganda phone number. Format: +256 7XX XXX XXX' }
+  // Phone is optional — many patients in the catchment don't carry one. Only
+  // validate format when something was provided.
+  let whatsappNumber: string | null = null
+  if (rawPhone && rawPhone.trim().length > 0) {
+    whatsappNumber = formatPhoneNumber(rawPhone)
+    if (!isValidUgandaPhone(whatsappNumber)) {
+      return { error: 'Invalid Uganda phone number. Format: +256 7XX XXX XXX' }
+    }
   }
 
   const supabase = createServiceClient()
 
-  // Check for existing patient at this clinic
-  const { data: existing } = await supabase
-    .from('patients')
-    .select('id')
-    .eq('clinic_id', staff.clinic_id)
-    .eq('whatsapp_number', whatsappNumber)
-    .single()
+  // If a phone was provided, look up an existing patient at this clinic by
+  // phone (the cheapest dedupe). Without a phone, fall through to the
+  // name+DOB duplicate check below.
+  let existing: { id: string } | null = null
+  if (whatsappNumber) {
+    const { data } = await supabase
+      .from('patients')
+      .select('id')
+      .eq('clinic_id', staff.clinic_id)
+      .eq('whatsapp_number', whatsappNumber)
+      .maybeSingle()
+    existing = data ?? null
+  }
 
   let patientId: string
 

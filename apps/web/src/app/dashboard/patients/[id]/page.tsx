@@ -77,7 +77,9 @@ export default async function PatientProfilePage({
         <h2 className="text-xl font-bold">
           {patient.display_name || 'Unknown Patient'}
         </h2>
-        <p className="text-muted-foreground font-mono">{patient.whatsapp_number}</p>
+        {patient.whatsapp_number && (
+          <p className="text-muted-foreground font-mono">{patient.whatsapp_number}</p>
+        )}
         <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
           {patient.date_of_birth && (
             <span>DOB: {new Date(patient.date_of_birth).toLocaleDateString('en-GB')}</span>

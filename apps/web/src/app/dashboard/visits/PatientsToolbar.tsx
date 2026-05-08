@@ -111,12 +111,12 @@ export function PatientsToolbar() {
         <form ref={formRef} action={handleCreatePatient} className="bg-card border border-border rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="whatsapp_number">WhatsApp Number *</Label>
+              <Label htmlFor="whatsapp_number">Phone (optional)</Label>
               <Input
                 id="whatsapp_number"
                 name="whatsapp_number"
                 placeholder="+256 7XX XXX XXX"
-                required
+                type="tel"
               />
             </div>
             <div className="space-y-1.5">
