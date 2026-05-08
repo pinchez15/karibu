@@ -157,7 +157,24 @@ export default async function AdminPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link
+          href="/dashboard/admin/inventory"
+          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold">Inventory</h4>
+              <p className="text-sm text-muted-foreground">Labs and drugs your clinic has on hand</p>
+            </div>
+          </div>
+        </Link>
+
         <Link
           href="/dashboard/admin/staff"
           className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
