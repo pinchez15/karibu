@@ -29,15 +29,19 @@ import javax.inject.Inject
 data class DictationUiState(
     val transcript: String = "",
     val isRecording: Boolean = false,
-    val isTranscribing: Boolean = false,
+    /** Number of segments currently uploading to Whisper. Drives the "transcribing…" indicator. */
+    val pendingChunks: Int = 0,
     val isSubmitting: Boolean = false,
     val isStructuringWithAi: Boolean = false,
     val submitted: Boolean = false,
     val error: String? = null,
     val savedLocally: Boolean = false,
 ) {
+    /** Back-compat alias — true while any chunk is in flight. */
+    val isTranscribing: Boolean
+        get() = pendingChunks > 0
     val canSubmit: Boolean
-        get() = transcript.trim().length >= 10 && !isRecording && !isTranscribing && !isSubmitting
+        get() = transcript.trim().length >= 10 && !isRecording && !isSubmitting
 }
 
 @HiltViewModel
@@ -82,10 +86,14 @@ class DictationViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Microphone permission is required.") }
             return
         }
-        if (_uiState.value.isRecording || _uiState.value.isTranscribing) return
+        if (_uiState.value.isRecording) return
 
         try {
-            recorder.start()
+            recorder.startStreaming { segmentFile ->
+                // Each finalized segment gets uploaded to Whisper on a worker
+                // thread; the result appends to `transcript` as it lands.
+                viewModelScope.launch { transcribeSegment(segmentFile) }
+            }
             _uiState.update { it.copy(isRecording = true, error = null) }
             analytics.capture(Analytics.Events.DICTATION_STARTED)
         } catch (e: Exception) {
@@ -93,35 +101,43 @@ class DictationViewModel @Inject constructor(
         }
     }
 
-    fun stopRecordingAndTranscribe() {
+    fun stopRecording() {
         if (!_uiState.value.isRecording) return
-        val file = recorder.stop()
-        _uiState.update { it.copy(isRecording = false, isTranscribing = file != null) }
-        if (file == null) return
+        recorder.stopStreaming()
+        _uiState.update { it.copy(isRecording = false) }
+    }
 
-        viewModelScope.launch {
-            try {
-                val text = withContext(Dispatchers.IO) {
-                    clerkAuthManager.refreshToken()
-                    dictationApi.transcribeChunk(file)
-                }
-                // Append to existing transcript with a space separator, trimming
-                // accidental leading/trailing whitespace from the model output.
-                _uiState.update { state ->
-                    val joined = listOf(state.transcript.trim(), text.trim())
-                        .filter { it.isNotEmpty() }
-                        .joinToString(" ")
-                    state.copy(transcript = joined, isTranscribing = false)
-                }
-            } catch (e: DictationException) {
-                _uiState.update { it.copy(isTranscribing = false, error = e.message) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isTranscribing = false, error = "Transcription failed: ${e.message}") }
-            } finally {
-                // Always discard the chunk file once we have the text (or the
-                // attempt failed). We never store patient-related audio.
-                file.delete()
+    /** Back-compat alias for screens that still call the old name. */
+    fun stopRecordingAndTranscribe() = stopRecording()
+
+    private suspend fun transcribeSegment(file: java.io.File) {
+        if (file.length() < 1500) {
+            file.delete()
+            return
+        }
+        _uiState.update { it.copy(pendingChunks = it.pendingChunks + 1) }
+        try {
+            val text = withContext(Dispatchers.IO) {
+                clerkAuthManager.refreshToken()
+                dictationApi.transcribeChunk(file)
             }
+            if (text.isNotBlank()) {
+                _uiState.update { state ->
+                    val trimmedPrev = state.transcript.trimEnd()
+                    val combined = if (trimmedPrev.isEmpty()) text.trim()
+                    else "$trimmedPrev ${text.trim()}"
+                    state.copy(transcript = combined)
+                }
+            }
+        } catch (e: DictationException) {
+            // Swallow per-chunk errors — one bad segment shouldn't kill the
+            // stream. Surface only if the clinician sees zero text after stop.
+            android.util.Log.w("DictationVM", "chunk failed: ${e.message}")
+        } catch (e: Exception) {
+            android.util.Log.w("DictationVM", "chunk failed: ${e.message}")
+        } finally {
+            file.delete()
+            _uiState.update { it.copy(pendingChunks = (it.pendingChunks - 1).coerceAtLeast(0)) }
         }
     }
 
