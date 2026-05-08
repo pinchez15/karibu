@@ -6,10 +6,13 @@ import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity
 import com.karibuhealth.app.data.local.db.dao.PaymentDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.domain.model.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.util.UUID
@@ -70,8 +73,14 @@ class PaymentRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
         )
 
-        database.runInTransaction {
-            kotlinx.coroutines.runBlocking {
+        // withTransaction is the suspend-friendly Room transaction API. The
+        // previous runInTransaction { runBlocking { ... } } pattern crashed
+        // when called from viewModelScope (Main dispatcher) because the
+        // sync database.runInTransaction enforces "not on main thread."
+        // withContext(IO) for belt-and-braces in case withTransaction
+        // dispatches differently across Room versions.
+        withContext(Dispatchers.IO) {
+            database.withTransaction {
                 paymentDao.upsert(entity)
                 syncQueueDao.insert(syncEntry)
             }

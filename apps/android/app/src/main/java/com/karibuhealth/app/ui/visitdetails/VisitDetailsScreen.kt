@@ -742,6 +742,19 @@ private fun SyncCard(
     }
 }
 
+/**
+ * Status-driven bottom actions on visit-detail. Payment is intentionally
+ * NOT the dominant CTA after a save — patients often still need lab /
+ * pharmacy work before payment, and clinicians want to keep editing the
+ * note as new information lands. Layout per status:
+ *
+ *   pending + !doc complete → primary "Write note"
+ *   pending +  doc complete → primary disabled "AI checking…"
+ *   sent                    → primary "Edit note" + secondary "Take payment"
+ *   review                  → primary "Review notes"
+ *   error                   → primary "Edit and retry"
+ *   completed               → primary "Edit note"
+ */
 @Composable
 private fun VisitDetailsBottomAction(
     visit: Visit,
@@ -753,46 +766,68 @@ private fun VisitDetailsBottomAction(
 ) {
     val docComplete = visit.documentationComplete
 
-    val (label, action, icon, enabled) = when {
+    val primary: BottomActionConfig
+    val secondary: BottomActionConfig?
+
+    when {
         visit.status == VisitStatus.pending && !docComplete -> {
-            BottomActionConfig(
+            primary = BottomActionConfig(
                 label = if (hasLocalDraft) "Continue note" else "Write note",
                 onClick = { onNavigateToDictation(visitId, false) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
+            secondary = null
+        }
+        visit.status == VisitStatus.pending && docComplete -> {
+            primary = BottomActionConfig(
+                label = "AI checking…",
+                onClick = {},
+                icon = null,
+                enabled = false,
+            )
+            secondary = null
         }
         visit.status == VisitStatus.sent -> {
-            BottomActionConfig(
-                label = "Approve and proceed to payment",
+            primary = BottomActionConfig(
+                label = "Edit note",
+                onClick = { onNavigateToDictation(visitId, false) },
+                icon = Icons.Default.Mic,
+                enabled = true,
+            )
+            secondary = BottomActionConfig(
+                label = "Take payment",
                 onClick = { onNavigateToPayment(visitId) },
                 icon = null,
                 enabled = true,
             )
         }
-        visit.status == VisitStatus.pending && docComplete -> {
-            BottomActionConfig(
-                label = "Wait for structure…",
-                onClick = {},
-                icon = null,
-                enabled = false,
-            )
-        }
         visit.status == VisitStatus.review -> {
-            BottomActionConfig(
+            primary = BottomActionConfig(
                 label = "Review notes",
                 onClick = { onNavigateToReview(visitId) },
                 icon = Icons.Default.RateReview,
                 enabled = true,
             )
+            secondary = null
         }
         visit.status == VisitStatus.error -> {
-            BottomActionConfig(
+            primary = BottomActionConfig(
                 label = "Edit and retry",
                 onClick = { onNavigateToDictation(visitId, false) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
+            secondary = null
+        }
+        visit.status == VisitStatus.completed -> {
+            primary = BottomActionConfig(
+                label = "Edit note",
+                onClick = { onNavigateToDictation(visitId, false) },
+                icon = Icons.Default.Mic,
+                enabled = true,
+            )
+            secondary = null
         }
         else -> return
     }
@@ -804,30 +839,47 @@ private fun VisitDetailsBottomAction(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, Line, RoundedCornerShape(0.dp))
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (secondary != null) {
+                OutlinedButton(
+                    onClick = secondary.onClick,
+                    modifier = Modifier.weight(1f),
+                    enabled = secondary.enabled,
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(vertical = 14.dp),
+                ) {
+                    if (secondary.icon != null) {
+                        Icon(secondary.icon, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(secondary.label, fontWeight = FontWeight.SemiBold)
+                }
+            }
             Button(
-                onClick = action,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
+                onClick = primary.onClick,
+                modifier = Modifier.weight(1f),
+                enabled = primary.enabled,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (enabled) Cobalt else Line,
+                    containerColor = if (primary.enabled) Cobalt else Line,
                     disabledContainerColor = Line,
                     disabledContentColor = Muted,
                 ),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(vertical = 14.dp),
             ) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null)
+                if (primary.icon != null) {
+                    Icon(primary.icon, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                 }
-                Text(label, fontWeight = FontWeight.SemiBold)
+                Text(primary.label, fontWeight = FontWeight.SemiBold)
             }
         }
     }
