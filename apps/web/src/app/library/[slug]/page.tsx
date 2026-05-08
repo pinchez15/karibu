@@ -77,11 +77,71 @@ export async function generateMetadata({ params }: DocumentPageProps) {
   }
 }
 
+/**
+ * Render-time filter for non-clinical chunks (TOC, foreword, disclaimer,
+ * page footers like "EMHSLU3"). The chunks stay in the database for AI
+ * retrieval — but they're noise to a human reader scrolling the document
+ * page, and pdf-parse leaks them in as full sections. Heuristics:
+ *   - too short to carry meaning
+ *   - dominated by dot leaders (TOC entries with `....14`)
+ *   - dominated by digits (page-reference lists)
+ *   - section heading matches a known non-clinical bucket
+ *   - section heading is a short alphanumeric token (page footer like
+ *     "EMHSLU3" or "UCG2023")
+ */
+const NOISE_HEADING_PATTERNS = [
+  'TABLE OF CONTENTS',
+  'FOREWORD',
+  'PREFACE',
+  'ACKNOWLEDGEMENTS',
+  'ACKNOWLEDGMENTS',
+  'CONTRIBUTORS',
+  'TASKFORCE',
+  'TASK FORCE',
+  'EDITORIAL TEAM',
+  'DISCLAIMER',
+  'COPYRIGHT',
+  'INDEX',
+  'BIBLIOGRAPHY',
+  'REFERENCES',
+  'ABBREVIATIONS',
+  'ACRONYMS',
+  'LIST OF FIGURES',
+  'LIST OF TABLES',
+  'PUBLISHED BY',
+]
+
+function isLikelyNonClinical(content: string, section: string | null): boolean {
+  const text = content.trim()
+  if (text.length < 150) return true
+
+  const dotRatio = (text.match(/\./g) ?? []).length / text.length
+  if (dotRatio > 0.12) return true // TOC dot leaders dominate
+
+  const digitRatio = (text.match(/\d/g) ?? []).length / text.length
+  if (digitRatio > 0.3) return true // page-reference / phone-number dominated
+
+  if (section) {
+    const upper = section.toUpperCase()
+    if (NOISE_HEADING_PATTERNS.some((h) => upper.includes(h))) return true
+    // Page-footer style headings: short single token of letters+digits
+    // (e.g. "EMHSLU3", "UCG2023") that pdf-parse mis-detects as section.
+    if (/^[A-Z]{2,8}\d*$/.test(section.trim().replace(/\s+/g, ''))) return true
+  }
+
+  return false
+}
+
 export default async function DocumentPage({ params }: DocumentPageProps) {
   const { slug } = await params
   const result = await getDocument(slug)
   if (!result) notFound()
   const { doc, chunks } = result
+
+  // Filter front-matter / TOC / page-footer chunks before grouping. The
+  // chunks remain in the DB for AI retrieval; only the public reading
+  // experience is cleaned up.
+  const visibleChunks = chunks.filter((c) => !isLikelyNonClinical(c.content, c.section))
 
   // Group chunks by section so we render section headings once.
   const sections: Array<{
@@ -89,7 +149,7 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
     anchor: string | null
     chunks: ChunkRow[]
   }> = []
-  for (const chunk of chunks) {
+  for (const chunk of visibleChunks) {
     const last = sections[sections.length - 1]
     if (last && last.section === chunk.section) {
       last.chunks.push(chunk)
@@ -177,7 +237,23 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
 
         {/* Body */}
         {sections.length === 0 ? (
-          <p className="mt-8 text-body italic">This document hasn't been content-loaded yet.</p>
+          <div className="mt-8 bg-card border border-border rounded-xl p-5 text-sm text-body">
+            {chunks.length === 0 ? (
+              <p className="italic">This document hasn't been content-loaded yet.</p>
+            ) : (
+              <>
+                <p>
+                  This document's content is mostly tables, drug listings, or other
+                  structured data that doesn't reflow well outside the original PDF.
+                </p>
+                <p className="mt-2">
+                  Tap <strong>Download original PDF</strong> above to read it in its
+                  intended layout. Karibu's AI retrieves the full content of this
+                  document when reviewing clinician notes.
+                </p>
+              </>
+            )}
+          </div>
         ) : (
           <div className="mt-10 space-y-10">
             {sections.map((sec, i) => (
