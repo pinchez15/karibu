@@ -131,28 +131,17 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         </div>
       </div>
 
-      {/* Pending visit + clinician hasn't finished documenting yet: show the
-          web dictation card so a desktop clinician can capture the note.
-          Direct-saved Android visits have documentation_complete=true and
-          status='sent', so this card is correctly skipped for them. */}
-      {(visit.status === 'pending' || visit.status === 'error') &&
-        !visit.documentation_complete &&
-        !(visit.status === 'pending' && visit.provider_notes?.transcript) && (
-          <PendingDictationCard visitId={visit.id} />
-        )}
-      {/* AI is mid-flight: clinician submitted via "Structure with AI" so a
-          transcript exists and Inngest is structuring. Only relevant if the
-          clinician hasn't documentation-completed via the offline-first path. */}
-      {visit.status === 'pending' &&
-        !visit.documentation_complete &&
-        visit.provider_notes?.transcript && (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
-            <p className="font-medium text-primary">AI is structuring this dictation…</p>
-            <p className="text-sm text-primary/90 mt-1">
-              Usually under a minute. The visit will move to Review when it&apos;s ready.
-            </p>
-          </div>
-        )}
+      {/* Note editor — desktop clinicians type or dictate the note here. After
+          save, documentation_complete=true and the visit moves to 'sent';
+          AI runs automatically in the background (Inngest poller, ~60s) and
+          appears as a collapsible section beneath. Always shown until the
+          clinician marks the note complete. */}
+      {!visit.documentation_complete && (
+        <PendingDictationCard
+          visitId={visit.id}
+          initialContent={visit.provider_notes?.transcript ?? ''}
+        />
+      )}
 
       {/* Visit Details (flattened by Inngest persist step) */}
       {(visit.diagnosis || visit.medications || visit.follow_up_instructions || visit.tests_ordered) && (
@@ -211,14 +200,16 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
       )}
 
       {/* Clinician note (always shown, expanded — receipt-of-record) */}
-      {(visit.patient_notes_clinician?.content || visit.provider_notes?.transcript) && (
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-3">Clinician note</h3>
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">
-            {visit.patient_notes_clinician?.content || visit.provider_notes?.transcript}
-          </p>
-        </div>
-      )}
+      {visit.documentation_complete &&
+        (visit.patient_notes_clinician?.content || visit.provider_notes?.transcript) && (
+          <ClinicianNoteCard
+            visitId={visit.id}
+            content={
+              visit.patient_notes_clinician?.content ?? visit.provider_notes?.transcript ?? ''
+            }
+            canEdit={visit.status !== 'completed'}
+          />
+        )}
 
       {/* AI structured note — collapsible, appears beneath. The clinician's
           note is the source of truth; this section is reference material. */}
@@ -312,6 +303,54 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
           </Button>
         </div>
       )}
+    </div>
+  )
+}
+
+interface ClinicianNoteCardProps {
+  visitId: string
+  content: string
+  canEdit: boolean
+}
+
+/**
+ * Receipt-of-record clinician note. The "Edit note" affordance reuses the
+ * editor component — saving re-runs AI structuring (since it sets
+ * ai_structure_status='not_started' again, the poller picks it up).
+ */
+function ClinicianNoteCard({ visitId, content, canEdit }: ClinicianNoteCardProps) {
+  const [editing, setEditing] = useState(false)
+
+  if (editing) {
+    return (
+      <PendingDictationCard
+        visitId={visitId}
+        initialContent={content}
+        mode="editing"
+        onClose={() => setEditing(false)}
+      />
+    )
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <h3 className="text-lg font-semibold">Clinician note</h3>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditing(true)}
+            className="h-7 text-xs"
+          >
+            Edit note
+          </Button>
+        )}
+      </div>
+      <p className="text-sm whitespace-pre-wrap leading-relaxed">{content}</p>
+      <p className="text-xs text-muted-foreground mt-3">
+        This is what prints on the receipt. Edit re-runs AI structuring on the new text.
+      </p>
     </div>
   )
 }

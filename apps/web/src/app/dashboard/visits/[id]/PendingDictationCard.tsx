@@ -1,33 +1,51 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useCallback, useTransition } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { Loader2, Mic, Square } from 'lucide-react'
+import { Loader2, Mic, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { saveClinicianNote } from './note-actions'
 
-// Shown on /dashboard/visits/[id] when visit.status === 'pending' AND there
-// isn't already a transcript on the way through the AI pipeline. Lets a
-// desktop clinician dictate the same way the Android app does — record audio
-// in the browser, transcribe via /functions/v1/dictate, edit the text,
-// submit to /functions/v1/submit-dictation which fires the Inngest workflow.
-//
-// Mirrors apps/android/.../ui/dictation/DictationScreen.kt — same endpoints,
-// same edit-before-submit flow, same error model.
+/**
+ * Desktop clinician note editor. Mirrors the Android dictation flow:
+ *
+ *   - Type the note OR record via browser mic (Whisper). Recording appends
+ *     transcribed text to the textarea; the clinician can edit either way.
+ *   - Save persists the note as the receipt-of-record (patient_notes with
+ *     source='clinician_fallback'), marks documentation_complete, advances
+ *     the visit pending→sent so the cashier can take payment.
+ *   - AI structuring runs automatically in the background (Inngest poller
+ *     within ~60s) — appears as a collapsible "AI structured note" section
+ *     beneath this once it lands. No manual trigger.
+ *
+ * Rendered when !visit.documentation_complete on /dashboard/visits/[id].
+ * After save, this card disappears and the saved note + AI section take over.
+ *
+ * The editor also accepts an `initialContent` so it can serve as the inline
+ * "Edit note" affordance after a previous save.
+ */
 
 interface PendingDictationCardProps {
   visitId: string
+  initialContent?: string
+  /** "save" (default) shows the primary save button. "editing" shows save + cancel. */
+  mode?: 'save' | 'editing'
+  onClose?: () => void
 }
 
-export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
-  const router = useRouter()
+export function PendingDictationCard({
+  visitId,
+  initialContent = '',
+  mode = 'save',
+  onClose,
+}: PendingDictationCardProps) {
   const { getToken } = useAuth()
 
-  const [transcript, setTranscript] = useState('')
+  const [content, setContent] = useState(initialContent)
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -106,9 +124,7 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
         const newText = result.text?.trim() || ''
         if (!newText) return
 
-        // Append to whatever's already in the textarea. Trim to avoid double
-        // spaces from successive chunks.
-        setTranscript((prev) => [prev.trim(), newText].filter(Boolean).join(' '))
+        setContent((prev) => [prev.trim(), newText].filter(Boolean).join(' '))
       } catch (e) {
         setError(`Transcription failed: ${(e as Error).message}`)
       } finally {
@@ -118,70 +134,46 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
     [getToken],
   )
 
-  const submit = useCallback(async () => {
-    const text = transcript.trim()
+  const handleSave = useCallback(() => {
+    setError(null)
+    const text = content.trim()
     if (text.length < 10) {
-      setError('Dictate a bit more before submitting.')
+      setError('Add a bit more to the note before saving.')
       return
     }
 
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      const clerkToken = await getToken()
-      if (!clerkToken) {
-        setError('Not signed in. Please refresh.')
+    startTransition(async () => {
+      const result = await saveClinicianNote(visitId, text)
+      if (!result.success) {
+        setError(result.error)
         return
       }
+      onClose?.()
+    })
+  }, [content, visitId, onClose])
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/submit-dictation`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${clerkToken}`,
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          },
-          body: JSON.stringify({ visit_id: visitId, transcript: text }),
-        },
-      )
-
-      if (!response.ok) {
-        const body = await response.text().catch(() => '')
-        setError(`Submit failed (${response.status}): ${body.slice(0, 120)}`)
-        return
-      }
-
-      // Refresh the page so the server-rendered detail picks up the new
-      // provider_notes.transcript and renders the "AI is structuring..."
-      // state instead of this card.
-      router.refresh()
-    } catch (e) {
-      setError(`Submit failed: ${(e as Error).message}`)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [transcript, visitId, getToken, router])
-
-  const wordCount = transcript.trim().split(/\s+/).filter(Boolean).length
+  const wordCount = content.trim().split(/\s+/).filter(Boolean).length
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 space-y-3">
       <div>
-        <h3 className="text-lg font-semibold">Dictate visit note</h3>
+        <h3 className="text-lg font-semibold">
+          {mode === 'editing' ? 'Edit clinician note' : 'Clinician note'}
+        </h3>
         <p className="text-sm text-muted-foreground">
-          Speak the SOAP note in your own words after the patient leaves. The AI will structure it
-          for you and suggest diagnoses with citations.
+          Type the SOAP note in your own words, or tap the microphone to dictate. Save when you're
+          done — the visit can move to payment immediately. AI will structure the note in the
+          background and add SOAP, HMIS suggestions, and a plain-language summary as reference
+          beneath your note.
         </p>
       </div>
 
       <Textarea
-        value={transcript}
-        onChange={(e) => setTranscript(e.target.value)}
-        placeholder="Tap the microphone below and speak. Your words will appear here. You can edit before submitting."
-        className="min-h-[160px]"
-        disabled={isSubmitting}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Patient reports fever and headache for 3 days. T 38.4°C. RDT positive (Pf). Plan: AL 4 tabs BD x 3d, ORS, follow-up 48h."
+        className="min-h-[200px] leading-relaxed"
+        disabled={pending}
       />
 
       {error && (
@@ -201,8 +193,8 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
         <Button
           type="button"
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isTranscribing || isSubmitting}
-          variant={isRecording ? 'destructive' : 'default'}
+          disabled={isTranscribing || pending}
+          variant={isRecording ? 'destructive' : 'outline'}
           className="gap-2"
         >
           {isRecording ? (
@@ -213,7 +205,7 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
           ) : (
             <>
               <Mic className="w-4 h-4" />
-              {transcript ? 'Add more' : 'Record'}
+              {content ? 'Add more' : 'Record'}
             </>
           )}
         </Button>
@@ -221,27 +213,42 @@ export function PendingDictationCard({ visitId }: PendingDictationCardProps) {
         {isTranscribing && (
           <span className="text-sm text-muted-foreground inline-flex items-center gap-1">
             <Loader2 className="w-3 h-3 animate-spin" />
-            Transcribing...
+            Transcribing…
           </span>
         )}
 
         <span className="text-sm text-muted-foreground ml-auto">{wordCount} words</span>
 
+        {mode === 'editing' && onClose && (
+          <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
+            Cancel
+          </Button>
+        )}
+
         <Button
           type="button"
-          onClick={submit}
-          disabled={isRecording || isTranscribing || isSubmitting || transcript.trim().length < 10}
+          onClick={handleSave}
+          disabled={isRecording || isTranscribing || pending || content.trim().length < 10}
+          className="gap-2"
         >
-          {isSubmitting ? (
+          {pending ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              Submitting
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving
             </>
           ) : (
-            'Submit'
+            <>
+              <Sparkles className="w-3.5 h-3.5" />
+              Save
+            </>
           )}
         </Button>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Once saved, AI runs automatically in the background. You can keep going — the structured
+        note + suggestions appear here when ready (~60s).
+      </p>
     </div>
   )
 }
