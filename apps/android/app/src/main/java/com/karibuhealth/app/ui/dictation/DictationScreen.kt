@@ -245,27 +245,43 @@ private fun DictationBottomToolbar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Big primary mic button — 56dp per design.
+                //
+                // Stop is ALWAYS available while recording, even if a chunk
+                // is mid-upload. In-flight transcription continues
+                // independently after stop and gets appended when it lands.
+                // The button only gates Start (new recording) on no other
+                // operation in flight.
+                val buttonEnabled = uiState.isRecording ||
+                    (!uiState.isSubmitting && !uiState.isTranscribing)
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(18.dp))
                         .background(if (uiState.isRecording) Amber else Cobalt)
                         .clickable(
-                            enabled = !uiState.isSubmitting && !uiState.isTranscribing,
+                            enabled = buttonEnabled,
                             onClick = onToggleWhisper,
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (uiState.isTranscribing) {
-                        CircularProgressIndicator(
+                    // Always show the action icon when recording — never
+                    // swap it for a spinner. The "Transcribing…" label in
+                    // the toolbar already conveys the in-flight state.
+                    when {
+                        uiState.isRecording -> Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = "Stop",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp),
+                        )
+                        uiState.isTranscribing -> CircularProgressIndicator(
                             modifier = Modifier.size(22.dp),
                             strokeWidth = 2.5.dp,
                             color = Color.White,
                         )
-                    } else {
-                        Icon(
-                            imageVector = if (uiState.isRecording) Icons.Default.Stop else Icons.Default.Mic,
-                            contentDescription = if (uiState.isRecording) "Stop" else "Record",
+                        else -> Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Record",
                             tint = Color.White,
                             modifier = Modifier.size(22.dp),
                         )
