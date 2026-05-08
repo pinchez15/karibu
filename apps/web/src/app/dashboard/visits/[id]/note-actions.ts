@@ -93,12 +93,14 @@ export async function saveClinicianNote(
   }
 
   // 3. visits: mark documentation complete, advance status pending→sent,
-  //    queue AI. Keep AI status independent of clinical status.
+  //    queue the AI review. Keep AI lifecycle independent of clinical
+  //    status — the cashier never waits on AI.
   const visitUpdate: Record<string, unknown> = {
     documentation_complete: true,
     documentation_completed_at: now,
-    ai_structure_status: 'not_started',
-    ai_structure_error: null,
+    ai_review_status: 'not_started',
+    ai_review_error: null,
+    ai_review_no_concerns: false,
     updated_at: now,
   }
   if (visit.status === 'pending' || visit.status === 'error') {

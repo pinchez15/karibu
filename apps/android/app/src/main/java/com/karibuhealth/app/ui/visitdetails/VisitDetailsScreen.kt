@@ -194,24 +194,18 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                // AI structured note — collapsible, driven by visits.ai_structure_status.
-                uiState.visit?.let { visit ->
-                    AiNoteCard(
-                        visit = visit,
-                        structured = AiStructuredSuggestions.parseOrNull(uiState.providerNote?.structuredData),
-                        soapText = uiState.providerNote?.noteContent,
-                        aiPatientSummary = uiState.aiPatientNote?.content,
-                    )
+                // AI receipt summary — when present, show as reference. The
+                // clinician's note above is the receipt-of-record; this is the
+                // plain-language version that may print on the thermal slip.
+                uiState.aiPatientNote?.content?.takeIf { it.isNotBlank() }?.let { summary ->
+                    AiReceiptCard(summary = summary)
                 }
 
-                // HMIS codes — render once AI completed and produced suggestions.
-                if (uiState.visit?.aiStructureStatus == "completed") {
-                    AiStructuredSuggestions.parseOrNull(uiState.providerNote?.structuredData)
-                        ?.takeIf { it.diagnoses.any { d -> !d.icd10.isNullOrBlank() } }
-                        ?.let { suggestions ->
-                            HmisCodesCard(suggestions = suggestions)
-                        }
-                }
+                // The disagreement-question banner ships in Android v1.0.12
+                // after the corpus is seeded and the web flow is validated.
+                // Until then the clinician views any AI question on the web
+                // visit-details page; the cashier-side workflow proceeds the
+                // same on Android.
 
                 // Care delivered — lab + pharmacy outcomes (read-only).
                 // Renders only when there's something to show: tests ordered,
@@ -345,6 +339,48 @@ private fun PatientCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AiReceiptCard(summary: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = Amber,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Patient receipt summary",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Plain-language version that prints on the thermal slip when you choose this. Your note above remains the receipt-of-record by default.",
+                style = MaterialTheme.typography.labelSmall,
+                color = Muted,
+            )
         }
     }
 }
