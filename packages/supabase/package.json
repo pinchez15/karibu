@@ -5,9 +5,20 @@
   "scripts": {
     "generate-types": "supabase gen types typescript --local > src/database.types.ts",
     "migrate": "supabase db push",
-    "reset": "supabase db reset"
+    "reset": "supabase db reset",
+    "embed-corpus": "tsx scripts/embed-corpus.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "openai": "^4.67.0",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
-    "supabase": "^1.142.0"
+    "@types/node": "^20.0.0",
+    "@types/pdf-parse": "^1.1.4",
+    "supabase": "^1.142.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
   }
 }

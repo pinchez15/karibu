@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
 import { createServiceClient } from '@/lib/supabase'
 import { KaribuLockup } from '@/components/karibu-mark'
 
@@ -159,10 +159,11 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
                   href={doc.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-cobalt hover:text-cobalt-deep inline-flex items-center gap-1.5 text-sm"
+                  download
+                  className="inline-flex items-center gap-1.5 bg-cobalt text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-cobalt-deep transition-colors"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Original source
+                  <Download className="h-3.5 w-3.5" />
+                  Download original PDF
                 </a>
               </div>
             )}

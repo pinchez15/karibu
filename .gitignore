@@ -18,6 +18,11 @@ out/
 Karibu Health EHR App Figma/
 karibu logos/
 
+# Source PDFs for the medical corpus — embedded into Supabase + Storage
+# via `pnpm --filter @karibu/supabase embed-corpus`. Local only; the
+# canonical copies live in Supabase Storage after embedding.
+Medical Corpus/
+
 # Environment files
 .env
 .env.local
