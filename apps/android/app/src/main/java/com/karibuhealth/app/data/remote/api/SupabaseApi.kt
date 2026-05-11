@@ -99,6 +99,12 @@ interface SupabaseApi {
     @POST("rpc/claim_patient")
     suspend fun claimPatient(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
 
+    @POST("rpc/start_visit_self_triage")
+    suspend fun startVisitSelfTriage(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+
+    @POST("rpc/complete_visit_queue")
+    suspend fun completeVisitQueue(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+
     @POST("rpc/get_clinic_queue")
     suspend fun getClinicQueue(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
 
@@ -114,4 +120,7 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_mark_documentation_complete")
     suspend fun rpcMarkDocumentationComplete(@Body request: MarkDocumentationCompleteDto): Response<ResponseBody>
+
+    @POST("rpc/rpc_upsert_visit_clinical_summary")
+    suspend fun rpcUpsertVisitClinicalSummary(@Body request: VisitClinicalSummaryUpsertDto): Response<ResponseBody>
 }

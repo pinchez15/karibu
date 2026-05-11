@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.repository
 
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity
+import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.dao.PatientNoteDao
 import com.karibuhealth.app.data.local.db.dao.ProviderNoteDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
@@ -11,6 +12,7 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.PatientNoteSummaryUpsertDto
 import com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto
+import com.karibuhealth.app.data.remote.dto.VisitClinicalSummaryUpsertDto
 import com.karibuhealth.app.domain.model.PatientNote
 import com.karibuhealth.app.domain.model.ProviderNote
 import com.karibuhealth.app.util.NetworkMonitor
@@ -28,6 +30,7 @@ import javax.inject.Singleton
 class NoteRepository @Inject constructor(
     private val providerNoteDao: ProviderNoteDao,
     private val patientNoteDao: PatientNoteDao,
+    private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -190,6 +193,65 @@ class NoteRepository @Inject constructor(
         )
         syncQueueDao.insert(syncEntry)
         entity.toDomain() to syncEntry.id
+    }
+
+    /**
+     * Save the structured clinical fields that are operationally separate from
+     * the receipt note: diagnosis, pharmacy text, lab text, follow-up
+     * instructions, and the richer note-section JSON.
+     */
+    suspend fun saveClinicalSummary(
+        visitId: String,
+        diagnosis: String?,
+        medications: String?,
+        followUpInstructions: String?,
+        testsOrdered: String?,
+        structuredData: String?,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        visitDao.updateClinicalSummary(
+            id = visitId,
+            diagnosis = diagnosis,
+            medications = medications,
+            followUpInstructions = followUpInstructions,
+            testsOrdered = testsOrdered,
+            updatedAt = now,
+        )
+        providerNoteDao.updateStructuredData(visitId, structuredData, now)
+
+        val rpcBody = VisitClinicalSummaryUpsertDto(
+            visitId = visitId,
+            diagnosis = diagnosis,
+            medications = medications,
+            followUpInstructions = followUpInstructions,
+            testsOrdered = testsOrdered,
+            structuredData = structuredData,
+        )
+        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+
+        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+            try {
+                val response = supabaseApi.rpcUpsertVisitClinicalSummary(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "upsert_visit_clinical_summary",
+            entityType = "visits",
+            entityId = visitId,
+            payload = json.encodeToString(VisitClinicalSummaryUpsertDto.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = effectivePredecessor,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
     }
 
     suspend fun refreshNotes(visitId: String) {

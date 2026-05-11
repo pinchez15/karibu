@@ -218,7 +218,11 @@ export async function recordPayment(
 
   await supabase
     .from('visits')
-    .update({ status: 'completed' })
+    .update({
+      status: 'completed',
+      queue_status: 'completed',
+      finalized_at: new Date().toISOString(),
+    })
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
 
@@ -236,7 +240,11 @@ export async function skipPayment(visitId: string): Promise<{ success?: boolean;
 
   await supabase
     .from('visits')
-    .update({ status: 'completed' })
+    .update({
+      status: 'completed',
+      queue_status: 'completed',
+      finalized_at: new Date().toISOString(),
+    })
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
 

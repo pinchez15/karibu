@@ -194,6 +194,17 @@ fun VisitDetailsScreen(
                     )
                 }
 
+                uiState.visit?.let { visit ->
+                    if (
+                        !visit.diagnosis.isNullOrBlank() ||
+                        !visit.followUpInstructions.isNullOrBlank() ||
+                        !visit.testsOrdered.isNullOrBlank() ||
+                        !visit.medications.isNullOrBlank()
+                    ) {
+                        ClinicalSummaryCard(visit = visit)
+                    }
+                }
+
                 // Clinician note (always expanded — receipt-of-record).
                 // Prefers patient_notes.content when source='clinician_fallback';
                 // falls back to provider_notes.transcript while the clinician
@@ -417,6 +428,52 @@ private fun ClinicianNoteCard(content: String) {
                 color = Ink,
             )
         }
+    }
+}
+
+@Composable
+private fun ClinicalSummaryCard(visit: Visit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            KhMetaText(text = "CLINICAL SUMMARY")
+            visit.diagnosis?.takeIf { it.isNotBlank() }?.let {
+                SummaryRow(label = "Diagnosis", value = it)
+            }
+            visit.medications?.takeIf { it.isNotBlank() }?.let {
+                SummaryRow(label = "Pharmacy", value = it)
+            }
+            visit.testsOrdered?.takeIf { it.isNotBlank() }?.let {
+                SummaryRow(label = "Labs", value = it)
+            }
+            visit.followUpInstructions?.takeIf { it.isNotBlank() }?.let {
+                SummaryRow(label = "Follow-up", value = it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryRow(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Cobalt,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Ink,
+        )
     }
 }
 

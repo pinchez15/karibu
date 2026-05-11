@@ -70,7 +70,16 @@ class PaymentViewModel @Inject constructor(
         }
     }
 
-    fun skipPayment() {
-        _uiState.update { it.copy(isComplete = true) }
+    fun skipPayment(visitId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRecording = true, error = null) }
+            try {
+                val staffId = authTokenStore.getStaffId() ?: throw Exception("No staff ID")
+                paymentRepository.skipPayment(visitId, staffId)
+                _uiState.update { it.copy(isComplete = true, isRecording = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message, isRecording = false) }
+            }
+        }
     }
 }

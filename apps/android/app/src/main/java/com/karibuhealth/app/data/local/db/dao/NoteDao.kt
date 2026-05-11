@@ -18,6 +18,14 @@ interface ProviderNoteDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(note: ProviderNoteEntity)
+
+    @Query("""
+        UPDATE provider_notes
+        SET structured_data = :structuredData,
+            updated_at = :updatedAt
+        WHERE visit_id = :visitId
+    """)
+    suspend fun updateStructuredData(visitId: String, structuredData: String?, updatedAt: String)
 }
 
 @Dao

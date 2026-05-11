@@ -92,8 +92,9 @@ fun PaymentScreen(
             }
 
             TextButton(
-                onClick = { viewModel.skipPayment() },
+                onClick = { viewModel.skipPayment(visitId) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isRecording,
             ) {
                 Text("Skip Payment")
             }

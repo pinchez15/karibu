@@ -87,6 +87,7 @@ class SyncEngine @Inject constructor(
             "create_visit" -> syncCreateVisit(entry)
             "upsert_provider_note" -> syncUpsertProviderNote(entry)
             "upsert_patient_note_summary" -> syncUpsertPatientNoteSummary(entry)
+            "upsert_visit_clinical_summary" -> syncUpsertVisitClinicalSummary(entry)
             "insert_patient_vitals" -> syncInsertPatientVitals(entry)
             "mark_documentation_complete" -> syncMarkDocumentationComplete(entry)
             "queue_op" -> syncQueueOperation(entry)
@@ -163,6 +164,18 @@ class SyncEngine @Inject constructor(
         Log.d(TAG, "Patient note summary synced: ${entry.entityId}")
     }
 
+    private suspend fun syncUpsertVisitClinicalSummary(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(VisitClinicalSummaryUpsertDto.serializer(), entry.payload)
+        Log.d(TAG, "Syncing upsert_visit_clinical_summary: ${entry.entityId}")
+        val result = supabaseApi.rpcUpsertVisitClinicalSummary(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("upsert_visit_clinical_summary HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Visit clinical summary synced: ${entry.entityId}")
+    }
+
+
     private suspend fun syncInsertPatientVitals(entry: SyncQueueEntry) {
         val dto = json.decodeFromString(PatientVitalsCreateDto.serializer(), entry.payload)
         Log.d(TAG, "Syncing insert_patient_vitals: ${entry.entityId}")
@@ -202,11 +215,20 @@ class SyncEngine @Inject constructor(
         }
             ?: emptyMap()
 
-        when (rpcName) {
+        val response = when (rpcName) {
             "assign_to_nurse" -> supabaseApi.assignToNurse(rpcParams)
             "mark_ready_for_doctor" -> supabaseApi.markReadyForDoctor(rpcParams)
             "claim_patient" -> supabaseApi.claimPatient(rpcParams)
-            else -> Log.w(TAG, "Unknown queue RPC: $rpcName")
+            "start_visit_self_triage" -> supabaseApi.startVisitSelfTriage(rpcParams)
+            "complete_visit_queue" -> supabaseApi.completeVisitQueue(rpcParams)
+            else -> {
+                Log.w(TAG, "Unknown queue RPC: $rpcName")
+                null
+            }
+        }
+        if (response != null && !response.isSuccessful) {
+            val body = response.errorBody()?.string().orEmpty()
+            throw IllegalStateException("${rpcName ?: "queue_op"} HTTP ${response.code()} ${body.take(300)}".trim())
         }
     }
 

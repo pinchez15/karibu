@@ -105,6 +105,40 @@ interface VisitDao {
     @Query("UPDATE visits SET queue_status = :queueStatus, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateQueueStatus(id: String, queueStatus: String, updatedAt: String)
 
+    @Query("""
+        UPDATE visits
+        SET status = :status,
+            queue_status = :queueStatus,
+            finalized_at = :finalizedAt,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateStatusAndQueueStatus(
+        id: String,
+        status: String,
+        queueStatus: String,
+        finalizedAt: String?,
+        updatedAt: String,
+    )
+
+    @Query("""
+        UPDATE visits
+        SET diagnosis = :diagnosis,
+            medications = :medications,
+            follow_up_instructions = :followUpInstructions,
+            tests_ordered = :testsOrdered,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateClinicalSummary(
+        id: String,
+        diagnosis: String?,
+        medications: String?,
+        followUpInstructions: String?,
+        testsOrdered: String?,
+        updatedAt: String,
+    )
+
     @Query("UPDATE visits SET is_synced = :isSynced WHERE id = :id")
     suspend fun updateSyncState(id: String, isSynced: Boolean)
 

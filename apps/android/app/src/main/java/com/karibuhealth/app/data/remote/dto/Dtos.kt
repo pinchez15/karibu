@@ -216,6 +216,19 @@ data class MarkDocumentationCompleteDto(
     @SerialName("p_visit_id") val visitId: String,
 )
 
+// SyncQueue payload for "upsert_visit_clinical_summary" via
+// rpc_upsert_visit_clinical_summary. `structuredData` is a JSON string; the
+// SQL function validates/casts it to jsonb before storing it.
+@Serializable
+data class VisitClinicalSummaryUpsertDto(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_diagnosis") val diagnosis: String? = null,
+    @SerialName("p_medications") val medications: String? = null,
+    @SerialName("p_follow_up_instructions") val followUpInstructions: String? = null,
+    @SerialName("p_tests_ordered") val testsOrdered: String? = null,
+    @SerialName("p_structured_data") val structuredData: String? = null,
+)
+
 @Serializable
 data class PaymentDto(
     val id: String,

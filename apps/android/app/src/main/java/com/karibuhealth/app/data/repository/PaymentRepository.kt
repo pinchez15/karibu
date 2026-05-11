@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity
 import com.karibuhealth.app.data.local.db.dao.PaymentDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.local.db.dao.VisitDao
 import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.domain.model.*
@@ -23,6 +24,7 @@ import javax.inject.Singleton
 class PaymentRepository @Inject constructor(
     private val database: KaribuDatabase,
     private val paymentDao: PaymentDao,
+    private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
     private val json: Json,
 ) {
@@ -72,6 +74,17 @@ class PaymentRepository @Inject constructor(
             attempts = 0,
             createdAt = System.currentTimeMillis(),
         )
+        val completeEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "queue_op",
+            entityType = "visits",
+            entityId = visitId,
+            payload = """{"rpc":"complete_visit_queue","params":{"p_visit_id":"$visitId","p_staff_id":"$collectedBy"}}""",
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = syncEntry.id,
+        )
 
         // withTransaction is the suspend-friendly Room transaction API. The
         // previous runInTransaction { runBlocking { ... } } pattern crashed
@@ -83,9 +96,47 @@ class PaymentRepository @Inject constructor(
             database.withTransaction {
                 paymentDao.upsert(entity)
                 syncQueueDao.insert(syncEntry)
+                syncQueueDao.insert(completeEntry)
+                visitDao.updateStatusAndQueueStatus(
+                    id = visitId,
+                    status = VisitStatus.completed.name,
+                    queueStatus = QueueStatus.completed.name,
+                    finalizedAt = now,
+                    updatedAt = now,
+                )
             }
         }
 
         return payment
+    }
+
+    suspend fun skipPayment(
+        visitId: String,
+        staffId: String,
+    ) {
+        val now = Instant.now().toString()
+        val completeEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "queue_op",
+            entityType = "visits",
+            entityId = visitId,
+            payload = """{"rpc":"complete_visit_queue","params":{"p_visit_id":"$visitId","p_staff_id":"$staffId"}}""",
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+        )
+
+        withContext(Dispatchers.IO) {
+            database.withTransaction {
+                syncQueueDao.insert(completeEntry)
+                visitDao.updateStatusAndQueueStatus(
+                    id = visitId,
+                    status = VisitStatus.completed.name,
+                    queueStatus = QueueStatus.completed.name,
+                    finalizedAt = now,
+                    updatedAt = now,
+                )
+            }
+        }
     }
 }

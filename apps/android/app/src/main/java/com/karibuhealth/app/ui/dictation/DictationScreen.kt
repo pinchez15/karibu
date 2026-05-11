@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,6 +77,7 @@ fun DictationScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onTranscriptChange = viewModel::updateTranscript,
+        onSectionsChange = viewModel::updateSections,
         onDismissError = viewModel::dismissError,
         onSubmit = { viewModel.submit(visitId) },
         onStructureWithAi = { viewModel.structureWithAi(visitId) },
@@ -96,6 +99,7 @@ private fun DictationScreenContent(
     uiState: DictationUiState,
     onNavigateBack: () -> Unit,
     onTranscriptChange: (String) -> Unit,
+    onSectionsChange: (ClinicalNoteSections) -> Unit,
     onDismissError: () -> Unit,
     onSubmit: () -> Unit,
     onStructureWithAi: () -> Unit,
@@ -167,9 +171,96 @@ private fun DictationScreenContent(
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Focus-mode body — large, calm typography.
+            val sections = uiState.sections
+
+            Text(
+                text = "Clinical note",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Ink,
+            )
+
+            SectionField(
+                label = "CHIEF COMPLAINT",
+                value = sections.chiefComplaint,
+                placeholder = "Fever for 3 days",
+                minLines = 1,
+                onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "HISTORY OF PRESENT ILLNESS",
+                value = sections.hpi,
+                placeholder = "Onset, duration, associated symptoms, relevant negatives",
+                onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "PHYSICAL EXAM",
+                value = sections.physicalExam,
+                placeholder = "General appearance, vitals, focused exam findings",
+                onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "FAMILY AND SOCIAL HISTORY",
+                value = sections.familySocialHistory,
+                placeholder = "Household exposure, pregnancy, smoking/alcohol, family conditions",
+                onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "DIAGNOSIS",
+                value = sections.diagnosis,
+                placeholder = "Malaria, dehydration, URI, hypertension...",
+                minLines = 1,
+                onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "ASSESSMENT AND PLAN",
+                value = sections.assessmentPlan,
+                placeholder = "Clinical reasoning and treatment plan",
+                onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "PHARMACY",
+                value = sections.medications,
+                placeholder = "Amoxicillin 500 mg TDS x 5 days",
+                onValueChange = { onSectionsChange(sections.copy(medications = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+            SectionField(
+                label = "LABS",
+                value = sections.testsOrdered,
+                placeholder = "Malaria RDT, Hb, urinalysis",
+                onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+
+            FollowUpTaskPicker(
+                selected = sections.followUpTasks,
+                enabled = !uiState.isSubmitting,
+                onSelectedChange = { onSectionsChange(sections.copy(followUpTasks = it)) },
+            )
+            SectionField(
+                label = "FOLLOW-UP DETAILS",
+                value = sections.followUpInstructions,
+                placeholder = "Return in 48 hours, danger signs, referral instructions",
+                onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
+                enabled = !uiState.isSubmitting,
+            )
+
+            Text(
+                text = "Dictation / extra notes",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Ink,
+                modifier = Modifier.padding(top = 8.dp),
+            )
             BasicTextField(
-                value = uiState.transcript,
+                value = sections.additionalNote,
                 onValueChange = onTranscriptChange,
                 textStyle = TextStyle(
                     color = Ink,
@@ -180,12 +271,15 @@ private fun DictationScreenContent(
                 cursorBrush = SolidColor(Cobalt),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 240.dp),
+                    .heightIn(min = 120.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Line, RoundedCornerShape(12.dp))
+                    .padding(12.dp),
                 enabled = !uiState.isSubmitting,
                 decorationBox = { inner ->
-                    if (uiState.transcript.isEmpty()) {
+                    if (sections.additionalNote.isEmpty()) {
                         Text(
-                            text = "Patient reports fever and headache for 3 days. T 38.4°C. RDT positive (Pf). Plan: AL 4 tabs BD x 3d, ORS, follow-up 48h.",
+                            text = "Free dictation lands here. Use the fields above for the structured receipt and queues.",
                             color = Muted,
                             style = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
                         )
@@ -214,6 +308,71 @@ private fun DictationScreenContent(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionField(
+    label: String,
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+    enabled: Boolean,
+    minLines: Int = 2,
+) {
+    Column {
+        KhMetaText(text = label)
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text(placeholder, color = Muted) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
+            minLines = minLines,
+            maxLines = 5,
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Cobalt,
+                unfocusedBorderColor = Line,
+            ),
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FollowUpTaskPicker(
+    selected: List<String>,
+    enabled: Boolean,
+    onSelectedChange: (List<String>) -> Unit,
+) {
+    val options = listOf(
+        "Get script from pharmacy",
+        "Get labs drawn",
+        "Return for review",
+        "Referral",
+    )
+    Column {
+        KhMetaText(text = "FOLLOW-UP TASKS")
+        Spacer(Modifier.height(6.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { option ->
+                FilterChip(
+                    selected = option in selected,
+                    onClick = {
+                        if (!enabled) return@FilterChip
+                        val next = if (option in selected) selected - option else selected + option
+                        onSelectedChange(next)
+                    },
+                    enabled = enabled,
+                    label = { Text(option) },
+                )
             }
         }
     }
@@ -338,6 +497,7 @@ private fun DictationScreenPreview() {
             ),
             onNavigateBack = {},
             onTranscriptChange = {},
+            onSectionsChange = {},
             onDismissError = {},
             onSubmit = {},
             onStructureWithAi = {},
@@ -345,4 +505,3 @@ private fun DictationScreenPreview() {
         )
     }
 }
-

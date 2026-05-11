@@ -24,10 +24,30 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
+
+@Serializable
+data class ClinicalNoteSections(
+    val chiefComplaint: String = "",
+    val hpi: String = "",
+    val physicalExam: String = "",
+    val familySocialHistory: String = "",
+    val diagnosis: String = "",
+    val assessmentPlan: String = "",
+    val medications: String = "",
+    val testsOrdered: String = "",
+    val followUpInstructions: String = "",
+    val followUpTasks: List<String> = emptyList(),
+    val additionalNote: String = "",
+)
 
 data class DictationUiState(
     val transcript: String = "",
+    val sections: ClinicalNoteSections = ClinicalNoteSections(),
     val isRecording: Boolean = false,
     /** Number of segments currently uploading to Whisper. Drives the "transcribing…" indicator. */
     val pendingChunks: Int = 0,
@@ -41,7 +61,8 @@ data class DictationUiState(
     val isTranscribing: Boolean
         get() = pendingChunks > 0
     val canSubmit: Boolean
-        get() = transcript.trim().length >= 10 && !isRecording && !isSubmitting
+        get() = (transcript.trim().length >= 10 || sections.hasClinicalContent()) &&
+            !isRecording && !isSubmitting
 }
 
 @HiltViewModel
@@ -54,6 +75,7 @@ class DictationViewModel @Inject constructor(
     private val clerkAuthManager: ClerkAuthManager,
     private val networkMonitor: NetworkMonitor,
     private val analytics: Analytics,
+    private val json: Json,
 ) : ViewModel() {
 
     private val recorder = DictationRecorder(context)
@@ -64,9 +86,21 @@ class DictationViewModel @Inject constructor(
     fun load(visitId: String) {
         viewModelScope.launch {
             val existing = noteRepository.getProviderNoteOnce(visitId)
+            val visit = visitRepository.getVisitByIdOnce(visitId)
+            val parsedSections = existing?.structuredData
+                ?.let(::decodeClinicalSections)
+                ?: ClinicalNoteSections(
+                    chiefComplaint = visit?.chiefComplaint.orEmpty(),
+                    diagnosis = visit?.diagnosis.orEmpty(),
+                    medications = visit?.medications.orEmpty(),
+                    testsOrdered = visit?.testsOrdered.orEmpty(),
+                    followUpInstructions = visit?.followUpInstructions.orEmpty(),
+                    additionalNote = existing?.transcript.orEmpty(),
+                )
             _uiState.update {
                 it.copy(
-                    transcript = existing?.transcript.orEmpty(),
+                    transcript = parsedSections.toClinicianText().ifBlank { existing?.transcript.orEmpty() },
+                    sections = parsedSections,
                     savedLocally = existing?.transcript?.isNotBlank() == true,
                     submitted = false,
                     error = null,
@@ -123,10 +157,14 @@ class DictationViewModel @Inject constructor(
             }
             if (text.isNotBlank()) {
                 _uiState.update { state ->
-                    val trimmedPrev = state.transcript.trimEnd()
+                    val trimmedPrev = state.sections.additionalNote.trimEnd()
                     val combined = if (trimmedPrev.isEmpty()) text.trim()
                     else "$trimmedPrev ${text.trim()}"
-                    state.copy(transcript = combined)
+                    val nextSections = state.sections.copy(additionalNote = combined)
+                    state.copy(
+                        transcript = nextSections.toClinicianText(),
+                        sections = nextSections,
+                    )
                 }
             }
         } catch (e: DictationException) {
@@ -142,7 +180,24 @@ class DictationViewModel @Inject constructor(
     }
 
     fun updateTranscript(text: String) {
-        _uiState.update { it.copy(transcript = text, savedLocally = false) }
+        _uiState.update {
+            val nextSections = it.sections.copy(additionalNote = text)
+            it.copy(
+                transcript = nextSections.toClinicianText(),
+                sections = nextSections,
+                savedLocally = false,
+            )
+        }
+    }
+
+    fun updateSections(sections: ClinicalNoteSections) {
+        _uiState.update {
+            it.copy(
+                sections = sections,
+                transcript = sections.toClinicianText(),
+                savedLocally = false,
+            )
+        }
     }
 
     fun onMicrophonePermissionDenied() {
@@ -161,7 +216,8 @@ class DictationViewModel @Inject constructor(
      *      atomically server-side, making the visit reachable for payment)
      */
     fun submit(visitId: String) {
-        val transcript = _uiState.value.transcript.trim()
+        val sections = _uiState.value.sections
+        val transcript = sections.toClinicianText()
         if (transcript.length < 10) {
             _uiState.update { it.copy(error = "Add a bit more to the note before saving.") }
             return
@@ -181,9 +237,18 @@ class DictationViewModel @Inject constructor(
                         content = transcript,
                         predecessorSyncId = providerSyncId,
                     )
+                    val clinicalSyncId = noteRepository.saveClinicalSummary(
+                        visitId = visitId,
+                        diagnosis = sections.diagnosis.cleanOrNull(),
+                        medications = sections.medications.cleanOrNull(),
+                        followUpInstructions = sections.followUpInstructionsWithTasks().cleanOrNull(),
+                        testsOrdered = sections.testsOrdered.cleanOrNull(),
+                        structuredData = json.encodeToString(sections),
+                        predecessorSyncId = summarySyncId ?: providerSyncId,
+                    )
                     visitRepository.markDocumentationComplete(
                         visitId = visitId,
-                        predecessorSyncId = summarySyncId ?: providerSyncId,
+                        predecessorSyncId = clinicalSyncId ?: summarySyncId ?: providerSyncId,
                     )
                 }
                 analytics.capture(
@@ -258,4 +323,53 @@ class DictationViewModel @Inject constructor(
         recorder.cancel()
         recorder.clearCache()
     }
+
+    private fun decodeClinicalSections(raw: String): ClinicalNoteSections? {
+        return try {
+            json.decodeFromString(ClinicalNoteSections.serializer(), raw)
+        } catch (_: SerializationException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
 }
+
+private fun ClinicalNoteSections.hasClinicalContent(): Boolean =
+    listOf(
+        chiefComplaint,
+        hpi,
+        physicalExam,
+        familySocialHistory,
+        diagnosis,
+        assessmentPlan,
+        medications,
+        testsOrdered,
+        followUpInstructions,
+        additionalNote,
+    ).any { it.isNotBlank() } || followUpTasks.isNotEmpty()
+
+private fun ClinicalNoteSections.toClinicianText(): String {
+    val blocks = listOfNotNull(
+        chiefComplaint.cleanOrNull()?.let { "Chief complaint: $it" },
+        hpi.cleanOrNull()?.let { "History of present illness: $it" },
+        physicalExam.cleanOrNull()?.let { "Physical exam: $it" },
+        familySocialHistory.cleanOrNull()?.let { "Family and social history: $it" },
+        diagnosis.cleanOrNull()?.let { "Diagnosis: $it" },
+        assessmentPlan.cleanOrNull()?.let { "Assessment and plan: $it" },
+        medications.cleanOrNull()?.let { "Medications: $it" },
+        testsOrdered.cleanOrNull()?.let { "Labs/tests: $it" },
+        followUpInstructionsWithTasks().cleanOrNull()?.let { "Follow-up: $it" },
+        additionalNote.cleanOrNull()?.let { "Additional note: $it" },
+    )
+    return blocks.joinToString("\n\n")
+}
+
+private fun ClinicalNoteSections.followUpInstructionsWithTasks(): String {
+    val taskText = followUpTasks.joinToString("; ")
+    return listOf(followUpInstructions.cleanOrNull(), taskText.cleanOrNull())
+        .filterNotNull()
+        .joinToString("\n")
+}
+
+private fun String.cleanOrNull(): String? = trim().takeIf { it.isNotBlank() }
