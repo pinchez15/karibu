@@ -144,7 +144,7 @@ fun VitalsScreen(
                             text = "Patient #${patientId.take(8)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Ink,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         KhMetaText(text = "VISIT ${visitId.take(8).uppercase()}")
                     }
@@ -275,7 +275,7 @@ fun VitalsScreen(
                             Text(
                                 text = "Use weight ${uiState.weightKg} kg to confirm pediatric dose. Consider malaria RDT.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Body,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -285,7 +285,7 @@ fun VitalsScreen(
             OutlinedTextField(
                 value = uiState.notes,
                 onValueChange = viewModel::updateNotes,
-                label = { Text("Notes (optional)", color = Muted) },
+                label = { Text("Notes (optional)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 shape = RoundedCornerShape(10.dp),

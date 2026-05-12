@@ -26,9 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
-import com.karibuhealth.app.ui.theme.Ink
 import com.karibuhealth.app.ui.theme.Line
-import com.karibuhealth.app.ui.theme.Muted
 
 /**
  * Focus-aware vital input card.
@@ -58,8 +56,8 @@ fun KhVitalCard(
         hot -> Amber
         else -> Line
     }
-    val labelColor: Color = if (isFocused) Cobalt else Muted
-    val valueColor: Color = if (hot) Amber else Ink
+    val labelColor: Color = if (isFocused) Cobalt else MaterialTheme.colorScheme.onSurfaceVariant
+    val valueColor: Color = if (hot) Amber else MaterialTheme.colorScheme.onSurface
 
     val borderWidth = if (isFocused) 2.dp else 1.dp
     val haloModifier = if (isFocused) {
@@ -118,7 +116,7 @@ fun KhVitalCard(
                                 Text(
                                     text = "—",
                                     style = LocalTextStyle.current.copy(
-                                        color = Muted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.SemiBold,
                                     ),
@@ -131,7 +129,7 @@ fun KhVitalCard(
                     Text(
                         text = unit,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Muted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }

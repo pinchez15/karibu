@@ -20,7 +20,6 @@ import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.GreenSoft
 import com.karibuhealth.app.ui.theme.Line
 import com.karibuhealth.app.ui.theme.LineSoft
-import com.karibuhealth.app.ui.theme.Muted
 import com.karibuhealth.app.ui.theme.Slate
 import com.karibuhealth.app.ui.theme.SlateSoft
 
@@ -38,8 +37,8 @@ fun KhStatusPill(
         KhStatusKind.Vitals -> Green to GreenSoft
         KhStatusKind.InNote -> Cobalt to CobaltSoft
         KhStatusKind.Ready -> Cobalt to CobaltSoft
-        KhStatusKind.Waiting -> Muted to LineSoft
-        KhStatusKind.Done -> Muted to LineSoft
+        KhStatusKind.Waiting -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
+        KhStatusKind.Done -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
         KhStatusKind.Lab -> Slate to SlateSoft
         KhStatusKind.Review -> Cobalt to CobaltSoft
         KhStatusKind.Sent -> Green to GreenSoft

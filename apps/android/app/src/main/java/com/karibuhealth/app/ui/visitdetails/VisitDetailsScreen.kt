@@ -76,7 +76,7 @@ fun VisitDetailsScreen(
                         "Visit",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
@@ -300,7 +300,7 @@ private fun PatientCard(
                         text = name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(2.dp))
                     KhMetaText(
@@ -334,7 +334,7 @@ private fun PatientCard(
                         KhVitalChip(
                             label = "T",
                             value = "${formatDecimal(it)}°C",
-                            valueColor = if (it >= 38.0) Amber else Ink,
+                            valueColor = if (it >= 38.0) Amber else MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     if (vitals.bpSystolic != null && vitals.bpDiastolic != null) {
@@ -342,7 +342,7 @@ private fun PatientCard(
                         KhVitalChip(
                             label = "BP",
                             value = "${vitals.bpSystolic}/${vitals.bpDiastolic}",
-                            valueColor = if (high) Amber else Ink,
+                            valueColor = if (high) Amber else MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     vitals.pulseBpm?.let {
@@ -355,7 +355,7 @@ private fun PatientCard(
                         KhVitalChip(
                             label = "SpO₂",
                             value = "$it%",
-                            valueColor = if (it < 94) Amber else Ink,
+                            valueColor = if (it < 94) Amber else MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     vitals.weightKg?.let {
@@ -390,20 +390,20 @@ private fun AiReceiptCard(summary: String) {
                     text = "Patient receipt summary",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Spacer(Modifier.height(6.dp))
             Text(
                 text = summary,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "Plain-language version that prints on the thermal slip when you choose this. Your note above remains the receipt-of-record by default.",
                 style = MaterialTheme.typography.labelSmall,
-                color = Muted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -425,7 +425,7 @@ private fun ClinicianNoteCard(content: String) {
             Text(
                 text = content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -472,7 +472,7 @@ private fun SummaryRow(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = Ink,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -498,7 +498,7 @@ private fun CareDeliveredCard(visit: Visit) {
                         text = "Medications",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.width(8.dp))
                     DispensingPill(status = visit.dispensingStatus)
@@ -508,7 +508,7 @@ private fun CareDeliveredCard(visit: Visit) {
                     Text(
                         text = visit.medications,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 if (!visit.dispenseNotes.isNullOrBlank()) {
@@ -516,7 +516,7 @@ private fun CareDeliveredCard(visit: Visit) {
                     Text(
                         text = "Dispenser note: ${visit.dispenseNotes}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Muted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -529,7 +529,7 @@ private fun CareDeliveredCard(visit: Visit) {
                         text = "Tests",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.width(8.dp))
                     LabPill(status = visit.labStatus, abnormal = visit.labAbnormal)
@@ -539,7 +539,7 @@ private fun CareDeliveredCard(visit: Visit) {
                     Text(
                         text = visit.testsOrdered,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Ink,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 if (!visit.labResults.isNullOrBlank()) {
@@ -559,13 +559,13 @@ private fun CareDeliveredCard(visit: Visit) {
                         Column {
                             KhMetaText(
                                 text = "RESULT",
-                                color = if (visit.labAbnormal) Amber else Muted,
+                                color = if (visit.labAbnormal) Amber else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = visit.labResults,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Ink,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -582,7 +582,7 @@ private fun DispensingPill(status: String) {
         "in_progress" -> Triple("In progress", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
         "partial" -> Triple("Partial", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
         "out_of_stock" -> Triple("Out of stock", com.karibuhealth.app.ui.theme.Red, com.karibuhealth.app.ui.theme.RedSoft)
-        else -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+        else -> Triple("Pending", MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
     }
     com.karibuhealth.app.ui.components.KhAccentPill(label = label, fg = fg, bg = bg)
 }
@@ -601,8 +601,8 @@ private fun LabPill(status: String, abnormal: Boolean) {
         "running" -> Triple("Running", Cobalt, com.karibuhealth.app.ui.theme.CobaltSoft)
         "done" -> Triple("Done", Green, com.karibuhealth.app.ui.theme.GreenSoft)
         "abnormal" -> Triple("Abnormal", com.karibuhealth.app.ui.theme.AmberInk, AmberSoft)
-        "pending" -> Triple("Pending", Muted, com.karibuhealth.app.ui.theme.LineSoft)
-        else -> Triple("—", Muted, com.karibuhealth.app.ui.theme.LineSoft)
+        "pending" -> Triple("Pending", MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
+        else -> Triple("—", MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
     }
     com.karibuhealth.app.ui.components.KhAccentPill(label = label, fg = fg, bg = bg)
 }
@@ -652,7 +652,7 @@ private fun HmisCodeRow(
         Text(
             text = name,
             style = MaterialTheme.typography.bodyMedium,
-            color = Ink,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         KhMetaText(
@@ -660,7 +660,7 @@ private fun HmisCodeRow(
             color = when (confidence.lowercase()) {
                 "high" -> Green
                 "medium" -> Cobalt
-                else -> Muted
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
         )
     }
@@ -704,13 +704,13 @@ private fun SyncErrorBanner(
                 text = first.operationType,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = first.lastError.ifBlank { "(no error message)" },
                 style = MaterialTheme.typography.labelSmall,
-                color = Body,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
             Spacer(Modifier.height(4.dp))
@@ -722,7 +722,7 @@ private fun SyncErrorBanner(
                     Text(
                         text = "${err.operationType}: ${err.lastError.take(80)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Muted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
@@ -766,7 +766,7 @@ private fun SyncCard(
             Text(
                 text = statusMessage,
                 style = MaterialTheme.typography.bodySmall,
-                color = Body,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(10.dp))
             OutlinedButton(
@@ -927,7 +927,7 @@ private fun VisitDetailsBottomAction(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (primary.enabled) Cobalt else Line,
                     disabledContainerColor = Line,
-                    disabledContentColor = Muted,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
                 shape = RoundedCornerShape(12.dp),
                 contentPadding = PaddingValues(vertical = 14.dp),

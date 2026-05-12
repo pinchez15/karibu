@@ -146,9 +146,9 @@ fun HomeScreen(
                             value = uiState.searchQuery,
                             onValueChange = viewModel::updateSearch,
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Find patient by phone or name", color = Muted) },
+                            placeholder = { Text("Find patient by phone or name", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             leadingIcon = {
-                                Icon(Icons.Default.Search, contentDescription = null, tint = Muted)
+                                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -201,7 +201,7 @@ fun HomeScreen(
                             text = "Queue",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Ink,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
                         KhMetaText(
@@ -246,7 +246,7 @@ fun HomeScreen(
                                 text = "AI review",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Ink,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             KhMetaText(text = "${uiState.toReview.size} READY")
@@ -276,7 +276,7 @@ fun HomeScreen(
                                 text = "Drafts",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Ink,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             KhMetaText(text = "${uiState.toDictate.size} TO FINISH")
@@ -306,7 +306,7 @@ fun HomeScreen(
                             Text(
                                 text = "${uiState.doneTodayCount} completed today",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Muted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -338,7 +338,7 @@ private fun HomeAppBar(
                 text = staff?.displayName ?: "—",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
 
@@ -367,12 +367,12 @@ private fun HomeHero(
         Text(
             text = "Today, $datePretty",
             style = MaterialTheme.typography.bodyMedium,
-            color = Muted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
         Text(
             text = buildAnnotatedString {
-                withStyle(SpanStyle(color = Ink, fontWeight = FontWeight.SemiBold)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)) {
                     append("$seen seen.")
                 }
                 append(" ")
@@ -408,7 +408,7 @@ private fun StatTile(
                     text = value,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (indicatorColor != null) {
                     Spacer(Modifier.width(6.dp))
@@ -467,13 +467,13 @@ private fun ProfileMenu(
                 text = staff?.role?.name?.replace('_', ' ')?.replaceFirstChar { it.titlecase() }
                     ?: "",
                 style = MaterialTheme.typography.bodySmall,
-                color = Muted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             clinicName?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Muted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -501,7 +501,7 @@ private fun SectionHeader(
             text = if (countSuffix != null) "$title ($countSuffix)" else title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = Ink,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -512,7 +512,7 @@ private fun EmptyHint(text: String) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = Muted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -542,7 +542,7 @@ private fun SearchResultCard(
                     text = name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 val meta = listOfNotNull(
                     age,
@@ -552,14 +552,14 @@ private fun SearchResultCard(
                     Text(
                         text = meta,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Muted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 patient.dateOfBirth?.let {
                     Text(
                         text = "DOB: ${formatDobForDisplay(it)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Muted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -626,7 +626,7 @@ private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
                     text = name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 if (ageBand.isNotBlank()) {
@@ -640,7 +640,7 @@ private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
             Text(
                 text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: "—",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(6.dp))
             KhMetaText(text = "$patientId · $waitText")
@@ -676,12 +676,12 @@ private fun StatusCard(
                 text = name,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = v.chiefComplaint?.takeIf { it.isNotBlank() } ?: v.visitDate,
                 style = MaterialTheme.typography.bodySmall,
-                color = Muted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         KhStatusPill(kind = kind, label = statusLabel)

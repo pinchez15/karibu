@@ -10,8 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.karibuhealth.app.ui.theme.Ink
-import com.karibuhealth.app.ui.theme.Muted
 
 /** Mono key/value vital chip — `T 38.4°C` style (label cool, value bold). */
 @Composable
@@ -19,13 +17,13 @@ fun KhVitalChip(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    valueColor: Color = Ink,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Row(modifier = modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
-            color = Muted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
         )
         Spacer(Modifier.width(4.dp))

@@ -121,7 +121,7 @@ private fun DictationScreenContent(
                             "Note",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Ink,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         KhMetaText(text = "DICTATION")
                     }
@@ -177,7 +177,7 @@ private fun DictationScreenContent(
                 text = "Clinical note",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             SectionField(
@@ -256,14 +256,14 @@ private fun DictationScreenContent(
                 text = "Dictation / extra notes",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Ink,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 8.dp),
             )
             BasicTextField(
                 value = sections.additionalNote,
                 onValueChange = onTranscriptChange,
                 textStyle = TextStyle(
-                    color = Ink,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 17.sp,
                     lineHeight = 26.sp,
                     fontWeight = FontWeight.Normal,
@@ -280,7 +280,7 @@ private fun DictationScreenContent(
                     if (sections.additionalNote.isEmpty()) {
                         Text(
                             text = "Free dictation lands here. Use the fields above for the structured receipt and queues.",
-                            color = Muted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
                         )
                     }
@@ -328,7 +328,7 @@ private fun SectionField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = Muted) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
             minLines = minLines,
@@ -457,7 +457,7 @@ private fun DictationBottomToolbar(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Body,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     KhMetaText(
                         text = "$wordCount WORDS" + if (uiState.savedLocally) " · AUTO-SAVED" else "",

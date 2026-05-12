@@ -206,11 +206,11 @@ fun NewVisitScreen(
                         )
                         viewModel.updateDateOfBirth(formatted)
                     },
-                    placeholder = { Text("DD-MM-YYYY", color = Muted) },
+                    placeholder = { Text("DD-MM-YYYY", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = uiState.fieldErrors.dateOfBirth != null,
                     supportingText = uiState.fieldErrors.dateOfBirth?.let { { Text(it) } }
-                        ?: { Text("Type DDMMYYYY or tap the calendar", color = Muted) },
+                        ?: { Text("Type DDMMYYYY or tap the calendar", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     trailingIcon = {
                         IconButton(onClick = { datePickerOpen = true }) {
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Pick date", tint = Cobalt)
@@ -235,7 +235,7 @@ fun NewVisitScreen(
                 OutlinedTextField(
                     value = uiState.searchQuery,
                     onValueChange = viewModel::updateSearch,
-                    placeholder = { Text("+256 7XX XXX XXX", color = Muted) },
+                    placeholder = { Text("+256 7XX XXX XXX", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = uiState.fieldErrors.phone != null,
                     supportingText = uiState.fieldErrors.phone?.let { { Text(it) } },
@@ -255,7 +255,7 @@ fun NewVisitScreen(
                 OutlinedTextField(
                     value = uiState.chiefComplaint,
                     onValueChange = viewModel::updateChiefComplaint,
-                    placeholder = { Text("e.g. Fever for 3 days, headache", color = Muted) },
+                    placeholder = { Text("e.g. Fever for 3 days, headache", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 80.dp),
@@ -312,10 +312,10 @@ fun NewVisitScreen(
                             text = patient.fullName.ifBlank { "Unknown" },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = Ink,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         patient.patientId?.let {
-                            Text("ID: #$it", style = MaterialTheme.typography.bodySmall, color = Muted)
+                            Text("ID: #$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -349,7 +349,7 @@ fun NewVisitScreen(
                                 }
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = Body,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -418,7 +418,7 @@ private fun LabeledOutlinedField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = Muted) },
+            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             isError = error != null,
             supportingText = error?.let { { Text(it) } },
             singleLine = true,
@@ -457,7 +457,7 @@ private fun SegmentedChip(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) Color.White else Body,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

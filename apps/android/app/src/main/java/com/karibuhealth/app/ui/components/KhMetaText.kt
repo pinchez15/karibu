@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.karibuhealth.app.ui.theme.Muted
 
 /**
  * Small uppercase mono label — the Android equivalent of the web `.kh-meta`
@@ -17,7 +16,7 @@ import com.karibuhealth.app.ui.theme.Muted
 fun KhMetaText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = Muted,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     Text(
         text = text.uppercase(),
