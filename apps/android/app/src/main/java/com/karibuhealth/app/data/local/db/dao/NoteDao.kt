@@ -16,6 +16,12 @@ interface ProviderNoteDao {
     @Query("SELECT * FROM provider_notes WHERE visit_id = :visitId")
     suspend fun getByVisitIdOnce(visitId: String): ProviderNoteEntity?
 
+    // Migration 039: notes can be standalone (no visit_id). The sign / amend
+    // / void RPCs key off id, so we need lookup-by-id for the autosave +
+    // Sign split.
+    @Query("SELECT * FROM provider_notes WHERE id = :id")
+    suspend fun getByIdOnce(id: String): ProviderNoteEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(note: ProviderNoteEntity)
 
@@ -26,6 +32,36 @@ interface ProviderNoteDao {
         WHERE visit_id = :visitId
     """)
     suspend fun updateStructuredData(visitId: String, structuredData: String?, updatedAt: String)
+
+    // Local mirror of the server-side lifecycle transitions. Status flips
+    // immediately so the UI reflects the new state; the actual server-side
+    // write happens through rpcSignProviderNote / amend / void (online) or
+    // gets queued by SyncEngine (offline).
+    @Query("""
+        UPDATE provider_notes
+        SET status = :status,
+            finalized_at = COALESCE(:finalizedAt, finalized_at),
+            finalized_by = COALESCE(:finalizedBy, finalized_by),
+            amended_at = COALESCE(:amendedAt, amended_at),
+            amended_by = COALESCE(:amendedBy, amended_by),
+            voided_at = COALESCE(:voidedAt, voided_at),
+            voided_by = COALESCE(:voidedBy, voided_by),
+            void_reason = COALESCE(:voidReason, void_reason),
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateLifecycle(
+        id: String,
+        status: String,
+        finalizedAt: String?,
+        finalizedBy: String?,
+        amendedAt: String?,
+        amendedBy: String?,
+        voidedAt: String?,
+        voidedBy: String?,
+        voidReason: String?,
+        updatedAt: String,
+    )
 }
 
 @Dao

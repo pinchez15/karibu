@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -52,6 +53,8 @@ fun HomeScreen(
     onNavigateToQueue: () -> Unit,
     onNavigateToNewVisit: () -> Unit,
     onNavigateToVisitDetails: (String) -> Unit,
+    onNavigateToPatient: (String) -> Unit,
+    onNavigateToWorklists: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -100,6 +103,7 @@ fun HomeScreen(
                             profileMenuOpen = false
                             viewModel.signOut()
                         },
+                        onOpenWorklists = onNavigateToWorklists,
                     )
                 }
 
@@ -180,6 +184,11 @@ fun HomeScreen(
                         items(uiState.searchResults, key = { "p-${it.id}" }) { patient ->
                             SearchResultCard(
                                 patient = patient,
+                                // Tap the card body to open the patient
+                                // timeline (Phase 3 patient-first UX).
+                                // "Start Visit" stays on the right for the
+                                // legacy queue-driven flow.
+                                onOpenPatient = { onNavigateToPatient(patient.id) },
                                 onStartVisit = {
                                     scope.launch {
                                         viewModel.startVisitForPatient(patient.id)?.let(onNavigateToVisitDetails)
@@ -324,6 +333,7 @@ private fun HomeAppBar(
     profileMenuOpen: Boolean,
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
+    onOpenWorklists: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -339,6 +349,17 @@ private fun HomeAppBar(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        // Phase 5 — worklists entry point. Sits next to the profile avatar so
+        // it's reachable from the same one-tap zone the clinician already
+        // uses for sign-out / clinic info.
+        IconButton(onClick = onOpenWorklists) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.List,
+                contentDescription = "Open worklists",
+                tint = Cobalt,
             )
         }
 
@@ -520,6 +541,7 @@ private fun EmptyHint(text: String) {
 @Composable
 private fun SearchResultCard(
     patient: Patient,
+    onOpenPatient: () -> Unit,
     onStartVisit: () -> Unit,
 ) {
     val name = listOfNotNull(patient.firstName, patient.lastName)
@@ -537,7 +559,14 @@ private fun SearchResultCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Tap the patient-summary column to open the timeline. Keeps
+            // "Start Visit" as a discrete button so the existing queue-driven
+            // flow stays clickable without a long-press.
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onOpenPatient),
+            ) {
                 Text(
                     text = name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -562,6 +591,11 @@ private fun SearchResultCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                Text(
+                    text = "Tap to open patient",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cobalt,
+                )
             }
 
             Button(

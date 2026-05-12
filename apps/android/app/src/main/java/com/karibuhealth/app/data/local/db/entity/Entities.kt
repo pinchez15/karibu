@@ -57,6 +57,24 @@ data class PatientEntity(
     @ColumnInfo(name = "whatsapp_number") val whatsappNumber: String?,
     @ColumnInfo(name = "date_of_birth") val dateOfBirth: String?,
     val sex: String?,
+    // Identity precision (migration 038). Year-only and approximate-age patients
+    // are first-class — the clinician picks the precision in the new-visit form
+    // and we record exactly what they know. Room doesn't enforce the
+    // dob_precision consistency CHECK; the UI + server enforce it. SMALLINT on
+    // the server maps to Int? here.
+    @ColumnInfo(name = "birth_year") val birthYear: Int? = null,
+    @ColumnInfo(name = "approximate_age") val approximateAge: Int? = null,
+    @ColumnInfo(name = "age_recorded_at") val ageRecordedAt: String? = null,
+    @ColumnInfo(name = "dob_precision") val dobPrecision: String = "unknown",
+    // Location + secondary identifiers (migration 038). Ugandan administrative
+    // hierarchy: village < parish < subcounty < district. Used as the primary
+    // disambiguator when DOB and phone are unknown.
+    val village: String? = null,
+    val parish: String? = null,
+    val subcounty: String? = null,
+    val district: String? = null,
+    @ColumnInfo(name = "guardian_name") val guardianName: String? = null,
+    @ColumnInfo(name = "national_id") val nationalId: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     // Local-only fields
@@ -133,19 +151,48 @@ data class VisitEntity(
 
 @Entity(
     tableName = "provider_notes",
-    indices = [Index("visit_id", unique = true)],
+    // Migration 7->8 (mirror of server migration 039): visit_id is optional;
+    // unique-when-present is enforced via a partial unique index created
+    // manually in MIGRATION_7_8 (Room can't express a partial unique index
+    // via @Index, so the index_provider_notes_visit_id name has to match what
+    // the migration creates so the schema verifier accepts it).
+    indices = [
+        Index(value = ["visit_id"], unique = true, name = "index_provider_notes_visit_id"),
+        Index(value = ["patient_id", "updated_at"], name = "index_provider_notes_patient_id_updated_at"),
+    ],
 )
 data class ProviderNoteEntity(
     @PrimaryKey val id: String,
-    @ColumnInfo(name = "visit_id") val visitId: String,
+    // Migration 039: provider_notes are patient-first. patient_id is the
+    // durable record link; visit_id is optional (standalone notes for phone
+    // calls, lab updates, follow-ups, etc.).
+    @ColumnInfo(name = "patient_id") val patientId: String,
+    @ColumnInfo(name = "visit_id") val visitId: String?,
     val transcript: String?,
     @ColumnInfo(name = "note_content") val noteContent: String?,
     @ColumnInfo(name = "structured_data") val structuredData: String?,
     val status: String,
+    // 'visit' | 'phone_call' | 'follow_up' | 'lab_update' | 'pharmacy_update' | 'general'
+    // Default 'visit' preserves the legacy visit-tied semantics. Room doesn't
+    // enforce the CHECK constraint; the server is the source of truth.
+    val source: String = "visit",
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
+    // finalized_at / finalized_by stay as the canonical "signed" timestamps
+    // (renaming would cascade across every Android + web caller). Lifecycle
+    // is now draft -> signed -> amended | voided; amend/void columns below.
     @ColumnInfo(name = "finalized_at") val finalizedAt: String?,
     @ColumnInfo(name = "finalized_by") val finalizedBy: String?,
+    @ColumnInfo(name = "amended_at") val amendedAt: String? = null,
+    @ColumnInfo(name = "amended_by") val amendedBy: String? = null,
+    @ColumnInfo(name = "voided_at") val voidedAt: String? = null,
+    @ColumnInfo(name = "voided_by") val voidedBy: String? = null,
+    @ColumnInfo(name = "void_reason") val voidReason: String? = null,
+    // Migration 042: server-side rpc_upsert_provider_note now records the
+    // authoring staff on first INSERT (preserved on subsequent UPDATEs).
+    // Read-back only on Android — there's no client-side write path; the
+    // mobile column exists so we can render "Authored by …" in future UI.
+    @ColumnInfo(name = "created_by") val createdBy: String? = null,
 )
 
 @Entity(

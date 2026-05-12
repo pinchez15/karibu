@@ -1,5 +1,7 @@
 # KARIBU HEALTH — Legal Compliance Report
 
+> **Status note (2026-05-12):** this report was written pre-pivot (Feb 2026) when the product captured patient consultation audio and required per-patient DPPA consent. The product pivoted on 2026-04-24 to dictation-only — clinicians dictate a summary *after* the patient leaves; patient audio is never recorded or stored; the audio/consent infrastructure (`audio_uploads`, `patient_consents`, related visit/note columns) was dropped in migration 023. Sections of this report dealing with audio consent and patient-voice retention are therefore historical and no longer reflect operating reality. The DPPA registration, Data Protection Officer, and clinician-data-handling guidance remain relevant. Get a fresh legal review before relying on this document for current compliance posture.
+
 **Prepared:** February 10, 2026
 **Purpose:** Assess the legality of an AI-powered clinical documentation system in Uganda and identify gaps for HIPAA compliance
 **Audience:** Local leadership, project stakeholders, legal counsel

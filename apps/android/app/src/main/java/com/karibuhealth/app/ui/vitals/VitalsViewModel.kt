@@ -46,7 +46,7 @@ class VitalsViewModel @Inject constructor(
     fun updateMuac(value: String) = _uiState.update { it.copy(muacCm = value) }
     fun updateNotes(value: String) = _uiState.update { it.copy(notes = value) }
 
-    fun save(patientId: String, visitId: String) {
+    fun save(patientId: String, visitId: String?) {
         if (_uiState.value.isSaving) return
         val state = _uiState.value
         viewModelScope.launch {

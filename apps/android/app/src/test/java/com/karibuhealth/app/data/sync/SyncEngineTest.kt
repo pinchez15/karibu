@@ -17,6 +17,7 @@ class SyncEngineTest {
     private lateinit var patientDao: PatientDao
     private lateinit var visitDao: VisitDao
     private lateinit var paymentDao: PaymentDao
+    private lateinit var patientVitalsDao: PatientVitalsDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var syncEngine: SyncEngine
@@ -27,6 +28,7 @@ class SyncEngineTest {
         patientDao = mockk(relaxed = true)
         visitDao = mockk(relaxed = true)
         paymentDao = mockk(relaxed = true)
+        patientVitalsDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
 
@@ -35,6 +37,7 @@ class SyncEngineTest {
             patientDao = patientDao,
             visitDao = visitDao,
             paymentDao = paymentDao,
+            patientVitalsDao = patientVitalsDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             json = Json { ignoreUnknownKeys = true },

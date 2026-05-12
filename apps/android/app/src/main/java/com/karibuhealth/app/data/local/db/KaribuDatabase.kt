@@ -17,7 +17,7 @@ import com.karibuhealth.app.data.local.db.entity.*
         PaymentEntity::class,
         SyncQueueEntry::class,
     ],
-    version = 6,
+    version = 9,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {

@@ -1,21 +1,21 @@
 # Karibu Health
 
-A clinical documentation system for low-resource health centres in Uganda. Clinicians dictate a brief summary after each patient visit; an AI assistant turns the dictation into a structured SOAP note with diagnosis suggestions and citations; the patient walks out with a printed receipt.
+A clinical documentation system for low-resource health centres in Uganda. After each patient visit the clinician types or dictates a brief note. An AI assistant works as a peer — it reviews the note against Ugandan clinical guidelines and surfaces possible disagreements with citations, drafts a plain-language patient receipt, and suggests an HMIS diagnosis code. The clinician retains medical authority on every decision. The patient walks out with a printed receipt.
 
 ## Product Shape
 
 The product is built around two surfaces:
 
-- **Android tablet (apps/android)** — what nurses use day to day. Offline-first via Room + WorkManager. After the patient leaves, the clinician taps the visit, dictates 1-3 minutes into the phone, and watches the AI structure the note.
-- **Web dashboard (apps/web)** — for desktop staff and admins: queue management, visit review + edit + approve, payment recording, printed-receipt rendering, and HMIS 105 reporting (which is what the diocese uses to report to the Ministry of Health and unlock subsidies).
+- **Android tablet (apps/android)** — primary clinician surface. Offline-first via Room + WorkManager. After the patient leaves, the clinician opens the visit and types or dictates a brief note. AI structuring is opt-in.
+- **Web dashboard (apps/web)** — for desktop staff and admins: queue management, visit review + edit + approve, payment recording, printed-receipt rendering, role-based worklists, and HMIS 105 reporting (which is what the diocese uses to report to the Ministry of Health and unlock subsidies).
 
 ### Core flow
 
 1. Patient arrives at the clinic. Receptionist (or any staff) checks them in via the Queue (web or Android).
 2. Nurse calls the patient and conducts the visit face-to-face — no app involvement during the consultation.
-3. After the patient leaves, nurse opens the visit on Android and dictates a 1-3 minute summary.
-4. Inngest workflow turns the dictation into a SOAP note + patient summary, suggests likely diagnoses with citations, drafts follow-up instructions.
-5. Nurse reviews + edits + approves on the web dashboard.
+3. After the patient leaves, the clinician opens the visit on Android and types or dictates a brief note. Save persists locally; Android syncs to Supabase when online.
+4. (Opt-in) Inngest workflow runs three independent handlers — review the note against Uganda clinical guidelines (asks questions only when AI would disagree with high confidence), draft a plain-language patient receipt, suggest an HMIS diagnosis code. Each handler retries independently.
+5. Clinician reviews + edits + approves on the web dashboard. The clinician retains medical authority — AI never rewrites the note.
 6. Web dashboard renders the patient receipt for the clinic's 58mm thermal printer.
 7. Patient walks out with the receipt. Done.
 
@@ -42,9 +42,9 @@ karibu-health/
 | Web app | Next.js 16, React, Tailwind |
 | Database | Supabase (Postgres) |
 | Auth | Clerk (Android SDK + Next.js) |
-| Edge functions | Supabase (Deno) — `dictate`, `generate-notes` |
-| Background jobs | Inngest (note structuring workflow, scheduled tasks) |
-| AI | OpenAI Whisper (dictation transcription), OpenAI healthcare model (SOAP + citations) |
+| Edge functions | Supabase (Deno) — `dictate`, `submit-dictation`, `approve-dictation`, `reject-dictation` |
+| Background jobs | Inngest — note review, patient receipt drafting, HMIS code suggestion, 1-minute polling fallback |
+| AI | OpenAI Whisper (dictation), GPT (note review against Uganda guidelines, receipt drafting, HMIS code suggestion) |
 | Receipt printer | 58mm thermal via browser print dialog |
 
 ## Prerequisites
@@ -84,8 +84,11 @@ API key with access to Whisper + the healthcare model goes into `.env` as `OPENA
 ```bash
 cd packages/supabase
 supabase functions deploy dictate
-supabase functions deploy generate-notes
+supabase functions deploy submit-dictation
+supabase functions deploy approve-dictation
+supabase functions deploy reject-dictation
 supabase secrets set OPENAI_API_KEY=sk-...
+supabase secrets set INNGEST_EVENT_KEY=...
 supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
 ```
 

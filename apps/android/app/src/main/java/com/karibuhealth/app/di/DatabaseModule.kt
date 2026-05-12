@@ -8,6 +8,9 @@ import com.karibuhealth.app.data.local.db.migrations.MIGRATION_2_3
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_3_4
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_4_5
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_5_6
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_6_7
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_7_8
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_8_9
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +35,10 @@ object DatabaseModule {
             // would wipe all of that on every schema bump. Only allow destructive
             // wipe on downgrade. Schema upgrades MUST register a real Migration
             // here or Room will throw on first open.
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(
+                MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
+                MIGRATION_8_9,
+            )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }

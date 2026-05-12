@@ -3,6 +3,12 @@ package com.karibuhealth.app.data.local.db.converter
 import com.karibuhealth.app.data.local.db.entity.*
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.domain.model.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 // ========== Clinic ==========
 
@@ -45,6 +51,10 @@ fun PatientDto.toEntity(isSynced: Boolean = true) = PatientEntity(
     firstName = firstName, lastName = lastName, displayName = displayName,
     whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
+    birthYear = birthYear, approximateAge = approximateAge,
+    ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
+    village = village, parish = parish, subcounty = subcounty, district = district,
+    guardianName = guardianName, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced,
 )
@@ -55,6 +65,10 @@ fun PatientEntity.toDomain() = Patient(
     firstName = firstName, lastName = lastName, displayName = displayName,
     whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
+    birthYear = birthYear, approximateAge = approximateAge,
+    ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
+    village = village, parish = parish, subcounty = subcounty, district = district,
+    guardianName = guardianName, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced,
 )
@@ -65,6 +79,10 @@ fun Patient.toEntity(isSynced: Boolean = true, localCreatedAt: Long? = null) = P
     firstName = firstName, lastName = lastName, displayName = displayName,
     whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
+    birthYear = birthYear, approximateAge = approximateAge,
+    ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
+    village = village, parish = parish, subcounty = subcounty, district = district,
+    guardianName = guardianName, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced, localCreatedAt = localCreatedAt,
 )
@@ -74,6 +92,28 @@ fun Patient.toCreateDto() = PatientCreateDto(
     firstName = firstName, lastName = lastName,
     whatsappNumber = whatsappNumber,
     dateOfBirth = dateOfBirth, sex = sex,
+    birthYear = birthYear, approximateAge = approximateAge,
+    ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
+    village = village, parish = parish, subcounty = subcounty, district = district,
+    guardianName = guardianName, nationalId = nationalId,
+)
+
+// Map the duplicate-candidate RPC row to the domain projection. Strips NULLs
+// out of the match_reasons array; SQL is supposed to do this but we keep the
+// list non-null on the Kotlin side anyway.
+fun DuplicateCandidateDto.toDomain() = com.karibuhealth.app.domain.model.DuplicateCandidate(
+    id = id,
+    patientId = patientId,
+    firstName = firstName,
+    lastName = lastName,
+    sex = sex,
+    village = village,
+    parish = parish,
+    nationalId = nationalId,
+    whatsappNumber = whatsappNumber,
+    derivedAge = derivedAge,
+    matchScore = matchScore,
+    matchReasons = matchReasons.filterNotNull(),
 )
 
 // ========== Visit ==========
@@ -178,19 +218,33 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
 // ========== ProviderNote ==========
 
 fun ProviderNoteDto.toEntity() = ProviderNoteEntity(
-    id = id, visitId = visitId, transcript = transcript,
+    id = id, patientId = patientId, visitId = visitId,
+    transcript = transcript,
     noteContent = noteContent,
-    structuredData = structuredData, status = status,
+    structuredData = structuredData, status = status, source = source,
     createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, finalizedBy = finalizedBy,
+    amendedAt = amendedAt, amendedBy = amendedBy,
+    voidedAt = voidedAt, voidedBy = voidedBy, voidReason = voidReason,
+    createdBy = createdBy,
 )
 
 fun ProviderNoteEntity.toDomain() = ProviderNote(
-    id = id, visitId = visitId, transcript = transcript,
+    id = id, patientId = patientId, visitId = visitId,
+    transcript = transcript,
     noteContent = noteContent, structuredData = structuredData,
-    status = NoteStatus.valueOf(status),
+    // NoteStatus enum has been broadened to draft | signed | amended | voided.
+    // Pre-migration rows that managed to persist 'finalized' should already
+    // have been promoted to 'signed' by MIGRATION_7_8, but defend defensively
+    // in case anything slipped through.
+    status = runCatching { NoteStatus.valueOf(status) }
+        .getOrDefault(if (status == "finalized") NoteStatus.signed else NoteStatus.draft),
+    source = source,
     createdAt = createdAt, updatedAt = updatedAt,
     finalizedAt = finalizedAt, finalizedBy = finalizedBy,
+    amendedAt = amendedAt, amendedBy = amendedBy,
+    voidedAt = voidedAt, voidedBy = voidedBy, voidReason = voidReason,
+    createdBy = createdBy,
 )
 
 // ========== PatientNote ==========
@@ -285,4 +339,136 @@ fun Payment.toCreateDto() = PaymentCreateDto(
     paymentMethod = paymentMethod.name, status = status.name,
     serviceType = serviceType, notes = notes,
     collectedBy = collectedBy,
+)
+
+// ========== Phase 3 — patient timeline + latest vitals ==========
+
+// Helpers to peek at fields inside the JsonObject event_data payloads. The
+// server's jsonb_build_object encodes SQL NULLs as JSON null (a JsonPrimitive
+// with `isString == false` whose contents are the literal "null"), so we
+// guard with `JsonNull` detection via stdlib's `*OrNull` accessors.
+private fun JsonObject.stringOrNull(key: String): String? {
+    val element = this[key] ?: return null
+    val primitive = (element as? JsonPrimitive) ?: return null
+    if (!primitive.isString && primitive.content == "null") return null
+    return primitive.content.takeIf { it.isNotEmpty() }
+}
+
+private fun JsonObject.intOrNull(key: String): Int? =
+    (this[key] as? JsonPrimitive)?.intOrNull
+
+private fun JsonObject.doubleOrNull(key: String): Double? =
+    (this[key] as? JsonPrimitive)?.doubleOrNull
+
+private fun JsonObject.booleanOrFalse(key: String): Boolean =
+    (this[key] as? JsonPrimitive)?.booleanOrNull == true
+
+/**
+ * Parse one DTO row into the typed domain sealed-class subtype. Unknown event
+ * types fall back to null so an unexpected payload doesn't crash the timeline
+ * — the ViewModel filters those out before rendering.
+ */
+fun PatientTimelineEventDto.toDomain(): PatientTimelineEvent? {
+    val data = eventData
+    return when (eventType) {
+        "visit" -> PatientTimelineEvent.VisitEvent(
+            eventId = eventId,
+            eventAt = eventAt,
+            visitId = data.stringOrNull("visit_id") ?: eventId,
+            status = data.stringOrNull("status") ?: "pending",
+            queueStatus = data.stringOrNull("queue_status") ?: "waiting",
+            department = data.stringOrNull("department") ?: "opd",
+            chiefComplaint = data.stringOrNull("chief_complaint"),
+            diagnosis = data.stringOrNull("diagnosis"),
+            medications = data.stringOrNull("medications"),
+            followUpInstructions = data.stringOrNull("follow_up_instructions"),
+            testsOrdered = data.stringOrNull("tests_ordered"),
+            dispensingStatus = data.stringOrNull("dispensing_status") ?: "not_started",
+            labStatus = data.stringOrNull("lab_status") ?: "not_ordered",
+            labAbnormal = data.booleanOrFalse("lab_abnormal"),
+            documentationComplete = data.booleanOrFalse("documentation_complete"),
+            visitDate = data.stringOrNull("visit_date"),
+            doctorId = data.stringOrNull("doctor_id"),
+        )
+        "note" -> PatientTimelineEvent.NoteEvent(
+            eventId = eventId,
+            eventAt = eventAt,
+            noteId = data.stringOrNull("note_id") ?: eventId,
+            visitId = data.stringOrNull("visit_id"),
+            status = data.stringOrNull("status") ?: "draft",
+            source = data.stringOrNull("source") ?: "general",
+            transcriptPreview = data.stringOrNull("transcript_preview").orEmpty(),
+            hasTranscript = data.booleanOrFalse("has_transcript"),
+            signedAt = data.stringOrNull("signed_at"),
+            signedBy = data.stringOrNull("signed_by"),
+            amendedAt = data.stringOrNull("amended_at"),
+            updatedAt = data.stringOrNull("updated_at"),
+        )
+        "vital" -> PatientTimelineEvent.VitalEvent(
+            eventId = eventId,
+            eventAt = eventAt,
+            vitalId = data.stringOrNull("vital_id") ?: eventId,
+            visitId = data.stringOrNull("visit_id"),
+            recordedBy = data.stringOrNull("recorded_by"),
+            weightKg = data.doubleOrNull("weight_kg"),
+            heightCm = data.doubleOrNull("height_cm"),
+            tempC = data.doubleOrNull("temp_c"),
+            bpSystolic = data.intOrNull("bp_systolic"),
+            bpDiastolic = data.intOrNull("bp_diastolic"),
+            pulseBpm = data.intOrNull("pulse_bpm"),
+            respRate = data.intOrNull("resp_rate"),
+            spo2Pct = data.intOrNull("spo2_pct"),
+            muacCm = data.doubleOrNull("muac_cm"),
+            notes = data.stringOrNull("notes"),
+        )
+        "payment" -> PatientTimelineEvent.PaymentEvent(
+            eventId = eventId,
+            eventAt = eventAt,
+            paymentId = data.stringOrNull("payment_id") ?: eventId,
+            visitId = data.stringOrNull("visit_id"),
+            amountUgx = data.intOrNull("amount_ugx") ?: 0,
+            paymentMethod = data.stringOrNull("payment_method") ?: "cash",
+            receiptNumber = data.stringOrNull("receipt_number"),
+            serviceType = data.stringOrNull("service_type"),
+            status = data.stringOrNull("status") ?: "paid",
+            collectedBy = data.stringOrNull("collected_by"),
+        )
+        // Migration 042: task events come back with a strict superset of
+        // care_tasks columns (plus the JSON keys created_by / completed_by /
+        // assignee_id which the timeline card doesn't render today).
+        "task" -> PatientTimelineEvent.TaskEvent(
+            eventId = eventId,
+            eventAt = eventAt,
+            taskId = data.stringOrNull("task_id") ?: eventId,
+            visitId = data.stringOrNull("visit_id"),
+            taskType = data.stringOrNull("task_type") ?: "general",
+            title = data.stringOrNull("title").orEmpty(),
+            description = data.stringOrNull("description"),
+            assigneeRole = data.stringOrNull("assignee_role"),
+            dueAt = data.stringOrNull("due_at"),
+            status = data.stringOrNull("status") ?: "open",
+            completedAt = data.stringOrNull("completed_at"),
+        )
+        else -> null
+    }
+}
+
+fun PatientLatestVitalsDto.toDomain() = PatientLatestVitals(
+    weightKg = weightKg,
+    weightKgAt = weightKgAt,
+    heightCm = heightCm,
+    heightCmAt = heightCmAt,
+    tempC = tempC,
+    tempCAt = tempCAt,
+    bpSystolic = bpSystolic,
+    bpDiastolic = bpDiastolic,
+    bpAt = bpAt,
+    pulseBpm = pulseBpm,
+    pulseBpmAt = pulseBpmAt,
+    respRate = respRate,
+    respRateAt = respRateAt,
+    spo2Pct = spo2Pct,
+    spo2PctAt = spo2PctAt,
+    muacCm = muacCm,
+    muacCmAt = muacCmAt,
 )

@@ -79,7 +79,7 @@ fun DictationScreen(
         onTranscriptChange = viewModel::updateTranscript,
         onSectionsChange = viewModel::updateSections,
         onDismissError = viewModel::dismissError,
-        onSubmit = { viewModel.submit(visitId) },
+        onSubmit = { viewModel.signNote(visitId) },
         onStructureWithAi = { viewModel.structureWithAi(visitId) },
         onToggleWhisper = {
             if (uiState.isRecording) {
@@ -173,12 +173,19 @@ private fun DictationScreenContent(
         ) {
             val sections = uiState.sections
 
-            Text(
-                text = "Clinical note",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Clinical note",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                AutosaveStatusIndicator(status = uiState.autosaveStatus)
+            }
 
             SectionField(
                 label = "CHIEF COMPLAINT",
@@ -310,6 +317,56 @@ private fun DictationScreenContent(
                 }
             }
         }
+    }
+}
+
+/**
+ * Subtle inline indicator for the debounced autosave pipeline. Sits next to
+ * the "Clinical note" header so the clinician can see at a glance whether
+ * their typing is safely persisted.
+ *
+ * Idle    -> empty (renders nothing)
+ * Saving  -> small spinner + "Saving…"
+ * Saved   -> muted "Saved" label
+ * Offline -> amber "Saved offline — will sync"
+ * Error   -> error text (rare; mostly catches Room write failures)
+ */
+@Composable
+private fun AutosaveStatusIndicator(status: AutosaveStatus) {
+    when (status) {
+        AutosaveStatus.Idle -> Unit
+        AutosaveStatus.Saving -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(12.dp),
+                strokeWidth = 1.5.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "Saving…",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AutosaveStatus.Saved -> Text(
+            text = "Saved",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AutosaveStatus.Offline -> Text(
+            text = "Saved offline — will sync",
+            style = MaterialTheme.typography.labelSmall,
+            color = Amber,
+            fontWeight = FontWeight.SemiBold,
+        )
+        is AutosaveStatus.Error -> Text(
+            text = "Save error",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 
@@ -478,7 +535,12 @@ private fun DictationBottomToolbar(
                             color = Color.White,
                         )
                     } else {
-                        Text("Save", fontWeight = FontWeight.SemiBold)
+                        // Phase 2 split: Save is now Sign + Complete. Every
+                        // entrypoint into this screen is visit-tied; the
+                        // "& Complete" tail signals that signing also runs
+                        // the documentation-complete chain and unlocks
+                        // payment.
+                        Text("Sign & Complete", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

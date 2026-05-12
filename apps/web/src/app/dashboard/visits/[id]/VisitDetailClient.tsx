@@ -143,6 +143,7 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         <PendingDictationCard
           visitId={visit.id}
           initialContent={visit.provider_notes?.transcript ?? ''}
+          initialNoteId={visit.provider_notes?.id ?? null}
         />
       )}
 
@@ -207,6 +208,7 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
         (visit.patient_notes_clinician?.content || visit.provider_notes?.transcript) && (
           <ClinicianNoteCard
             visitId={visit.id}
+            noteId={visit.provider_notes?.id ?? null}
             content={
               visit.patient_notes_clinician?.content ?? visit.provider_notes?.transcript ?? ''
             }
@@ -310,16 +312,18 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
 
 interface ClinicianNoteCardProps {
   visitId: string
+  noteId: string | null
   content: string
   canEdit: boolean
 }
 
 /**
  * Receipt-of-record clinician note. The "Edit note" affordance reuses the
- * editor component — saving re-runs AI structuring (since it sets
- * ai_structure_status='not_started' again, the poller picks it up).
+ * editor component — re-signing reuses the same provider_notes.id so the
+ * row is upserted in place, and it re-runs AI review (since signClinicianNote
+ * resets ai_review_status='not_started' and the poller picks it up).
  */
-function ClinicianNoteCard({ visitId, content, canEdit }: ClinicianNoteCardProps) {
+function ClinicianNoteCard({ visitId, noteId, content, canEdit }: ClinicianNoteCardProps) {
   const [editing, setEditing] = useState(false)
 
   if (editing) {
@@ -327,6 +331,7 @@ function ClinicianNoteCard({ visitId, content, canEdit }: ClinicianNoteCardProps
       <PendingDictationCard
         visitId={visitId}
         initialContent={content}
+        initialNoteId={noteId}
         mode="editing"
         onClose={() => setEditing(false)}
       />

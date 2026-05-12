@@ -4,13 +4,26 @@ import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
-type DuplicateCandidate = {
+export type DobPrecision = 'exact' | 'year_only' | 'age_estimate' | 'unknown'
+
+export type DuplicateCandidate = {
   id: string
   patient_id: number | null
   first_name: string | null
   last_name: string | null
-  display_name: string | null
+  sex: string | null
   date_of_birth: string | null
+  birth_year: number | null
+  approximate_age: number | null
+  dob_precision: DobPrecision | null
+  village: string | null
+  parish: string | null
+  guardian_name: string | null
+  national_id: string | null
+  whatsapp_number: string | null
+  derived_age: number | null
+  match_score: number | null
+  match_reasons: string[] | null
 }
 
 function parseUgandaDateOfBirth(dateOfBirth: string) {
@@ -57,24 +70,106 @@ function formatPatientWriteError(error: { message?: string | null; details?: str
   return error?.message || 'Failed to create patient'
 }
 
-async function findLikelyDuplicatePatient(
-  clinicId: string,
-  firstName: string,
-  lastName: string,
-  dateOfBirth: string,
-): Promise<DuplicateCandidate | null> {
-  const supabase = createServiceClient()
-  const { data } = await supabase
-    .from('patients')
-    .select('id, patient_id, first_name, last_name, display_name, date_of_birth')
-    .eq('clinic_id', clinicId)
-    .eq('date_of_birth', dateOfBirth)
-    .ilike('first_name', firstName)
-    .ilike('last_name', lastName)
-    .order('created_at', { ascending: false })
-    .limit(1)
+function nullableTrim(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
 
-  return (data?.[0] as DuplicateCandidate | undefined) ?? null
+function parseNumericInput(value: FormDataEntryValue | null): number | null {
+  if (value === null || value === undefined) return null
+  const str = String(value).trim()
+  if (str.length === 0) return null
+  const n = Number(str)
+  if (!Number.isFinite(n)) return null
+  return n
+}
+
+function isValidPrecision(value: string | null): value is DobPrecision {
+  return value === 'exact' || value === 'year_only' || value === 'age_estimate' || value === 'unknown'
+}
+
+// Compute an effective age (in years) from the precision + populated fields,
+// mirroring the SQL patient_age_years() helper. Used to feed the duplicate
+// candidate RPC's age band.
+function computeEffectiveAge(args: {
+  precision: DobPrecision
+  dateOfBirth: string | null
+  birthYear: number | null
+  approximateAge: number | null
+}): number | null {
+  const now = new Date()
+  if (args.precision === 'exact' && args.dateOfBirth) {
+    const dob = new Date(`${args.dateOfBirth}T00:00:00Z`)
+    if (Number.isNaN(dob.getTime())) return null
+    let age = now.getUTCFullYear() - dob.getUTCFullYear()
+    const m = now.getUTCMonth() - dob.getUTCMonth()
+    if (m < 0 || (m === 0 && now.getUTCDate() < dob.getUTCDate())) age -= 1
+    return age >= 0 ? age : null
+  }
+  if (args.precision === 'year_only' && args.birthYear) {
+    return now.getUTCFullYear() - args.birthYear
+  }
+  if (args.precision === 'age_estimate' && args.approximateAge !== null) {
+    // Just-registered, so age_recorded_at == today => no drift to add.
+    return args.approximateAge
+  }
+  return null
+}
+
+async function findDuplicateCandidatesRpc(args: {
+  clinicId: string
+  firstName: string
+  lastName: string
+  village: string | null
+  parish: string | null
+  age: number | null
+  sex: string | null
+}): Promise<DuplicateCandidate[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc('rpc_find_duplicate_candidates', {
+    p_clinic_id: args.clinicId,
+    p_first_name: args.firstName,
+    p_last_name: args.lastName,
+    p_village: args.village,
+    p_parish: args.parish,
+    p_age: args.age,
+    p_sex: args.sex,
+  })
+  if (error) {
+    console.error('rpc_find_duplicate_candidates failed:', error)
+    return []
+  }
+  return (data ?? []) as DuplicateCandidate[]
+}
+
+export async function findPatientCandidates(input: {
+  first_name: string
+  last_name: string
+  village?: string | null
+  parish?: string | null
+  age?: number | null
+  sex?: string | null
+}): Promise<{ candidates: DuplicateCandidate[]; error?: string }> {
+  const staff = await getStaff()
+  if (!staff) return { candidates: [], error: 'Not authenticated' }
+
+  const firstName = input.first_name?.trim() ?? ''
+  const lastName = input.last_name?.trim() ?? ''
+  if (firstName.length < 2 && lastName.length < 2) {
+    return { candidates: [] }
+  }
+
+  const candidates = await findDuplicateCandidatesRpc({
+    clinicId: staff.clinic_id,
+    firstName,
+    lastName,
+    village: input.village?.trim() || null,
+    parish: input.parish?.trim() || null,
+    age: input.age ?? null,
+    sex: input.sex === 'M' || input.sex === 'F' ? input.sex : null,
+  })
+  return { candidates }
 }
 
 export async function createPatientWithVisit(formData: FormData) {
@@ -82,20 +177,61 @@ export async function createPatientWithVisit(formData: FormData) {
   if (!staff) throw new Error('Not authenticated')
 
   const rawPhone = formData.get('whatsapp_number') as string
-  const firstName = (formData.get('first_name') as string)?.trim() || null
-  const lastName = (formData.get('last_name') as string)?.trim() || null
-  const dateOfBirthInput = (formData.get('date_of_birth') as string)?.trim() || null
+  const firstName = nullableTrim(formData.get('first_name'))
+  const lastName = nullableTrim(formData.get('last_name'))
   const sex = (formData.get('sex') as string) || null
-  const existingPatientId = (formData.get('existing_patient_id') as string)?.trim() || null
+  const existingPatientId = nullableTrim(formData.get('existing_patient_id'))
   const confirmDuplicate = formData.get('confirm_duplicate') === 'true'
 
-  if (!firstName || !lastName || !dateOfBirthInput) {
-    return { error: 'First name, last name, and date of birth are required' }
+  const precisionInput = nullableTrim(formData.get('dob_precision')) ?? 'unknown'
+  const precision: DobPrecision = isValidPrecision(precisionInput) ? precisionInput : 'unknown'
+  const dateOfBirthInput = nullableTrim(formData.get('date_of_birth'))
+  const birthYearInput = parseNumericInput(formData.get('birth_year'))
+  const approximateAgeInput = parseNumericInput(formData.get('approximate_age'))
+
+  const village = nullableTrim(formData.get('village'))
+  const parish = nullableTrim(formData.get('parish'))
+  const subcounty = nullableTrim(formData.get('subcounty'))
+  const district = nullableTrim(formData.get('district'))
+  const guardianName = nullableTrim(formData.get('guardian_name'))
+  const nationalId = nullableTrim(formData.get('national_id'))
+
+  if (!firstName || !lastName) {
+    return { error: 'First name and last name are required' }
   }
-  const dobError = validateDateOfBirth(dateOfBirthInput)
-  if (dobError) return { error: dobError }
-  const dateOfBirth = parseUgandaDateOfBirth(dateOfBirthInput)
-  if (!dateOfBirth) return { error: 'Enter date of birth as DD-MM-YYYY' }
+  // Sex is required for HMIS banding (existing behaviour).
+  if (sex !== 'M' && sex !== 'F') {
+    return { error: 'Sex is required' }
+  }
+
+  // Per-precision validation.
+  let dateOfBirth: string | null = null
+  let birthYear: number | null = null
+  let approximateAge: number | null = null
+  let ageRecordedAt: string | null = null
+  const currentYear = new Date().getUTCFullYear()
+
+  if (precision === 'exact') {
+    if (!dateOfBirthInput) return { error: 'Date of birth is required for exact precision' }
+    const dobError = validateDateOfBirth(dateOfBirthInput)
+    if (dobError) return { error: dobError }
+    dateOfBirth = parseUgandaDateOfBirth(dateOfBirthInput)
+    if (!dateOfBirth) return { error: 'Enter date of birth as DD-MM-YYYY' }
+  } else if (precision === 'year_only') {
+    if (birthYearInput === null) return { error: 'Birth year is required' }
+    if (!Number.isInteger(birthYearInput) || birthYearInput < 1900 || birthYearInput > currentYear) {
+      return { error: `Birth year must be between 1900 and ${currentYear}` }
+    }
+    birthYear = birthYearInput
+  } else if (precision === 'age_estimate') {
+    if (approximateAgeInput === null) return { error: 'Approximate age is required' }
+    if (!Number.isInteger(approximateAgeInput) || approximateAgeInput < 0 || approximateAgeInput > 130) {
+      return { error: 'Approximate age must be between 0 and 130' }
+    }
+    approximateAge = approximateAgeInput
+    ageRecordedAt = new Date().toISOString()
+  }
+  // 'unknown' → no age fields populated
 
   // Phone is optional — many patients in the catchment don't carry one. Only
   // validate format when something was provided.
@@ -111,7 +247,7 @@ export async function createPatientWithVisit(formData: FormData) {
 
   // If a phone was provided, look up an existing patient at this clinic by
   // phone (the cheapest dedupe). Without a phone, fall through to the
-  // name+DOB duplicate check below.
+  // duplicate-candidates RPC below.
   let existing: { id: string } | null = null
   if (whatsappNumber) {
     const { data } = await supabase
@@ -130,14 +266,25 @@ export async function createPatientWithVisit(formData: FormData) {
   } else if (existing) {
     patientId = existing.id
   } else {
-    const duplicateCandidate = await findLikelyDuplicatePatient(
-      staff.clinic_id,
+    const effectiveAge = computeEffectiveAge({
+      precision,
+      dateOfBirth,
+      birthYear,
+      approximateAge,
+    })
+
+    const candidates = await findDuplicateCandidatesRpc({
+      clinicId: staff.clinic_id,
       firstName,
       lastName,
-      dateOfBirth,
-    )
-    if (duplicateCandidate && !confirmDuplicate) {
-      return { duplicateCandidate }
+      village,
+      parish,
+      age: effectiveAge,
+      sex,
+    })
+
+    if (candidates.length > 0 && !confirmDuplicate) {
+      return { duplicateCandidates: candidates }
     }
 
     const { data: newPatient, error: patientError } = await supabase
@@ -148,7 +295,17 @@ export async function createPatientWithVisit(formData: FormData) {
         first_name: firstName,
         last_name: lastName,
         date_of_birth: dateOfBirth,
-        ...(sex === 'M' || sex === 'F' ? { sex } : {}),
+        birth_year: birthYear,
+        approximate_age: approximateAge,
+        age_recorded_at: ageRecordedAt,
+        dob_precision: precision,
+        village,
+        parish,
+        subcounty,
+        district,
+        guardian_name: guardianName,
+        national_id: nationalId,
+        sex,
       })
       .select('id')
       .single()

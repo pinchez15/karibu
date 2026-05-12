@@ -18,6 +18,8 @@ import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +30,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.UUID
 import javax.inject.Inject
 
 @Serializable
@@ -45,6 +48,26 @@ data class ClinicalNoteSections(
     val additionalNote: String = "",
 )
 
+/**
+ * Visual state of the autosave pipeline. Drives the small indicator under
+ * the screen header. Sealed so the screen can match on subtype without
+ * accidentally falling into an "everything is Idle" coalescing bug.
+ *
+ * Lifecycle: Idle -> Saving -> Saved (online) | Offline (queued) | Error
+ *   Idle    — no edits since last save, nothing pending
+ *   Saving  — debounce fired, write to Room + (online) RPC in flight
+ *   Saved   — last save completed against the server
+ *   Offline — last save persisted locally + queued; sync on reconnect
+ *   Error   — last save threw; surfaced briefly, then resets on next edit
+ */
+sealed class AutosaveStatus {
+    data object Idle : AutosaveStatus()
+    data object Saving : AutosaveStatus()
+    data object Saved : AutosaveStatus()
+    data object Offline : AutosaveStatus()
+    data class Error(val message: String) : AutosaveStatus()
+}
+
 data class DictationUiState(
     val transcript: String = "",
     val sections: ClinicalNoteSections = ClinicalNoteSections(),
@@ -56,6 +79,26 @@ data class DictationUiState(
     val submitted: Boolean = false,
     val error: String? = null,
     val savedLocally: Boolean = false,
+    /**
+     * Stable provider-note UUID for this editing session. Generated on the
+     * first text change (or read from existing local row on load) and reused
+     * across every autosave + Sign call so the server-side ON CONFLICT (id)
+     * keeps merging into the same row.
+     */
+    val noteId: String? = null,
+    /**
+     * Patient owning the note. For visit-tied dictation we resolve this from
+     * the visit on load. Standalone notes (phone calls, etc.) would supply
+     * patient_id directly — not wired into this screen yet.
+     */
+    val patientId: String? = null,
+    /**
+     * Visit id this dictation is tied to (every current entrypoint is
+     * visit-tied; reserved nullable for standalone-note callers wired in
+     * later phases).
+     */
+    val visitId: String? = null,
+    val autosaveStatus: AutosaveStatus = AutosaveStatus.Idle,
 ) {
     /** Back-compat alias — true while any chunk is in flight. */
     val isTranscribing: Boolean
@@ -83,6 +126,18 @@ class DictationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DictationUiState())
     val uiState: StateFlow<DictationUiState> = _uiState.asStateFlow()
 
+    // Pending autosave debounce job. Cancelled on every keystroke so we only
+    // flush once typing settles (AUTOSAVE_DEBOUNCE_MS). signNote() awaits any
+    // in-flight job so the final autosave landed before flipping to signed.
+    private var autosaveJob: Job? = null
+
+    private companion object {
+        // Idle delay before the autosave fires. 1.5s matches the prompt's
+        // recommendation; long enough to coalesce burst typing, short enough
+        // that a stop-mid-edit gets persisted before the user moves on.
+        const val AUTOSAVE_DEBOUNCE_MS = 1_500L
+    }
+
     fun load(visitId: String) {
         viewModelScope.launch {
             val existing = noteRepository.getProviderNoteOnce(visitId)
@@ -104,6 +159,14 @@ class DictationViewModel @Inject constructor(
                     savedLocally = existing?.transcript?.isNotBlank() == true,
                     submitted = false,
                     error = null,
+                    // Reuse the existing note id so server-side ON CONFLICT
+                    // (id) keeps merging into the same row across resume.
+                    // We also stash patient_id here so the autosave path
+                    // doesn't have to re-fetch the visit each time.
+                    noteId = existing?.id ?: it.noteId,
+                    patientId = visit?.patientId ?: it.patientId,
+                    visitId = visitId,
+                    autosaveStatus = AutosaveStatus.Idle,
                 )
             }
         }
@@ -166,6 +229,10 @@ class DictationViewModel @Inject constructor(
                         sections = nextSections,
                     )
                 }
+                // Whisper transcription is just another source of text edits;
+                // pipe it through the same debounced autosave so the freshly
+                // landed chunk also lands in Supabase.
+                scheduleAutosave()
             }
         } catch (e: DictationException) {
             // Swallow per-chunk errors — one bad segment shouldn't kill the
@@ -188,6 +255,7 @@ class DictationViewModel @Inject constructor(
                 savedLocally = false,
             )
         }
+        scheduleAutosave()
     }
 
     fun updateSections(sections: ClinicalNoteSections) {
@@ -198,6 +266,67 @@ class DictationViewModel @Inject constructor(
                 savedLocally = false,
             )
         }
+        scheduleAutosave()
+    }
+
+    /**
+     * Debounced autosave. Every edit cancels the prior pending save and
+     * schedules a new one AUTOSAVE_DEBOUNCE_MS out. The actual write goes
+     * through `noteRepository.saveDraft(...)`, which persists locally first
+     * then direct-writes (online) or queues (offline) the upsert RPC.
+     *
+     * Skipped when there's no patient_id yet (load() hasn't resolved it) or
+     * when we're already mid-Sign — Sign does its own final saveDraft to
+     * make sure the latest transcript landed before flipping to signed.
+     */
+    private fun scheduleAutosave() {
+        val current = _uiState.value
+        if (current.isSubmitting) return
+        val patientId = current.patientId ?: return
+
+        autosaveJob?.cancel()
+        autosaveJob = viewModelScope.launch {
+            delay(AUTOSAVE_DEBOUNCE_MS)
+            performAutosave(patientId)
+        }
+    }
+
+    /**
+     * Run one autosave cycle. Generates a stable noteId on first save and
+     * keeps it in UI state so subsequent saves (and the final Sign) reuse
+     * the same row server-side.
+     */
+    private suspend fun performAutosave(patientId: String): String? {
+        val snapshot = _uiState.value
+        val transcript = snapshot.sections.toClinicianText().ifBlank { snapshot.transcript }
+        if (transcript.isBlank()) return null
+
+        _uiState.update { it.copy(autosaveStatus = AutosaveStatus.Saving) }
+        return try {
+            val noteId = snapshot.noteId ?: UUID.randomUUID().toString()
+            val (savedNote, syncEntryId) = withContext(Dispatchers.IO) {
+                noteRepository.saveDraft(
+                    patientId = patientId,
+                    visitId = snapshot.visitId,
+                    transcript = transcript,
+                    noteId = noteId,
+                    source = "visit",
+                )
+            }
+            _uiState.update {
+                it.copy(
+                    noteId = savedNote.id,
+                    savedLocally = true,
+                    autosaveStatus = if (syncEntryId == null) AutosaveStatus.Saved else AutosaveStatus.Offline,
+                )
+            }
+            savedNote.id
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(autosaveStatus = AutosaveStatus.Error(e.message ?: "Autosave failed"))
+            }
+            null
+        }
     }
 
     fun onMicrophonePermissionDenied() {
@@ -205,38 +334,58 @@ class DictationViewModel @Inject constructor(
     }
 
     /**
-     * Save the visit. Always offline-safe — no AI involvement.
+     * Sign the note + run the visit-tied finalization chain.
      *
-     * Pipeline (each step direct-writes when online + no upstream queue
-     * dependency, otherwise queues with a linear `dependsOn` chain):
-     *   1. provider_notes.transcript (the clinician's actual words)
+     * Phase 2 split (docs/patient-centered-architecture-plan.md): autosave
+     * keeps the draft transcript fresh in provider_notes; Sign is the
+     * deliberate action that flips status -> signed and stamps finalized_at.
+     *
+     * Pipeline (visit-tied — each step direct-writes when online + no
+     * upstream queue dependency, otherwise queues with a linear `dependsOn`
+     * chain):
+     *   0. cancel debounced autosave + run one final saveDraft so the
+     *      latest transcript is durable BEFORE we flip to signed
+     *   1. rpc_sign_provider_note — status='signed', finalized_at/by set
      *   2. patient_notes.content (clinician fallback for the receipt; copies
      *      the transcript verbatim so print/pharmacy works without AI)
-     *   3. visits.documentation_complete = true (and status pending → sent
+     *   3. visits.diagnosis/medications/etc. via rpc_upsert_visit_clinical_summary
+     *   4. visits.documentation_complete = true (and status pending -> sent
      *      atomically server-side, making the visit reachable for payment)
      */
-    fun submit(visitId: String) {
+    fun signNote(visitId: String) {
         val sections = _uiState.value.sections
         val transcript = sections.toClinicianText()
         if (transcript.length < 10) {
-            _uiState.update { it.copy(error = "Add a bit more to the note before saving.") }
+            _uiState.update { it.copy(error = "Add a bit more to the note before signing.") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, error = null) }
             try {
+                // 0. Flush autosave. Cancel the debounce so we don't race
+                //    against ourselves, then force one final draft write so
+                //    the freshly typed content is durable + has a stable
+                //    note id before we sign.
+                autosaveJob?.cancel()
+                autosaveJob = null
+                val patientId = _uiState.value.patientId
+                    ?: visitRepository.getVisitByIdOnce(visitId)?.patientId
+                    ?: error("Cannot resolve patient_id for visit $visitId")
+                val noteId = withContext(Dispatchers.IO) {
+                    performAutosave(patientId)
+                } ?: error("Final autosave failed")
+
                 withContext(Dispatchers.IO) {
-                    val (_, providerSyncId) = noteRepository.saveNoteAndQueue(
-                        visitId = visitId,
-                        transcript = transcript,
-                        predecessorSyncId = null,
-                    )
+                    // 1. Flip provider_notes.status -> signed.
+                    val signSyncId = noteRepository.signNote(noteId = noteId)
+                    // 2. Patient-receipt fallback (clinician_fallback row).
                     val (_, summarySyncId) = noteRepository.saveSummaryFallback(
                         visitId = visitId,
                         content = transcript,
-                        predecessorSyncId = providerSyncId,
+                        predecessorSyncId = signSyncId,
                     )
+                    // 3. Structured clinical summary (diagnosis / meds / etc.).
                     val clinicalSyncId = noteRepository.saveClinicalSummary(
                         visitId = visitId,
                         diagnosis = sections.diagnosis.cleanOrNull(),
@@ -244,11 +393,12 @@ class DictationViewModel @Inject constructor(
                         followUpInstructions = sections.followUpInstructionsWithTasks().cleanOrNull(),
                         testsOrdered = sections.testsOrdered.cleanOrNull(),
                         structuredData = json.encodeToString(sections),
-                        predecessorSyncId = summarySyncId ?: providerSyncId,
+                        predecessorSyncId = summarySyncId ?: signSyncId,
                     )
+                    // 4. Mark documentation complete + pending -> sent.
                     visitRepository.markDocumentationComplete(
                         visitId = visitId,
-                        predecessorSyncId = clinicalSyncId ?: summarySyncId ?: providerSyncId,
+                        predecessorSyncId = clinicalSyncId ?: summarySyncId ?: signSyncId,
                     )
                 }
                 analytics.capture(
@@ -256,7 +406,7 @@ class DictationViewModel @Inject constructor(
                     mapOf(
                         "visit_id" to visitId,
                         "transcript_length" to transcript.length,
-                        "mode" to "save",
+                        "mode" to "sign",
                     ),
                 )
                 _uiState.update {
@@ -267,10 +417,13 @@ class DictationViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSubmitting = false, error = "Could not save: ${e.message}") }
+                _uiState.update { it.copy(isSubmitting = false, error = "Could not sign: ${e.message}") }
             }
         }
     }
+
+    /** Back-compat alias for callers that still invoke the old name. */
+    fun submit(visitId: String) = signNote(visitId)
 
     /**
      * Opt-in: structure the saved note with AI. Fires the existing

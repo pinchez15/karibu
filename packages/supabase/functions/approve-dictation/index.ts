@@ -81,11 +81,13 @@ serve(async (req) => {
       approverId = staff?.id ?? null
     }
 
+    // provider_notes lifecycle is draft → signed | amended | voided post
+    // migration 039. patient_notes keeps the original draft/finalized check.
     const [providerErr, patientErr] = await Promise.all([
       supabase
         .from('provider_notes')
         .update({
-          status: 'finalized',
+          status: 'signed',
           finalized_at: now,
           finalized_by: approverId,
           updated_at: now,
@@ -98,7 +100,7 @@ serve(async (req) => {
         .eq('visit_id', visit_id)
         .then(r => r.error),
     ])
-    if (providerErr) throw new Error(`provider_notes finalize failed: ${providerErr.message}`)
+    if (providerErr) throw new Error(`provider_notes sign failed: ${providerErr.message}`)
     if (patientErr) throw new Error(`patient_notes finalize failed: ${patientErr.message}`)
 
     const { error: visitUpdateErr } = await supabase

@@ -112,6 +112,17 @@ interface SupabaseApi {
     @POST("rpc/rpc_upsert_provider_note")
     suspend fun rpcUpsertProviderNote(@Body request: ProviderNoteUpsertDto): Response<ResponseBody>
 
+    // Migration 039 lifecycle RPCs: senior clinicians can sign / amend /
+    // void notes. SECURITY DEFINER on the server; role checks live there.
+    @POST("rpc/rpc_sign_provider_note")
+    suspend fun rpcSignProviderNote(@Body request: SignProviderNoteRequest): Response<Unit>
+
+    @POST("rpc/rpc_amend_provider_note")
+    suspend fun rpcAmendProviderNote(@Body request: AmendProviderNoteRequest): Response<Unit>
+
+    @POST("rpc/rpc_void_provider_note")
+    suspend fun rpcVoidProviderNote(@Body request: VoidProviderNoteRequest): Response<Unit>
+
     @POST("rpc/rpc_upsert_patient_note_summary")
     suspend fun rpcUpsertPatientNoteSummary(@Body request: PatientNoteSummaryUpsertDto): Response<ResponseBody>
 
@@ -123,4 +134,55 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_upsert_visit_clinical_summary")
     suspend fun rpcUpsertVisitClinicalSummary(@Body request: VisitClinicalSummaryUpsertDto): Response<ResponseBody>
+
+    // Migration 038 fuzzy patient search RPCs. SECURITY DEFINER on the server,
+    // so they require a Clerk JWT (attached by AuthInterceptor) and validate
+    // staff membership before returning rows.
+    @POST("rpc/rpc_find_duplicate_candidates")
+    suspend fun rpcFindDuplicateCandidates(
+        @Body request: FindDuplicateCandidatesRequest,
+    ): List<DuplicateCandidateDto>
+
+    @POST("rpc/rpc_search_patients")
+    suspend fun rpcSearchPatients(
+        @Body request: SearchPatientsRequest,
+    ): List<DuplicateCandidateDto>
+
+    // Migration 040: patient timeline + per-field latest vitals. Both RPCs are
+    // SECURITY DEFINER on the server and validate Clerk-authenticated callers
+    // against staff membership before returning rows.
+    @POST("rpc/rpc_get_patient_timeline")
+    suspend fun rpcGetPatientTimeline(
+        @Body request: GetPatientTimelineRequest,
+    ): List<PatientTimelineEventDto>
+
+    // Returns a single-row table; PostgREST still serializes it as a JSON array.
+    @POST("rpc/rpc_get_patient_latest_vitals")
+    suspend fun rpcGetPatientLatestVitals(
+        @Body request: GetPatientLatestVitalsRequest,
+    ): List<PatientLatestVitalsDto>
+
+    // Migration 041 worklist RPCs. All seven are SECURITY DEFINER on the
+    // server and validate the Clerk-authenticated caller against the staff
+    // table for the requested clinic before returning rows.
+    @POST("rpc/rpc_worklist_needs_vitals")
+    suspend fun rpcWorklistNeedsVitals(@Body request: WorklistRequest): List<NeedsVitalsRow>
+
+    @POST("rpc/rpc_worklist_needs_clinician")
+    suspend fun rpcWorklistNeedsClinician(@Body request: WorklistRequest): List<NeedsClinicianRow>
+
+    @POST("rpc/rpc_worklist_needs_lab")
+    suspend fun rpcWorklistNeedsLab(@Body request: WorklistClinicOnlyRequest): List<NeedsLabRow>
+
+    @POST("rpc/rpc_worklist_needs_pharmacy")
+    suspend fun rpcWorklistNeedsPharmacy(@Body request: WorklistClinicOnlyRequest): List<NeedsPharmacyRow>
+
+    @POST("rpc/rpc_worklist_needs_payment")
+    suspend fun rpcWorklistNeedsPayment(@Body request: WorklistClinicOnlyRequest): List<NeedsPaymentRow>
+
+    @POST("rpc/rpc_worklist_my_drafts")
+    suspend fun rpcWorklistMyDrafts(@Body request: MyDraftsRequest): List<MyDraftsRow>
+
+    @POST("rpc/rpc_worklist_care_tasks")
+    suspend fun rpcWorklistCareTasks(@Body request: CareTasksWorklistRequest): List<CareTaskRow>
 }

@@ -10,9 +10,12 @@ import com.karibuhealth.app.data.local.db.entity.PatientNoteEntity
 import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.AmendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.PatientNoteSummaryUpsertDto
 import com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto
+import com.karibuhealth.app.data.remote.dto.SignProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.VisitClinicalSummaryUpsertDto
+import com.karibuhealth.app.data.remote.dto.VoidProviderNoteRequest
 import com.karibuhealth.app.domain.model.PatientNote
 import com.karibuhealth.app.domain.model.ProviderNote
 import com.karibuhealth.app.util.NetworkMonitor
@@ -53,7 +56,9 @@ class NoteRepository @Inject constructor(
 
     /**
      * Local-only draft save (no queue entry). Used for in-progress note
-     * editing where the clinician hasn't tapped Save yet.
+     * editing where the clinician hasn't tapped Sign yet. Kept as a thin
+     * wrapper over `upsertProviderNote` for callers that don't need the
+     * sync-queue handle.
      */
     suspend fun saveDraftTranscript(visitId: String, transcript: String): ProviderNote =
         withContext(Dispatchers.IO) {
@@ -61,43 +66,81 @@ class NoteRepository @Inject constructor(
             val now = Instant.now().toString()
             val entity = ProviderNoteEntity(
                 id = existing?.id ?: UUID.randomUUID().toString(),
+                // Local-only path: we don't have patient_id at hand, but
+                // existing rows came from a visit-tied upsert so the column
+                // is populated. Worst case (fresh row) we leave a sentinel
+                // that the upsertProviderNote path will overwrite the moment
+                // the screen learns patient_id from the visit.
+                patientId = existing?.patientId ?: "",
                 visitId = visitId,
                 transcript = transcript,
                 noteContent = existing?.noteContent,
                 structuredData = existing?.structuredData,
                 status = existing?.status ?: "draft",
+                source = existing?.source ?: "visit",
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now,
                 finalizedAt = existing?.finalizedAt,
                 finalizedBy = existing?.finalizedBy,
+                amendedAt = existing?.amendedAt,
+                amendedBy = existing?.amendedBy,
+                voidedAt = existing?.voidedAt,
+                voidedBy = existing?.voidedBy,
+                voidReason = existing?.voidReason,
             )
             providerNoteDao.upsert(entity)
             entity.toDomain()
         }
 
     /**
-     * Save the clinician's note transcript to Supabase (or queue if offline).
-     * Returns (note, syncEntryId?). Direct-write via rpc_upsert_provider_note
-     * when online + no upstream queue prerequisite.
+     * Upsert a provider note (patient-first). Replaces the old visit-tied
+     * `saveNoteAndQueue`. Persists locally first, then direct-writes via the
+     * Migration 039 RPC when online + no upstream queue prerequisite,
+     * otherwise queues `upsert_provider_note` with the full payload (including
+     * patient_id + source).
+     *
+     * Returns (note, syncEntryId?). `syncEntryId` is null when the row
+     * already landed in Supabase.
+     *
+     * `noteId` is the stable local UUID — pass the one you generated on the
+     * first autosave so the server-side `ON CONFLICT (id)` upsert sees the
+     * same row across the autosave → Sign chain.
      */
-    suspend fun saveNoteAndQueue(
-        visitId: String,
-        transcript: String,
+    suspend fun upsertProviderNote(
+        noteId: String? = null,
+        patientId: String,
+        visitId: String? = null,
+        transcript: String?,
+        status: String = "draft",
+        source: String? = null,
         predecessorSyncId: String? = null,
     ): Pair<ProviderNote, String?> = withContext(Dispatchers.IO) {
-        val existing = providerNoteDao.getByVisitIdOnce(visitId)
+        val existing = noteId?.let { providerNoteDao.getByIdOnce(it) }
+            ?: visitId?.let { providerNoteDao.getByVisitIdOnce(it) }
         val now = Instant.now().toString()
+        // The server's ON CONFLICT (id) rule never clobbers an existing
+        // transcript with NULL. Mirror that locally so a stop-and-resume
+        // autosave doesn't blank the last-good draft.
+        val effectiveTranscript = transcript ?: existing?.transcript
+        val effectiveSource = source ?: existing?.source ?: if (visitId != null) "visit" else "general"
         val entity = ProviderNoteEntity(
-            id = existing?.id ?: UUID.randomUUID().toString(),
-            visitId = visitId,
-            transcript = transcript,
+            id = noteId ?: existing?.id ?: UUID.randomUUID().toString(),
+            patientId = patientId,
+            visitId = visitId ?: existing?.visitId,
+            transcript = effectiveTranscript,
             noteContent = existing?.noteContent,
             structuredData = existing?.structuredData,
-            status = existing?.status ?: "draft",
+            status = status,
+            source = effectiveSource,
             createdAt = existing?.createdAt ?: now,
             updatedAt = now,
             finalizedAt = existing?.finalizedAt,
             finalizedBy = existing?.finalizedBy,
+            amendedAt = existing?.amendedAt,
+            amendedBy = existing?.amendedBy,
+            voidedAt = existing?.voidedAt,
+            voidedBy = existing?.voidedBy,
+            voidReason = existing?.voidReason,
         )
         providerNoteDao.upsert(entity)
 
@@ -105,10 +148,14 @@ class NoteRepository @Inject constructor(
             id = entity.id,
             visitId = entity.visitId,
             transcript = transcript,
-            status = entity.status,
+            status = status,
+            patientId = patientId,
+            source = effectiveSource,
         )
 
-        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+        // Visit-tied path: linearize against any pending create_visit sync.
+        val effectivePredecessor = predecessorSyncId
+            ?: entity.visitId?.let { getPendingVisitSyncDependency(it) }
 
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
@@ -132,6 +179,204 @@ class NoteRepository @Inject constructor(
         )
         syncQueueDao.insert(syncEntry)
         entity.toDomain() to syncEntry.id
+    }
+
+    /**
+     * Convenience wrapper for autosave — always writes status='draft'.
+     * `noteId` should be the same stable UUID across the editing session so
+     * the server-side ON CONFLICT (id) keeps merging into the same row.
+     */
+    suspend fun saveDraft(
+        patientId: String,
+        visitId: String? = null,
+        transcript: String?,
+        noteId: String? = null,
+        source: String? = null,
+        predecessorSyncId: String? = null,
+    ): Pair<ProviderNote, String?> = upsertProviderNote(
+        noteId = noteId,
+        patientId = patientId,
+        visitId = visitId,
+        transcript = transcript,
+        status = "draft",
+        source = source,
+        predecessorSyncId = predecessorSyncId,
+    )
+
+    /**
+     * Back-compat: the legacy visit-tied save call. Resolves patient_id by
+     * reading the local visit row. Existing callers (visit-tied save chain)
+     * keep working without learning about patient_id directly. New code
+     * should call `upsertProviderNote` / `saveDraft` / `signNote` instead.
+     */
+    suspend fun saveNoteAndQueue(
+        visitId: String,
+        transcript: String,
+        predecessorSyncId: String? = null,
+    ): Pair<ProviderNote, String?> = withContext(Dispatchers.IO) {
+        val patientId = visitDao.getByIdOnce(visitId)?.patientId
+            ?: error("Visit $visitId has no local row; cannot resolve patient_id")
+        upsertProviderNote(
+            patientId = patientId,
+            visitId = visitId,
+            transcript = transcript,
+            status = "draft",
+            source = "visit",
+            predecessorSyncId = predecessorSyncId,
+        )
+    }
+
+    /**
+     * Sign a provider note. Flips status -> signed and stamps finalized_at /
+     * finalized_by. Direct-writes via rpcSignProviderNote when online,
+     * otherwise queues `sign_provider_note` so the transition syncs on
+     * reconnect. Local row's status is updated optimistically either way.
+     */
+    suspend fun signNote(
+        noteId: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        providerNoteDao.updateLifecycle(
+            id = noteId,
+            status = "signed",
+            finalizedAt = now,
+            finalizedBy = null,
+            amendedAt = null,
+            amendedBy = null,
+            voidedAt = null,
+            voidedBy = null,
+            voidReason = null,
+            updatedAt = now,
+        )
+
+        val rpcBody = SignProviderNoteRequest(id = noteId)
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcSignProviderNote(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "sign_provider_note",
+            entityType = "provider_notes",
+            entityId = noteId,
+            payload = json.encodeToString(SignProviderNoteRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
+    }
+
+    /**
+     * Amend a signed note. Only valid from signed/amended on the server side;
+     * the local lifecycle column is updated optimistically. Direct-writes
+     * via rpcAmendProviderNote when online, otherwise queues
+     * `amend_provider_note`.
+     */
+    suspend fun amendNote(
+        noteId: String,
+        transcript: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        providerNoteDao.updateLifecycle(
+            id = noteId,
+            status = "amended",
+            finalizedAt = null,
+            finalizedBy = null,
+            amendedAt = now,
+            amendedBy = null,
+            voidedAt = null,
+            voidedBy = null,
+            voidReason = null,
+            updatedAt = now,
+        )
+        // Mirror the transcript change locally — the server-side amend RPC
+        // also updates transcript.
+        val existing = providerNoteDao.getByIdOnce(noteId)
+        if (existing != null) {
+            providerNoteDao.upsert(existing.copy(transcript = transcript, updatedAt = now))
+        }
+
+        val rpcBody = AmendProviderNoteRequest(id = noteId, transcript = transcript)
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcAmendProviderNote(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "amend_provider_note",
+            entityType = "provider_notes",
+            entityId = noteId,
+            payload = json.encodeToString(AmendProviderNoteRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
+    }
+
+    /**
+     * Void a note. Senior clinicians only on the server. Direct-writes via
+     * rpcVoidProviderNote when online, otherwise queues `void_provider_note`.
+     */
+    suspend fun voidNote(
+        noteId: String,
+        reason: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        providerNoteDao.updateLifecycle(
+            id = noteId,
+            status = "voided",
+            finalizedAt = null,
+            finalizedBy = null,
+            amendedAt = null,
+            amendedBy = null,
+            voidedAt = now,
+            voidedBy = null,
+            voidReason = reason,
+            updatedAt = now,
+        )
+
+        val rpcBody = VoidProviderNoteRequest(id = noteId, reason = reason)
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcVoidProviderNote(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "void_provider_note",
+            entityType = "provider_notes",
+            entityId = noteId,
+            payload = json.encodeToString(VoidProviderNoteRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
     }
 
     /**

@@ -41,8 +41,6 @@ class StaffRepository @Inject constructor(
             val staffDto = staffList.firstOrNull() ?: return null
             val entity = staffDto.toEntity()
             staffDao.upsert(entity)
-
-            // Also cache clinic
             authTokenStore.saveStaffId(entity.id)
             authTokenStore.saveClinicId(entity.clinicId)
 

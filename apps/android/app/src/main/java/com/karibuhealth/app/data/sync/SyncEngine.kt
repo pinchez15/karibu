@@ -63,14 +63,24 @@ class SyncEngine @Inject constructor(
                 Log.e(TAG, "Sync failed for ${entry.id}: ${e.message}")
                 val nextAttempt = entry.attempts + 1
                 val backoffMs = BACKOFF_BASE_MS * (1L shl minOf(nextAttempt, 5))
+                val nextStatus = if (nextAttempt >= entry.maxAttempts) "failed" else "pending"
                 syncQueueDao.update(
                     entry.copy(
-                        status = if (nextAttempt >= entry.maxAttempts) "failed" else "pending",
+                        status = nextStatus,
                         attempts = nextAttempt,
                         lastError = e.message,
                         nextRetryAt = System.currentTimeMillis() + backoffMs,
                     )
                 )
+                // Phase 6 fix: transitive failure propagation. Without this,
+                // dependents of a terminal-failed entry sit at status='pending'
+                // forever — the single-hop check at line 51 keeps refusing to
+                // process them because the parent never flips to 'completed'.
+                // Now they fail with a clear reason and the UI's failing-entries
+                // observable surfaces the whole chain for triage.
+                if (nextStatus == "failed") {
+                    markDependentsFailed(entry.id, "upstream ${entry.operationType} failed: ${e.message}")
+                }
             }
         }
 
@@ -90,6 +100,11 @@ class SyncEngine @Inject constructor(
             "upsert_visit_clinical_summary" -> syncUpsertVisitClinicalSummary(entry)
             "insert_patient_vitals" -> syncInsertPatientVitals(entry)
             "mark_documentation_complete" -> syncMarkDocumentationComplete(entry)
+            // Migration 039 lifecycle ops — senior-clinician signed / amended
+            // / voided notes that were queued while offline.
+            "sign_provider_note" -> syncSignProviderNote(entry)
+            "amend_provider_note" -> syncAmendProviderNote(entry)
+            "void_provider_note" -> syncVoidProviderNote(entry)
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
@@ -106,9 +121,27 @@ class SyncEngine @Inject constructor(
             if (serverPatient != null) {
                 patientDao.upsert(serverPatient.toEntity(isSynced = true))
                 Log.d(TAG, "Patient synced: ${serverPatient.id}")
+                // Phase 6 fix: dependent-payload walk on the HTTP 200 success
+                // path (was previously only inside the 409 branch). In the
+                // common case the server preserves the client-supplied UUID,
+                // so this is a no-op — but if any future server-side behavior
+                // rewrites the id, downstream visit/note payloads referencing
+                // the local UUID would fail FK validation. This makes the
+                // success and conflict paths symmetric.
+                if (serverPatient.id != entry.entityId) {
+                    propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
+                }
             }
         } catch (e: retrofit2.HttpException) {
             if (e.code() == 409) {
+                if (dto.whatsappNumber.isNullOrBlank()) {
+                    // No phone → no unique-by-phone conflict can fire (the
+                    // partial unique index from 022 only covers WHERE
+                    // whatsapp_number IS NOT NULL). The 409 came from
+                    // something else (most likely a duplicate id from a
+                    // partial sync retry); re-throw to retry with backoff.
+                    throw e
+                }
                 Log.w(TAG, "Patient conflict (409), fetching existing")
                 val existing = supabaseApi.lookupPatient(
                     "eq.${dto.clinicId}",
@@ -116,15 +149,53 @@ class SyncEngine @Inject constructor(
                 )
                 existing.firstOrNull()?.let { serverPatient ->
                     patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                    val dependents = syncQueueDao.getDependents(entry.id)
-                    for (dep in dependents) {
-                        val updatedPayload = dep.payload.replace(entry.entityId, serverPatient.id)
-                        syncQueueDao.update(dep.copy(payload = updatedPayload))
+                    if (serverPatient.id != entry.entityId) {
+                        propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
                     }
                 }
             } else {
                 throw e
             }
+        }
+    }
+
+    /**
+     * Phase 6 helper: rewrite the local UUID to the server UUID in every
+     * pending dependent's payload, so downstream RPCs ship with the FK that
+     * actually exists server-side. Called from both the success and conflict
+     * paths of syncCreatePatient (and from syncCreateVisit if the server ever
+     * rewrites visit ids).
+     */
+    private suspend fun propagateRemoteId(entrySyncId: String, localId: String, remoteId: String) {
+        if (localId == remoteId) return
+        val dependents = syncQueueDao.getDependents(entrySyncId)
+        for (dep in dependents) {
+            if (!dep.payload.contains(localId)) continue
+            val updatedPayload = dep.payload.replace(localId, remoteId)
+            syncQueueDao.update(dep.copy(payload = updatedPayload))
+        }
+    }
+
+    /**
+     * Phase 6 helper: when an entry hits terminal 'failed' state, cascade
+     * the failure to every transitive dependent. Without this, dependents
+     * sit at status='pending' forever — the single-hop dependency gate
+     * keeps refusing to process them because the parent never flips to
+     * 'completed'. Cycles are structurally impossible (single-parent
+     * dependsOn + topological insertion order).
+     */
+    private suspend fun markDependentsFailed(entryId: String, reason: String) {
+        val dependents = syncQueueDao.getDependents(entryId)
+        for (dep in dependents) {
+            if (dep.status == "completed" || dep.status == "failed") continue
+            Log.w(TAG, "Cascading failure to ${dep.id} (${dep.operationType}): $reason")
+            syncQueueDao.update(
+                dep.copy(
+                    status = "failed",
+                    lastError = reason,
+                )
+            )
+            markDependentsFailed(dep.id, "upstream ${dep.operationType} failed: $reason")
         }
     }
 
@@ -151,6 +222,39 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("upsert_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
         }
         Log.d(TAG, "Provider note synced: ${entry.entityId}")
+    }
+
+    private suspend fun syncSignProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(SignProviderNoteRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing sign_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcSignProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("sign_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note signed: ${entry.entityId}")
+    }
+
+    private suspend fun syncAmendProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(AmendProviderNoteRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing amend_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcAmendProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("amend_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note amended: ${entry.entityId}")
+    }
+
+    private suspend fun syncVoidProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(VoidProviderNoteRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing void_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcVoidProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("void_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note voided: ${entry.entityId}")
     }
 
     private suspend fun syncUpsertPatientNoteSummary(entry: SyncQueueEntry) {

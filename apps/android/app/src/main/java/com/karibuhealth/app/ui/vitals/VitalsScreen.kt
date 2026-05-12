@@ -32,13 +32,19 @@ import com.karibuhealth.app.ui.theme.Muted
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VitalsScreen(
-    visitId: String,
+    visitId: String?,
     patientId: String,
     onNavigateBack: () -> Unit,
-    onContinue: (visitId: String) -> Unit,
+    onContinue: (visitId: String?) -> Unit,
     viewModel: VitalsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Patient-only mode (no visit) is the Phase 4 entry from the patient
+    // timeline FAB. The visit-tied flow keeps its step indicator + "Save
+    // and continue" wording; the patient-only flow drops the step badge
+    // and the Skip affordance (there's nothing to skip to).
+    val patientOnlyMode = visitId == null
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onContinue(visitId)
@@ -67,8 +73,10 @@ fun VitalsScreen(
                     }
                 },
                 actions = {
-                    Box(modifier = Modifier.padding(end = 16.dp)) {
-                        KhMetaText(text = "STEP 2 / 3")
+                    if (!patientOnlyMode) {
+                        Box(modifier = Modifier.padding(end = 16.dp)) {
+                            KhMetaText(text = "STEP 2 / 3")
+                        }
                     }
                 },
             )
@@ -86,17 +94,19 @@ fun VitalsScreen(
                     .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(
-                            onClick = { onContinue(visitId) },
-                            modifier = Modifier.weight(1f),
-                            enabled = !uiState.isSaving,
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(vertical = 14.dp),
-                        ) { Text("Skip") }
+                        if (!patientOnlyMode) {
+                            OutlinedButton(
+                                onClick = { onContinue(visitId) },
+                                modifier = Modifier.weight(1f),
+                                enabled = !uiState.isSaving,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(vertical = 14.dp),
+                            ) { Text("Skip") }
+                        }
 
                         Button(
                             onClick = { viewModel.save(patientId = patientId, visitId = visitId) },
-                            modifier = Modifier.weight(2f),
+                            modifier = if (patientOnlyMode) Modifier.weight(1f) else Modifier.weight(2f),
                             enabled = !uiState.isSaving,
                             colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
                             shape = RoundedCornerShape(12.dp),
@@ -109,7 +119,10 @@ fun VitalsScreen(
                                     color = Color.White,
                                 )
                             } else {
-                                Text("Save and continue", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    if (patientOnlyMode) "Save vitals" else "Save and continue",
+                                    fontWeight = FontWeight.SemiBold,
+                                )
                             }
                         }
                     }
@@ -125,7 +138,9 @@ fun VitalsScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            KhStepIndicator(step = 2, totalSteps = 3, label = "VITALS")
+            if (!patientOnlyMode) {
+                KhStepIndicator(step = 2, totalSteps = 3, label = "VITALS")
+            }
 
             // Sticky-feeling patient strip — identity always anchored.
             // (Not actually pinned; sticky pinning would need a constraint
@@ -146,7 +161,11 @@ fun VitalsScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        KhMetaText(text = "VISIT ${visitId.take(8).uppercase()}")
+                        if (visitId != null) {
+                            KhMetaText(text = "VISIT ${visitId.take(8).uppercase()}")
+                        } else {
+                            KhMetaText(text = "PATIENT VITALS")
+                        }
                     }
                     KhMetaText(text = "ALL FIELDS OPTIONAL")
                 }

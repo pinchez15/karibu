@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Sparkles,
   Bell,
+  ListTodo,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
@@ -34,6 +35,7 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
   clinician: [
     { id: 'home', label: 'Today', href: '/dashboard', icon: Home },
     { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
+    { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
     { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
     { id: 'reports', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ],

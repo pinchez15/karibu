@@ -157,22 +157,60 @@ export interface VisitWithPatient extends Visit {
   patient: Patient;
 }
 
+// Provider note lifecycle (post migration 039):
+//   draft    -> autosaved or manually-saved work-in-progress
+//   signed   -> clinician attested as the clinical record. finalized_at/by
+//               retain the "signed" timestamps (column name kept for
+//               backwards compatibility — renaming would churn every caller).
+//   amended  -> previously-signed note rewritten via rpc_amend_provider_note
+//   voided   -> previously-signed note withdrawn via rpc_void_provider_note
+export type ProviderNoteStatus = 'draft' | 'signed' | 'amended' | 'voided';
+
+// patient_notes still uses the original draft/finalized lifecycle — see
+// 001_initial_schema.sql. Kept as a separate type to avoid implying the two
+// tables share a status enum (they don't).
 export type NoteStatus = 'draft' | 'finalized';
+
+// Discriminator for the clinical activity that produced a provider_note
+// (migration 039). 'visit' covers the legacy visit-tied path.
+export type ProviderNoteSource =
+  | 'visit'
+  | 'phone_call'
+  | 'follow_up'
+  | 'lab_update'
+  | 'pharmacy_update'
+  | 'general';
 
 export interface ProviderNote {
   id: string;
-  visit_id: string;
+  // Patient is the durable link (NOT NULL post-039).
+  patient_id: string;
+  // Visit is optional (nullable post-039). Standalone notes — phone follow-ups,
+  // lab updates, pharmacy annotations — leave this null.
+  visit_id: string | null;
   // Raw dictation transcript from Whisper. Short-form (typically <3 min of
   // audio). The audio itself is never persisted — only this text.
   transcript: string | null;
   // SOAP-formatted note structured by the AI assistant from the transcript.
   note_content: string | null;
   structured_data: Record<string, unknown>;
-  status: NoteStatus;
+  status: ProviderNoteStatus;
+  source: ProviderNoteSource;
   created_at: string;
   updated_at: string;
+  // Set by rpc_upsert_provider_note on first INSERT (migration 042) and
+  // preserved on subsequent autosaves. Drives the my-drafts worklist filter.
+  // Nullable for legacy rows that pre-date the migration.
+  created_by: string | null;
+  // Kept named finalized_* — semantically these are now the "signed at/by"
+  // timestamps. Renaming would cascade across every Android + web caller.
   finalized_at: string | null;
   finalized_by: string | null;
+  amended_at: string | null;
+  amended_by: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
 }
 
 export type PatientNoteSource = 'ai_generated' | 'clinician_fallback';
@@ -209,6 +247,132 @@ export interface PatientVitals {
   muac_cm: number | null;
   notes: string | null;
   created_at: string;
+}
+
+// =============================================
+// PATIENT TIMELINE (migration 040 — Phase 3)
+// =============================================
+//
+// rpc_get_patient_timeline returns a chronologically-ordered union of
+// {visit | note | vital | payment} events for one patient. event_data
+// shape is fixed per event_type; mirror the jsonb_build_object() calls
+// in packages/supabase/migrations/040_patient_timeline.sql.
+
+export type PatientTimelineEventType = 'visit' | 'note' | 'vital' | 'payment' | 'task';
+
+// care_tasks.task_type / status — must match migration 041 CHECK constraints.
+export type CareTaskType =
+  | 'lab_followup'
+  | 'phone_callback'
+  | 'home_visit'
+  | 'medication_review'
+  | 'referral_followup'
+  | 'general';
+
+export type CareTaskStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface VisitEventData {
+  visit_id: string;
+  status: VisitStatus;
+  queue_status: QueueStatus;
+  department: VisitDepartment;
+  chief_complaint: string | null;
+  diagnosis: string | null;
+  medications: string | null;
+  follow_up_instructions: string | null;
+  tests_ordered: string | null;
+  dispensing_status: string | null;
+  lab_status: string | null;
+  lab_abnormal: boolean | null;
+  documentation_complete: boolean;
+  visit_date: string;
+  doctor_id: string | null;
+}
+
+export interface NoteEventData {
+  note_id: string;
+  visit_id: string | null;
+  status: ProviderNoteStatus;
+  source: ProviderNoteSource;
+  transcript_preview: string;
+  has_transcript: boolean;
+  signed_at: string | null;
+  signed_by: string | null;
+  amended_at: string | null;
+  updated_at: string;
+}
+
+export interface VitalEventData {
+  vital_id: string;
+  visit_id: string | null;
+  recorded_by: string | null;
+  weight_kg: number | null;
+  height_cm: number | null;
+  temp_c: number | null;
+  bp_systolic: number | null;
+  bp_diastolic: number | null;
+  pulse_bpm: number | null;
+  resp_rate: number | null;
+  spo2_pct: number | null;
+  muac_cm: number | null;
+  notes: string | null;
+}
+
+export interface PaymentEventData {
+  payment_id: string;
+  visit_id: string | null;
+  amount_ugx: number;
+  payment_method: PaymentMethod;
+  receipt_number: string | null;
+  service_type: string | null;
+  status: PaymentStatus;
+  collected_by: string | null;
+}
+
+// Migration 042 — care_tasks projected onto the patient timeline. Cancelled
+// tasks are filtered out at the RPC layer so the UI never has to render them.
+export interface TaskEventData {
+  task_id: string;
+  visit_id: string | null;
+  task_type: CareTaskType;
+  title: string;
+  description: string | null;
+  assignee_role: StaffRole | null;
+  assignee_id: string | null;
+  due_at: string | null;
+  status: CareTaskStatus;
+  completed_at: string | null;
+  completed_by: string | null;
+  created_by: string | null;
+}
+
+export type PatientTimelineEvent =
+  | { event_type: 'visit'; event_at: string; event_id: string; event_data: VisitEventData }
+  | { event_type: 'note'; event_at: string; event_id: string; event_data: NoteEventData }
+  | { event_type: 'vital'; event_at: string; event_id: string; event_data: VitalEventData }
+  | { event_type: 'payment'; event_at: string; event_id: string; event_data: PaymentEventData }
+  | { event_type: 'task'; event_at: string; event_id: string; event_data: TaskEventData };
+
+// rpc_get_patient_latest_vitals — single row with per-field most recent
+// non-null value + its recorded_at timestamp.
+export interface PatientLatestVitals {
+  weight_kg: number | null;
+  weight_kg_at: string | null;
+  height_cm: number | null;
+  height_cm_at: string | null;
+  temp_c: number | null;
+  temp_c_at: string | null;
+  bp_systolic: number | null;
+  bp_diastolic: number | null;
+  bp_at: string | null;
+  pulse_bpm: number | null;
+  pulse_bpm_at: string | null;
+  resp_rate: number | null;
+  resp_rate_at: string | null;
+  spo2_pct: number | null;
+  spo2_pct_at: string | null;
+  muac_cm: number | null;
+  muac_cm_at: string | null;
 }
 
 export interface AuditLog {

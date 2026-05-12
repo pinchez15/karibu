@@ -34,16 +34,20 @@ The queue dashboard (web and mobile) subscribes to **Postgres changes** on the `
 
 ## Part 2: Deploy Edge Functions
 
-> **2026-04-08:** WhatsApp delivery removed. Patient notes are now printed
-> from the staff dashboard. The `send-whatsapp` function and magic-link
-> patient viewer no longer exist.
+> **2026-04-24:** Audio/consent infrastructure dropped in migration 023. The `transcribe` and `cleanup-audio` functions, `audio_uploads` table, and `patient_consents` table no longer exist. Patient voice is never recorded. The product is dictation-enabled (typing or post-visit clinician dictation).
+>
+> **2026-04-08:** WhatsApp delivery removed. Patient notes are printed from the staff dashboard. `send-whatsapp` and the magic-link patient viewer no longer exist.
 
-You have two Edge Functions that must be deployed and given secrets:
+Four Edge Functions are deployed; all live in `packages/supabase/functions/`.
 
-| Function         | Purpose                          | Used by                          |
-|------------------|-----------------------------------|----------------------------------|
-| `transcribe`     | Audio → transcript (OpenAI/Sunbird)| Web + mobile after upload         |
-| `generate-notes` | Transcript → SOAP + patient note | Called by `transcribe` (internal) |
+| Function            | Purpose                                                            | Called by                                  |
+|---------------------|--------------------------------------------------------------------|--------------------------------------------|
+| `dictate`           | Audio chunk → Whisper transcript. Stateless: no DB write, no consent gate. ≤25MB. | Android dictation flow, web mic recorder |
+| `submit-dictation`  | Persists transcript to `provider_notes`, sets `visits.status='pending'`, fires Inngest `note.dictated` event. | Android opt-in "Structure with AI" action, web dashboard submit |
+| `approve-dictation` | Clinician approves AI-structured note; advances `pending → sent`, finalizes provider + patient notes. | Web review flow, Android ReviewScreen     |
+| `reject-dictation`  | Clears AI output (note_content, structured_data, patient summary); preserves transcript for re-edit. | Web review flow                          |
+
+The downstream AI workflow runs in **Inngest**, not in an edge function — see `apps/web/src/inngest/functions/` for `reviewClinicianNote`, `draftPatientReceipt`, `suggestHmisCode`, and the 1-minute polling fallback `pollAiStructureQueue`.
 
 ### Prerequisites
 
@@ -59,16 +63,17 @@ You have two Edge Functions that must be deployed and given secrets:
   ```
   (`YOUR_PROJECT_REF` is in Dashboard → Project Settings → General → Reference ID.)
 
-### Deploy all three functions
+### Deploy all four functions
 
 From **`packages/supabase`**:
 
 ```bash
 cd packages/supabase
 
-# Deploy both (order doesn’t matter for deploy; transcribe calls generate-notes at runtime)
-supabase functions deploy transcribe
-supabase functions deploy generate-notes
+supabase functions deploy dictate
+supabase functions deploy submit-dictation
+supabase functions deploy approve-dictation
+supabase functions deploy reject-dictation
 ```
 
 ### Set secrets (required for Edge Functions)
@@ -80,11 +85,11 @@ Supabase automatically provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` t
 From `packages/supabase`:
 
 ```bash
-# Required for transcribe + generate-notes
+# OpenAI Whisper (dictate) and Inngest event dispatch (submit-dictation)
 supabase secrets set OPENAI_API_KEY=sk-your-actual-openai-key
-supabase secrets set SUNBIRD_API_KEY=your-sunbird-api-key
+supabase secrets set INNGEST_EVENT_KEY=your-inngest-event-key
 
-# Required for edge function authentication (Clerk JWT verification)
+# Clerk JWT verification (all four functions verify Clerk tokens)
 # Find this in Clerk Dashboard → API Keys → "Frontend API URL"
 supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
 ```
@@ -94,41 +99,32 @@ supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
 1. Go to **Project Settings** (gear) → **Edge Functions**.
 2. Under **Edge Function Secrets**, add each key:
 
-| Secret name               | Required by        | Example / notes        |
-|---------------------------|--------------------|------------------------|
-| `OPENAI_API_KEY`          | transcribe, generate-notes, dictate | `sk-...`         |
-| `SUNBIRD_API_KEY`         | transcribe (translation)   | Sunbird dashboard |
-| `CLERK_ISSUER`            | dictate, transcribe, generate-notes (auth) | `https://clerk.karibu.health` |
+| Secret name          | Required by                                                    | Example / notes                |
+|----------------------|----------------------------------------------------------------|--------------------------------|
+| `OPENAI_API_KEY`     | `dictate` (Whisper)                                            | `sk-...`                       |
+| `INNGEST_EVENT_KEY`  | `submit-dictation` (fires `note.dictated`)                     | Inngest dashboard              |
+| `CLERK_ISSUER`       | All four (Clerk JWT validation)                                | `https://clerk.karibu.health`  |
 
-3. Save. Redeploy functions if the UI says so, or run:
-
-   ```bash
-   supabase functions deploy transcribe
-   supabase functions deploy generate-notes
-   ```
+3. Save and redeploy the affected functions.
 
 ### Verify Edge Functions
 
-1. **URLs:**  
-   `https://YOUR_PROJECT_REF.supabase.co/functions/v1/transcribe`  
-   (same pattern for `generate-notes` and `send-whatsapp`).
-
-2. **transcribe:**  
-   Trigger from the web app: visit detail → upload/trigger transcription. Check **Edge Functions** → **Logs** in the Dashboard for runs and errors.
-
-3. **generate-notes:**  
-   Called by `transcribe` after transcription; no direct call from the app.
+1. **URLs follow the pattern:** `https://YOUR_PROJECT_REF.supabase.co/functions/v1/<function-name>`.
+2. **`dictate`:** Trigger from Android dictation or the web mic recorder; check Dashboard → Edge Functions → Logs.
+3. **`submit-dictation`:** Triggered when the clinician taps "Structure with AI"; the Inngest event should appear in the Inngest dashboard within seconds.
+4. **`approve-dictation` / `reject-dictation`:** Exercised from the web review flow.
 
 ---
 
 ## Checklist
 
 - [ ] Realtime enabled; `visits` in `supabase_realtime` publication.
-- [ ] `transcribe` and `generate-notes` deployed.
-- [ ] Secrets set: `OPENAI_API_KEY`, `SUNBIRD_API_KEY`.
+- [ ] All four edge functions deployed.
+- [ ] Secrets set: `OPENAI_API_KEY`, `INNGEST_EVENT_KEY`, `CLERK_ISSUER`.
+- [ ] Inngest signing keys configured in the web app (`INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`).
 - [ ] Queue dashboard updates in real time when visits change.
-- [ ] Transcription + notes pipeline works from visit detail.
-- [ ] Print patient note works from dashboard.
+- [ ] Dictation round-trip works: clinician dictates → transcript persisted → `note.dictated` event fires → AI review writes back.
+- [ ] Print patient note works from the dashboard.
 
 ---
 
@@ -138,14 +134,14 @@ supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
 
 - Confirm **Database → Replication**: Realtime is on and `visits` is in `supabase_realtime`.
 - Confirm RLS allows the client to read `visits` (Realtime respects RLS).
-- In browser dev tools, check for WebSocket errors to `realtime.supabase.co`.
+- Check browser dev tools for WebSocket errors to `realtime.supabase.co`.
 
-**Edge Function 500 / “Missing key”**
+**Edge Function 500 / "Missing key"**
 
 - In Dashboard → Project Settings → Edge Functions, confirm every required secret is set.
 - Redeploy the function after changing secrets.
 
-**transcribe fails after upload**
+**`submit-dictation` succeeds but no AI review appears**
 
-- Check Edge Function logs for the exact error (OpenAI/Sunbird key, Storage path, or `generate-notes` URL).
-- Ensure Storage bucket and RLS allow the service role to read the audio file.
+- Check the Inngest dashboard for the `note.dictated` event and the three handlers (`reviewClinicianNote`, `draftPatientReceipt`, `suggestHmisCode`).
+- The 1-minute polling fallback `pollAiStructureQueue` will eventually pick up any visit with `documentation_complete=true AND ai_review_status='not_started' AND ai_review_attempts < 5`.

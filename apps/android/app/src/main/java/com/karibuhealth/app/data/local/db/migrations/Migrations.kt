@@ -3,6 +3,137 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v8 -> v9: note authorship (migration 042 mirror). Adds the
+// provider_notes.created_by column so the mobile cache can read back which
+// staff first dictated each note. Strictly additive — the server records the
+// value on INSERT via rpc_upsert_provider_note; nothing on Android writes to
+// it directly.
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE provider_notes ADD COLUMN created_by TEXT")
+    }
+}
+
+// v7 -> v8: clinical notes patient-first (migration 039 mirror). Adds the
+// note lifecycle (draft -> signed -> amended | voided) and a source
+// discriminator so provider_notes can attach to phone calls, lab follow-ups,
+// and other non-encounter clinical activities. Visit_id becomes optional but
+// stays unique-when-present via a partial unique index.
+//
+// Backfill rules mirror the server migration:
+//   - patient_id derived from visits.patient_id for rows that have a visit_id
+//   - status 'finalized' rows promoted to 'signed'
+//   - source defaults to 'visit' (the legacy semantics) on existing rows
+//
+// Room doesn't enforce CHECK constraints; the server is the source of truth
+// for the source/status value sets.
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. patient_id — initially nullable so we can backfill from joined
+        //    visit. Pre-launch this only affects demo data.
+        db.execSQL("ALTER TABLE provider_notes ADD COLUMN patient_id TEXT")
+        db.execSQL(
+            "UPDATE provider_notes SET patient_id = (" +
+                "SELECT v.patient_id FROM visits v WHERE v.id = provider_notes.visit_id" +
+                ") WHERE patient_id IS NULL",
+        )
+        // Room treats `val patientId: String` as NOT NULL. SQLite can't add a
+        // NOT NULL column post-hoc without a table rebuild, but Room only
+        // verifies the schema by reading column metadata on first open — and
+        // it inspects `notnull` from PRAGMA table_info. We rebuild the table
+        // to enforce NOT NULL on patient_id (no production rows pre-launch).
+        db.execSQL(
+            """
+            CREATE TABLE provider_notes_new (
+                id TEXT NOT NULL PRIMARY KEY,
+                patient_id TEXT NOT NULL,
+                visit_id TEXT,
+                transcript TEXT,
+                note_content TEXT,
+                structured_data TEXT,
+                status TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'visit',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                finalized_at TEXT,
+                finalized_by TEXT,
+                amended_at TEXT,
+                amended_by TEXT,
+                voided_at TEXT,
+                voided_by TEXT,
+                void_reason TEXT
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO provider_notes_new (
+                id, patient_id, visit_id, transcript, note_content, structured_data,
+                status, source, created_at, updated_at, finalized_at, finalized_by
+            )
+            SELECT
+                id, patient_id, visit_id, transcript, note_content, structured_data,
+                CASE WHEN status = 'finalized' THEN 'signed' ELSE status END,
+                'visit',
+                created_at, updated_at, finalized_at, finalized_by
+            FROM provider_notes
+            WHERE patient_id IS NOT NULL
+            """.trimIndent(),
+        )
+        db.execSQL("DROP TABLE provider_notes")
+        db.execSQL("ALTER TABLE provider_notes_new RENAME TO provider_notes")
+
+        // Drop the old implicit UNIQUE on visit_id and replace with a partial
+        // unique index so multiple standalone notes (visit_id IS NULL) can
+        // coexist while visit-tied notes stay 1:1.
+        db.execSQL("DROP INDEX IF EXISTS index_provider_notes_visit_id")
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS index_provider_notes_visit_id " +
+                "ON provider_notes(visit_id) WHERE visit_id IS NOT NULL",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_provider_notes_patient_id_updated_at " +
+                "ON provider_notes(patient_id, updated_at)",
+        )
+    }
+}
+
+// v6 -> v7: patient identity precision (migration 038 mirror). Strictly
+// additive — adds nullable identity-precision columns and a non-null
+// dob_precision discriminator defaulted to 'unknown'. The server's
+// patients_dob_precision_consistent CHECK constraint is NOT mirrored here;
+// Room/SQLite can't easily express it and the new-visit UI is the single
+// writer that has to satisfy it on the server anyway.
+//
+// Server-side columns (from packages/supabase/migrations/038):
+//   birth_year SMALLINT
+//   approximate_age SMALLINT
+//   age_recorded_at TIMESTAMPTZ
+//   dob_precision TEXT NOT NULL DEFAULT 'unknown'
+//   village, parish, subcounty, district, guardian_name, national_id (TEXT)
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Integer-typed nullable identity columns.
+        db.execSQL("ALTER TABLE patients ADD COLUMN birth_year INTEGER")
+        db.execSQL("ALTER TABLE patients ADD COLUMN approximate_age INTEGER")
+        db.execSQL("ALTER TABLE patients ADD COLUMN age_recorded_at TEXT")
+        // Non-null discriminator. Existing rows backfill to 'unknown' via the
+        // DEFAULT; the dictation pivot wiped audit history but seed demo
+        // patients carry date_of_birth, so we promote them to 'exact' to match
+        // the server's same backfill in migration 038.
+        db.execSQL("ALTER TABLE patients ADD COLUMN dob_precision TEXT NOT NULL DEFAULT 'unknown'")
+        db.execSQL("UPDATE patients SET dob_precision = 'exact' WHERE date_of_birth IS NOT NULL AND dob_precision = 'unknown'")
+
+        // Location + secondary identifiers.
+        db.execSQL("ALTER TABLE patients ADD COLUMN village TEXT")
+        db.execSQL("ALTER TABLE patients ADD COLUMN parish TEXT")
+        db.execSQL("ALTER TABLE patients ADD COLUMN subcounty TEXT")
+        db.execSQL("ALTER TABLE patients ADD COLUMN district TEXT")
+        db.execSQL("ALTER TABLE patients ADD COLUMN guardian_name TEXT")
+        db.execSQL("ALTER TABLE patients ADD COLUMN national_id TEXT")
+    }
+}
+
 // v5 -> v6: AI as augmentation. Adds AI-structuring lifecycle columns on
 // visits (read-only on Android — written server-side by the Inngest pipeline
 // and synced down on refresh). Also drops the unique index on

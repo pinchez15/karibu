@@ -7,7 +7,13 @@ import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.FindDuplicateCandidatesRequest
+import com.karibuhealth.app.data.remote.dto.GetPatientLatestVitalsRequest
+import com.karibuhealth.app.data.remote.dto.GetPatientTimelineRequest
+import com.karibuhealth.app.domain.model.DuplicateCandidate
 import com.karibuhealth.app.domain.model.Patient
+import com.karibuhealth.app.domain.model.PatientLatestVitals
+import com.karibuhealth.app.domain.model.PatientTimelineEvent
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -47,6 +53,13 @@ class PatientRepository @Inject constructor(
             patientDao.getByPhone(clinicId, phone)?.toDomain()
         }
 
+    /**
+     * Offline-only fallback for duplicate detection — exact name + exact DOB
+     * against the local Room cache. The primary duplicate-detection path is
+     * [findDuplicateCandidates], which calls the rpc_find_duplicate_candidates
+     * RPC (migration 038) for trigram-based fuzzy matching server-side. Kept
+     * for the offline new-visit registration path.
+     */
     suspend fun findLikelyDuplicate(
         clinicId: String,
         firstName: String,
@@ -54,6 +67,41 @@ class PatientRepository @Inject constructor(
         dateOfBirth: String,
     ): Patient? = withContext(Dispatchers.IO) {
         patientDao.findLikelyDuplicate(clinicId, firstName, lastName, dateOfBirth)?.toDomain()
+    }
+
+    /**
+     * Server-side fuzzy duplicate search. Calls rpc_find_duplicate_candidates
+     * (migration 038) which does trigram name similarity + location + ±3-year
+     * age band matching and returns ranked candidates with match_reasons.
+     *
+     * Returns an empty list when offline or on RPC failure — the caller treats
+     * that the same as "no duplicates", which is the safe behaviour (the
+     * offline [findLikelyDuplicate] can still fire as a fallback in
+     * NewVisitViewModel if needed).
+     */
+    suspend fun findDuplicateCandidates(
+        clinicId: String,
+        firstName: String,
+        lastName: String,
+        village: String? = null,
+        parish: String? = null,
+        age: Int? = null,
+        sex: String? = null,
+    ): List<DuplicateCandidate> = withContext(Dispatchers.IO) {
+        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        runCatching {
+            supabaseApi.rpcFindDuplicateCandidates(
+                FindDuplicateCandidatesRequest(
+                    clinicId = clinicId,
+                    firstName = firstName,
+                    lastName = lastName,
+                    village = village?.takeIf { it.isNotBlank() },
+                    parish = parish?.takeIf { it.isNotBlank() },
+                    age = age,
+                    sex = sex,
+                ),
+            ).map { it.toDomain() }
+        }.getOrElse { emptyList() }
     }
 
     /**
@@ -70,8 +118,27 @@ class PatientRepository @Inject constructor(
         whatsappNumber: String? = null,
         dateOfBirth: String? = null,
         sex: String? = null,
+        birthYear: Int? = null,
+        approximateAge: Int? = null,
+        ageRecordedAt: String? = null,
+        dobPrecision: String = "unknown",
+        village: String? = null,
+        parish: String? = null,
+        subcounty: String? = null,
+        district: String? = null,
+        guardianName: String? = null,
+        nationalId: String? = null,
     ): Pair<Patient, String?> = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
+        // If the clinician picks "age_estimate" without supplying the recorded
+        // timestamp, default to now — the server-side CHECK constraint
+        // (patients_dob_precision_consistent) requires age_recorded_at to be
+        // non-null in that branch.
+        val resolvedAgeRecordedAt = if (dobPrecision == "age_estimate" && ageRecordedAt == null) {
+            now
+        } else {
+            ageRecordedAt
+        }
         val patient = Patient(
             id = UUID.randomUUID().toString(),
             clinicId = clinicId,
@@ -83,6 +150,16 @@ class PatientRepository @Inject constructor(
             whatsappNumber = whatsappNumber,
             dateOfBirth = dateOfBirth,
             sex = sex,
+            birthYear = birthYear,
+            approximateAge = approximateAge,
+            ageRecordedAt = resolvedAgeRecordedAt,
+            dobPrecision = dobPrecision,
+            village = village,
+            parish = parish,
+            subcounty = subcounty,
+            district = district,
+            guardianName = guardianName,
+            nationalId = nationalId,
             createdAt = now,
             updatedAt = now,
         )
@@ -141,4 +218,51 @@ class PatientRepository @Inject constructor(
             patientDao.upsert(serverDto.toEntity(isSynced = true))
         }
     }
+
+    /**
+     * Patient timeline (Phase 3). Calls rpc_get_patient_timeline on the
+     * server and unpacks the JSON event_data into typed
+     * [PatientTimelineEvent] subtypes.
+     *
+     * Phase 3 is online-only — offline timeline derivation from Room would
+     * be a future enhancement (entries live across visits / notes / vitals /
+     * payments and span the entire patient history, not just locally cached
+     * rows). Returns an empty list when offline or on RPC failure; the
+     * ViewModel surfaces "Couldn't load timeline" in that case.
+     *
+     * `cursor` is exclusive: pass the oldest eventAt from the previous page
+     * to fetch the next.
+     */
+    suspend fun getPatientTimeline(
+        patientId: String,
+        cursor: String? = null,
+        limit: Int = 50,
+    ): List<PatientTimelineEvent> = withContext(Dispatchers.IO) {
+        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        runCatching {
+            supabaseApi.rpcGetPatientTimeline(
+                GetPatientTimelineRequest(
+                    patientId = patientId,
+                    cursor = cursor,
+                    limit = limit,
+                ),
+            ).mapNotNull { it.toDomain() }
+        }.getOrElse { emptyList() }
+    }
+
+    /**
+     * Latest-known vital values for a patient. Each measurement is resolved
+     * independently — weight may be from today, height from a month ago.
+     * Online-only for the same reason as [getPatientTimeline]; returns null
+     * on failure so the UI can fall back to "Latest vitals unavailable".
+     */
+    suspend fun getPatientLatestVitals(patientId: String): PatientLatestVitals? =
+        withContext(Dispatchers.IO) {
+            if (!networkMonitor.isOnline()) return@withContext null
+            runCatching {
+                supabaseApi.rpcGetPatientLatestVitals(
+                    GetPatientLatestVitalsRequest(patientId = patientId),
+                ).firstOrNull()?.toDomain()
+            }.getOrNull()
+        }
 }

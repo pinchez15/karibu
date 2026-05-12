@@ -5,22 +5,36 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.domain.model.DuplicateCandidate
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.util.formatPhoneNumber
 import com.karibuhealth.app.util.isValidUgandaPhone
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 
 enum class PatientSex { M, F }
+
+// Server-side dob_precision discriminator values (migration 038). Kept as
+// strings — the migration uses a CHECK constraint rather than an enum so we
+// stay close to the wire format.
+object DobPrecision {
+    const val EXACT = "exact"
+    const val YEAR_ONLY = "year_only"
+    const val AGE_ESTIMATE = "age_estimate"
+    const val UNKNOWN = "unknown"
+}
 
 data class FieldErrors(
     val firstName: String? = null,
     val lastName: String? = null,
     val sex: String? = null,
     val dateOfBirth: String? = null,
+    val birthYear: String? = null,
+    val approximateAge: String? = null,
     val phone: String? = null,
 )
 
@@ -29,11 +43,27 @@ data class NewVisitUiState(
     val firstName: String = "",
     val lastName: String = "",
     val sex: PatientSex? = null,
+    // DOB precision drives which age field is required + which column is
+    // populated on the server. Default 'exact' preserves the pre-038 form
+    // behaviour for clinics that still capture exact DOBs.
+    val dobPrecision: String = DobPrecision.EXACT,
     val dateOfBirth: String? = null, // Display format dd-MM-yyyy
+    val birthYear: String = "", // 4-digit year as typed, e.g. "1992"
+    val approximateAge: String = "", // years as typed, e.g. "45"
+    // Location + secondary identifiers (migration 038). Village + parish are
+    // the primary disambiguators for rural HC III catchments when DOB and
+    // phone are unknown; subcounty/district/guardian/national_id are exposed
+    // behind the "More" disclosure in the UI.
+    val village: String = "",
+    val parish: String = "",
+    val subcounty: String = "",
+    val district: String = "",
+    val guardianName: String = "",
+    val nationalId: String = "",
     val chiefComplaint: String = "",
     val searchResults: List<Patient> = emptyList(),
     val foundPatient: Patient? = null,
-    val duplicateCandidate: Patient? = null,
+    val duplicateCandidates: List<DuplicateCandidate> = emptyList(),
     val isSearching: Boolean = false,
     val isCreating: Boolean = false,
     val error: String? = null,
@@ -74,25 +104,104 @@ class NewVisitViewModel @Inject constructor(
     }
 
     fun updateFirstName(name: String) {
-        _uiState.update { it.copy(firstName = name, duplicateCandidate = null, fieldErrors = it.fieldErrors.copy(firstName = null)) }
+        _uiState.update {
+            it.copy(
+                firstName = name,
+                duplicateCandidates = emptyList(),
+                fieldErrors = it.fieldErrors.copy(firstName = null),
+            )
+        }
     }
 
     fun updateLastName(name: String) {
-        _uiState.update { it.copy(lastName = name, duplicateCandidate = null, fieldErrors = it.fieldErrors.copy(lastName = null)) }
+        _uiState.update {
+            it.copy(
+                lastName = name,
+                duplicateCandidates = emptyList(),
+                fieldErrors = it.fieldErrors.copy(lastName = null),
+            )
+        }
     }
 
     fun updateSex(sex: PatientSex) {
-        _uiState.update { it.copy(sex = sex, duplicateCandidate = null, fieldErrors = it.fieldErrors.copy(sex = null)) }
+        _uiState.update {
+            it.copy(
+                sex = sex,
+                duplicateCandidates = emptyList(),
+                fieldErrors = it.fieldErrors.copy(sex = null),
+            )
+        }
+    }
+
+    fun updateDobPrecision(precision: String) {
+        _uiState.update {
+            it.copy(
+                dobPrecision = precision,
+                duplicateCandidates = emptyList(),
+                // Clear stale errors when the user changes which field applies.
+                fieldErrors = it.fieldErrors.copy(
+                    dateOfBirth = null,
+                    birthYear = null,
+                    approximateAge = null,
+                ),
+            )
+        }
     }
 
     fun updateDateOfBirth(input: String) {
         _uiState.update {
             it.copy(
                 dateOfBirth = input,
-                duplicateCandidate = null,
+                duplicateCandidates = emptyList(),
                 fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
             )
         }
+    }
+
+    fun updateBirthYear(input: String) {
+        val digits = input.filter(Char::isDigit).take(4)
+        _uiState.update {
+            it.copy(
+                birthYear = digits,
+                duplicateCandidates = emptyList(),
+                fieldErrors = it.fieldErrors.copy(birthYear = null),
+            )
+        }
+    }
+
+    fun updateApproximateAge(input: String) {
+        val digits = input.filter(Char::isDigit).take(3)
+        _uiState.update {
+            it.copy(
+                approximateAge = digits,
+                duplicateCandidates = emptyList(),
+                fieldErrors = it.fieldErrors.copy(approximateAge = null),
+            )
+        }
+    }
+
+    fun updateVillage(input: String) {
+        _uiState.update { it.copy(village = input, duplicateCandidates = emptyList()) }
+    }
+
+    fun updateParish(input: String) {
+        _uiState.update { it.copy(parish = input, duplicateCandidates = emptyList()) }
+    }
+
+    fun updateSubcounty(input: String) {
+        _uiState.update { it.copy(subcounty = input) }
+    }
+
+    fun updateDistrict(input: String) {
+        _uiState.update { it.copy(district = input) }
+    }
+
+    fun updateGuardianName(input: String) {
+        _uiState.update { it.copy(guardianName = input) }
+    }
+
+    fun updateNationalId(input: String) {
+        _uiState.update { it.copy(nationalId = input) }
     }
 
     fun formatDateOfBirthInput(input: String): String {
@@ -112,23 +221,36 @@ class NewVisitViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 dateOfBirth = display,
-                duplicateCandidate = null,
+                duplicateCandidates = emptyList(),
                 fieldErrors = it.fieldErrors.copy(dateOfBirth = null),
             )
         }
     }
 
     fun selectPatient(patient: Patient) {
-        _uiState.update { it.copy(foundPatient = patient, duplicateCandidate = null) }
+        _uiState.update { it.copy(foundPatient = patient, duplicateCandidates = emptyList()) }
     }
 
     fun updateChiefComplaint(text: String) {
         _uiState.update { it.copy(chiefComplaint = text) }
     }
 
-    suspend fun startVisitForDuplicateCandidate(): VisitStartResult? {
-        val patient = _uiState.value.duplicateCandidate ?: return null
-        _uiState.update { it.copy(foundPatient = patient, duplicateCandidate = null) }
+    /**
+     * Start a visit for a candidate the clinician picked from the duplicate
+     * list. Looks the full patient row up locally first; on cache miss we
+     * fall back to fetching just the id from the patients endpoint via the
+     * repository. Replaces the pre-038 startVisitForDuplicateCandidate(),
+     * which assumed a single candidate stored in state.
+     */
+    suspend fun startVisitForCandidate(candidateId: String): VisitStartResult? {
+        val patient = patientRepository.getPatientByIdOnce(candidateId)
+        if (patient == null) {
+            _uiState.update {
+                it.copy(error = "Couldn't load that patient — try syncing and search by name.")
+            }
+            return null
+        }
+        _uiState.update { it.copy(foundPatient = patient, duplicateCandidates = emptyList()) }
         return startVisitForSelectedPatient()
     }
 
@@ -159,21 +281,32 @@ class NewVisitViewModel @Inject constructor(
         val state = _uiState.value
         if (state.foundPatient != null) return startVisitForSelectedPatient()
 
-        // Validate the new-patient form. Sex and DOB are required for HMIS 105
-        // age × sex banding; without them visits silently drop out of the
-        // monthly report. Phone is optional — many patients in this catchment
-        // don't carry one.
+        // Validate the new-patient form. Sex remains required for HMIS 105
+        // sex banding. DOB precision (migration 038) now lets year-only and
+        // age-estimate patients still land in the right HMIS age bucket via
+        // the patient_age_years() helper, so we only require an exact DOB
+        // when the clinician explicitly picked precision='exact'. Phone is
+        // optional — many patients in this catchment don't carry one.
         val errors = FieldErrors(
             firstName = if (state.firstName.isBlank()) "Required" else null,
             lastName = if (state.lastName.isBlank()) "Required" else null,
             sex = if (state.sex == null) "Required" else null,
-            dateOfBirth = validateDateOfBirth(state.dateOfBirth),
+            dateOfBirth = if (state.dobPrecision == DobPrecision.EXACT) {
+                validateDateOfBirth(state.dateOfBirth)
+            } else null,
+            birthYear = if (state.dobPrecision == DobPrecision.YEAR_ONLY) {
+                validateBirthYear(state.birthYear)
+            } else null,
+            approximateAge = if (state.dobPrecision == DobPrecision.AGE_ESTIMATE) {
+                validateApproximateAge(state.approximateAge)
+            } else null,
             phone = if (state.searchQuery.isNotBlank() && !state.phoneValid) {
                 "Enter a valid Uganda phone number or leave blank"
             } else null,
         )
         if (errors.firstName != null || errors.lastName != null || errors.sex != null ||
-            errors.dateOfBirth != null || errors.phone != null
+            errors.dateOfBirth != null || errors.birthYear != null ||
+            errors.approximateAge != null || errors.phone != null
         ) {
             _uiState.update { it.copy(fieldErrors = errors, error = null) }
             return null
@@ -184,27 +317,54 @@ class NewVisitViewModel @Inject constructor(
                 _uiState.update { it.copy(error = "No active clinic — please sign in again") }
                 return null
             }
-        val dateOfBirthIso = displayToIsoDate(state.dateOfBirth!!) ?: run {
-            _uiState.update {
-                it.copy(
-                    fieldErrors = it.fieldErrors.copy(dateOfBirth = "Enter a valid date"),
-                    error = null,
-                )
+
+        // Resolve the per-precision identity fields. dateOfBirthIso may be
+        // null for non-exact precisions — that's expected and matches the
+        // server CHECK constraint.
+        val dateOfBirthIso = if (state.dobPrecision == DobPrecision.EXACT) {
+            displayToIsoDate(state.dateOfBirth!!) ?: run {
+                _uiState.update {
+                    it.copy(
+                        fieldErrors = it.fieldErrors.copy(dateOfBirth = "Enter a valid date"),
+                        error = null,
+                    )
+                }
+                return null
             }
-            return null
-        }
+        } else null
+        val birthYearInt = state.birthYear.takeIf { state.dobPrecision == DobPrecision.YEAR_ONLY }
+            ?.toIntOrNull()
+        val approxAgeInt = state.approximateAge.takeIf { state.dobPrecision == DobPrecision.AGE_ESTIMATE }
+            ?.toIntOrNull()
+
         val phone = if (state.searchQuery.isNotBlank()) formatPhoneNumber(state.searchQuery) else null
+
+        // Compute the age estimate used to band duplicate-candidate matches.
+        // The RPC widens this to ±3 years internally, so we just need a
+        // single integer year value.
+        val today = LocalDate.now()
+        val ageEstimate: Int? = when (state.dobPrecision) {
+            DobPrecision.EXACT -> dateOfBirthIso
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?.let { today.year - it.year }
+            DobPrecision.YEAR_ONLY -> birthYearInt?.let { today.year - it }
+            DobPrecision.AGE_ESTIMATE -> approxAgeInt
+            else -> null
+        }
 
         _uiState.update { it.copy(isCreating = true, error = null) }
         return try {
-            val duplicateCandidate = patientRepository.findLikelyDuplicate(
+            val candidates = patientRepository.findDuplicateCandidates(
                 clinicId = clinicId,
                 firstName = state.firstName.trim(),
                 lastName = state.lastName.trim(),
-                dateOfBirth = dateOfBirthIso,
+                village = state.village.trim().takeIf { it.isNotBlank() },
+                parish = state.parish.trim().takeIf { it.isNotBlank() },
+                age = ageEstimate,
+                sex = state.sex?.name,
             )
-            if (duplicateCandidate != null && !confirmDuplicate) {
-                _uiState.update { it.copy(duplicateCandidate = duplicateCandidate, isCreating = false) }
+            if (candidates.isNotEmpty() && !confirmDuplicate) {
+                _uiState.update { it.copy(duplicateCandidates = candidates, isCreating = false) }
                 return null
             }
 
@@ -215,6 +375,18 @@ class NewVisitViewModel @Inject constructor(
                 whatsappNumber = phone,
                 dateOfBirth = dateOfBirthIso,
                 sex = state.sex?.name,
+                birthYear = birthYearInt,
+                approximateAge = approxAgeInt,
+                ageRecordedAt = if (state.dobPrecision == DobPrecision.AGE_ESTIMATE) {
+                    Instant.now().toString()
+                } else null,
+                dobPrecision = state.dobPrecision,
+                village = state.village.trim().takeIf { it.isNotBlank() },
+                parish = state.parish.trim().takeIf { it.isNotBlank() },
+                subcounty = state.subcounty.trim().takeIf { it.isNotBlank() },
+                district = state.district.trim().takeIf { it.isNotBlank() },
+                guardianName = state.guardianName.trim().takeIf { it.isNotBlank() },
+                nationalId = state.nationalId.trim().takeIf { it.isNotBlank() },
             )
             val staffId = authTokenStore.getStaffId()
             val chiefComplaint = state.chiefComplaint.trim().takeIf { it.isNotBlank() }
@@ -241,6 +413,23 @@ class NewVisitViewModel @Inject constructor(
         val today = LocalDate.now()
         if (dob.isAfter(today)) return "Date of birth cannot be in the future"
         if (dob.isBefore(today.minusYears(120))) return "Date of birth looks too far in the past"
+        return null
+    }
+
+    private fun validateBirthYear(input: String): String? {
+        if (input.isBlank()) return "Required"
+        val year = input.toIntOrNull() ?: return "Enter a 4-digit year"
+        val currentYear = LocalDate.now().year
+        if (year < 1900) return "Year looks too far in the past"
+        if (year > currentYear) return "Year cannot be in the future"
+        return null
+    }
+
+    private fun validateApproximateAge(input: String): String? {
+        if (input.isBlank()) return "Required"
+        val age = input.toIntOrNull() ?: return "Enter age in years"
+        if (age < 0) return "Age can't be negative"
+        if (age > 130) return "Age looks too high"
         return null
     }
 

@@ -15,9 +15,13 @@ interface PatientDao {
     @Query("""
         SELECT * FROM patients
         WHERE clinic_id = :clinicId
-        AND (whatsapp_number LIKE '%' || :query || '%'
-             OR display_name LIKE '%' || :query || '%'
-             OR patient_number LIKE '%' || :query || '%')
+        AND (
+             replace(lower(coalesce(whatsapp_number, '')), ' ', '') LIKE '%' || replace(lower(:query), ' ', '') || '%'
+             OR lower(coalesce(display_name, '')) LIKE '%' || lower(:query) || '%'
+             OR lower(trim(coalesce(first_name, '') || ' ' || coalesce(last_name, ''))) LIKE '%' || lower(:query) || '%'
+             OR lower(coalesce(first_name, '')) LIKE '%' || lower(:query) || '%'
+             OR lower(coalesce(last_name, '')) LIKE '%' || lower(:query) || '%'
+        )
         ORDER BY display_name
         LIMIT 50
     """)
@@ -32,6 +36,13 @@ interface PatientDao {
     @Query("SELECT * FROM patients WHERE clinic_id = :clinicId AND whatsapp_number = :phone")
     suspend fun getByPhone(clinicId: String, phone: String): PatientEntity?
 
+    // Offline-only fallback: exact name + exact DOB match against the local
+    // cache. The primary duplicate-detection path is now the
+    // rpc_find_duplicate_candidates RPC (migration 038), which does
+    // trigram-based fuzzy matching across name + location + age and runs
+    // server-side. Kept here so we still have a hard-stop check when the device
+    // has no network and the clinician is re-registering a patient who was
+    // already entered earlier on the same device.
     @Query("""
         SELECT * FROM patients
         WHERE clinic_id = :clinicId

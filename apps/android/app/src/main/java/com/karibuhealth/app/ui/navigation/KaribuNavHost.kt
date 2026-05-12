@@ -12,11 +12,14 @@ import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
 import com.karibuhealth.app.ui.dictation.DictationScreen
+import com.karibuhealth.app.ui.patientdetail.PatientTimelineScreen
+import com.karibuhealth.app.ui.patientnote.PatientNoteScreen
 import com.karibuhealth.app.ui.vitals.VitalsScreen
 import com.karibuhealth.app.ui.visitdetails.VisitDetailsScreen
 import com.karibuhealth.app.ui.review.ReviewScreen
 import com.karibuhealth.app.ui.payment.PaymentScreen
 import com.karibuhealth.app.ui.success.SuccessScreen
+import com.karibuhealth.app.ui.worklists.WorklistsScreen
 
 @Composable
 fun KaribuNavHost(
@@ -44,6 +47,10 @@ fun KaribuNavHost(
                 onNavigateToVisitDetails = { visitId ->
                     navController.navigate(NavRoute.VisitDetails(visitId))
                 },
+                onNavigateToPatient = { patientId ->
+                    navController.navigate(NavRoute.PatientDetail(patientId))
+                },
+                onNavigateToWorklists = { navController.navigate(NavRoute.Worklists) },
             )
         }
 
@@ -90,8 +97,12 @@ fun KaribuNavHost(
                 onContinue = { visitId ->
                     // Whether the clinician saved vitals or skipped, next is the
                     // note. aiMode=false — Save flow no longer toggles AI here.
-                    navController.navigate(NavRoute.Dictation(visitId, false)) {
-                        popUpTo(NavRoute.Home)
+                    // visitId is non-null here because the visit-tied route
+                    // always supplies one; ignore the rare null case.
+                    if (visitId != null) {
+                        navController.navigate(NavRoute.Dictation(visitId, false)) {
+                            popUpTo(NavRoute.Home)
+                        }
                     }
                 },
             )
@@ -175,6 +186,67 @@ fun KaribuNavHost(
                     navController.navigate(NavRoute.Home) {
                         popUpTo(NavRoute.Home) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        // Phase 3 — patient timeline (one patient, longitudinal context) and
+        // the patient-only note editor (no visit). The timeline FAB routes to
+        // PatientNote; PatientNote pops back to the timeline on Sign.
+        composable<NavRoute.PatientDetail> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.PatientDetail>()
+            PatientTimelineScreen(
+                patientId = route.patientId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToVisit = { visitId ->
+                    navController.navigate(NavRoute.VisitDetails(visitId))
+                },
+                onAddNote = { patientId ->
+                    navController.navigate(NavRoute.PatientNote(patientId, null))
+                },
+                onRecordVitals = { patientId ->
+                    navController.navigate(NavRoute.PatientVitals(patientId))
+                },
+            )
+        }
+
+        composable<NavRoute.PatientNote> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.PatientNote>()
+            PatientNoteScreen(
+                patientId = route.patientId,
+                initialSource = route.source,
+                onNavigateBack = { navController.popBackStack() },
+                onSigned = { navController.popBackStack() },
+            )
+        }
+
+        // Phase 4 — patient-only vitals capture (no visit). Reuses
+        // VitalsScreen with visitId=null. On save, pops back to the
+        // PatientTimelineScreen so the new vitals row renders in the
+        // timeline.
+        composable<NavRoute.PatientVitals> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.PatientVitals>()
+            VitalsScreen(
+                visitId = null,
+                patientId = route.patientId,
+                onNavigateBack = { navController.popBackStack() },
+                onContinue = { _ ->
+                    navController.popBackStack()
+                },
+            )
+        }
+
+        // Phase 5 — operational worklists. Reached from the Home app bar.
+        // Tapping a row routes to the appropriate detail screen so the
+        // clinician can act on the item without losing the worklist context.
+        composable<NavRoute.Worklists> {
+            WorklistsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToVisit = { visitId ->
+                    navController.navigate(NavRoute.VisitDetails(visitId))
+                },
+                onNavigateToPatient = { patientId ->
+                    navController.navigate(NavRoute.PatientDetail(patientId))
                 },
             )
         }

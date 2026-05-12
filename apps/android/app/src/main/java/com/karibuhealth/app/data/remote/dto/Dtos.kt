@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.remote.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class ClinicDto(
@@ -41,6 +42,17 @@ data class PatientDto(
     @SerialName("whatsapp_number") val whatsappNumber: String? = null,
     @SerialName("date_of_birth") val dateOfBirth: String? = null,
     val sex: String? = null,
+    // Migration 038 identity precision + location columns.
+    @SerialName("birth_year") val birthYear: Int? = null,
+    @SerialName("approximate_age") val approximateAge: Int? = null,
+    @SerialName("age_recorded_at") val ageRecordedAt: String? = null,
+    @SerialName("dob_precision") val dobPrecision: String = "unknown",
+    val village: String? = null,
+    val parish: String? = null,
+    val subcounty: String? = null,
+    val district: String? = null,
+    @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("national_id") val nationalId: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
@@ -54,6 +66,70 @@ data class PatientCreateDto(
     @SerialName("whatsapp_number") val whatsappNumber: String? = null,
     @SerialName("date_of_birth") val dateOfBirth: String? = null,
     val sex: String? = null,
+    // Migration 038 identity precision + location columns.
+    @SerialName("birth_year") val birthYear: Int? = null,
+    @SerialName("approximate_age") val approximateAge: Int? = null,
+    @SerialName("age_recorded_at") val ageRecordedAt: String? = null,
+    @SerialName("dob_precision") val dobPrecision: String = "unknown",
+    val village: String? = null,
+    val parish: String? = null,
+    val subcounty: String? = null,
+    val district: String? = null,
+    @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("national_id") val nationalId: String? = null,
+)
+
+// Return shape of rpc_find_duplicate_candidates / rpc_search_patients (migration
+// 038). match_reasons is an ARRAY_REMOVE(...) result so SQL guarantees no NULLs
+// inside, but we model it as List<String?> defensively in case Postgres returns
+// SQL NULL elements through PostgREST.
+@Serializable
+data class DuplicateCandidateDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: Long? = null,
+    @SerialName("first_name") val firstName: String? = null,
+    @SerialName("last_name") val lastName: String? = null,
+    val sex: String? = null,
+    @SerialName("date_of_birth") val dateOfBirth: String? = null,
+    @SerialName("birth_year") val birthYear: Int? = null,
+    @SerialName("approximate_age") val approximateAge: Int? = null,
+    @SerialName("dob_precision") val dobPrecision: String = "unknown",
+    val village: String? = null,
+    val parish: String? = null,
+    @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("national_id") val nationalId: String? = null,
+    @SerialName("whatsapp_number") val whatsappNumber: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    @SerialName("match_score") val matchScore: Float = 0f,
+    @SerialName("match_reasons") val matchReasons: List<String?> = emptyList(),
+)
+
+// RPC parameter payloads for the two migration 038 search functions. Built as
+// dedicated DTOs (not Map<String, Any?>) so kotlinx-serialization can drop
+// NULLs cleanly without the Retrofit/Moshi `@JvmSuppressWildcards` ceremony.
+@Serializable
+data class FindDuplicateCandidatesRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_first_name") val firstName: String,
+    @SerialName("p_last_name") val lastName: String,
+    @SerialName("p_village") val village: String? = null,
+    @SerialName("p_parish") val parish: String? = null,
+    @SerialName("p_age") val age: Int? = null,
+    @SerialName("p_sex") val sex: String? = null,
+    @SerialName("p_limit") val limit: Int? = null,
+)
+
+@Serializable
+data class SearchPatientsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_query") val query: String? = null,
+    @SerialName("p_village") val village: String? = null,
+    @SerialName("p_parish") val parish: String? = null,
+    @SerialName("p_national_id") val nationalId: String? = null,
+    @SerialName("p_age_min") val ageMin: Int? = null,
+    @SerialName("p_age_max") val ageMax: Int? = null,
+    @SerialName("p_sex") val sex: String? = null,
+    @SerialName("p_limit") val limit: Int? = null,
 )
 
 @Serializable
@@ -118,15 +194,28 @@ data class VisitCreateDto(
 @Serializable
 data class ProviderNoteDto(
     val id: String,
-    @SerialName("visit_id") val visitId: String,
+    // Migration 039: visit_id is now nullable (standalone notes for phone
+    // calls, lab updates, etc.). patient_id is the durable record link.
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
     val transcript: String? = null,
     @SerialName("note_content") val noteContent: String? = null,
     @SerialName("structured_data") val structuredData: String? = null,
+    // Lifecycle: draft | signed | amended | voided.
     val status: String = "draft",
+    // 'visit' | 'phone_call' | 'follow_up' | 'lab_update' | 'pharmacy_update' | 'general'
+    val source: String = "visit",
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
     @SerialName("finalized_at") val finalizedAt: String? = null,
     @SerialName("finalized_by") val finalizedBy: String? = null,
+    @SerialName("amended_at") val amendedAt: String? = null,
+    @SerialName("amended_by") val amendedBy: String? = null,
+    @SerialName("voided_at") val voidedAt: String? = null,
+    @SerialName("voided_by") val voidedBy: String? = null,
+    @SerialName("void_reason") val voidReason: String? = null,
+    // Migration 042: authoring staff recorded on first INSERT by the server.
+    @SerialName("created_by") val createdBy: String? = null,
 )
 
 @Serializable
@@ -194,12 +283,37 @@ data class VisitCreateRpcDto(
 )
 
 // SyncQueue payload for "upsert_provider_note" via rpc_upsert_provider_note.
+// Migration 039 extends the RPC signature with optional p_patient_id +
+// p_source. Existing queued payloads (without those fields) still decode and
+// round-trip cleanly because both have defaults. visit_id is nullable now
+// (standalone notes for phone calls, lab updates, etc.). transcript is also
+// nullable; the server preserves the existing transcript when sent NULL.
 @Serializable
 data class ProviderNoteUpsertDto(
     @SerialName("p_id") val id: String,
-    @SerialName("p_visit_id") val visitId: String,
-    @SerialName("p_transcript") val transcript: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_transcript") val transcript: String? = null,
     @SerialName("p_status") val status: String = "draft",
+    @SerialName("p_patient_id") val patientId: String? = null,
+    @SerialName("p_source") val source: String? = null,
+)
+
+// Migration 039 lifecycle RPC payloads.
+@Serializable
+data class SignProviderNoteRequest(
+    @SerialName("p_id") val id: String,
+)
+
+@Serializable
+data class AmendProviderNoteRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_transcript") val transcript: String,
+)
+
+@Serializable
+data class VoidProviderNoteRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_reason") val reason: String,
 )
 
 // SyncQueue payload for "upsert_patient_note_summary" via rpc_upsert_patient_note_summary.
@@ -258,4 +372,192 @@ data class PaymentCreateDto(
     @SerialName("service_type") val serviceType: String? = null,
     val notes: String? = null,
     @SerialName("collected_by") val collectedBy: String,
+)
+
+// =============================================================================
+// Phase 3 — patient timeline + latest vitals (migration 040)
+// =============================================================================
+
+// Request payload for rpc_get_patient_timeline. Cursor is exclusive: pass the
+// oldest event_at from the previous page as `p_cursor` to fetch the next page.
+@Serializable
+data class GetPatientTimelineRequest(
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_cursor") val cursor: String? = null,
+    @SerialName("p_limit") val limit: Int? = null,
+)
+
+// One row from rpc_get_patient_timeline. event_data is an opaque JSON payload
+// shaped per event type (visit | note | vital | payment). We keep it as a raw
+// JsonObject here and unpack into typed sealed-class variants in the domain
+// layer so the DTO stays a faithful mirror of the RPC return shape.
+@Serializable
+data class PatientTimelineEventDto(
+    @SerialName("event_type") val eventType: String,
+    @SerialName("event_at") val eventAt: String,
+    @SerialName("event_id") val eventId: String,
+    @SerialName("event_data") val eventData: JsonObject,
+)
+
+// Request payload for rpc_get_patient_latest_vitals.
+@Serializable
+data class GetPatientLatestVitalsRequest(
+    @SerialName("p_patient_id") val patientId: String,
+)
+
+// =============================================================================
+// Phase 5 — worklist RPCs (migration 041)
+// =============================================================================
+// All seven worklist RPCs share a clinic-id parameter; some add a department
+// or other filter. Each RPC has a distinct RETURNS TABLE shape that's modelled
+// here as its own DTO so kotlinx-serialization can decode the rows without a
+// lossy "any optional" union.
+
+// Departmental worklist — needs-vitals / needs-clinician.
+@Serializable
+data class WorklistRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_department") val department: String? = null,
+)
+
+// Clinic-wide worklist — needs-lab / needs-pharmacy / needs-payment.
+@Serializable
+data class WorklistClinicOnlyRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+// rpc_worklist_my_drafts — Clerk-authenticated callers pass clinic-only;
+// service-role callers must supply p_staff_id (Android only ever calls with
+// a Clerk JWT, but we keep the optional field for future server-side
+// shims).
+@Serializable
+data class MyDraftsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_staff_id") val staffId: String? = null,
+)
+
+// rpc_worklist_care_tasks — supports filtering by role / assignee / type.
+@Serializable
+data class CareTasksWorklistRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_assignee_role") val assigneeRole: String? = null,
+    @SerialName("p_assignee_id") val assigneeId: String? = null,
+    @SerialName("p_task_type") val taskType: String? = null,
+)
+
+@Serializable
+data class NeedsVitalsRow(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    @SerialName("chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("queue_status") val queueStatus: String? = null,
+    @SerialName("checked_in_at") val checkedInAt: String? = null,
+)
+
+@Serializable
+data class NeedsClinicianRow(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    @SerialName("chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("queue_status") val queueStatus: String? = null,
+    val priority: String? = null,
+    @SerialName("doctor_id") val doctorId: String? = null,
+    @SerialName("checked_in_at") val checkedInAt: String? = null,
+    @SerialName("wait_minutes") val waitMinutes: Int? = null,
+)
+
+@Serializable
+data class NeedsLabRow(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    @SerialName("chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("lab_status") val labStatus: String? = null,
+    @SerialName("doctor_id") val doctorId: String? = null,
+    @SerialName("visit_date") val visitDate: String? = null,
+)
+
+@Serializable
+data class NeedsPharmacyRow(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    val medications: String? = null,
+    @SerialName("dispensing_status") val dispensingStatus: String? = null,
+    @SerialName("doctor_id") val doctorId: String? = null,
+    @SerialName("visit_date") val visitDate: String? = null,
+)
+
+@Serializable
+data class NeedsPaymentRow(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    val diagnosis: String? = null,
+    @SerialName("visit_date") val visitDate: String? = null,
+    @SerialName("documentation_completed_at") val documentationCompletedAt: String? = null,
+)
+
+@Serializable
+data class MyDraftsRow(
+    @SerialName("note_id") val noteId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("visit_id") val visitId: String? = null,
+    val source: String? = null,
+    @SerialName("transcript_preview") val transcriptPreview: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+)
+
+@Serializable
+data class CareTaskRow(
+    @SerialName("task_id") val taskId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("visit_id") val visitId: String? = null,
+    @SerialName("task_type") val taskType: String,
+    val title: String? = null,
+    val description: String? = null,
+    @SerialName("assignee_role") val assigneeRole: String? = null,
+    @SerialName("assignee_id") val assigneeId: String? = null,
+    @SerialName("due_at") val dueAt: String? = null,
+    val status: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+// Mirrors the rpc_get_patient_latest_vitals row exactly. Every field is
+// nullable because each vital is resolved independently and may never have
+// been measured. RPC functions that RETURN TABLE come back as a JSON array
+// from PostgREST even when the function returns a single row.
+@Serializable
+data class PatientLatestVitalsDto(
+    @SerialName("weight_kg") val weightKg: Double? = null,
+    @SerialName("weight_kg_at") val weightKgAt: String? = null,
+    @SerialName("height_cm") val heightCm: Double? = null,
+    @SerialName("height_cm_at") val heightCmAt: String? = null,
+    @SerialName("temp_c") val tempC: Double? = null,
+    @SerialName("temp_c_at") val tempCAt: String? = null,
+    @SerialName("bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("bp_at") val bpAt: String? = null,
+    @SerialName("pulse_bpm") val pulseBpm: Int? = null,
+    @SerialName("pulse_bpm_at") val pulseBpmAt: String? = null,
+    @SerialName("resp_rate") val respRate: Int? = null,
+    @SerialName("resp_rate_at") val respRateAt: String? = null,
+    @SerialName("spo2_pct") val spo2Pct: Int? = null,
+    @SerialName("spo2_pct_at") val spo2PctAt: String? = null,
+    @SerialName("muac_cm") val muacCm: Double? = null,
+    @SerialName("muac_cm_at") val muacCmAt: String? = null,
 )

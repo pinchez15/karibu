@@ -47,12 +47,15 @@ export async function approveVisit(
     }
   }
 
-  // Finalize notes
+  // Sign the provider note + finalize the patient_notes receipt. The
+  // provider_notes lifecycle is draft → signed | amended | voided (migration
+  // 039); patient_notes keeps the original draft/finalized check from
+  // 001_initial_schema.sql.
   const now = new Date().toISOString()
   await Promise.all([
     supabase
       .from('provider_notes')
-      .update({ status: 'finalized', finalized_at: now, finalized_by: staff.id })
+      .update({ status: 'signed', finalized_at: now, finalized_by: staff.id })
       .eq('visit_id', visitId),
     supabase
       .from('patient_notes')
