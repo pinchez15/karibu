@@ -10,7 +10,7 @@ NOTES="${1:-Karibu beta build}"
 
 cd "$(dirname "$0")/.."
 
-JAVA_HOME="$JAVA_HOME" ./gradlew :app:appDistributionUploadDebug \
+JAVA_HOME="$JAVA_HOME" ./gradlew :app:assembleDebug :app:appDistributionUploadDebug \
   --serviceCredentialsFile="$CREDS" \
   --groups=beta-testers \
   --releaseNotes="$NOTES"
