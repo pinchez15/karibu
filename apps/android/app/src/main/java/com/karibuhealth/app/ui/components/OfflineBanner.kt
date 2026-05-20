@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
@@ -22,6 +23,7 @@ import com.karibuhealth.app.ui.theme.Amber as KaribuWarning
 fun OfflineBanner(
     isOnline: Boolean,
     pendingSyncCount: Int,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -30,10 +32,15 @@ fun OfflineBanner(
         exit = slideOutVertically(),
         modifier = modifier,
     ) {
+        // Only enable taps when there's a queue to show. Offline-only state
+        // (no pending items) leaves the banner non-interactive so we don't
+        // open an empty details sheet.
+        val tappable = pendingSyncCount > 0 && onClick != null
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(if (!isOnline) KaribuWarning else MaterialTheme.colorScheme.primaryContainer)
+                .then(if (tappable) Modifier.clickable(onClick = onClick!!) else Modifier)
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -47,10 +54,10 @@ fun OfflineBanner(
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = if (!isOnline) {
-                    "You're offline. Data is saved locally."
-                } else {
-                    "$pendingSyncCount item${if (pendingSyncCount != 1) "s" else ""} pending sync"
+                text = when {
+                    !isOnline -> "You're offline. Data is saved locally."
+                    tappable -> "$pendingSyncCount item${if (pendingSyncCount != 1) "s" else ""} pending sync — tap to review"
+                    else -> "$pendingSyncCount item${if (pendingSyncCount != 1) "s" else ""} pending sync"
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = if (!isOnline) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,

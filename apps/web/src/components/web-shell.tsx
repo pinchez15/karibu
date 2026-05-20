@@ -37,14 +37,22 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
     { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
     { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
     { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
+    // Read-only views of the lab + pharmacy queues the clinician requested,
+    // so they can answer "did Sarah's CBC come back?" without leaving the
+    // sidebar. Lab/pharmacy dispenser actions still live under those roles.
+    { id: 'my-labs', label: 'Lab status', href: '/dashboard/my-labs', icon: FlaskConical },
+    { id: 'my-pharmacy', label: 'Pharmacy status', href: '/dashboard/my-pharmacy', icon: Pill },
+    { id: 'stock-overview', label: 'Clinic stock', href: '/dashboard/stock-overview', icon: BarChart3 },
     { id: 'reports', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ],
   pharmacy: [
     { id: 'orders', label: 'Today', href: '/dashboard/pharmacy', icon: Pill },
+    { id: 'stock', label: 'Stock', href: '/dashboard/pharmacy/stock', icon: ListTodo },
     { id: 'history', label: 'History', href: '/dashboard/pharmacy/history', icon: Users },
   ],
   lab: [
     { id: 'orders', label: 'Today', href: '/dashboard/lab', icon: FlaskConical },
+    { id: 'stock', label: 'Stock', href: '/dashboard/lab/stock', icon: ListTodo },
     { id: 'history', label: 'History', href: '/dashboard/lab/history', icon: Users },
   ],
   analyst: [

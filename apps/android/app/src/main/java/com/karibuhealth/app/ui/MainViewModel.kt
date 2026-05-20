@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -17,6 +20,7 @@ class MainViewModel @Inject constructor(
     private val authTokenStore: AuthTokenStore,
     private val networkMonitor: NetworkMonitor,
     private val syncQueueDao: SyncQueueDao,
+    private val syncEngine: SyncEngine,
 ) : ViewModel() {
 
     val isAuthenticated: StateFlow<Boolean> = authTokenStore.observeToken()
@@ -28,4 +32,29 @@ class MainViewModel @Inject constructor(
 
     val pendingSyncCount: StateFlow<Int> = syncQueueDao.getPendingCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val pendingEntries: StateFlow<List<SyncQueueEntry>> = syncQueueDao.observePending()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * User-initiated retry. Resets any failed-with-max-attempts entries so a
+     * server-side fix has a chance to land, then runs the queue.
+     */
+    fun retryAll() {
+        viewModelScope.launch {
+            syncQueueDao.resetFailed()
+            syncEngine.processQueue()
+        }
+    }
+
+    /**
+     * Manual escape hatch: mark a single entry as completed without
+     * re-running the RPC. Use when the user has confirmed the data is in
+     * the web app and just wants the local count to clear.
+     */
+    fun markEntrySynced(id: String) {
+        viewModelScope.launch {
+            syncQueueDao.forceComplete(id)
+        }
+    }
 }

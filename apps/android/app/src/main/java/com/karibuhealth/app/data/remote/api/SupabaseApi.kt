@@ -1,6 +1,7 @@
 package com.karibuhealth.app.data.remote.api
 
 import com.karibuhealth.app.data.remote.dto.*
+import kotlinx.serialization.json.JsonObject
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -86,27 +87,35 @@ interface SupabaseApi {
     @POST("payments")
     suspend fun createPayment(@Body payment: PaymentCreateDto): List<PaymentDto>
 
-    // Queue RPCs (SECURITY DEFINER -- bypass RLS)
+    // Queue RPCs (SECURITY DEFINER -- bypass RLS).
+    //
+    // Bodies are typed as JsonObject (not Map<String, Any?>) so the
+    // kotlinx-serialization Retrofit converter can serialize them. The
+    // generic-Map form fails at request build time with "Unable to create
+    // @Body converter for java.util.Map<java.lang.String, java.lang.Object>",
+    // which surfaces as queue entries that retry forever without ever
+    // hitting the network — caller sees "X items pending sync" stuck even
+    // though the data lands by other paths.
     @POST("rpc/check_in_patient")
-    suspend fun checkInPatient(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun checkInPatient(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/assign_to_nurse")
-    suspend fun assignToNurse(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun assignToNurse(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/mark_ready_for_doctor")
-    suspend fun markReadyForDoctor(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun markReadyForDoctor(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/claim_patient")
-    suspend fun claimPatient(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun claimPatient(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/start_visit_self_triage")
-    suspend fun startVisitSelfTriage(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun startVisitSelfTriage(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/complete_visit_queue")
-    suspend fun completeVisitQueue(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun completeVisitQueue(@Body request: JsonObject): Response<ResponseBody>
 
     @POST("rpc/get_clinic_queue")
-    suspend fun getClinicQueue(@Body request: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+    suspend fun getClinicQueue(@Body request: JsonObject): Response<ResponseBody>
 
     // Offline-first foundation (migration 029) RPCs
     @POST("rpc/rpc_upsert_provider_note")
@@ -185,4 +194,15 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_worklist_care_tasks")
     suspend fun rpcWorklistCareTasks(@Body request: CareTasksWorklistRequest): List<CareTaskRow>
+
+    // AI review suggestions for a visit (migration 033). Read-only on
+    // Android for now — the table SELECT RLS scopes to the caller's clinic
+    // via get_current_clinic_id(), which works because AuthInterceptor
+    // attaches the Clerk JWT.
+    @GET("ai_review_suggestions")
+    suspend fun getAiReviewSuggestions(
+        @Query("visit_id") visitId: String,
+        @Query("select") select: String = "id,visit_id,suggestion_type,question,reasoning,confidence,clinician_response,created_at",
+        @Query("order") order: String = "created_at.asc",
+    ): List<AiReviewSuggestionDto>
 }

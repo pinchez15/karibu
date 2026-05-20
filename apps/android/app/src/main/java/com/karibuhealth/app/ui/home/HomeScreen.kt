@@ -265,8 +265,8 @@ fun HomeScreen(
                         Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
                             StatusCard(
                                 visit = v,
-                                kind = KhStatusKind.Review,
-                                statusLabel = "Review",
+                                kind = KhStatusKind.PendingReview,
+                                statusLabel = "Pending Review",
                                 onClick = { onNavigateToVisitDetails(v.visit.id) },
                             )
                         }

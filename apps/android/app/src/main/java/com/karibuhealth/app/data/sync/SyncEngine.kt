@@ -310,14 +310,14 @@ class SyncEngine @Inject constructor(
             entry.payload,
         )
         val rpcName = payload["rpc"]?.jsonPrimitive?.content
-        val rpcParams = payload["params"]?.jsonObject?.mapValues { (_, value) ->
-            if (value is kotlinx.serialization.json.JsonPrimitive && value.isString) {
-                value.content
-            } else {
-                value.toString().trim('"')
-            }
-        }
-            ?: emptyMap()
+        // Pass the params object straight through as a JsonObject. The
+        // earlier coerce-to-Map<String,String> path tripped the
+        // kotlinx-serialization Retrofit converter ("Unable to create
+        // @Body converter for java.util.Map<java.lang.String,
+        // java.lang.Object>") — every queue_op then retried forever
+        // without ever leaving the device.
+        val rpcParams = payload["params"]?.jsonObject
+            ?: kotlinx.serialization.json.JsonObject(emptyMap())
 
         val response = when (rpcName) {
             "assign_to_nurse" -> supabaseApi.assignToNurse(rpcParams)

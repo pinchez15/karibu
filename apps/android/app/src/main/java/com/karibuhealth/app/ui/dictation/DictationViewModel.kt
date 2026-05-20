@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.DictationException
 import com.karibuhealth.app.data.repository.NoteRepository
+import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
@@ -47,6 +48,25 @@ data class ClinicalNoteSections(
     val followUpTasks: List<String> = emptyList(),
     val additionalNote: String = "",
 )
+
+/**
+ * Identifies the section text field currently holding focus, so Whisper
+ * transcripts route to that field instead of always landing in
+ * `additionalNote`. Default routing target when nothing is focused remains
+ * `additionalNote` so the existing tap-mic-and-talk flow is unchanged.
+ */
+enum class NoteSection {
+    ChiefComplaint,
+    Hpi,
+    PhysicalExam,
+    FamilySocialHistory,
+    Diagnosis,
+    AssessmentPlan,
+    Medications,
+    TestsOrdered,
+    FollowUpInstructions,
+    AdditionalNote,
+}
 
 /**
  * Visual state of the autosave pipeline. Drives the small indicator under
@@ -92,6 +112,10 @@ data class DictationUiState(
      * patient_id directly — not wired into this screen yet.
      */
     val patientId: String? = null,
+    /** Patient sex ('M' / 'F' / null). Drives the lab picker's sex filter. */
+    val patientSex: String? = null,
+    /** Patient age in whole years. Drives the lab picker's age filter. */
+    val patientAgeYears: Int? = null,
     /**
      * Visit id this dictation is tied to (every current entrypoint is
      * visit-tied; reserved nullable for standalone-note callers wired in
@@ -99,6 +123,12 @@ data class DictationUiState(
      */
     val visitId: String? = null,
     val autosaveStatus: AutosaveStatus = AutosaveStatus.Idle,
+    /**
+     * Section field that currently has focus. Set via setFocusedSection from
+     * onFocusChanged callbacks on each field. `null` means no section field
+     * is focused — Whisper transcripts then fall back to `additionalNote`.
+     */
+    val focusedSection: NoteSection? = null,
 ) {
     /** Back-compat alias — true while any chunk is in flight. */
     val isTranscribing: Boolean
@@ -114,6 +144,7 @@ class DictationViewModel @Inject constructor(
     private val dictationApi: DictationApiClient,
     private val noteRepository: NoteRepository,
     private val visitRepository: VisitRepository,
+    private val patientRepository: PatientRepository,
     private val syncEngine: SyncEngine,
     private val clerkAuthManager: ClerkAuthManager,
     private val networkMonitor: NetworkMonitor,
@@ -142,6 +173,8 @@ class DictationViewModel @Inject constructor(
         viewModelScope.launch {
             val existing = noteRepository.getProviderNoteOnce(visitId)
             val visit = visitRepository.getVisitByIdOnce(visitId)
+            val patient = visit?.patientId?.let { patientRepository.getPatientByIdOnce(it) }
+            val ageYears = patient?.dateOfBirth?.let(::computeAgeYears)
             val parsedSections = existing?.structuredData
                 ?.let(::decodeClinicalSections)
                 ?: ClinicalNoteSections(
@@ -165,6 +198,8 @@ class DictationViewModel @Inject constructor(
                     // doesn't have to re-fetch the visit each time.
                     noteId = existing?.id ?: it.noteId,
                     patientId = visit?.patientId ?: it.patientId,
+                    patientSex = patient?.sex ?: it.patientSex,
+                    patientAgeYears = ageYears ?: it.patientAgeYears,
                     visitId = visitId,
                     autosaveStatus = AutosaveStatus.Idle,
                 )
@@ -220,10 +255,12 @@ class DictationViewModel @Inject constructor(
             }
             if (text.isNotBlank()) {
                 _uiState.update { state ->
-                    val trimmedPrev = state.sections.additionalNote.trimEnd()
-                    val combined = if (trimmedPrev.isEmpty()) text.trim()
-                    else "$trimmedPrev ${text.trim()}"
-                    val nextSections = state.sections.copy(additionalNote = combined)
+                    // Route transcribed text to whichever section field has
+                    // focus. Falls back to additionalNote so the legacy
+                    // "tap mic, dictate everything into the free notes box"
+                    // flow still works when no field is focused.
+                    val target = state.focusedSection ?: NoteSection.AdditionalNote
+                    val nextSections = state.sections.appendToSection(target, text.trim())
                     state.copy(
                         transcript = nextSections.toClinicianText(),
                         sections = nextSections,
@@ -331,6 +368,27 @@ class DictationViewModel @Inject constructor(
 
     fun onMicrophonePermissionDenied() {
         _uiState.update { it.copy(error = "Microphone permission is required for Whisper recording.") }
+    }
+
+    /**
+     * Flush the pending autosave window synchronously, then invoke [onDone] so
+     * the caller can navigate away. Used by the "Save draft" toolbar button —
+     * the clinician dictates a few sections, taps Save, and the back-nav fires
+     * only after Room has the latest transcript. Without this they'd lose the
+     * last 1.5 s of typing on a quick exit.
+     */
+    fun saveDraftAndExit(onDone: () -> Unit) {
+        val patientId = _uiState.value.patientId
+        if (patientId == null) {
+            onDone()
+            return
+        }
+        viewModelScope.launch {
+            autosaveJob?.cancel()
+            autosaveJob = null
+            performAutosave(patientId)
+            onDone()
+        }
     }
 
     /**
@@ -467,6 +525,10 @@ class DictationViewModel @Inject constructor(
         }
     }
 
+    fun setFocusedSection(section: NoteSection?) {
+        _uiState.update { it.copy(focusedSection = section) }
+    }
+
     fun dismissError() {
         _uiState.update { it.copy(error = null) }
     }
@@ -485,6 +547,30 @@ class DictationViewModel @Inject constructor(
         } catch (_: IllegalArgumentException) {
             null
         }
+    }
+}
+
+/**
+ * Append a Whisper chunk to the section identified by [target]. Joins with a
+ * single space if the existing text is non-empty so consecutive chunks read
+ * as one continuous sentence.
+ */
+private fun ClinicalNoteSections.appendToSection(target: NoteSection, chunk: String): ClinicalNoteSections {
+    fun merge(prev: String): String {
+        val trimmed = prev.trimEnd()
+        return if (trimmed.isEmpty()) chunk else "$trimmed $chunk"
+    }
+    return when (target) {
+        NoteSection.ChiefComplaint -> copy(chiefComplaint = merge(chiefComplaint))
+        NoteSection.Hpi -> copy(hpi = merge(hpi))
+        NoteSection.PhysicalExam -> copy(physicalExam = merge(physicalExam))
+        NoteSection.FamilySocialHistory -> copy(familySocialHistory = merge(familySocialHistory))
+        NoteSection.Diagnosis -> copy(diagnosis = merge(diagnosis))
+        NoteSection.AssessmentPlan -> copy(assessmentPlan = merge(assessmentPlan))
+        NoteSection.Medications -> copy(medications = merge(medications))
+        NoteSection.TestsOrdered -> copy(testsOrdered = merge(testsOrdered))
+        NoteSection.FollowUpInstructions -> copy(followUpInstructions = merge(followUpInstructions))
+        NoteSection.AdditionalNote -> copy(additionalNote = merge(additionalNote))
     }
 }
 
@@ -526,3 +612,14 @@ private fun ClinicalNoteSections.followUpInstructionsWithTasks(): String {
 }
 
 private fun String.cleanOrNull(): String? = trim().takeIf { it.isNotBlank() }
+
+// Whole-year age from an ISO date string. Returns null on parse failure so the
+// lab picker falls back to "no age filter" rather than gating on bad data.
+private fun computeAgeYears(isoDate: String): Int? {
+    return try {
+        val dob = java.time.LocalDate.parse(isoDate)
+        java.time.Period.between(dob, java.time.LocalDate.now()).years
+    } catch (_: Exception) {
+        null
+    }
+}

@@ -9,6 +9,11 @@ import { cn } from '@/lib/utils'
 export type DispensingRow = {
   id: string
   visit_date: string
+  // Diagnosis takes priority on the dispenser view (pharmacy gets orders
+  // after a diagnosis is made — the chief complaint they typed in at
+  // intake is rarely useful for dispensing). Keep chief_complaint as a
+  // fallback for pre-documentation rows that somehow leak through.
+  diagnosis: string | null
   chief_complaint: string | null
   medications: string | null
   dispensing_status: 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock'
@@ -50,7 +55,7 @@ export function PharmacyQueueClient({ initialRows }: { initialRows: DispensingRo
 
       <div className="grid grid-cols-[1.4fr_1fr_2fr_0.9fr_1.4fr] gap-3 px-[18px] py-2 kh-meta border-b border-line-soft">
         <span>PATIENT</span>
-        <span>COMPLAINT</span>
+        <span>DIAGNOSIS</span>
         <span>MEDICATIONS</span>
         <span>STATUS</span>
         <span>ACTIONS</span>
@@ -108,7 +113,7 @@ function PharmacyRow({ row, last }: { row: DispensingRow; last: boolean }) {
         </Link>
         <div className="text-[11px] text-muted-foreground font-mono">{meta}</div>
       </div>
-      <div className="text-body">{row.chief_complaint || '—'}</div>
+      <div className="text-body">{row.diagnosis || row.chief_complaint || '—'}</div>
       <div className="text-body whitespace-pre-wrap leading-relaxed">
         {row.medications || '—'}
       </div>

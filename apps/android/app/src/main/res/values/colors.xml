@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Day-mode mirror so both qualifiers resolve the same name. Compose uses
+         the colors in ui/theme/Color.kt; this only serves the platform window
+         background ahead of Compose. -->
+    <color name="dark_window_background">#FFFFFFFF</color>
+</resources>

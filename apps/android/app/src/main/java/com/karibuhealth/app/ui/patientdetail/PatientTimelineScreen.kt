@@ -403,11 +403,15 @@ private fun TimelineCardFrame(
 
 @Composable
 private fun VisitEventCard(event: PatientTimelineEvent.VisitEvent, onClick: () -> Unit) {
+    // Clinical-note display labels (May 2026 rename). The underlying status
+    // enum stayed the same; only the user-facing language changed to match
+    // the clinical-note vocabulary clinicians know from other EMRs.
     val statusPill = when (event.status) {
-        "completed", "sent" -> KhStatusKind.Sent to event.status.replaceFirstChar { it.uppercase() }
-        "review" -> KhStatusKind.Review to "Review"
-        "error" -> KhStatusKind.Urgent to "Error"
-        "pending" -> KhStatusKind.Waiting to "Pending"
+        "sent" -> KhStatusKind.Signed to "Signed"
+        "completed" -> KhStatusKind.Done to "Closed"
+        "review" -> KhStatusKind.PendingReview to "Pending Review"
+        "error" -> KhStatusKind.Errored to "Errored"
+        "pending" -> KhStatusKind.Draft to "Draft"
         else -> KhStatusKind.Waiting to event.status.replaceFirstChar { it.uppercase() }
     }
     TimelineCardFrame(accent = Cobalt, onClick = onClick) {

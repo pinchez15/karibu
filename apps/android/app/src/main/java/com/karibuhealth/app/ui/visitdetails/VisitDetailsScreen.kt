@@ -177,6 +177,13 @@ fun VisitDetailsScreen(
                     )
                 }
 
+                // AI review questions from the Inngest pipeline (migration
+                // 033). Read-only banner — responses still go through the web
+                // until the SECURITY DEFINER RPC ships in a follow-up.
+                com.karibuhealth.app.ui.components.AiReviewBanner(
+                    suggestions = uiState.aiReviewSuggestions,
+                )
+
                 // Patient card with inline vital chips
                 uiState.patient?.let { patient ->
                     PatientCard(
@@ -398,12 +405,6 @@ private fun AiReceiptCard(summary: String) {
                 text = summary,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Plain-language version that prints on the thermal slip when you choose this. Your note above remains the receipt-of-record by default.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

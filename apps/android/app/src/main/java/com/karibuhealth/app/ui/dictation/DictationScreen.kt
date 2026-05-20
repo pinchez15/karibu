@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -78,8 +79,10 @@ fun DictationScreen(
         onNavigateBack = onNavigateBack,
         onTranscriptChange = viewModel::updateTranscript,
         onSectionsChange = viewModel::updateSections,
+        onFocusedSectionChange = viewModel::setFocusedSection,
         onDismissError = viewModel::dismissError,
         onSubmit = { viewModel.signNote(visitId) },
+        onSaveDraft = { viewModel.saveDraftAndExit(onNavigateBack) },
         onStructureWithAi = { viewModel.structureWithAi(visitId) },
         onToggleWhisper = {
             if (uiState.isRecording) {
@@ -100,8 +103,10 @@ private fun DictationScreenContent(
     onNavigateBack: () -> Unit,
     onTranscriptChange: (String) -> Unit,
     onSectionsChange: (ClinicalNoteSections) -> Unit,
+    onFocusedSectionChange: (NoteSection?) -> Unit,
     onDismissError: () -> Unit,
     onSubmit: () -> Unit,
+    onSaveDraft: () -> Unit,
     onStructureWithAi: () -> Unit,
     onToggleWhisper: () -> Unit,
 ) {
@@ -159,6 +164,7 @@ private fun DictationScreenContent(
                 uiState = uiState,
                 onToggleWhisper = onToggleWhisper,
                 onSubmit = onSubmit,
+                onSaveDraft = onSaveDraft,
                 wordCount = wordCount,
             )
         },
@@ -190,7 +196,8 @@ private fun DictationScreenContent(
             SectionField(
                 label = "CHIEF COMPLAINT",
                 value = sections.chiefComplaint,
-                placeholder = "Fever for 3 days",
+                section = NoteSection.ChiefComplaint,
+                onFocusChange = onFocusedSectionChange,
                 minLines = 1,
                 onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
                 enabled = !uiState.isSubmitting,
@@ -198,28 +205,32 @@ private fun DictationScreenContent(
             SectionField(
                 label = "HISTORY OF PRESENT ILLNESS",
                 value = sections.hpi,
-                placeholder = "Onset, duration, associated symptoms, relevant negatives",
+                section = NoteSection.Hpi,
+                onFocusChange = onFocusedSectionChange,
                 onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
                 enabled = !uiState.isSubmitting,
             )
             SectionField(
                 label = "PHYSICAL EXAM",
                 value = sections.physicalExam,
-                placeholder = "General appearance, vitals, focused exam findings",
+                section = NoteSection.PhysicalExam,
+                onFocusChange = onFocusedSectionChange,
                 onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
                 enabled = !uiState.isSubmitting,
             )
             SectionField(
                 label = "FAMILY AND SOCIAL HISTORY",
                 value = sections.familySocialHistory,
-                placeholder = "Household exposure, pregnancy, smoking/alcohol, family conditions",
+                section = NoteSection.FamilySocialHistory,
+                onFocusChange = onFocusedSectionChange,
                 onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
                 enabled = !uiState.isSubmitting,
             )
             SectionField(
                 label = "DIAGNOSIS",
                 value = sections.diagnosis,
-                placeholder = "Malaria, dehydration, URI, hypertension...",
+                section = NoteSection.Diagnosis,
+                onFocusChange = onFocusedSectionChange,
                 minLines = 1,
                 onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
                 enabled = !uiState.isSubmitting,
@@ -227,24 +238,98 @@ private fun DictationScreenContent(
             SectionField(
                 label = "ASSESSMENT AND PLAN",
                 value = sections.assessmentPlan,
-                placeholder = "Clinical reasoning and treatment plan",
+                section = NoteSection.AssessmentPlan,
+                onFocusChange = onFocusedSectionChange,
                 onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
                 enabled = !uiState.isSubmitting,
             )
-            SectionField(
-                label = "PHARMACY",
-                value = sections.medications,
-                placeholder = "Amoxicillin 500 mg TDS x 5 days",
-                onValueChange = { onSectionsChange(sections.copy(medications = it)) },
-                enabled = !uiState.isSubmitting,
-            )
-            SectionField(
-                label = "LABS",
-                value = sections.testsOrdered,
-                placeholder = "Malaria RDT, Hb, urinalysis",
-                onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
-                enabled = !uiState.isSubmitting,
-            )
+            var showRxPicker by remember { mutableStateOf(false) }
+            var showLabPicker by remember { mutableStateOf(false) }
+
+            // PHARMACY — free-text persists alongside the structured picker so
+            // clinicians can drop in items like "give from clinic stock" that
+            // don't fit the formulary.
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "PHARMACY",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    AddRxChip(onClick = { showRxPicker = true })
+                }
+                Spacer(Modifier.height(4.dp))
+                SectionField(
+                    label = null,
+                    value = sections.medications,
+                    section = NoteSection.Medications,
+                    onFocusChange = onFocusedSectionChange,
+                    onValueChange = { onSectionsChange(sections.copy(medications = it)) },
+                    enabled = !uiState.isSubmitting,
+                )
+            }
+
+            // LABS — picker is sex/age-filtered (no pregnancy tests for males,
+            // etc.). Selections append to the free-text field.
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "LABS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    AddLabsChip(onClick = { showLabPicker = true })
+                }
+                Spacer(Modifier.height(4.dp))
+                SectionField(
+                    label = null,
+                    value = sections.testsOrdered,
+                    section = NoteSection.TestsOrdered,
+                    onFocusChange = onFocusedSectionChange,
+                    onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
+                    enabled = !uiState.isSubmitting,
+                )
+            }
+
+            if (showLabPicker) {
+                LabPickerSheet(
+                    patientSex = uiState.patientSex,
+                    ageYears = uiState.patientAgeYears,
+                    onDismiss = { showLabPicker = false },
+                    onConfirm = { addition ->
+                        val current = sections.testsOrdered
+                        val merged = listOf(current, addition)
+                            .filter { it.isNotBlank() }
+                            .joinToString(", ")
+                        onSectionsChange(sections.copy(testsOrdered = merged))
+                        showLabPicker = false
+                    },
+                )
+            }
+
+            if (showRxPicker) {
+                PharmacyPickerSheet(
+                    onDismiss = { showRxPicker = false },
+                    onConfirm = { addition ->
+                        val current = sections.medications
+                        val merged = listOf(current, addition)
+                            .filter { it.isNotBlank() }
+                            .joinToString("\n")
+                        onSectionsChange(sections.copy(medications = merged))
+                        showRxPicker = false
+                    },
+                )
+            }
 
             FollowUpTaskPicker(
                 selected = sections.followUpTasks,
@@ -254,7 +339,8 @@ private fun DictationScreenContent(
             SectionField(
                 label = "FOLLOW-UP DETAILS",
                 value = sections.followUpInstructions,
-                placeholder = "Return in 48 hours, danger signs, referral instructions",
+                section = NoteSection.FollowUpInstructions,
+                onFocusChange = onFocusedSectionChange,
                 onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -281,18 +367,12 @@ private fun DictationScreenContent(
                     .heightIn(min = 120.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, Line, RoundedCornerShape(12.dp))
-                    .padding(12.dp),
+                    .padding(12.dp)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) onFocusedSectionChange(NoteSection.AdditionalNote)
+                    },
                 enabled = !uiState.isSubmitting,
-                decorationBox = { inner ->
-                    if (sections.additionalNote.isEmpty()) {
-                        Text(
-                            text = "Free dictation lands here. Use the fields above for the structured receipt and queues.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
-                        )
-                    }
-                    inner()
-                },
+                decorationBox = { inner -> inner() },
             )
 
             uiState.error?.let { error ->
@@ -372,21 +452,32 @@ private fun AutosaveStatusIndicator(status: AutosaveStatus) {
 
 @Composable
 private fun SectionField(
-    label: String,
+    label: String?,
     value: String,
-    placeholder: String,
+    section: NoteSection,
     onValueChange: (String) -> Unit,
+    onFocusChange: (NoteSection?) -> Unit,
     enabled: Boolean,
     minLines: Int = 2,
 ) {
     Column {
-        KhMetaText(text = label)
-        Spacer(Modifier.height(6.dp))
+        if (label != null) {
+            KhMetaText(text = label)
+            Spacer(Modifier.height(6.dp))
+        }
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    // Only set on focus gained. We keep "last focused" as the
+                    // routing target so tapping a field, blurring, and then
+                    // tapping mic still routes into that field — matches the
+                    // mental model that the field they were just editing is
+                    // the one they want to dictate into.
+                    if (focusState.isFocused) onFocusChange(section)
+                },
             enabled = enabled,
             minLines = minLines,
             maxLines = 5,
@@ -440,6 +531,7 @@ private fun DictationBottomToolbar(
     uiState: DictationUiState,
     onToggleWhisper: () -> Unit,
     onSubmit: () -> Unit,
+    onSaveDraft: () -> Unit,
     wordCount: Int,
 ) {
     Surface(
@@ -509,7 +601,7 @@ private fun DictationBottomToolbar(
                         text = when {
                             uiState.isRecording -> "Recording… tap to stop"
                             uiState.isTranscribing -> "Whisper transcribing…"
-                            uiState.savedLocally -> "Saved · ready to print"
+                            uiState.savedLocally -> "Ready to sign · keep dictating to add more"
                             else -> "Tap mic, or use keyboard voice"
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -519,6 +611,21 @@ private fun DictationBottomToolbar(
                     KhMetaText(
                         text = "$wordCount WORDS" + if (uiState.savedLocally) " · AUTO-SAVED" else "",
                     )
+                }
+
+                // Save draft & exit — the dictation flow is incremental:
+                // clinicians want to record into History, then move to
+                // Physical Exam, then jump out and back. Autosave already
+                // persists every keystroke; this button flushes the pending
+                // debounce window and pops back to the visit screen so they
+                // aren't trapped between mic and Sign.
+                OutlinedButton(
+                    onClick = onSaveDraft,
+                    enabled = !uiState.isSubmitting && !uiState.isRecording,
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Text("Save draft", fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
@@ -560,8 +667,10 @@ private fun DictationScreenPreview() {
             onNavigateBack = {},
             onTranscriptChange = {},
             onSectionsChange = {},
+            onFocusedSectionChange = {},
             onDismissError = {},
             onSubmit = {},
+            onSaveDraft = {},
             onStructureWithAi = {},
             onToggleWhisper = {},
         )

@@ -25,6 +25,7 @@ async function getPharmacyQueue(clinicId: string): Promise<DispensingRow[]> {
     .select(`
       id,
       visit_date,
+      diagnosis,
       chief_complaint,
       medications,
       dispensing_status,

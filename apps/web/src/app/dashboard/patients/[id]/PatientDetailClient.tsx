@@ -33,6 +33,7 @@ import {
   recordPatientVitals,
   signPatientNote,
 } from './actions'
+import { VISIT_STATUS_DISPLAY } from '@/lib/visit-status'
 
 // Roles allowed to sign a note (matches signPatientNote / migration 039).
 const SIGNING_ROLES = new Set<StaffRole>([
@@ -70,13 +71,9 @@ const SOURCE_LABEL: Record<ProviderNoteSource, string> = {
   general: 'General',
 }
 
-const VISIT_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'To Dictate', color: 'text-primary', bg: 'bg-primary/10' },
-  review: { label: 'Review', color: 'text-primary', bg: 'bg-primary/10' },
-  sent: { label: 'Sent', color: 'text-accent', bg: 'bg-accent/10' },
-  completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
-  error: { label: 'Error', color: 'text-destructive', bg: 'bg-destructive/10' },
-}
+// Mirrors the shared status display map. Re-declared as the generic
+// dictionary shape the existing call sites in this file lean on.
+const VISIT_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = VISIT_STATUS_DISPLAY
 
 const NOTE_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'Draft', color: 'text-muted-foreground', bg: 'bg-muted' },

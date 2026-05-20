@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -21,6 +24,7 @@ import com.karibuhealth.app.data.sync.PullSyncManager
 import com.karibuhealth.app.data.sync.SyncWorker
 import com.karibuhealth.app.util.SessionMonitor
 import com.karibuhealth.app.ui.components.OfflineBanner
+import com.karibuhealth.app.ui.components.SyncDetailsSheet
 import com.karibuhealth.app.ui.navigation.KaribuNavHost
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,7 +69,10 @@ class MainActivity : ComponentActivity() {
                 val isAuthenticated by viewModel.isAuthenticated.collectAsState()
                 val isOnline by viewModel.isOnline.collectAsState()
                 val pendingSyncCount by viewModel.pendingSyncCount.collectAsState()
+                val pendingEntries by viewModel.pendingEntries.collectAsState()
                 val navController = rememberNavController()
+
+                var showSyncSheet by remember { mutableStateOf(false) }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -73,6 +80,7 @@ class MainActivity : ComponentActivity() {
                         OfflineBanner(
                             isOnline = isOnline,
                             pendingSyncCount = pendingSyncCount,
+                            onClick = { showSyncSheet = true },
                         )
                     },
                 ) { innerPadding ->
@@ -80,6 +88,18 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         isAuthenticated = isAuthenticated,
                         modifier = Modifier.padding(innerPadding),
+                    )
+                }
+
+                if (showSyncSheet) {
+                    SyncDetailsSheet(
+                        entries = pendingEntries,
+                        onDismiss = { showSyncSheet = false },
+                        onRetryAll = {
+                            viewModel.retryAll()
+                            showSyncSheet = false
+                        },
+                        onMarkSynced = viewModel::markEntrySynced,
                     )
                 }
             }

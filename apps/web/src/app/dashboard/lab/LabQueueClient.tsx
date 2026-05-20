@@ -9,7 +9,11 @@ import { cn } from '@/lib/utils'
 export type LabRow = {
   id: string
   visit_date: string
+  // For lab the working / suspected diagnosis is the most useful signal —
+  // tests are usually ordered to confirm or rule out something. If the
+  // clinician hasn't entered a diagnosis yet, fall back to chief complaint.
   chief_complaint: string | null
+  diagnosis: string | null
   tests_ordered: string | null
   lab_status: 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal'
   lab_results: string | null
@@ -39,8 +43,9 @@ export function LabQueueClient({ initialRows }: { initialRows: LabRow[] }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-[1.4fr_2fr_2.4fr_1fr_1.2fr] gap-3 px-[18px] py-2 kh-meta border-b border-line-soft">
+      <div className="grid grid-cols-[1.4fr_1.4fr_1.6fr_2fr_1fr_1.2fr] gap-3 px-[18px] py-2 kh-meta border-b border-line-soft">
         <span>PATIENT</span>
+        <span>SUSPECTED DX</span>
         <span>TESTS ORDERED</span>
         <span>RESULT</span>
         <span>STATUS</span>
@@ -96,7 +101,7 @@ function LabRowItem({ row, last }: { row: LabRow; last: boolean }) {
   return (
     <div
       className={cn(
-        'grid grid-cols-[1.4fr_2fr_2.4fr_1fr_1.2fr] gap-3 px-[18px] py-3 text-[13px] items-start',
+        'grid grid-cols-[1.4fr_1.4fr_1.6fr_2fr_1fr_1.2fr] gap-3 px-[18px] py-3 text-[13px] items-start',
         !last && 'border-b border-line-soft',
         pending && 'opacity-60',
       )}
@@ -110,6 +115,15 @@ function LabRowItem({ row, last }: { row: LabRow; last: boolean }) {
           <div className="text-[11px] text-muted-foreground mt-1">
             Ordered by {row.doctor.display_name}
           </div>
+        )}
+      </div>
+      <div className="text-body whitespace-pre-wrap leading-snug">
+        {row.diagnosis ? (
+          <span>{row.diagnosis}</span>
+        ) : row.chief_complaint ? (
+          <span className="italic text-muted-foreground">{row.chief_complaint}</span>
+        ) : (
+          '—'
         )}
       </div>
       <div className="text-body whitespace-pre-wrap leading-relaxed">

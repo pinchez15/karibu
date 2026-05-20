@@ -1,6 +1,7 @@
 package com.karibuhealth.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,19 +13,37 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.karibuhealth.app.ui.theme.Amber
-import com.karibuhealth.app.ui.theme.AmberSoft
-import com.karibuhealth.app.ui.theme.Cobalt
-import com.karibuhealth.app.ui.theme.CobaltSoft
 import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.GreenSoft
-import com.karibuhealth.app.ui.theme.Line
-import com.karibuhealth.app.ui.theme.LineSoft
-import com.karibuhealth.app.ui.theme.Slate
-import com.karibuhealth.app.ui.theme.SlateSoft
 
-/** Karibu status pill — mirrors the web `<StatusPill>` component. */
-enum class KhStatusKind { Waiting, Vitals, Ready, InNote, Urgent, Done, Lab, Review, Sent }
+/** Karibu status pill — mirrors the web `<StatusPill>` component.
+ *
+ *  Clinical-note states (Draft / PendingReview / Signed / Cosigned / Addended /
+ *  Amended / Errored / Voided) extend the older queue-style kinds (Waiting,
+ *  Vitals, etc.). Pill colors come from the M3 colorScheme so both light and
+ *  dark renders read correctly.
+ */
+enum class KhStatusKind {
+    // Queue / worklist kinds (legacy, still used by Today + worklists).
+    Waiting,
+    Vitals,
+    Ready,
+    InNote,
+    Urgent,
+    Done,
+    Lab,
+    Review,
+    Sent,
+    // Clinical-note lifecycle kinds.
+    Draft,
+    PendingReview,
+    Signed,
+    Cosigned,
+    Addended,
+    Amended,
+    Errored,
+    Voided,
+}
 
 @Composable
 fun KhStatusPill(
@@ -32,16 +51,35 @@ fun KhStatusPill(
     label: String,
     modifier: Modifier = Modifier,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val isDark = isSystemInDarkTheme()
+
+    // Dark-mode green: the brand greens are tuned for light surfaces only, so
+    // derive a high-contrast pair from the palette when in night mode.
+    val successFg = if (isDark) Color(0xFF8DEABF) else Green
+    val successBg = if (isDark) Color(0xFF14432F) else GreenSoft
+
     val (fg, bg) = when (kind) {
-        KhStatusKind.Urgent -> Amber to AmberSoft
-        KhStatusKind.Vitals -> Green to GreenSoft
-        KhStatusKind.InNote -> Cobalt to CobaltSoft
-        KhStatusKind.Ready -> Cobalt to CobaltSoft
-        KhStatusKind.Waiting -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
-        KhStatusKind.Done -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
-        KhStatusKind.Lab -> Slate to SlateSoft
-        KhStatusKind.Review -> Cobalt to CobaltSoft
-        KhStatusKind.Sent -> Green to GreenSoft
+        KhStatusKind.Urgent -> scheme.tertiary to scheme.tertiaryContainer
+        KhStatusKind.Vitals -> successFg to successBg
+        KhStatusKind.InNote -> scheme.primary to scheme.primaryContainer
+        KhStatusKind.Ready -> scheme.primary to scheme.primaryContainer
+        KhStatusKind.Waiting -> scheme.onSurfaceVariant to scheme.surfaceVariant
+        KhStatusKind.Done -> scheme.onSurfaceVariant to scheme.surfaceVariant
+        KhStatusKind.Lab -> scheme.secondary to scheme.secondaryContainer
+        KhStatusKind.Review -> scheme.primary to scheme.primaryContainer
+        KhStatusKind.Sent -> successFg to successBg
+
+        // Clinical-note lifecycle. Kept distinct from the queue kinds so callers
+        // express intent at the call site even though some pairs visually match.
+        KhStatusKind.Draft -> scheme.onSurfaceVariant to scheme.surfaceVariant
+        KhStatusKind.PendingReview -> scheme.primary to scheme.primaryContainer
+        KhStatusKind.Signed -> successFg to successBg
+        KhStatusKind.Cosigned -> successFg to successBg
+        KhStatusKind.Addended -> scheme.tertiary to scheme.tertiaryContainer
+        KhStatusKind.Amended -> scheme.tertiary to scheme.tertiaryContainer
+        KhStatusKind.Errored -> scheme.error to scheme.errorContainer
+        KhStatusKind.Voided -> scheme.error to scheme.errorContainer
     }
 
     Text(

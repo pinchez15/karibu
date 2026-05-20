@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.VitalsRepository
@@ -33,6 +35,14 @@ data class VisitDetailsUiState(
         transportLabel = "No signal",
     ),
     val syncErrors: List<SyncErrorInfo> = emptyList(),
+    /**
+     * AI review questions for this visit (migration 033). Surfaced as amber
+     * banners on the visit screen — these are Uganda HC III guideline
+     * conflicts or red-flag prompts the AI raised against the clinician's
+     * note. Read-only for now; the response action ships once the
+     * record_review_response RPC lands.
+     */
+    val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
 )
 
 data class SyncErrorInfo(
@@ -67,6 +77,7 @@ class VisitDetailsViewModel @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
     private val syncQueueDao: SyncQueueDao,
+    private val supabaseApi: SupabaseApi,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
@@ -124,6 +135,18 @@ class VisitDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             visitRepository.refreshVisit(visitId)
             noteRepository.refreshNotes(visitId)
+        }
+
+        // Best-effort fetch of AI review suggestions. Swallow errors — the
+        // banner just stays hidden if the call fails (offline, RLS, etc.)
+        // and the rest of the screen is unaffected.
+        viewModelScope.launch {
+            try {
+                val suggestions = supabaseApi.getAiReviewSuggestions(visitId = "eq.$visitId")
+                _uiState.update { it.copy(aiReviewSuggestions = suggestions) }
+            } catch (e: Exception) {
+                android.util.Log.w("VisitDetailsVM", "AI review fetch failed: ${e.message}")
+            }
         }
     }
 

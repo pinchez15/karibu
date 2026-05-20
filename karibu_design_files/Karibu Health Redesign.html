@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Karibu Health — UI redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: 'Inter', system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="brand.jsx"></script>
+<script type="text/babel" src="android-screens.jsx"></script>
+<script type="text/babel" src="web-clinician.jsx"></script>
+<script type="text/babel" src="web-other.jsx"></script>
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "androidDark": false,
+  "aiState": "done",
+  "vitalsKbd": true,
+  "vitalsFocus": "bpd"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const dark = tweaks.androidDark;
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection id="brand" title="Brand system" subtitle="Cobalt anchor · slate type · amber AI signal">
+          <DCArtboard id="brand-sheet" label="Brand sheet" width={1200} height={1340}>
+            <BrandSheet />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="android" title="Android — clinician flow" subtitle="Mobile-first, offline-first. Toggle dark via Tweaks for low-light readability.">
+          <DCArtboard id="and-home" label="01 Home / Queue" width={360} height={760}>
+            <ScreenHome dark={dark} />
+          </DCArtboard>
+          <DCArtboard id="and-newvisit" label="02 New visit" width={360} height={760}>
+            <ScreenNewVisit dark={dark} />
+          </DCArtboard>
+          <DCArtboard id="and-vitals" label="03 Vitals" width={360} height={760}>
+            <ScreenVitals dark={dark} />
+          </DCArtboard>
+          <DCArtboard id="and-vitals-kbd" label="03b Vitals · keyboard" width={360} height={760}>
+            <ScreenVitals dark={dark} keyboardUp={tweaks.vitalsKbd} focusKey={tweaks.vitalsFocus} />
+          </DCArtboard>
+          <DCArtboard id="and-dictation" label="04 Dictation" width={360} height={760}>
+            <ScreenDictation dark={dark} />
+          </DCArtboard>
+          <DCArtboard id="and-visit" label="05 Visit · AI streaming" width={360} height={760}>
+            <ScreenVisitDetails dark={dark} aiState={tweaks.aiState} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="web-clin" title="Web — clinician" subtitle="Desktop-first dashboard and visit detail. Role-aware sidebar.">
+          <DCArtboard id="web-dash" label="Clinician dashboard" width={1320} height={840}>
+            <WebClinicianDashboard />
+          </DCArtboard>
+          <DCArtboard id="web-visit" label="Visit detail · streaming SOAP" width={1320} height={840}>
+            <WebVisitDetail />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="web-pharm" title="Web — pharmacy" subtitle="Receive orders, count and dispense, watch stock.">
+          <DCArtboard id="web-pharmacy" label="Pharmacy" width={1320} height={1080}>
+            <WebPharmacy />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="web-lab" title="Web — laboratory" subtitle="Receive orders, run tests, push results back to clinician.">
+          <DCArtboard id="web-lab-art" label="Lab orders & results" width={1320} height={840}>
+            <WebLab />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="web-analyst" title="Web — data analyst" subtitle="HMIS 105, multi-clinic compare, data quality, saved views.">
+          <DCArtboard id="web-analyst-art" label="Analyst workbench" width={1320} height={1180}>
+            <WebAnalyst />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel>
+        <TweakSection title="Android">
+          <TweakToggle label="Dark mode (low-light / outdoor)" value={tweaks.androidDark} onChange={v => setTweak('androidDark', v)} />
+        </TweakSection>
+        <TweakSection title="AI moment">
+          <TweakRadio
+            label="State"
+            value={tweaks.aiState}
+            onChange={v => setTweak('aiState', v)}
+            options={[
+              { value: 'streaming', label: 'Streaming' },
+              { value: 'done', label: 'Done' },
+            ]}
+          />
+        </TweakSection>
+        <TweakSection title="Vitals · keyboard">
+          <TweakToggle label="Keyboard pulled up" value={tweaks.vitalsKbd} onChange={v => setTweak('vitalsKbd', v)} />
+          <TweakSelect
+            label="Focused field"
+            value={tweaks.vitalsFocus}
+            onChange={v => setTweak('vitalsFocus', v)}
+            options={[
+              { value: 'height', label: 'Height' },
+              { value: 'weight', label: 'Weight' },
+              { value: 'bps', label: 'BP Sys' },
+              { value: 'bpd', label: 'BP Dia' },
+              { value: 'pulse', label: 'Pulse' },
+              { value: 'resp', label: 'Resp' },
+              { value: 'temp', label: 'Temp' },
+              { value: 'spo2', label: 'SpO₂' },
+              { value: 'muac', label: 'MUAC' },
+            ]}
+          />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -57,4 +57,29 @@ interface SyncQueueDao {
         WHERE status = 'failed' OR (status = 'pending' AND attempts >= max_attempts)
     """)
     suspend fun resetFailed(): Int
+
+    /**
+     * Streams every queue entry still counted as pending or failed, so the
+     * sync details UI can show clinicians exactly what's stuck (operation,
+     * attempts, last error). The count query [getPendingCount] is the
+     * authoritative source for the banner number; this list mirrors it.
+     */
+    @Query("""
+        SELECT * FROM sync_queue
+        WHERE status IN ('pending', 'failed')
+        AND attempts < max_attempts
+        ORDER BY created_at ASC
+    """)
+    fun observePending(): Flow<List<SyncQueueEntry>>
+
+    /**
+     * Escape hatch: mark a single queue entry as completed without
+     * re-attempting the RPC. The user invokes this from the sync details
+     * sheet when they've verified the data already landed on the server
+     * (e.g., the patient/visit shows up in the web app). Avoids the
+     * "9 items pending forever" bug when a queue entry's underlying
+     * payload has already been written by some other path.
+     */
+    @Query("UPDATE sync_queue SET status = 'completed' WHERE id = :id")
+    suspend fun forceComplete(id: String)
 }

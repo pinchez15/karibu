@@ -9,6 +9,7 @@ import { PendingDictationCard } from './PendingDictationCard'
 import { ReviewQuestionBanner, type ReviewSuggestion } from './ReviewQuestionBanner'
 import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
 import { cn } from '@/lib/utils'
+import { getStatusDisplay } from '@/lib/visit-status'
 
 // Visit detail page. Two paths converge here:
 //
@@ -62,16 +63,8 @@ interface VisitDetailClientProps {
   payment?: PaymentData | null
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'To Dictate', color: 'text-primary', bg: 'bg-primary/10' },
-  review: { label: 'Review', color: 'text-primary', bg: 'bg-primary/10' },
-  sent: { label: 'Sent', color: 'text-accent', bg: 'bg-accent/10' },
-  completed: { label: 'Completed', color: 'text-muted-foreground', bg: 'bg-muted' },
-  error: { label: 'Error', color: 'text-destructive', bg: 'bg-destructive/10' },
-}
-
 export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
-  const config = statusConfig[visit.status] || statusConfig.error
+  const config = getStatusDisplay(visit.status)
 
   const handlePrintPatientNote = () => {
     window.open(`/dashboard/visits/${visit.id}/print`, '_blank')

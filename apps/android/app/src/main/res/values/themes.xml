@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.KaribuHealth" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      Platform-level activity theme. Compose owns app-surface colors via
+      KaribuHealthTheme; this theme only controls window chrome (status bar,
+      navigation bar, window background) before Compose lays out.
+
+      Day variant: light window with dark status-bar icons.
+      Night variant lives in values-night/themes.xml.
+    -->
+    <style name="Theme.KaribuHealth" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
 </resources>

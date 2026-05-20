@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors DarkBg in ui/theme/Color.kt so the platform window background
+         matches Compose's dark surface before Compose lays out. -->
+    <color name="dark_window_background">#0A0F26</color>
+</resources>
