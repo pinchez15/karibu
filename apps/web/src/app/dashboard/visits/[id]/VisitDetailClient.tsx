@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
 import { ReviewQuestionBanner, type ReviewSuggestion } from './ReviewQuestionBanner'
-import type { Visit, ProviderNote, PatientNote } from '@karibu/shared'
+import type { Visit, ProviderNote, PatientNote, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
+import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 
 // Visit detail page. Two paths converge here:
 //
@@ -60,10 +61,20 @@ interface PaymentData {
 interface VisitDetailClientProps {
   visit: VisitWithRelations
   staffId: string
+  staffRole?: StaffRole
   payment?: PaymentData | null
+  addendums?: AddendumView[]
+  amendments?: AmendmentView[]
 }
 
-export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
+export function VisitDetailClient({
+  visit,
+  staffId,
+  staffRole,
+  payment,
+  addendums = [],
+  amendments = [],
+}: VisitDetailClientProps) {
   const config = getStatusDisplay(visit.status)
 
   const handlePrintPatientNote = () => {
@@ -208,6 +219,23 @@ export function VisitDetailClient({ visit, payment }: VisitDetailClientProps) {
             canEdit={visit.status !== 'completed'}
           />
         )}
+
+      {/* Note lifecycle: addendums + amendment history + cosign/amend/void
+          actions. Only shown once the note has been signed (status !=
+          draft). Role gating lives inside the component + RPC layer. */}
+      {visit.documentation_complete && visit.provider_notes && staffRole && (
+        <NoteLifecycleActions
+          noteId={visit.provider_notes.id}
+          noteStatus={visit.provider_notes.status}
+          noteAuthorId={visit.provider_notes.created_by ?? visit.provider_notes.finalized_by ?? null}
+          requiresCosign={visit.provider_notes.requires_cosign ?? false}
+          currentTranscript={visit.provider_notes.transcript}
+          staffId={staffId}
+          staffRole={staffRole}
+          addendums={addendums}
+          amendments={amendments}
+        />
+      )}
 
       {/* AI review questions — surface only when AI would disagree with the
           clinician. Most visits show nothing here. Each question links to

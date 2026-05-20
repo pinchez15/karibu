@@ -132,6 +132,68 @@ export default async function VisitDetailPage({
     .eq('visit_id', id)
     .maybeSingle()
 
+  // Provider-note lifecycle history (migration 044). Loaded eagerly because
+  // both the addendum list + amendment timeline are part of the visit page,
+  // not a deep-link.
+  const providerNote = Array.isArray(visit.provider_notes)
+    ? visit.provider_notes[0]
+    : (visit.provider_notes as { id?: string } | null)
+  const providerNoteId = (providerNote as { id?: string } | null)?.id ?? null
+
+  let addendums: Array<{
+    id: string
+    addendum_text: string
+    created_at: string
+    created_by_name: string | null
+  }> = []
+  let amendments: Array<{
+    id: string
+    reason: string
+    amended_at: string
+    amended_by_name: string | null
+    prior_transcript: string | null
+    new_transcript: string | null
+  }> = []
+
+  if (providerNoteId) {
+    const [{ data: addendumRows }, { data: amendmentRows }] = await Promise.all([
+      supabase
+        .from('provider_note_addendums')
+        .select('id, addendum_text, created_at, author:staff!provider_note_addendums_created_by_fkey(display_name)')
+        .eq('parent_note_id', providerNoteId)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('provider_note_amendments')
+        .select('id, reason, amended_at, prior_transcript, new_transcript, author:staff!provider_note_amendments_amended_by_fkey(display_name)')
+        .eq('parent_note_id', providerNoteId)
+        .order('amended_at', { ascending: false }),
+    ])
+
+    addendums = (addendumRows ?? []).map((row) => {
+      type AuthorRel = { display_name: string } | { display_name: string }[] | null
+      const a = (row as { author?: AuthorRel }).author
+      return {
+        id: row.id as string,
+        addendum_text: row.addendum_text as string,
+        created_at: row.created_at as string,
+        created_by_name: Array.isArray(a) ? a[0]?.display_name ?? null : a?.display_name ?? null,
+      }
+    })
+
+    amendments = (amendmentRows ?? []).map((row) => {
+      type AuthorRel = { display_name: string } | { display_name: string }[] | null
+      const a = (row as { author?: AuthorRel }).author
+      return {
+        id: row.id as string,
+        reason: row.reason as string,
+        amended_at: row.amended_at as string,
+        amended_by_name: Array.isArray(a) ? a[0]?.display_name ?? null : a?.display_name ?? null,
+        prior_transcript: (row.prior_transcript as string | null) ?? null,
+        new_transcript: (row.new_transcript as string | null) ?? null,
+      }
+    })
+  }
+
   return (
     <div>
       <div className="px-4 pt-4">
@@ -146,7 +208,14 @@ export default async function VisitDetailPage({
         </Link>
       </div>
 
-      <VisitDetailClient visit={visit} staffId={staff.id} payment={payment} />
+      <VisitDetailClient
+        visit={visit}
+        staffId={staff.id}
+        staffRole={staff.role}
+        payment={payment}
+        addendums={addendums}
+        amendments={amendments}
+      />
     </div>
   )
 }

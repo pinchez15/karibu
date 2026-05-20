@@ -28,6 +28,17 @@ class StaffRepository @Inject constructor(
     suspend fun getStaffByClerkIdOnce(clerkUserId: String): Staff? =
         staffDao.getByClerkUserIdOnce(clerkUserId)?.toDomain()
 
+    /**
+     * Best-effort lookup of the current signed-in staff row by id. Reads the
+     * staffId cached in AuthTokenStore (set by [fetchAndCacheStaff]) and the
+     * staff row in Room. Returns null if the device hasn't completed Clerk
+     * onboarding yet.
+     */
+    suspend fun getCurrentStaff(): Staff? {
+        val staffId = authTokenStore.getStaffId() ?: return null
+        return staffDao.getByIdOnce(staffId)?.toDomain()
+    }
+
     fun getClinic(clinicId: String): Flow<Clinic?> =
         clinicDao.getById(clinicId).map { it?.toDomain() }
 

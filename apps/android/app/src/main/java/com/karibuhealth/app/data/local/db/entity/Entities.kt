@@ -193,6 +193,13 @@ data class ProviderNoteEntity(
     // Read-back only on Android — there's no client-side write path; the
     // mobile column exists so we can render "Authored by …" in future UI.
     @ColumnInfo(name = "created_by") val createdBy: String? = null,
+    // Migration 044 — cosign lifecycle. Mid-level signers (nurse,
+    // nursing_assistant) flip requires_cosign=true on sign; an attending then
+    // calls rpc_cosign_provider_note to clear the flag and bump status to
+    // 'cosigned'.
+    @ColumnInfo(name = "requires_cosign", defaultValue = "0") val requiresCosign: Boolean = false,
+    @ColumnInfo(name = "cosigned_at") val cosignedAt: String? = null,
+    @ColumnInfo(name = "cosigned_by") val cosignedBy: String? = null,
 )
 
 @Entity(

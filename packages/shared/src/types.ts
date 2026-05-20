@@ -157,14 +157,25 @@ export interface VisitWithPatient extends Visit {
   patient: Patient;
 }
 
-// Provider note lifecycle (post migration 039):
+// Provider note lifecycle (migrations 039 + 044):
 //   draft    -> autosaved or manually-saved work-in-progress
 //   signed   -> clinician attested as the clinical record. finalized_at/by
 //               retain the "signed" timestamps (column name kept for
 //               backwards compatibility — renaming would churn every caller).
-//   amended  -> previously-signed note rewritten via rpc_amend_provider_note
-//   voided   -> previously-signed note withdrawn via rpc_void_provider_note
-export type ProviderNoteStatus = 'draft' | 'signed' | 'amended' | 'voided';
+//   cosigned -> attending physician counter-signed a mid-level provider's
+//               note via rpc_cosign_provider_note. requires_cosign=false.
+//   addended -> one or more provider_note_addendums rows attached; original
+//               text preserved per the medical-records convention.
+//   amended  -> previously-signed note rewritten via rpc_amend_provider_note.
+//               Prior versions live in provider_note_amendments.
+//   voided   -> previously-signed note withdrawn via rpc_void_provider_note.
+export type ProviderNoteStatus =
+  | 'draft'
+  | 'signed'
+  | 'cosigned'
+  | 'addended'
+  | 'amended'
+  | 'voided';
 
 // patient_notes still uses the original draft/finalized lifecycle — see
 // 001_initial_schema.sql. Kept as a separate type to avoid implying the two
@@ -211,6 +222,43 @@ export interface ProviderNote {
   voided_at: string | null;
   voided_by: string | null;
   void_reason: string | null;
+  // Cosign lifecycle (migration 044). Mid-level signers (nurse,
+  // nursing_assistant) flip requires_cosign=true on sign; an attending
+  // (doctor/clinical_officer/admin/midwife) then calls rpc_cosign_provider_note
+  // which sets status='cosigned' and clears the flag.
+  requires_cosign: boolean;
+  cosigned_at: string | null;
+  cosigned_by: string | null;
+}
+
+// Append-only addendum to a signed note (migration 044). The parent note's
+// text is never modified — each addendum is its own audit row.
+export interface ProviderNoteAddendum {
+  id: string;
+  parent_note_id: string;
+  clinic_id: string;
+  patient_id: string;
+  visit_id: string | null;
+  addendum_text: string;
+  created_by: string;
+  created_at: string;
+}
+
+// History row written by rpc_amend_provider_note before the parent's
+// transcript/note_content is overwritten. Lets the timeline render the
+// version that existed prior to each amendment.
+export interface ProviderNoteAmendment {
+  id: string;
+  parent_note_id: string;
+  clinic_id: string;
+  patient_id: string;
+  prior_transcript: string | null;
+  prior_note_content: string | null;
+  new_transcript: string | null;
+  new_note_content: string | null;
+  reason: string;
+  amended_by: string;
+  amended_at: string;
 }
 
 export type PatientNoteSource = 'ai_generated' | 'clinician_fallback';

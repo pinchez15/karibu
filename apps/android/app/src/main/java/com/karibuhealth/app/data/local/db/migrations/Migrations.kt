@@ -3,6 +3,18 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v9 -> v10: cosign lifecycle (migration 044 mirror). Additive columns on
+// provider_notes so the mobile cache can read back which mid-level notes are
+// awaiting attending cosign. NOT NULL with a 0 default keeps the column
+// safe to add to existing rows.
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE provider_notes ADD COLUMN requires_cosign INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE provider_notes ADD COLUMN cosigned_at TEXT")
+        db.execSQL("ALTER TABLE provider_notes ADD COLUMN cosigned_by TEXT")
+    }
+}
+
 // v8 -> v9: note authorship (migration 042 mirror). Adds the
 // provider_notes.created_by column so the mobile cache can read back which
 // staff first dictated each note. Strictly additive — the server records the

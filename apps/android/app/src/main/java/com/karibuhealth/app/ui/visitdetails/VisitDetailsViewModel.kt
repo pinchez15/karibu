@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
 import com.karibuhealth.app.data.repository.NoteRepository
+import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.VitalsRepository
 import com.karibuhealth.app.data.sync.SyncEngine
@@ -25,6 +26,8 @@ data class VisitDetailsUiState(
     /** Plain-language AI summary, distinct from the clinician's `patientNote`. */
     val aiPatientNote: PatientNote? = null,
     val latestVitals: PatientVitals? = null,
+    /** Signed-in staff. Drives role-gated lifecycle actions (addend/cosign/etc). */
+    val currentStaff: Staff? = null,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val connectionStatus: NetworkMonitor.ConnectionStatus = NetworkMonitor.ConnectionStatus(
@@ -74,6 +77,7 @@ class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
     private val noteRepository: NoteRepository,
     private val vitalsRepository: VitalsRepository,
+    private val staffRepository: StaffRepository,
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
     private val syncQueueDao: SyncQueueDao,
@@ -84,6 +88,11 @@ class VisitDetailsViewModel @Inject constructor(
     val uiState: StateFlow<VisitDetailsUiState> = _uiState.asStateFlow()
 
     fun loadVisit(visitId: String) {
+        viewModelScope.launch {
+            val me = staffRepository.getCurrentStaff()
+            _uiState.update { it.copy(currentStaff = me) }
+        }
+
         viewModelScope.launch {
             visitRepository.getVisitWithDetails(visitId).collect { details ->
                 if (details != null) {
@@ -164,6 +173,36 @@ class VisitDetailsViewModel @Inject constructor(
             } finally {
                 _uiState.update { it.copy(isSyncing = false) }
             }
+        }
+    }
+
+    // Lifecycle actions (migration 044). Each goes through the repository's
+    // direct-write-or-queue path so they Just Work offline too.
+    fun addendCurrentNote(addendumText: String) {
+        val noteId = _uiState.value.providerNote?.id ?: return
+        viewModelScope.launch {
+            noteRepository.addendNote(noteId = noteId, addendumText = addendumText)
+        }
+    }
+
+    fun amendCurrentNote(transcript: String, reason: String) {
+        val noteId = _uiState.value.providerNote?.id ?: return
+        viewModelScope.launch {
+            noteRepository.amendNote(noteId = noteId, transcript = transcript, reason = reason)
+        }
+    }
+
+    fun voidCurrentNote(reason: String) {
+        val noteId = _uiState.value.providerNote?.id ?: return
+        viewModelScope.launch {
+            noteRepository.voidNote(noteId = noteId, reason = reason)
+        }
+    }
+
+    fun cosignCurrentNote() {
+        val noteId = _uiState.value.providerNote?.id ?: return
+        viewModelScope.launch {
+            noteRepository.cosignNote(noteId = noteId)
         }
     }
 }

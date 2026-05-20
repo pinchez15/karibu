@@ -216,6 +216,10 @@ data class ProviderNoteDto(
     @SerialName("void_reason") val voidReason: String? = null,
     // Migration 042: authoring staff recorded on first INSERT by the server.
     @SerialName("created_by") val createdBy: String? = null,
+    // Migration 044: cosign lifecycle.
+    @SerialName("requires_cosign") val requiresCosign: Boolean = false,
+    @SerialName("cosigned_at") val cosignedAt: String? = null,
+    @SerialName("cosigned_by") val cosignedBy: String? = null,
 )
 
 @Serializable
@@ -304,16 +308,32 @@ data class SignProviderNoteRequest(
     @SerialName("p_id") val id: String,
 )
 
+// Migration 044 signature: reason is required, optional p_note_content.
 @Serializable
 data class AmendProviderNoteRequest(
     @SerialName("p_id") val id: String,
     @SerialName("p_transcript") val transcript: String,
+    @SerialName("p_reason") val reason: String,
+    @SerialName("p_note_content") val noteContent: String? = null,
 )
 
 @Serializable
 data class VoidProviderNoteRequest(
     @SerialName("p_id") val id: String,
     @SerialName("p_reason") val reason: String,
+)
+
+// Migration 044 — append-only addendum.
+@Serializable
+data class AddendProviderNoteRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_addendum_text") val addendumText: String,
+)
+
+// Migration 044 — attending counter-signs a mid-level provider's note.
+@Serializable
+data class CosignProviderNoteRequest(
+    @SerialName("p_id") val id: String,
 )
 
 // SyncQueue payload for "upsert_patient_note_summary" via rpc_upsert_patient_note_summary.

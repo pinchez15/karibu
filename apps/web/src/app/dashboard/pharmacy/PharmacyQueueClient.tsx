@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Check, Loader2, AlertTriangle, PackageX } from 'lucide-react'
-import { setDispensingStatus } from './actions'
+import { Check, Loader2, AlertTriangle, PackageX, Package, X, Plus } from 'lucide-react'
+import { listClinicPharmacyStock, recordDispenseAndStock, setDispensingStatus } from './actions'
 import { cn } from '@/lib/utils'
 
 export type DispensingRow = {
@@ -72,6 +72,7 @@ function PharmacyRow({ row, last }: { row: DispensingRow; last: boolean }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showNotes, setShowNotes] = useState(false)
+  const [showDispense, setShowDispense] = useState(false)
   const [notes, setNotes] = useState(row.dispense_notes ?? '')
 
   const fullName = [row.patient.first_name, row.patient.last_name]
@@ -123,12 +124,20 @@ function PharmacyRow({ row, last }: { row: DispensingRow; last: boolean }) {
       <div className="space-y-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
-            onClick={() => dispatch('dispensed')}
+            onClick={() => setShowDispense(true)}
             disabled={pending}
             className="bg-green text-white rounded-md px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50"
           >
-            {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-            Dispensed
+            {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
+            Dispense + stock
+          </button>
+          <button
+            onClick={() => dispatch('dispensed')}
+            disabled={pending}
+            className="bg-green-soft text-green border border-green/30 rounded-md px-2.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1 disabled:opacity-50"
+            title="Mark dispensed without recording stock movements"
+          >
+            <Check className="h-3 w-3" /> Quick mark
           </button>
           <button
             onClick={() => dispatch('partial')}
@@ -164,6 +173,221 @@ function PharmacyRow({ row, last }: { row: DispensingRow; last: boolean }) {
         {error && (
           <div className="text-[11px] text-destructive">{error}</div>
         )}
+      </div>
+
+      {showDispense && (
+        <DispenseWithStockDialog
+          visitId={row.id}
+          medicationsText={row.medications ?? ''}
+          initialNotes={notes}
+          onClose={() => setShowDispense(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+type StockOption = Awaited<ReturnType<typeof listClinicPharmacyStock>>[number]
+
+function DispenseWithStockDialog({
+  visitId,
+  medicationsText,
+  initialNotes,
+  onClose,
+}: {
+  visitId: string
+  medicationsText: string
+  initialNotes: string
+  onClose: () => void
+}) {
+  const [stockOptions, setStockOptions] = useState<StockOption[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [lines, setLines] = useState<Array<{ id: string; stockItemId: string; quantity: string }>>([
+    { id: crypto.randomUUID(), stockItemId: '', quantity: '' },
+  ])
+  const [status, setStatus] = useState<'dispensed' | 'partial' | 'out_of_stock'>('dispensed')
+  const [notes, setNotes] = useState(initialNotes)
+  const [pending, startTransition] = useTransition()
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [partialFailures, setPartialFailures] = useState<string[]>([])
+
+  useEffect(() => {
+    listClinicPharmacyStock()
+      .then(setStockOptions)
+      .catch((e) => setLoadError(e?.message ?? 'Failed to load stock'))
+  }, [])
+
+  function addLine() {
+    setLines((prev) => [...prev, { id: crypto.randomUUID(), stockItemId: '', quantity: '' }])
+  }
+
+  function updateLine(id: string, patch: Partial<{ stockItemId: string; quantity: string }>) {
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+  }
+
+  function removeLine(id: string) {
+    setLines((prev) => (prev.length > 1 ? prev.filter((l) => l.id !== id) : prev))
+  }
+
+  function handleSubmit() {
+    setSubmitError(null)
+    setPartialFailures([])
+    const movements = lines
+      .filter((l) => l.stockItemId && parseFloat(l.quantity) > 0)
+      .map((l) => ({ stockItemId: l.stockItemId, quantity: parseFloat(l.quantity) }))
+    if (movements.length === 0) {
+      setSubmitError('Add at least one stock movement (or use Quick mark to skip stock).')
+      return
+    }
+    startTransition(async () => {
+      const r = await recordDispenseAndStock({
+        visitId,
+        status,
+        notes: notes || undefined,
+        movements,
+      })
+      if (r.success) {
+        onClose()
+      } else {
+        setSubmitError(r.error)
+        if ('partialFailures' in r && r.partialFailures) {
+          setPartialFailures(r.partialFailures)
+        }
+      }
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold">Dispense + decrement stock</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Records the dispense + creates negative stock movements per line.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-4 py-3 space-y-3">
+          {medicationsText && (
+            <div className="bg-muted/40 rounded-md p-2">
+              <div className="kh-meta">PRESCRIBED</div>
+              <p className="text-sm whitespace-pre-wrap mt-1">{medicationsText}</p>
+            </div>
+          )}
+
+          {loadError && <div className="text-sm text-destructive">{loadError}</div>}
+
+          <div className="space-y-2">
+            <div className="kh-meta">DEDUCT FROM</div>
+            {lines.map((line) => {
+              const selected = stockOptions.find((s) => s.id === line.stockItemId)
+              return (
+                <div key={line.id} className="grid grid-cols-[1fr_120px_auto] gap-2 items-start">
+                  <select
+                    value={line.stockItemId}
+                    onChange={(e) => updateLine(line.id, { stockItemId: e.target.value })}
+                    className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background"
+                  >
+                    <option value="">— Select stock item —</option>
+                    {stockOptions.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.drug_name}
+                        {opt.strength ? ` · ${opt.strength}` : ''}
+                        {' · '}
+                        {opt.quantity_on_hand} {opt.unit} on hand
+                      </option>
+                    ))}
+                  </select>
+                  <div>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={line.quantity}
+                      onChange={(e) => updateLine(line.id, { quantity: e.target.value })}
+                      placeholder={selected ? `qty in ${selected.unit}` : 'qty'}
+                      className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeLine(line.id)}
+                    className="text-muted-foreground hover:text-destructive p-1"
+                    title="Remove line"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )
+            })}
+            <button
+              type="button"
+              onClick={addLine}
+              className="text-xs text-cobalt hover:underline inline-flex items-center gap-1"
+            >
+              <Plus className="h-3 w-3" /> Add another item
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <div>
+              <label className="kh-meta">DISPENSE STATUS</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
+                className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background mt-1"
+              >
+                <option value="dispensed">Dispensed (fully)</option>
+                <option value="partial">Partial</option>
+                <option value="out_of_stock">Out of stock</option>
+              </select>
+            </div>
+            <div>
+              <label className="kh-meta">NOTE (optional)</label>
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. substituted Cotrim for Amox"
+                className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background mt-1"
+              />
+            </div>
+          </div>
+
+          {submitError && (
+            <div className="text-sm text-destructive bg-destructive/5 rounded-md p-2">
+              {submitError}
+              {partialFailures.length > 0 && (
+                <ul className="list-disc pl-5 mt-1 text-xs">
+                  {partialFailures.map((m, i) => (
+                    <li key={i}>{m}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 py-3 border-t border-border flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="bg-card border border-border text-body rounded-md px-3 py-1.5 text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={pending}
+            className="bg-green text-white rounded-md px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-60"
+          >
+            {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            Record dispense
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -15,6 +15,9 @@ interface StaffDao {
     @Query("SELECT * FROM staff WHERE clerk_user_id = :clerkUserId AND is_active = 1")
     suspend fun getByClerkUserIdOnce(clerkUserId: String): StaffEntity?
 
+    @Query("SELECT * FROM staff WHERE id = :id LIMIT 1")
+    suspend fun getByIdOnce(id: String): StaffEntity?
+
     @Query("SELECT * FROM staff WHERE clinic_id = :clinicId AND is_active = 1")
     fun getByClinic(clinicId: String): Flow<List<StaffEntity>>
 

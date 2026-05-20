@@ -48,7 +48,8 @@ enum class ReviewStatus { pending, pending_review, reviewed, rejected }
 //   voided  -> withdrawn (senior clinicians only); kept for audit
 // `finalized` is no longer a valid value, but we keep `signed` aliasable via
 // the runCatching path in the mappers so legacy rows downgrade gracefully.
-enum class NoteStatus { draft, signed, amended, voided }
+// Migration 044 expanded the lifecycle to include cosigned + addended.
+enum class NoteStatus { draft, signed, cosigned, addended, amended, voided }
 
 enum class PaymentMethod { cash, mtn_momo, airtel_money }
 
@@ -212,6 +213,10 @@ data class ProviderNote(
     // Migration 042: staff_id of the clinician who first dictated/started the
     // note. Set by rpc_upsert_provider_note on INSERT; preserved on UPDATE.
     val createdBy: String? = null,
+    // Migration 044: cosign lifecycle.
+    val requiresCosign: Boolean = false,
+    val cosignedAt: String? = null,
+    val cosignedBy: String? = null,
 )
 
 enum class PatientNoteSource { ai_generated, clinician_fallback }

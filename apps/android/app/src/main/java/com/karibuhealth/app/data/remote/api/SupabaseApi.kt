@@ -132,6 +132,13 @@ interface SupabaseApi {
     @POST("rpc/rpc_void_provider_note")
     suspend fun rpcVoidProviderNote(@Body request: VoidProviderNoteRequest): Response<Unit>
 
+    // Migration 044 lifecycle RPCs.
+    @POST("rpc/rpc_addend_provider_note")
+    suspend fun rpcAddendProviderNote(@Body request: AddendProviderNoteRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_cosign_provider_note")
+    suspend fun rpcCosignProviderNote(@Body request: CosignProviderNoteRequest): Response<Unit>
+
     @POST("rpc/rpc_upsert_patient_note_summary")
     suspend fun rpcUpsertPatientNoteSummary(@Body request: PatientNoteSummaryUpsertDto): Response<ResponseBody>
 

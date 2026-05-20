@@ -225,6 +225,24 @@ fun VisitDetailsScreen(
                     }
                 }
 
+                // Note lifecycle actions (cosign / addend / amend / void).
+                // Inline below the clinician-note card; the composable handles
+                // its own role + status gating and renders nothing for drafts.
+                uiState.providerNote?.let { note ->
+                    NoteLifecycleActionsCard(
+                        noteStatus = note.status.name,
+                        noteAuthorId = note.createdBy ?: note.finalizedBy,
+                        requiresCosign = note.requiresCosign,
+                        currentTranscript = note.transcript.orEmpty(),
+                        currentStaffId = uiState.currentStaff?.id,
+                        currentStaffRole = uiState.currentStaff?.role,
+                        onAddend = viewModel::addendCurrentNote,
+                        onAmend = viewModel::amendCurrentNote,
+                        onVoid = viewModel::voidCurrentNote,
+                        onCosign = viewModel::cosignCurrentNote,
+                    )
+                }
+
                 // AI receipt summary — when present, show as reference. The
                 // clinician's note above is the receipt-of-record; this is the
                 // plain-language version that may print on the thermal slip.

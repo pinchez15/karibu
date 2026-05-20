@@ -10,7 +10,9 @@ import com.karibuhealth.app.data.local.db.entity.PatientNoteEntity
 import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.AddendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.AmendProviderNoteRequest
+import com.karibuhealth.app.data.remote.dto.CosignProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.PatientNoteSummaryUpsertDto
 import com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto
 import com.karibuhealth.app.data.remote.dto.SignProviderNoteRequest
@@ -284,6 +286,7 @@ class NoteRepository @Inject constructor(
     suspend fun amendNote(
         noteId: String,
         transcript: String,
+        reason: String = "Amended via Android",
         predecessorSyncId: String? = null,
     ): String? = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
@@ -306,7 +309,11 @@ class NoteRepository @Inject constructor(
             providerNoteDao.upsert(existing.copy(transcript = transcript, updatedAt = now))
         }
 
-        val rpcBody = AmendProviderNoteRequest(id = noteId, transcript = transcript)
+        val rpcBody = AmendProviderNoteRequest(
+            id = noteId,
+            transcript = transcript,
+            reason = reason,
+        )
         if (networkMonitor.isOnline() && predecessorSyncId == null) {
             try {
                 val response = supabaseApi.rpcAmendProviderNote(rpcBody)
@@ -370,6 +377,114 @@ class NoteRepository @Inject constructor(
             entityType = "provider_notes",
             entityId = noteId,
             payload = json.encodeToString(VoidProviderNoteRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
+    }
+
+    /**
+     * Append an addendum to a signed note (migration 044). Original note is
+     * preserved on provider_notes; the addendum lives in
+     * provider_note_addendums and is the canonical record of the appended
+     * text. Direct-writes via rpcAddendProviderNote when online, otherwise
+     * queues `addend_provider_note`.
+     */
+    suspend fun addendNote(
+        noteId: String,
+        addendumText: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        // Bump local status to 'addended' unless the parent is already a
+        // stronger state (cosigned/amended) — mirrors the RPC's CASE.
+        val existing = providerNoteDao.getByIdOnce(noteId)
+        if (existing != null && existing.status !in setOf("cosigned", "amended")) {
+            providerNoteDao.updateLifecycle(
+                id = noteId,
+                status = "addended",
+                finalizedAt = null,
+                finalizedBy = null,
+                amendedAt = null,
+                amendedBy = null,
+                voidedAt = null,
+                voidedBy = null,
+                voidReason = null,
+                updatedAt = now,
+            )
+        }
+
+        val rpcBody = AddendProviderNoteRequest(id = noteId, addendumText = addendumText)
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcAddendProviderNote(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "addend_provider_note",
+            entityType = "provider_notes",
+            entityId = noteId,
+            payload = json.encodeToString(AddendProviderNoteRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = predecessorSyncId,
+        )
+        syncQueueDao.insert(syncEntry)
+        syncEntry.id
+    }
+
+    /**
+     * Attending counter-signs a mid-level provider's note (migration 044).
+     * Server-side check forbids self-cosign and requires an attending role.
+     * Direct-writes via rpcCosignProviderNote when online, otherwise queues
+     * `cosign_provider_note`.
+     */
+    suspend fun cosignNote(
+        noteId: String,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        val existing = providerNoteDao.getByIdOnce(noteId)
+        if (existing != null) {
+            providerNoteDao.updateLifecycle(
+                id = noteId,
+                status = "cosigned",
+                finalizedAt = null,
+                finalizedBy = null,
+                amendedAt = null,
+                amendedBy = null,
+                voidedAt = null,
+                voidedBy = null,
+                voidReason = null,
+                updatedAt = now,
+            )
+        }
+
+        val rpcBody = CosignProviderNoteRequest(id = noteId)
+        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+            try {
+                val response = supabaseApi.rpcCosignProviderNote(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "cosign_provider_note",
+            entityType = "provider_notes",
+            entityId = noteId,
+            payload = json.encodeToString(CosignProviderNoteRequest.serializer(), rpcBody),
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),

@@ -105,6 +105,9 @@ class SyncEngine @Inject constructor(
             "sign_provider_note" -> syncSignProviderNote(entry)
             "amend_provider_note" -> syncAmendProviderNote(entry)
             "void_provider_note" -> syncVoidProviderNote(entry)
+            // Migration 044 lifecycle ops.
+            "addend_provider_note" -> syncAddendProviderNote(entry)
+            "cosign_provider_note" -> syncCosignProviderNote(entry)
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
@@ -255,6 +258,28 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("void_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
         }
         Log.d(TAG, "Provider note voided: ${entry.entityId}")
+    }
+
+    private suspend fun syncAddendProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(AddendProviderNoteRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing addend_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcAddendProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("addend_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note addended: ${entry.entityId}")
+    }
+
+    private suspend fun syncCosignProviderNote(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(CosignProviderNoteRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing cosign_provider_note: ${entry.entityId}")
+        val result = supabaseApi.rpcCosignProviderNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("cosign_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        Log.d(TAG, "Provider note cosigned: ${entry.entityId}")
     }
 
     private suspend fun syncUpsertPatientNoteSummary(entry: SyncQueueEntry) {

@@ -13,12 +13,24 @@ const CLINICAL_ROLES = new Set([
   'nursing_assistant',
 ])
 
-// Senior clinicians who can sign / amend a note (matches the role gate baked
-// into rpc_sign_provider_note + rpc_amend_provider_note in migration 039).
+// Senior clinicians who can sign / amend / cosign a note (matches the role
+// gates baked into rpc_sign_provider_note + rpc_amend_provider_note +
+// rpc_cosign_provider_note in migrations 039 / 044).
 const SIGNING_ROLES = new Set(['admin', 'doctor', 'clinical_officer', 'midwife'])
+const COSIGN_ROLES = SIGNING_ROLES
 
 // Roles allowed to void a signed note (matches rpc_void_provider_note).
 const VOIDING_ROLES = new Set(['admin', 'doctor', 'clinical_officer'])
+
+// Anyone clinical can addend (matches rpc_addend_provider_note, migration 044).
+const ADDEND_ROLES = new Set([
+  'admin',
+  'doctor',
+  'clinical_officer',
+  'midwife',
+  'nurse',
+  'nursing_assistant',
+])
 
 async function loadVisitForStaff(
   visitId: string,
@@ -200,18 +212,46 @@ export async function signClinicianNote(
  */
 export const saveClinicianNote = signClinicianNote
 
+type NoteRow = {
+  id: string
+  visit_id: string | null
+  patient_id: string
+  patients: { clinic_id: string } | { clinic_id: string }[] | null
+}
+
+async function loadNoteForStaff(noteId: string, clinicId: string): Promise<NoteRow | null> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('provider_notes')
+    .select('id, visit_id, patient_id, patients!inner(clinic_id)')
+    .eq('id', noteId)
+    .maybeSingle()
+  const note = data as NoteRow | null
+  const patientsField = note?.patients
+  const noteClinicId = Array.isArray(patientsField)
+    ? patientsField[0]?.clinic_id
+    : patientsField?.clinic_id
+  return note && noteClinicId === clinicId ? note : null
+}
+
 /**
  * Amend a previously-signed note. Transcript content is rewritten; status
- * becomes 'amended'. RPC enforces senior role + signed/amended precondition.
+ * becomes 'amended'. RPC (migration 044) requires a reason and snapshots the
+ * prior content into provider_note_amendments before mutating.
  */
 export async function amendClinicianNote(input: {
   note_id: string
   transcript: string
+  reason: string
 }): Promise<{ success: true } | { success: false; error: string }> {
-  const { note_id, transcript } = input
+  const { note_id, transcript, reason } = input
   const text = transcript.trim()
+  const trimmedReason = reason.trim()
   if (text.length < 10) {
     return { success: false, error: 'Add a bit more to the note before amending.' }
+  }
+  if (trimmedReason.length === 0) {
+    return { success: false, error: 'Provide a reason for the amendment.' }
   }
 
   const staff = await getStaff()
@@ -220,39 +260,85 @@ export async function amendClinicianNote(input: {
     return { success: false, error: 'Your role cannot amend clinical notes.' }
   }
 
+  const note = await loadNoteForStaff(note_id, staff.clinic_id)
+  if (!note) return { success: false, error: 'Note not found' }
+
   const supabase = createServiceClient()
-
-  // Confirm the note exists in caller's clinic via the patient FK. Provides
-  // a friendlier error than letting the RPC throw "Note not found".
-  const { data: note } = await supabase
-    .from('provider_notes')
-    .select('id, visit_id, patient_id, patients!inner(clinic_id)')
-    .eq('id', note_id)
-    .maybeSingle()
-  type NoteRow = {
-    id: string
-    visit_id: string | null
-    patient_id: string
-    patients: { clinic_id: string } | { clinic_id: string }[] | null
-  }
-  const patientsField = (note as NoteRow | null)?.patients
-  const noteClinicId = Array.isArray(patientsField)
-    ? patientsField[0]?.clinic_id
-    : patientsField?.clinic_id
-  if (!note || noteClinicId !== staff.clinic_id) {
-    return { success: false, error: 'Note not found' }
-  }
-
   const { error: rpcErr } = await supabase.rpc('rpc_amend_provider_note', {
     p_id: note_id,
     p_transcript: text,
+    p_reason: trimmedReason,
   })
   if (rpcErr) {
     return { success: false, error: `amend failed: ${rpcErr.message}` }
   }
 
-  const visitId = (note as NoteRow).visit_id
-  if (visitId) revalidatePath(`/dashboard/visits/${visitId}`)
+  if (note.visit_id) revalidatePath(`/dashboard/visits/${note.visit_id}`)
+  return { success: true }
+}
+
+/**
+ * Cosign a mid-level provider's signed note. Sets status='cosigned' and
+ * clears requires_cosign. RPC enforces (a) caller is attending-level and
+ * (b) caller is not the original author.
+ */
+export async function cosignClinicianNote(input: {
+  note_id: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  if (!COSIGN_ROLES.has(staff.role)) {
+    return { success: false, error: 'Your role cannot cosign clinical notes.' }
+  }
+
+  const note = await loadNoteForStaff(input.note_id, staff.clinic_id)
+  if (!note) return { success: false, error: 'Note not found' }
+
+  const supabase = createServiceClient()
+  const { error: rpcErr } = await supabase.rpc('rpc_cosign_provider_note', {
+    p_id: input.note_id,
+  })
+  if (rpcErr) {
+    return { success: false, error: `cosign failed: ${rpcErr.message}` }
+  }
+
+  if (note.visit_id) revalidatePath(`/dashboard/visits/${note.visit_id}`)
+  return { success: true }
+}
+
+/**
+ * Append an addendum to a signed note. The original content is preserved on
+ * provider_notes; each addendum is a row in provider_note_addendums. Status
+ * flips to 'addended' unless the parent was already cosigned/amended.
+ */
+export async function addendClinicianNote(input: {
+  note_id: string
+  addendum_text: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const text = input.addendum_text.trim()
+  if (text.length < 3) {
+    return { success: false, error: 'Addendum is too short.' }
+  }
+
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  if (!ADDEND_ROLES.has(staff.role)) {
+    return { success: false, error: 'Your role cannot addend clinical notes.' }
+  }
+
+  const note = await loadNoteForStaff(input.note_id, staff.clinic_id)
+  if (!note) return { success: false, error: 'Note not found' }
+
+  const supabase = createServiceClient()
+  const { error: rpcErr } = await supabase.rpc('rpc_addend_provider_note', {
+    p_id: input.note_id,
+    p_addendum_text: text,
+  })
+  if (rpcErr) {
+    return { success: false, error: `addend failed: ${rpcErr.message}` }
+  }
+
+  if (note.visit_id) revalidatePath(`/dashboard/visits/${note.visit_id}`)
   return { success: true }
 }
 
@@ -277,27 +363,10 @@ export async function voidClinicianNote(input: {
     return { success: false, error: 'Your role cannot void clinical notes.' }
   }
 
+  const note = await loadNoteForStaff(note_id, staff.clinic_id)
+  if (!note) return { success: false, error: 'Note not found' }
+
   const supabase = createServiceClient()
-
-  const { data: note } = await supabase
-    .from('provider_notes')
-    .select('id, visit_id, patient_id, patients!inner(clinic_id)')
-    .eq('id', note_id)
-    .maybeSingle()
-  type NoteRow = {
-    id: string
-    visit_id: string | null
-    patient_id: string
-    patients: { clinic_id: string } | { clinic_id: string }[] | null
-  }
-  const patientsField = (note as NoteRow | null)?.patients
-  const noteClinicId = Array.isArray(patientsField)
-    ? patientsField[0]?.clinic_id
-    : patientsField?.clinic_id
-  if (!note || noteClinicId !== staff.clinic_id) {
-    return { success: false, error: 'Note not found' }
-  }
-
   const { error: rpcErr } = await supabase.rpc('rpc_void_provider_note', {
     p_id: note_id,
     p_reason: trimmedReason,
@@ -306,7 +375,6 @@ export async function voidClinicianNote(input: {
     return { success: false, error: `void failed: ${rpcErr.message}` }
   }
 
-  const visitId = (note as NoteRow).visit_id
-  if (visitId) revalidatePath(`/dashboard/visits/${visitId}`)
+  if (note.visit_id) revalidatePath(`/dashboard/visits/${note.visit_id}`)
   return { success: true }
 }

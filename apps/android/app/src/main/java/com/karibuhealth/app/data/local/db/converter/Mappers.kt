@@ -227,16 +227,18 @@ fun ProviderNoteDto.toEntity() = ProviderNoteEntity(
     amendedAt = amendedAt, amendedBy = amendedBy,
     voidedAt = voidedAt, voidedBy = voidedBy, voidReason = voidReason,
     createdBy = createdBy,
+    requiresCosign = requiresCosign,
+    cosignedAt = cosignedAt,
+    cosignedBy = cosignedBy,
 )
 
 fun ProviderNoteEntity.toDomain() = ProviderNote(
     id = id, patientId = patientId, visitId = visitId,
     transcript = transcript,
     noteContent = noteContent, structuredData = structuredData,
-    // NoteStatus enum has been broadened to draft | signed | amended | voided.
-    // Pre-migration rows that managed to persist 'finalized' should already
-    // have been promoted to 'signed' by MIGRATION_7_8, but defend defensively
-    // in case anything slipped through.
+    // NoteStatus enum (migration 044) is draft | signed | cosigned |
+    // addended | amended | voided. Pre-migration rows that persisted
+    // 'finalized' get promoted to 'signed' here as a safety net.
     status = runCatching { NoteStatus.valueOf(status) }
         .getOrDefault(if (status == "finalized") NoteStatus.signed else NoteStatus.draft),
     source = source,
@@ -245,6 +247,9 @@ fun ProviderNoteEntity.toDomain() = ProviderNote(
     amendedAt = amendedAt, amendedBy = amendedBy,
     voidedAt = voidedAt, voidedBy = voidedBy, voidReason = voidReason,
     createdBy = createdBy,
+    requiresCosign = requiresCosign,
+    cosignedAt = cosignedAt,
+    cosignedBy = cosignedBy,
 )
 
 // ========== PatientNote ==========
