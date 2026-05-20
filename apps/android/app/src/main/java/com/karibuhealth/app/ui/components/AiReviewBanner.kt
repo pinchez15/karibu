@@ -67,28 +67,23 @@ private fun AiReviewCard(suggestion: AiReviewSuggestionDto) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.AutoAwesome,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(16.dp),
                 tint = Amber,
             )
             Text(
-                text = "A QUESTION BEFORE YOU PROCEED",
-                style = MaterialTheme.typography.labelSmall,
+                text = suggestion.question,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = Amber,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
-        Text(
-            text = suggestion.question,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
         Text(
             text = suggestion.reasoning,
             style = MaterialTheme.typography.bodySmall,

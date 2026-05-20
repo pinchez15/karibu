@@ -626,11 +626,13 @@ private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
     }
     val accentColor: Color = when (kind) {
         KhStatusKind.Urgent -> Amber
-        KhStatusKind.Vitals -> Green
-        KhStatusKind.InNote, KhStatusKind.Ready, KhStatusKind.Review -> Cobalt
-        KhStatusKind.Sent -> Green
-        KhStatusKind.Lab -> Cobalt
-        KhStatusKind.Waiting, KhStatusKind.Done -> Cobalt
+        KhStatusKind.Vitals, KhStatusKind.Sent, KhStatusKind.Signed, KhStatusKind.Cosigned -> Green
+        KhStatusKind.Errored, KhStatusKind.Voided -> Amber
+        KhStatusKind.Addended, KhStatusKind.Amended -> Amber
+        // All other queue + note kinds anchor on the brand cobalt accent.
+        KhStatusKind.InNote, KhStatusKind.Ready, KhStatusKind.Review,
+        KhStatusKind.Lab, KhStatusKind.Waiting, KhStatusKind.Done,
+        KhStatusKind.Draft, KhStatusKind.PendingReview -> Cobalt
     }
     val patientId = p.patientNumber ?: "PT-${p.id.take(6)}"
     val ageBand = listOfNotNull(

@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Stamp
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.NoteAdd
 import androidx.compose.material3.Button
@@ -125,7 +125,7 @@ fun NoteLifecycleActionsCard(
                     onClick = onCosign,
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    Icon(Icons.Default.Stamp, contentDescription = null, modifier = Modifier.height(14.dp))
+                    Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.height(14.dp))
                     Spacer(Modifier.height(0.dp))
                     Text("Cosign")
                 }
