@@ -3,6 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import {
+  type ClinicalNoteSections,
+  sectionsToClinicianText,
+} from '@/lib/clinical-note-sections'
 
 const CLINICAL_ROLES = new Set([
   'admin',
@@ -53,22 +57,44 @@ async function loadVisitForStaff(
     | null
 }
 
+async function syncVisitClinicalSummary(
+  visitId: string,
+  sections: ClinicalNoteSections,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const followUpTasks = sections.followUpTasks.filter(Boolean).join('; ')
+  const followUp = [sections.followUpInstructions.trim(), followUpTasks]
+    .filter(Boolean)
+    .join('\n')
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_upsert_visit_clinical_summary', {
+    p_visit_id: visitId,
+    p_diagnosis: sections.diagnosis.trim() || null,
+    p_medications: sections.medications.trim() || null,
+    p_follow_up_instructions: followUp || null,
+    p_tests_ordered: sections.testsOrdered.trim() || null,
+    p_structured_data: JSON.stringify(sections),
+  })
+  if (error) {
+    return { success: false, error: `clinical summary failed: ${error.message}` }
+  }
+  return { success: true }
+}
+
 /**
  * Phase 2 autosave: persist the in-progress dictation as a `draft` provider
- * note keyed on `noteId`. Does NOT touch patient_notes, visits, or
- * ai_review_status — Sign owns those side effects. Safe to call on every
- * keystroke (debounced client-side).
+ * note keyed on `noteId`. Also syncs structured fields to the visit so lab
+ * pharmacy queues can advance before Sign (EHR pivot).
  *
- * `noteId` is the stable UUID the editor generates on mount; the server
- * upserts on conflict so repeated autosaves of the same draft just update
- * the same row.
+ * Does NOT set documentation_complete or sign the note — use Sign for that.
  */
 export async function autosaveDraftNote(input: {
   note_id: string
   visit_id: string
   transcript: string
+  sections: ClinicalNoteSections
 }): Promise<{ success: true } | { success: false; error: string }> {
-  const { note_id, visit_id, transcript } = input
+  const { note_id, visit_id, transcript, sections } = input
 
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not signed in' }
@@ -94,7 +120,30 @@ export async function autosaveDraftNote(input: {
       error: `autosave failed: ${rpcErr.message}`,
     }
   }
+
+  const summary = await syncVisitClinicalSummary(visit_id, sections)
+  if (!summary.success) return summary
+
   return { success: true }
+}
+
+/** Explicit save — same persistence as autosave, with path revalidation. */
+export async function saveDraftNote(input: {
+  note_id: string
+  visit_id: string
+  sections: ClinicalNoteSections
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const transcript = sectionsToClinicianText(input.sections)
+  const result = await autosaveDraftNote({
+    note_id: input.note_id,
+    visit_id: input.visit_id,
+    transcript,
+    sections: input.sections,
+  })
+  if (result.success) {
+    revalidatePath(`/dashboard/visits/${input.visit_id}`)
+  }
+  return result
 }
 
 /**
@@ -118,6 +167,7 @@ export async function signClinicianNote(
   visitId: string,
   content: string,
   noteId?: string,
+  sections?: ClinicalNoteSections,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const text = content.trim()
   if (text.length < 10) {
@@ -156,6 +206,11 @@ export async function signClinicianNote(
       success: false,
       error: `provider_notes upsert failed: ${providerErr.message}`,
     }
+  }
+
+  if (sections) {
+    const summary = await syncVisitClinicalSummary(visitId, sections)
+    if (!summary.success) return summary
   }
 
   // 2. patient_notes (clinician_fallback) — receipt-of-record.

@@ -37,20 +37,30 @@ class DictationApiClient @Inject constructor(
      *
      * @throws DictationException with a user-friendly message on failure.
      */
-    suspend fun transcribeChunk(audioFile: File): String {
+    suspend fun transcribeRecording(
+        audioFile: File,
+        transcriptContext: String? = null,
+        section: String? = null,
+    ): String {
         if (!audioFile.exists() || audioFile.length() == 0L) {
             throw DictationException("Recording file is empty.")
         }
 
         val mediaType = "audio/m4a".toMediaType()
-        val body = MultipartBody.Builder()
+        val bodyBuilder = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart(
                 name = "audio",
                 filename = audioFile.name,
                 body = audioFile.asRequestBody(mediaType),
             )
-            .build()
+        transcriptContext?.trim()?.takeIf { it.isNotEmpty() }?.let { context ->
+            bodyBuilder.addFormDataPart("context", context.takeLast(400))
+        }
+        section?.trim()?.takeIf { it.isNotEmpty() }?.let { sectionName ->
+            bodyBuilder.addFormDataPart("section", sectionName)
+        }
+        val body = bodyBuilder.build()
 
         val request = Request.Builder()
             .url("${BuildConfig.SUPABASE_URL}/functions/v1/dictate")

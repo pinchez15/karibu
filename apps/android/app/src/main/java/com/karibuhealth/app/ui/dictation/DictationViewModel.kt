@@ -68,6 +68,25 @@ enum class NoteSection {
     TestsOrdered,
     FollowUpInstructions,
     AdditionalNote,
+    ;
+
+    /** Matches `section` multipart field / edge-function prompt hints. */
+    val apiKey: String
+        get() = name
+
+    val displayLabel: String
+        get() = when (this) {
+            ChiefComplaint -> "Chief complaint"
+            Hpi -> "History"
+            PhysicalExam -> "Physical exam"
+            FamilySocialHistory -> "Family & social history"
+            Diagnosis -> "Diagnosis"
+            AssessmentPlan -> "Assessment & plan"
+            Medications -> "Pharmacy"
+            TestsOrdered -> "Labs"
+            FollowUpInstructions -> "Follow-up"
+            AdditionalNote -> "Additional notes"
+        }
 }
 
 /**
@@ -94,8 +113,11 @@ data class DictationUiState(
     val transcript: String = "",
     val sections: ClinicalNoteSections = ClinicalNoteSections(),
     val isRecording: Boolean = false,
-    /** Number of segments currently uploading to Whisper. Drives the "transcribing…" indicator. */
-    val pendingChunks: Int = 0,
+    /** Section locked when the current recording session started. */
+    val recordingSection: NoteSection? = null,
+    /** Batch transcription in flight after stop (one upload per section take). */
+    val isTranscribing: Boolean = false,
+    val transcribingSection: NoteSection? = null,
     val isSubmitting: Boolean = false,
     val isStructuringWithAi: Boolean = false,
     val submitted: Boolean = false,
@@ -136,12 +158,9 @@ data class DictationUiState(
     val openLabPickerOnLoad: Boolean = false,
     val openRxPickerOnLoad: Boolean = false,
 ) {
-    /** Back-compat alias — true while any chunk is in flight. */
-    val isTranscribing: Boolean
-        get() = pendingChunks > 0
     val canSubmit: Boolean
         get() = (transcript.trim().length >= 10 || sections.hasClinicalContent()) &&
-            !isRecording && !isSubmitting
+            !isRecording && !isTranscribing && !isSubmitting
 }
 
 @HiltViewModel
@@ -271,69 +290,94 @@ class DictationViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Microphone permission is required.") }
             return
         }
-        if (_uiState.value.isRecording) return
+        val state = _uiState.value
+        if (state.isRecording || state.isTranscribing) return
 
-        try {
-            recorder.startStreaming { segmentFile ->
-                // Each finalized segment gets uploaded to Whisper on a worker
-                // thread; the result appends to `transcript` as it lands.
-                viewModelScope.launch { transcribeSegment(segmentFile) }
+        val section = state.focusedSection
+        if (section == null) {
+            _uiState.update {
+                it.copy(error = "Tap a section field first, then tap the mic to dictate.")
             }
-            _uiState.update { it.copy(isRecording = true, error = null) }
-            analytics.capture(Analytics.Events.DICTATION_STARTED)
-        } catch (e: Exception) {
-            _uiState.update { it.copy(error = "Could not start recorder: ${e.message}") }
+            return
         }
+
+        if (!recorder.start()) {
+            _uiState.update { it.copy(error = "Could not start recorder. Try again.") }
+            return
+        }
+        _uiState.update {
+            it.copy(isRecording = true, recordingSection = section, error = null)
+        }
+        analytics.capture(Analytics.Events.DICTATION_STARTED)
     }
 
     fun stopRecording() {
-        if (!_uiState.value.isRecording) return
-        recorder.stopStreaming()
-        _uiState.update { it.copy(isRecording = false) }
+        val section = _uiState.value.recordingSection
+        if (!_uiState.value.isRecording || section == null) return
+
+        val file = recorder.stop()
+        _uiState.update {
+            it.copy(isRecording = false, recordingSection = null)
+        }
+        if (file == null) return
+        viewModelScope.launch { transcribeSectionRecording(file, section) }
     }
 
     /** Back-compat alias for screens that still call the old name. */
     fun stopRecordingAndTranscribe() = stopRecording()
 
-    private suspend fun transcribeSegment(file: java.io.File) {
-        if (file.length() < 1500) {
+    private suspend fun transcribeSectionRecording(file: java.io.File, section: NoteSection) {
+        if (file.length() < 800) {
             file.delete()
+            _uiState.update {
+                it.copy(error = "Recording too short. Hold the mic a little longer.")
+            }
             return
         }
-        _uiState.update { it.copy(pendingChunks = it.pendingChunks + 1) }
+        _uiState.update {
+            it.copy(isTranscribing = true, transcribingSection = section, error = null)
+        }
         try {
+            val sectionContext = _uiState.value.sections.sectionText(section).trim().takeLast(400)
             val text = withContext(Dispatchers.IO) {
                 clerkAuthManager.refreshToken()
-                dictationApi.transcribeChunk(file)
+                dictationApi.transcribeRecording(
+                    audioFile = file,
+                    transcriptContext = sectionContext.ifBlank { null },
+                    section = section.apiKey,
+                )
             }
             if (text.isNotBlank()) {
                 _uiState.update { state ->
-                    // Route transcribed text to whichever section field has
-                    // focus. Falls back to additionalNote so the legacy
-                    // "tap mic, dictate everything into the free notes box"
-                    // flow still works when no field is focused.
-                    val target = state.focusedSection ?: NoteSection.AdditionalNote
-                    val nextSections = state.sections.appendToSection(target, text.trim())
+                    val nextSections = state.sections.appendToSection(section, text.trim())
                     state.copy(
                         transcript = nextSections.toClinicianText(),
                         sections = nextSections,
                     )
                 }
-                // Whisper transcription is just another source of text edits;
-                // pipe it through the same debounced autosave so the freshly
-                // landed chunk also lands in Supabase.
                 scheduleAutosave()
             }
         } catch (e: DictationException) {
-            // Swallow per-chunk errors — one bad segment shouldn't kill the
-            // stream. Surface only if the clinician sees zero text after stop.
-            android.util.Log.w("DictationVM", "chunk failed: ${e.message}")
+            _uiState.update {
+                it.copy(error = "Transcription failed for ${section.displayLabel}. Tap mic to try again.")
+            }
+            android.util.Log.w("DictationVM", "section transcribe failed: ${e.message}")
         } catch (e: Exception) {
-            android.util.Log.w("DictationVM", "chunk failed: ${e.message}")
+            _uiState.update {
+                it.copy(error = "Transcription failed for ${section.displayLabel}. Tap mic to try again.")
+            }
+            android.util.Log.w("DictationVM", "section transcribe failed: ${e.message}")
         } finally {
             file.delete()
-            _uiState.update { it.copy(pendingChunks = (it.pendingChunks - 1).coerceAtLeast(0)) }
+            _uiState.update {
+                it.copy(isTranscribing = false, transcribingSection = null)
+            }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        recorder.cancel()
     }
 
     fun updateTranscript(text: String) {
@@ -394,14 +438,27 @@ class DictationViewModel @Inject constructor(
         _uiState.update { it.copy(autosaveStatus = AutosaveStatus.Saving) }
         return try {
             val noteId = snapshot.noteId ?: UUID.randomUUID().toString()
+            val visitId = snapshot.visitId
             val (savedNote, syncEntryId) = withContext(Dispatchers.IO) {
-                noteRepository.saveDraft(
+                val draftResult = noteRepository.saveDraft(
                     patientId = patientId,
-                    visitId = snapshot.visitId,
+                    visitId = visitId,
                     transcript = transcript,
                     noteId = noteId,
                     source = "visit",
                 )
+                if (visitId != null) {
+                    noteRepository.saveClinicalSummary(
+                        visitId = visitId,
+                        diagnosis = snapshot.sections.diagnosis.cleanOrNull(),
+                        medications = snapshot.sections.medications.cleanOrNull(),
+                        followUpInstructions = snapshot.sections.followUpInstructionsWithTasks().cleanOrNull(),
+                        testsOrdered = snapshot.sections.testsOrdered.cleanOrNull(),
+                        structuredData = json.encodeToString(snapshot.sections),
+                        predecessorSyncId = draftResult.second,
+                    )
+                }
+                draftResult
             }
             _uiState.update {
                 it.copy(
@@ -603,10 +660,22 @@ class DictationViewModel @Inject constructor(
     }
 }
 
+private fun ClinicalNoteSections.sectionText(section: NoteSection): String = when (section) {
+    NoteSection.ChiefComplaint -> chiefComplaint
+    NoteSection.Hpi -> hpi
+    NoteSection.PhysicalExam -> physicalExam
+    NoteSection.FamilySocialHistory -> familySocialHistory
+    NoteSection.Diagnosis -> diagnosis
+    NoteSection.AssessmentPlan -> assessmentPlan
+    NoteSection.Medications -> medications
+    NoteSection.TestsOrdered -> testsOrdered
+    NoteSection.FollowUpInstructions -> followUpInstructions
+    NoteSection.AdditionalNote -> additionalNote
+}
+
 /**
- * Append a Whisper chunk to the section identified by [target]. Joins with a
- * single space if the existing text is non-empty so consecutive chunks read
- * as one continuous sentence.
+ * Append a batch transcription to [target]. Joins with a space when the
+ * section already has content (re-dictate into the same field).
  */
 private fun ClinicalNoteSections.appendToSection(target: NoteSection, chunk: String): ClinicalNoteSections {
     fun merge(prev: String): String {

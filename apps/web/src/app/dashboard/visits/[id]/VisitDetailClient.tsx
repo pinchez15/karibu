@@ -10,6 +10,10 @@ import { ReviewQuestionBanner, type ReviewSuggestion } from './ReviewQuestionBan
 import type { Visit, ProviderNote, PatientNote, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
+import {
+  parseClinicalNoteSections,
+  sectionsHaveClinicalContent,
+} from '@/lib/clinical-note-sections'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 import { submitPharmacyOrder } from '../actions'
 
@@ -77,6 +81,20 @@ export function VisitDetailClient({
   amendments = [],
 }: VisitDetailClientProps) {
   const config = getStatusDisplay(visit.status)
+
+  const initialNoteSections = (() => {
+    const parsed = parseClinicalNoteSections(visit.provider_notes?.structured_data ?? null, {
+      diagnosis: visit.diagnosis ?? '',
+      medications: visit.medications ?? '',
+      testsOrdered: visit.tests_ordered ?? '',
+      followUpInstructions: visit.follow_up_instructions ?? '',
+    })
+    const transcript = visit.provider_notes?.transcript?.trim()
+    if (!sectionsHaveClinicalContent(parsed) && transcript) {
+      return { ...parsed, hpi: transcript }
+    }
+    return parsed
+  })()
 
   const handlePrintPatientNote = () => {
     window.open(`/dashboard/visits/${visit.id}/print`, '_blank')
@@ -147,8 +165,13 @@ export function VisitDetailClient({
       {!visit.documentation_complete && (
         <PendingDictationCard
           visitId={visit.id}
-          initialContent={visit.provider_notes?.transcript ?? ''}
+          initialSections={initialNoteSections}
           initialNoteId={visit.provider_notes?.id ?? null}
+          labResults={visit.lab_results}
+          labAbnormal={visit.lab_abnormal ?? false}
+          labStatus={visit.lab_status}
+          pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
+          staffRole={staffRole ?? null}
         />
       )}
 
@@ -223,6 +246,7 @@ export function VisitDetailClient({
             content={
               visit.patient_notes_clinician?.content ?? visit.provider_notes?.transcript ?? ''
             }
+            structuredData={visit.provider_notes?.structured_data ?? null}
             canEdit={visit.status !== 'completed'}
           />
         )}
@@ -342,6 +366,7 @@ interface ClinicianNoteCardProps {
   visitId: string
   noteId: string | null
   content: string
+  structuredData?: Record<string, unknown> | null
   canEdit: boolean
 }
 
@@ -351,14 +376,28 @@ interface ClinicianNoteCardProps {
  * row is upserted in place, and it re-runs AI review (since signClinicianNote
  * resets ai_review_status='not_started' and the poller picks it up).
  */
-function ClinicianNoteCard({ visitId, noteId, content, canEdit }: ClinicianNoteCardProps) {
+function ClinicianNoteCard({
+  visitId,
+  noteId,
+  content,
+  structuredData,
+  canEdit,
+}: ClinicianNoteCardProps) {
   const [editing, setEditing] = useState(false)
+
+  const editSections = (() => {
+    const parsed = parseClinicalNoteSections(structuredData ?? null)
+    if (!sectionsHaveClinicalContent(parsed) && content.trim()) {
+      return { ...parsed, hpi: content.trim() }
+    }
+    return parsed
+  })()
 
   if (editing) {
     return (
       <PendingDictationCard
         visitId={visitId}
-        initialContent={content}
+        initialSections={editSections}
         initialNoteId={noteId}
         mode="editing"
         onClose={() => setEditing(false)}

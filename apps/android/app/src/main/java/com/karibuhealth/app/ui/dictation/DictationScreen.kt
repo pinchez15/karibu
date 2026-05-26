@@ -226,7 +226,9 @@ private fun DictationScreenContent(
                 minLines = 1,
                 placeholder = "e.g. fever and cough x3 days",
                 onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.ChiefComplaint),
+                isRecordingTarget = uiState.recordingSection == NoteSection.ChiefComplaint && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.ChiefComplaint && uiState.isTranscribing,
             )
             SectionField(
                 label = "HISTORY OF PRESENT ILLNESS",
@@ -235,7 +237,9 @@ private fun DictationScreenContent(
                 onFocusChange = onFocusedSectionChange,
                 placeholder = "Onset, duration, severity, associated symptoms…",
                 onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.Hpi),
+                isRecordingTarget = uiState.recordingSection == NoteSection.Hpi && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.Hpi && uiState.isTranscribing,
             )
             SectionField(
                 label = "PHYSICAL EXAM",
@@ -244,7 +248,9 @@ private fun DictationScreenContent(
                 onFocusChange = onFocusedSectionChange,
                 placeholder = "Vitals, general appearance, focused exam…",
                 onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.PhysicalExam),
+                isRecordingTarget = uiState.recordingSection == NoteSection.PhysicalExam && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.PhysicalExam && uiState.isTranscribing,
             )
             SectionField(
                 label = "FAMILY AND SOCIAL HISTORY",
@@ -253,7 +259,9 @@ private fun DictationScreenContent(
                 onFocusChange = onFocusedSectionChange,
                 placeholder = "Relevant family history, social context…",
                 onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.FamilySocialHistory),
+                isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
             )
             SectionField(
                 label = "DIAGNOSIS",
@@ -263,7 +271,9 @@ private fun DictationScreenContent(
                 minLines = 1,
                 placeholder = "Primary diagnosis or working impression…",
                 onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.Diagnosis),
+                isRecordingTarget = uiState.recordingSection == NoteSection.Diagnosis && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.Diagnosis && uiState.isTranscribing,
             )
             SectionField(
                 label = "ASSESSMENT AND PLAN",
@@ -272,7 +282,9 @@ private fun DictationScreenContent(
                 onFocusChange = onFocusedSectionChange,
                 placeholder = "Clinical reasoning, plan, counseling…",
                 onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.AssessmentPlan),
+                isRecordingTarget = uiState.recordingSection == NoteSection.AssessmentPlan && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.AssessmentPlan && uiState.isTranscribing,
             )
             // PHARMACY — free-text persists alongside the structured picker so
             // clinicians can drop in items like "give from clinic stock" that
@@ -299,7 +311,9 @@ private fun DictationScreenContent(
                     onFocusChange = onFocusedSectionChange,
                     placeholder = "Medications or use Add Rx…",
                     onValueChange = { onSectionsChange(sections.copy(medications = it)) },
-                    enabled = !uiState.isSubmitting,
+                    enabled = sectionFieldEnabled(uiState, NoteSection.Medications),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.Medications && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.Medications && uiState.isTranscribing,
                 )
                 Spacer(Modifier.height(8.dp))
                 if (uiState.pharmacyOrderSubmitted) {
@@ -314,6 +328,8 @@ private fun DictationScreenContent(
                         onClick = onSendToPharmacy,
                         enabled = !uiState.isSubmitting &&
                             !uiState.isSendingToPharmacy &&
+                            !uiState.isRecording &&
+                            !uiState.isTranscribing &&
                             sections.medications.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -350,7 +366,9 @@ private fun DictationScreenContent(
                     onFocusChange = onFocusedSectionChange,
                     placeholder = "Labs ordered or use Add labs…",
                     onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
-                    enabled = !uiState.isSubmitting,
+                    enabled = sectionFieldEnabled(uiState, NoteSection.TestsOrdered),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.TestsOrdered && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.TestsOrdered && uiState.isTranscribing,
                 )
             }
 
@@ -386,7 +404,7 @@ private fun DictationScreenContent(
 
             FollowUpTaskPicker(
                 selected = sections.followUpTasks,
-                enabled = !uiState.isSubmitting,
+                enabled = !uiState.isSubmitting && !uiState.isRecording && !uiState.isTranscribing,
                 onSelectedChange = { onSectionsChange(sections.copy(followUpTasks = it)) },
             )
             SectionField(
@@ -396,7 +414,9 @@ private fun DictationScreenContent(
                 onFocusChange = onFocusedSectionChange,
                 placeholder = "Return precautions, referrals, next visit…",
                 onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.FollowUpInstructions),
+                isRecordingTarget = uiState.recordingSection == NoteSection.FollowUpInstructions && uiState.isRecording,
+                isTranscribingTarget = uiState.transcribingSection == NoteSection.FollowUpInstructions && uiState.isTranscribing,
             )
 
             Text(
@@ -425,7 +445,7 @@ private fun DictationScreenContent(
                     .onFocusChanged { focusState ->
                         if (focusState.isFocused) onFocusedSectionChange(NoteSection.AdditionalNote)
                     },
-                enabled = !uiState.isSubmitting,
+                enabled = sectionFieldEnabled(uiState, NoteSection.AdditionalNote),
                 decorationBox = { inner -> inner() },
             )
 
@@ -505,6 +525,12 @@ private fun AutosaveStatusIndicator(status: AutosaveStatus) {
 }
 
 @Composable
+private fun sectionFieldEnabled(uiState: DictationUiState, section: NoteSection): Boolean {
+    if (uiState.isSubmitting || uiState.isTranscribing) return false
+    if (!uiState.isRecording) return true
+    return uiState.recordingSection == section
+}
+
 private fun SectionField(
     label: String?,
     value: String,
@@ -514,10 +540,42 @@ private fun SectionField(
     enabled: Boolean,
     minLines: Int = 2,
     placeholder: String? = null,
+    isRecordingTarget: Boolean = false,
+    isTranscribingTarget: Boolean = false,
 ) {
+    val borderColor = when {
+        isRecordingTarget -> Amber
+        isTranscribingTarget -> Cobalt
+        else -> Line
+    }
+    val focusedBorderColor = when {
+        isRecordingTarget -> Amber
+        isTranscribingTarget -> Cobalt
+        else -> Cobalt
+    }
     Column {
         if (label != null) {
-            KhMetaText(text = label)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                KhMetaText(text = label)
+                when {
+                    isRecordingTarget -> Text(
+                        text = "Recording…",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Amber,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    isTranscribingTarget -> Text(
+                        text = "Transcribing…",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cobalt,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
             Spacer(Modifier.height(6.dp))
         }
         OutlinedTextField(
@@ -539,8 +597,8 @@ private fun SectionField(
             maxLines = 5,
             shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Cobalt,
-                unfocusedBorderColor = Line,
+                focusedBorderColor = focusedBorderColor,
+                unfocusedBorderColor = borderColor,
             ),
         )
     }
@@ -590,13 +648,16 @@ private fun DictationBottomToolbar(
     onSaveDraft: () -> Unit,
     wordCount: Int,
 ) {
+    val activeSection = uiState.recordingSection ?: uiState.transcribingSection
     val statusText = when {
-        uiState.isRecording -> "Recording… tap to stop"
-        uiState.isTranscribing -> "Whisper transcribing…"
-        uiState.savedLocally -> "Ready to sign · keep dictating to add more"
-        !uiState.canSubmit && wordCount == 0 -> "Add documentation before signing"
-        !uiState.canSubmit && uiState.isRecording -> "Stop recording to sign"
-        else -> "Tap mic, or use keyboard voice"
+        uiState.isRecording && activeSection != null ->
+            "Recording ${activeSection.displayLabel}… tap stop when done"
+        uiState.isTranscribing && activeSection != null ->
+            "Transcribing ${activeSection.displayLabel}…"
+        uiState.savedLocally -> "Ready to sign · dictate section by section"
+        !uiState.canSubmit && wordCount == 0 -> "Tap a section, then mic — or type"
+        uiState.isRecording || uiState.isTranscribing -> "Finish this section before signing"
+        else -> "Tap a section field, then mic to dictate"
     }
     val submitHint = when {
         uiState.isSubmitting -> ""

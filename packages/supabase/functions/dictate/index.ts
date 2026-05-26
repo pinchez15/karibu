@@ -3,8 +3,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
-import { checkRateLimit, getRateLimitKey } from '../_shared/rate-limit.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts'
+import { buildTranscriptionPrompt } from '../_shared/transcription.ts'
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
@@ -56,12 +57,21 @@ serve(async (req) => {
       )
     }
 
-    // Send directly to OpenAI Whisper
+    // Optional tail of transcript already on screen — improves continuity
+    // across ~5s streaming chunks and disambiguates clinical homophones.
+    const continuation = formData.get('context')
+    const section = formData.get('section')
+    const prompt = buildTranscriptionPrompt(
+      typeof continuation === 'string' ? continuation : null,
+      typeof section === 'string' ? section : null,
+    )
+
     const whisperForm = new FormData()
     whisperForm.append('file', audioFile, audioFile.name || 'dictation.webm')
     whisperForm.append('model', 'gpt-4o-transcribe')
     whisperForm.append('language', 'en')
     whisperForm.append('response_format', 'json')
+    whisperForm.append('prompt', prompt)
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
