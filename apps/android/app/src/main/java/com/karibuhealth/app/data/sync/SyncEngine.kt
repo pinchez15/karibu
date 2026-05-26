@@ -388,8 +388,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncSubmitPharmacyOrder(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(SubmitPharmacyOrderRequest.serializer(), entry.payload)
-            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        val decoded = json.decodeFromString(SubmitPharmacyOrderRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing rpc_submit_pharmacy_order: ${entry.entityId}")
         val result = supabaseApi.rpcSubmitPharmacyOrder(dto)
         if (!result.isSuccessful) {
@@ -400,8 +400,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncStartLab(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(StartLabRequest.serializer(), entry.payload)
-            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        val decoded = json.decodeFromString(StartLabRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing rpc_start_lab: ${entry.entityId}")
         val result = supabaseApi.rpcStartLab(dto)
         if (!result.isSuccessful) {
@@ -412,8 +412,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncRecordLabResult(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(RecordLabResultRequest.serializer(), entry.payload)
-            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        val decoded = json.decodeFromString(RecordLabResultRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing rpc_record_lab_result: ${entry.entityId}")
         val result = supabaseApi.rpcRecordLabResult(dto)
         if (!result.isSuccessful) {
@@ -424,8 +424,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncSetDispensingStatus(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(SetDispensingStatusRequest.serializer(), entry.payload)
-            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        val decoded = json.decodeFromString(SetDispensingStatusRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing rpc_set_dispensing_status: ${entry.entityId}")
         val result = supabaseApi.rpcSetDispensingStatus(dto)
         if (!result.isSuccessful) {
@@ -436,8 +436,8 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncRecordDispense(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(RecordDispenseRequest.serializer(), entry.payload)
-            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        val decoded = json.decodeFromString(RecordDispenseRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing rpc_record_dispense: ${entry.entityId}")
         val result = supabaseApi.rpcRecordDispense(dto)
         if (!result.isSuccessful) {

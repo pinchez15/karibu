@@ -11,11 +11,11 @@ import {
   Pill,
   FlaskConical,
   Sparkles,
-  Bell,
   ListTodo,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
+import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
 import { cn } from '@/lib/utils'
 
 export type WebShellRole = 'clinician' | 'pharmacy' | 'lab' | 'analyst'
@@ -172,23 +172,11 @@ export function WebShell({
 
         {/* Account */}
         {staff && (
-          <div className="p-3.5 border-t border-line-soft">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-cobalt-soft text-cobalt flex items-center justify-center font-semibold text-xs">
-                {staff.initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold truncate">{staff.displayName}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{staff.role}</div>
-              </div>
-              <button
-                className="text-muted-foreground hover:text-ink"
-                aria-label="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          <SidebarAccountMenu
+            displayName={staff.displayName}
+            role={staff.role}
+            initials={staff.initials}
+          />
         )}
       </aside>
 
@@ -201,6 +189,8 @@ export function WebShell({
 interface WebTopBarProps {
   title: string
   subtitle?: string
+  /** When false, subtitle uses normal sentence case (e.g. clinic dates). Default: meta label style. */
+  subtitleMeta?: boolean
   actions?: React.ReactNode
 }
 
@@ -208,14 +198,27 @@ interface WebTopBarProps {
  * Page header used inside WebShell — uppercase mono subtitle + large title.
  * Mirrors the pattern in karibu_design_files/web-clinician.jsx.
  */
-export function WebTopBar({ title, subtitle, actions }: WebTopBarProps) {
+export function WebTopBar({ title, subtitle, subtitleMeta = true, actions }: WebTopBarProps) {
   return (
-    <div className="px-8 py-5 border-b border-border bg-card flex items-center justify-between shrink-0">
-      <div>
-        {subtitle && <div className="kh-meta mb-1">{subtitle}</div>}
-        <h1 className="text-[22px] font-semibold tracking-tight">{title}</h1>
+    <div className="relative z-10 px-8 py-5 border-b border-border bg-card flex items-center justify-between gap-4 shrink-0">
+      <div className="min-w-0 flex-1">
+        {subtitle && (
+          <div
+            className={cn(
+              'mb-1',
+              subtitleMeta
+                ? 'kh-meta'
+                : 'text-[13px] text-muted-foreground',
+            )}
+          >
+            {subtitle}
+          </div>
+        )}
+        <h1 className="text-[22px] font-semibold tracking-tight truncate">{title}</h1>
       </div>
-      {actions && <div className="flex items-center gap-2.5">{actions}</div>}
+      {actions && (
+        <div className="relative z-20 flex shrink-0 items-center gap-2.5">{actions}</div>
+      )}
     </div>
   )
 }

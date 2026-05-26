@@ -58,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.domain.model.PatientLatestVitals
 import com.karibuhealth.app.domain.model.PatientTimelineEvent
+import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
@@ -692,7 +693,7 @@ private fun TodayCarePathwayBadges(visit: Visit) {
     ) {
         if (hasLab) {
             KhStatusPill(
-                text = "Lab · ${visit.labStatus.replace('_', ' ')}",
+                label = "Lab · ${visit.labStatus.replace('_', ' ')}",
                 kind = when (visit.labStatus) {
                     "done", "complete" -> KhStatusKind.Sent
                     "running", "pending" -> KhStatusKind.Lab
@@ -707,7 +708,7 @@ private fun TodayCarePathwayBadges(visit: Visit) {
                 "Pharm · ${visit.dispensingStatus.replace('_', ' ')}"
             }
             KhStatusPill(
-                text = pharmText,
+                label = pharmText,
                 kind = when (visit.dispensingStatus) {
                     "complete" -> KhStatusKind.Sent
                     "in_progress", "partial" -> KhStatusKind.PendingReview

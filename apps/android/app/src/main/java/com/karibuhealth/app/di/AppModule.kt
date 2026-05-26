@@ -1,6 +1,7 @@
 package com.karibuhealth.app.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.Module
 import dagger.Provides
@@ -18,4 +19,9 @@ object AppModule {
     fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
         return NetworkMonitor(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
 }

@@ -42,12 +42,6 @@ async function getVisitsToday(clinicId: string): Promise<number> {
   return count || 0
 }
 
-async function getPendingSyncCount(_clinicId: string): Promise<number> {
-  // Field-device sync state lives on the Android client. No server-side count
-  // today; placeholder returns 0 until that telemetry pipeline is wired up.
-  return 0
-}
-
 export default async function DashboardPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
@@ -58,11 +52,10 @@ export default async function DashboardPage() {
   if (staff.role === 'lab_tech') redirect('/dashboard/lab')
   if (staff.role === 'dispenser') redirect('/dashboard/pharmacy')
 
-  const [queue, reviewCount, visitsToday, pendingSync] = await Promise.all([
+  const [queue, reviewCount, visitsToday] = await Promise.all([
     getQueueData(staff.clinic_id),
     getReviewCount(staff.clinic_id),
     getVisitsToday(staff.clinic_id),
-    getPendingSyncCount(staff.clinic_id),
   ])
 
   return (
@@ -70,7 +63,6 @@ export default async function DashboardPage() {
       queue={queue}
       reviewCount={reviewCount}
       visitsToday={visitsToday}
-      pendingSync={pendingSync}
     />
   )
 }

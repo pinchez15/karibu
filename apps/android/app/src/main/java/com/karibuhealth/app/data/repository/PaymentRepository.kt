@@ -1,5 +1,6 @@
 package com.karibuhealth.app.data.repository
 
+import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.KaribuDatabase
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity

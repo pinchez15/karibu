@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Search, Filter, Sparkles, Smartphone } from 'lucide-react'
+import { Filter, Sparkles } from 'lucide-react'
+import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
+import { formatClinicDate } from '@/lib/format-clinic-date'
 import { cn } from '@/lib/utils'
 import type { QueueItem } from '@karibu/shared'
 
@@ -22,23 +24,13 @@ interface ClinicianDashboardProps {
   visitsToday?: number
   /** Average visit time today, in minutes (lightweight metric, can default later). */
   avgVisitMinutes?: number
-  /** Pending sync count from field devices, surfaced in the right column. */
-  pendingSync?: number
 }
-
-const FORMATTED_TODAY = new Intl.DateTimeFormat('en-GB', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-}).format(new Date()).toUpperCase().replace(/\s/g, ' · ')
 
 export function ClinicianDashboard({
   queue,
   reviewCount,
   visitsToday = 0,
   avgVisitMinutes,
-  pendingSync = 0,
 }: ClinicianDashboardProps) {
   const waiting = queue.length
   const avgLabel = avgVisitMinutes
@@ -49,25 +41,9 @@ export function ClinicianDashboard({
     <>
       <WebTopBar
         title="Today at the clinic"
-        subtitle={FORMATTED_TODAY}
-        actions={
-          <>
-            <div className="bg-background border border-border rounded-md px-3 py-2 flex items-center gap-2 text-muted-foreground text-[13px] w-[280px]">
-              <Search className="h-4 w-4" />
-              <span>Search patients, visits, codes</span>
-              <span className="ml-auto font-mono text-[11px] bg-card border border-border px-1.5 py-px rounded">
-                ⌘K
-              </span>
-            </div>
-            <div
-              className="bg-card text-muted-foreground border border-border rounded-md px-3 py-2 font-medium text-[13px] inline-flex items-center gap-1.5"
-              title="Visits are created on the Android clinician app"
-            >
-              <Smartphone className="h-3.5 w-3.5" />
-              New visit on Android
-            </div>
-          </>
-        }
+        subtitle={formatClinicDate()}
+        subtitleMeta={false}
+        actions={<ClinicianSearchBar />}
       />
 
       <div className="p-6 overflow-auto flex-1">
@@ -157,18 +133,18 @@ export function ClinicianDashboard({
 
           {/* Side column */}
           <div className="flex flex-col gap-4">
-            {/* AI review queue */}
+            {/* AI-structured notes awaiting clinician sign-off */}
             <div className="bg-card border border-amber/40 rounded-xl p-[18px]">
               <div className="flex items-center gap-1.5 text-amber kh-meta mb-2">
-                <Sparkles className="h-3.5 w-3.5" /> AI REVIEW QUEUE
+                <Sparkles className="h-3.5 w-3.5" /> NOTES TO REVIEW
               </div>
               <div className="text-[22px] font-semibold tracking-tight">
-                {reviewCount} {reviewCount === 1 ? 'note structured' : 'notes structured'}
+                {reviewCount} {reviewCount === 1 ? 'visit' : 'visits'}
               </div>
               <div className="text-[13px] text-muted-foreground mt-1">
                 {reviewCount === 0
-                  ? 'No pending reviews. AI suggestions will appear here.'
-                  : 'Confirm SOAP and HMIS codes before submitting.'}
+                  ? 'When AI structures a SOAP note from dictation, it appears here for you to confirm—not for scheduling.'
+                  : 'Confirm AI-structured SOAP notes and HMIS codes before the record is final.'}
               </div>
               <Link
                 href="/dashboard/review"
@@ -176,14 +152,6 @@ export function ClinicianDashboard({
               >
                 Open review queue
               </Link>
-            </div>
-
-            {/* Sync status — placeholder body until field-device telemetry ships */}
-            <div className="bg-card border border-border rounded-xl p-[18px]">
-              <div className="kh-meta mb-2">OFFLINE SYNC</div>
-              <div className="text-[13px] text-muted-foreground">
-                Field-device sync telemetry coming soon.
-              </div>
             </div>
           </div>
         </div>
