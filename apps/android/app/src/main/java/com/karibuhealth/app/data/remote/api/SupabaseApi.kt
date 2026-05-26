@@ -39,8 +39,14 @@ interface SupabaseApi {
         @Query("select") select: String = "*",
     ): List<PatientDto>
 
-    @POST("patients")
-    suspend fun createPatient(@Body patient: PatientCreateDto): List<PatientDto>
+    @GET("patients")
+    suspend fun getPatientById(
+        @Query("id") id: String,
+        @Query("select") select: String = "*",
+    ): List<PatientDto>
+
+    @POST("rpc/rpc_create_patient")
+    suspend fun rpcCreatePatient(@Body request: RpcCreatePatientRequest): Response<ResponseBody>
 
     // Visits
     @GET("visits")
@@ -83,9 +89,14 @@ interface SupabaseApi {
         @Query("select") select: String = "*",
     ): List<PatientNoteDto>
 
-    // Payments
-    @POST("payments")
-    suspend fun createPayment(@Body payment: PaymentCreateDto): List<PaymentDto>
+    // Pharmacy stock (read-only cache for offline dispense)
+    @GET("pharmacy_stock_items")
+    suspend fun getPharmacyStockItems(
+        @Query("clinic_id") clinicId: String,
+        @Query("active") active: String = "eq.true",
+        @Query("select") select: String = "*",
+        @Query("order") order: String = "drug_name.asc",
+    ): List<PharmacyStockItemDto>
 
     // Queue RPCs (SECURITY DEFINER -- bypass RLS).
     //

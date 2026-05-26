@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                 val isAuthenticated by viewModel.isAuthenticated.collectAsState()
                 val isOnline by viewModel.isOnline.collectAsState()
                 val pendingSyncCount by viewModel.pendingSyncCount.collectAsState()
+                val deviceSavedCount by viewModel.deviceSavedCount.collectAsState()
                 val pendingEntries by viewModel.pendingEntries.collectAsState()
                 val navController = rememberNavController()
 
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
                         OfflineBanner(
                             isOnline = isOnline,
                             pendingSyncCount = pendingSyncCount,
+                            deviceSavedCount = deviceSavedCount,
                             onClick = { showSyncSheet = true },
                         )
                     },

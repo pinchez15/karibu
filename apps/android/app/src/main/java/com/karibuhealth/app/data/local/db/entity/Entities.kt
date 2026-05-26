@@ -279,6 +279,24 @@ data class PatientVitalsEntity(
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )
 
+@Entity(
+    tableName = "pharmacy_stock_items",
+    indices = [Index("clinic_id")],
+)
+data class PharmacyStockItemEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "clinic_id") val clinicId: String,
+    @ColumnInfo(name = "drug_code") val drugCode: String,
+    @ColumnInfo(name = "drug_name") val drugName: String,
+    val formulation: String,
+    val strength: String?,
+    val unit: String,
+    @ColumnInfo(name = "quantity_on_hand") val quantityOnHand: Double,
+    @ColumnInfo(name = "low_stock_threshold") val lowStockThreshold: Double = 10.0,
+    val active: Boolean = true,
+    @ColumnInfo(name = "updated_at") val updatedAt: String = "",
+)
+
 @Entity(tableName = "sync_queue")
 data class SyncQueueEntry(
     @PrimaryKey val id: String,

@@ -20,6 +20,7 @@ class SyncEngineTest {
     private lateinit var patientVitalsDao: PatientVitalsDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
+    private lateinit var outboxReconciler: OutboxReconciler
     private lateinit var syncEngine: SyncEngine
 
     @Before
@@ -31,6 +32,7 @@ class SyncEngineTest {
         patientVitalsDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
+        outboxReconciler = mockk(relaxed = true)
 
         syncEngine = SyncEngine(
             syncQueueDao = syncQueueDao,
@@ -40,6 +42,7 @@ class SyncEngineTest {
             patientVitalsDao = patientVitalsDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
+            outboxReconciler = outboxReconciler,
             json = Json { ignoreUnknownKeys = true },
         )
     }
@@ -58,6 +61,7 @@ class SyncEngineTest {
     fun `processQueue returns 0 when queue is empty`() = runTest {
         every { networkMonitor.isOnline() } returns true
         coEvery { syncQueueDao.getRetryable(any()) } returns emptyList()
+        coEvery { syncQueueDao.getPending() } returns emptyList()
 
         val result = syncEngine.processQueue()
 

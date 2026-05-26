@@ -22,6 +22,7 @@ class PullSyncManager @Inject constructor(
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
     private val networkMonitor: NetworkMonitor,
+    private val outboxReconciler: OutboxReconciler,
 ) {
     companion object {
         private const val TAG = "PullSyncManager"
@@ -94,6 +95,8 @@ class PullSyncManager @Inject constructor(
                 }
             }
         }
+
+        outboxReconciler.reconcilePendingWithLocalState()
 
         Log.d(TAG, "Pull sync complete")
     }

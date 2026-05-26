@@ -89,7 +89,7 @@ fun PharmacyHomeScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.dispense(item.visitId, "dispensed", notes.ifBlank { null })
+                        viewModel.dispense(item.visitId, "dispensed", notes.ifBlank { null }, item.medications)
                         dispenseDialogVisit = null
                     },
                 ) { Text("Dispensed") }
@@ -98,7 +98,7 @@ fun PharmacyHomeScreen(
                 Row {
                     TextButton(
                         onClick = {
-                            viewModel.dispense(item.visitId, "partial", notes.ifBlank { null })
+                            viewModel.dispense(item.visitId, "partial", notes.ifBlank { null }, item.medications)
                             dispenseDialogVisit = null
                         },
                     ) { Text("Partial") }

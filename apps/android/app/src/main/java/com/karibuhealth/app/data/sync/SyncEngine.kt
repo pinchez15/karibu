@@ -23,6 +23,7 @@ class SyncEngine @Inject constructor(
     private val patientVitalsDao: PatientVitalsDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val outboxReconciler: OutboxReconciler,
     private val json: Json,
 ) {
     companion object {
@@ -41,6 +42,7 @@ class SyncEngine @Inject constructor(
 
         val sorted = topologicalSort(entries)
         var processedCount = 0
+        var failedCount = 0
 
         for (entry in sorted) {
             if (!networkMonitor.isOnline()) break
@@ -61,6 +63,8 @@ class SyncEngine @Inject constructor(
                 processedCount++
             } catch (e: Exception) {
                 Log.e(TAG, "Sync failed for ${entry.id}: ${e.message}")
+                failedCount++
+                SyncMetrics.recordRpcError(entry.operationType, null, e.message)
                 val nextAttempt = entry.attempts + 1
                 val backoffMs = BACKOFF_BASE_MS * (1L shl minOf(nextAttempt, 5))
                 val nextStatus = if (nextAttempt >= entry.maxAttempts) "failed" else "pending"
@@ -87,6 +91,12 @@ class SyncEngine @Inject constructor(
         // Clean up old completed entries (older than 7 days)
         val sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000)
         syncQueueDao.deleteCompleted(sevenDaysAgo)
+
+        if (processedCount > 0) {
+            outboxReconciler.reconcilePendingWithLocalState()
+        }
+        SyncMetrics.recordQueueProcessed(processedCount, failedCount)
+        SyncMetrics.recordOutboxDepth(syncQueueDao.getPending().size)
 
         return processedCount
     }
@@ -121,49 +131,24 @@ class SyncEngine @Inject constructor(
 
     private suspend fun syncCreatePatient(entry: SyncQueueEntry) {
         val dto = json.decodeFromString(PatientCreateDto.serializer(), entry.payload)
-        Log.d(TAG, "Syncing create_patient: ${entry.entityId}")
+        Log.d(TAG, "Syncing create_patient via RPC: ${entry.entityId}")
 
-        try {
-            val result = supabaseApi.createPatient(dto)
-            val serverPatient = result.firstOrNull()
-            if (serverPatient != null) {
-                patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                Log.d(TAG, "Patient synced: ${serverPatient.id}")
-                // Phase 6 fix: dependent-payload walk on the HTTP 200 success
-                // path (was previously only inside the 409 branch). In the
-                // common case the server preserves the client-supplied UUID,
-                // so this is a no-op — but if any future server-side behavior
-                // rewrites the id, downstream visit/note payloads referencing
-                // the local UUID would fail FK validation. This makes the
-                // success and conflict paths symmetric.
-                if (serverPatient.id != entry.entityId) {
-                    propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
-                }
+        val response = supabaseApi.rpcCreatePatient(dto.toRpcRequest(clientOpId = entry.id))
+        if (!response.isSuccessful) {
+            SyncMetrics.recordRpcError("create_patient", response.code(), response.errorBody()?.string())
+            throw IllegalStateException(
+                "rpc_create_patient HTTP ${response.code()} ${response.errorBody()?.string()?.take(300)}".trim(),
+            )
+        }
+
+        val serverPatient = supabaseApi.getPatientById("eq.${dto.id}").firstOrNull()
+        if (serverPatient != null) {
+            patientDao.upsert(serverPatient.toEntity(isSynced = true))
+            if (serverPatient.id != entry.entityId) {
+                propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
             }
-        } catch (e: retrofit2.HttpException) {
-            if (e.code() == 409) {
-                if (dto.whatsappNumber.isNullOrBlank()) {
-                    // No phone → no unique-by-phone conflict can fire (the
-                    // partial unique index from 022 only covers WHERE
-                    // whatsapp_number IS NOT NULL). The 409 came from
-                    // something else (most likely a duplicate id from a
-                    // partial sync retry); re-throw to retry with backoff.
-                    throw e
-                }
-                Log.w(TAG, "Patient conflict (409), fetching existing")
-                val existing = supabaseApi.lookupPatient(
-                    "eq.${dto.clinicId}",
-                    "eq.${dto.whatsappNumber}",
-                )
-                existing.firstOrNull()?.let { serverPatient ->
-                    patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                    if (serverPatient.id != entry.entityId) {
-                        propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
-                    }
-                }
-            } else {
-                throw e
-            }
+        } else {
+            patientDao.updateSyncState(dto.id, true)
         }
     }
 

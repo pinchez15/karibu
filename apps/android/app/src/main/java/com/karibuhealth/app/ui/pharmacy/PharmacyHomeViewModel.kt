@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.pharmacy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.repository.PharmacyStockRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.WorklistRepository
@@ -30,6 +31,7 @@ class PharmacyHomeViewModel @Inject constructor(
     private val staffRepository: StaffRepository,
     private val worklistRepository: WorklistRepository,
     private val visitRepository: VisitRepository,
+    private val pharmacyStockRepository: PharmacyStockRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PharmacyHomeUiState())
@@ -48,6 +50,7 @@ class PharmacyHomeViewModel @Inject constructor(
         val staff = _uiState.value.staff ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+            pharmacyStockRepository.refreshStock(staff.clinicId)
             val items = worklistRepository.getNeedsPharmacy(staff.clinicId)
             _uiState.update { it.copy(items = items, isLoading = false) }
         }
@@ -65,12 +68,22 @@ class PharmacyHomeViewModel @Inject constructor(
         }
     }
 
-    fun dispense(visitId: String, status: String, notes: String?) {
-        val staffId = _uiState.value.staff?.id ?: return
+    fun dispense(visitId: String, status: String, notes: String?, medications: String?) {
+        val staff = _uiState.value.staff ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching {
-                visitRepository.recordDispense(visitId, status, notes, staffId)
+                val movements = pharmacyStockRepository.applyOfflineDispenseMovements(
+                    clinicId = staff.clinicId,
+                    medications = medications,
+                )
+                visitRepository.recordDispense(
+                    visitId = visitId,
+                    status = status,
+                    notes = notes,
+                    staffId = staff.id,
+                    movementsJson = movements,
+                )
             }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()
             _uiState.update { it.copy(actionVisitId = null) }

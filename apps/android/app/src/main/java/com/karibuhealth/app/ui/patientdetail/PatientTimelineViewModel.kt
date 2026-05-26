@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.PatientRepository
+import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.domain.model.PatientLatestVitals
 import com.karibuhealth.app.domain.model.PatientTimelineEvent
@@ -37,11 +39,14 @@ data class PatientTimelineUiState(
     val isLoadingMore: Boolean = false,
     val hasMore: Boolean = true,
     val error: String? = null,
+    /** Today's visit for lab/pharmacy pathway badges on the chart header. */
+    val todayVisit: Visit? = null,
 )
 
 @HiltViewModel
 class PatientTimelineViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
+    private val visitRepository: VisitRepository,
     @Suppress("unused") private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -94,15 +99,20 @@ class PatientTimelineViewModel @Inject constructor(
             val timelineDeferred = async {
                 patientRepository.getPatientTimeline(patientId = patientId, limit = PAGE_SIZE)
             }
+            val todayVisitDeferred = async {
+                visitRepository.getLatestVisitForPatientToday(patientId)
+            }
 
             val patient = patientDeferred.await()
             val vitals = vitalsDeferred.await()
             val events = timelineDeferred.await()
+            val todayVisit = todayVisitDeferred.await()
 
             _uiState.update {
                 it.copy(
                     patient = patient ?: it.patient,
                     latestVitals = vitals ?: it.latestVitals,
+                    todayVisit = todayVisit,
                     events = events,
                     isLoading = false,
                     hasMore = events.size >= PAGE_SIZE,

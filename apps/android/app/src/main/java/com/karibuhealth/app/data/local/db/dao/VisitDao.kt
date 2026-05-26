@@ -211,4 +211,46 @@ interface VisitDao {
         dispensedBy: String?,
         updatedAt: String,
     )
+
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND tests_ordered IS NOT NULL
+          AND TRIM(tests_ordered) <> ''
+          AND lab_status IN ('pending', 'running')
+        ORDER BY checked_in_at ASC
+    """)
+    suspend fun getLocalNeedsLabVisits(clinicId: String, date: String): List<VisitEntity>
+
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND medications IS NOT NULL
+          AND TRIM(medications) <> ''
+          AND pharmacy_order_submitted_at IS NOT NULL
+          AND dispensing_status IN ('not_started', 'in_progress', 'partial', 'out_of_stock')
+        ORDER BY pharmacy_order_submitted_at ASC
+    """)
+    suspend fun getLocalNeedsPharmacyVisits(clinicId: String, date: String): List<VisitEntity>
+
+    @Query("""
+        SELECT * FROM visits
+        WHERE patient_id = :patientId
+          AND visit_date = :date
+        ORDER BY checked_in_at DESC
+        LIMIT 1
+    """)
+    suspend fun getLatestVisitForPatientToday(patientId: String, date: String): VisitEntity?
+
+    @Transaction
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND queue_status IN ('waiting', 'with_nurse', 'ready_for_doctor', 'with_doctor')
+        ORDER BY checked_in_at DESC
+    """)
+    fun getOpenEncountersToday(clinicId: String, date: String): Flow<List<VisitWithPatient>>
 }

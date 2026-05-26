@@ -16,6 +16,7 @@ import com.karibuhealth.app.data.remote.dto.StartLabRequest
 import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.data.sync.SyncQueueHelper
+import com.karibuhealth.app.data.sync.VisitMerge
 import com.karibuhealth.app.domain.model.*
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,16 @@ class VisitRepository @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
 ) {
+    fun getOpenEncountersToday(clinicId: String): Flow<List<VisitWithPatient>> {
+        val today = LocalDate.now().toString()
+        return visitDao.getOpenEncountersToday(clinicId, today)
+    }
+
+    suspend fun getLatestVisitForPatientToday(patientId: String): Visit? {
+        val today = LocalDate.now().toString()
+        return visitDao.getLatestVisitForPatientToday(patientId, today)?.toDomain()
+    }
+
     fun getTodayQueue(clinicId: String): Flow<List<VisitWithPatient>> {
         val today = LocalDate.now().toString()
         return visitDao.getTodayQueue(clinicId, today)
@@ -344,6 +355,7 @@ class VisitRepository @Inject constructor(
         status: String,
         notes: String?,
         staffId: String,
+        movementsJson: String = "[]",
     ): String? {
         val now = Instant.now().toString()
         return enqueueVisitRpc(
@@ -351,7 +363,12 @@ class VisitRepository @Inject constructor(
             operationType = "rpc_record_dispense",
             payload = json.encodeToString(
                 RecordDispenseRequest.serializer(),
-                RecordDispenseRequest(visitId = visitId, status = status, notes = notes),
+                RecordDispenseRequest(
+                    visitId = visitId,
+                    status = status,
+                    notes = notes,
+                    movements = movementsJson,
+                ),
             ),
             localMutator = {
                 visitDao.updateDispensingState(
@@ -369,6 +386,7 @@ class VisitRepository @Inject constructor(
                         visitId = visitId,
                         status = status,
                         notes = notes,
+                        movements = movementsJson,
                         clientOpId = it,
                     ),
                 )
@@ -495,7 +513,11 @@ class VisitRepository @Inject constructor(
             try {
                 val today = LocalDate.now().toString()
                 val remote = supabaseApi.getVisits("eq.$clinicId", "eq.$today")
-                visitDao.upsertAll(remote.map { it.toEntity(isSynced = true) })
+                remote.forEach { dto ->
+                    val local = visitDao.getByIdOnce(dto.id)
+                    val merged = VisitMerge.mergeRemote(local, dto.toEntity(isSynced = true))
+                    visitDao.upsert(merged)
+                }
             } catch (_: Exception) {
                 // Offline-first: silently use cache
             }
@@ -507,7 +529,10 @@ class VisitRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val remote = supabaseApi.getVisitById("eq.$visitId")
-                remote.firstOrNull()?.let { visitDao.upsert(it.toEntity(isSynced = true)) }
+                remote.firstOrNull()?.let { dto ->
+                    val local = visitDao.getByIdOnce(dto.id)
+                    visitDao.upsert(VisitMerge.mergeRemote(local, dto.toEntity(isSynced = true)))
+                }
             } catch (_: Exception) {}
         }
     }

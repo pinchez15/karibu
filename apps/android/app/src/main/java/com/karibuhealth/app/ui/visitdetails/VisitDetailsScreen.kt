@@ -260,6 +260,23 @@ fun VisitDetailsScreen(
                 // Renders only when there's something to show: tests ordered,
                 // a lab result, medications, or a dispensing decision.
                 uiState.visit?.let { visit ->
+                    val canSendPharmacy =
+                        !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
+                    if (canSendPharmacy) {
+                        OutlinedButton(
+                            onClick = { viewModel.sendToPharmacy() },
+                            enabled = !uiState.isSendingToPharmacy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
+                                else "Send to pharmacy",
+                            )
+                        }
+                        uiState.pharmacyMessage?.let { msg ->
+                            Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        }
+                    }
                     val hasLab =
                         !visit.testsOrdered.isNullOrBlank() || !visit.labResults.isNullOrBlank()
                     val hasPharmacy =

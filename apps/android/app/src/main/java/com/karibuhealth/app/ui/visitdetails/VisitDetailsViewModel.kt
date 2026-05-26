@@ -46,6 +46,8 @@ data class VisitDetailsUiState(
      * record_review_response RPC lands.
      */
     val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
+    val isSendingToPharmacy: Boolean = false,
+    val pharmacyMessage: String? = null,
 )
 
 data class SyncErrorInfo(
@@ -203,6 +205,28 @@ class VisitDetailsViewModel @Inject constructor(
         val noteId = _uiState.value.providerNote?.id ?: return
         viewModelScope.launch {
             noteRepository.cosignNote(noteId = noteId)
+        }
+    }
+
+    fun sendToPharmacy() {
+        val visit = _uiState.value.visit ?: return
+        val staffId = _uiState.value.currentStaff?.id ?: return
+        val meds = visit.medications?.trim().orEmpty()
+        if (meds.isEmpty()) {
+            _uiState.update { it.copy(pharmacyMessage = "Add medications before sending to pharmacy") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSendingToPharmacy = true, pharmacyMessage = null) }
+            runCatching {
+                visitRepository.submitPharmacyOrder(visit.id, meds, staffId)
+                visitRepository.refreshVisit(visit.id)
+            }.onSuccess {
+                _uiState.update { it.copy(pharmacyMessage = "Sent to pharmacy") }
+            }.onFailure { e ->
+                _uiState.update { it.copy(pharmacyMessage = e.message ?: "Could not send to pharmacy") }
+            }
+            _uiState.update { it.copy(isSendingToPharmacy = false) }
         }
     }
 }

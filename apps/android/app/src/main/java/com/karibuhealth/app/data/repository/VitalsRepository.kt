@@ -9,6 +9,7 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.PatientVitalsCreateDto
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.domain.model.PatientVitals
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ import javax.inject.Singleton
 class VitalsRepository @Inject constructor(
     private val patientVitalsDao: PatientVitalsDao,
     private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val authTokenStore: AuthTokenStore,
@@ -116,7 +118,7 @@ class VitalsRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueDao.insert(syncEntry)
-        vitals to syncEntry.id
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        vitals to queuedId
     }
 }

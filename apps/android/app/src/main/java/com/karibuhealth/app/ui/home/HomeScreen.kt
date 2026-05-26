@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -58,6 +59,7 @@ fun HomeScreen(
     onNavigateToVisitDetails: (String) -> Unit,
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
+    onNavigateToBilling: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -126,13 +128,14 @@ fun HomeScreen(
                             viewModel.signOut()
                         },
                         onOpenWorklists = onNavigateToWorklists,
+                        onOpenBilling = onNavigateToBilling,
                     )
                 }
 
                 item {
                     HomeHero(
                         seen = uiState.doneTodayCount,
-                        waiting = uiState.queue.size,
+                        waiting = uiState.openEncounters.size,
                     )
                 }
 
@@ -221,6 +224,23 @@ fun HomeScreen(
                     }
                 }
 
+                if (uiState.searchQuery.isBlank() && uiState.openEncounters.isNotEmpty()) {
+                    item {
+                        SectionHeader(
+                            title = "Open encounters",
+                            countSuffix = uiState.openEncounters.size,
+                        )
+                    }
+                    items(uiState.openEncounters, key = { "enc-${it.visit.id}" }) { v ->
+                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                            QueueCard(
+                                visit = v,
+                                onClick = { onNavigateToVisitDetails(v.visit.id) },
+                            )
+                        }
+                    }
+                }
+
                 item {
                     Row(
                         modifier = Modifier
@@ -229,7 +249,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "Queue",
+                            text = "My queue",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -356,6 +376,7 @@ private fun HomeAppBar(
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
     onOpenWorklists: () -> Unit,
+    onOpenBilling: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -374,9 +395,14 @@ private fun HomeAppBar(
             )
         }
 
-        // Phase 5 — worklists entry point. Sits next to the profile avatar so
-        // it's reachable from the same one-tap zone the clinician already
-        // uses for sign-out / clinic info.
+        IconButton(onClick = onOpenBilling) {
+            Icon(
+                imageVector = Icons.Default.Payments,
+                contentDescription = "Billing",
+                tint = Cobalt,
+            )
+        }
+
         IconButton(onClick = onOpenWorklists) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.List,

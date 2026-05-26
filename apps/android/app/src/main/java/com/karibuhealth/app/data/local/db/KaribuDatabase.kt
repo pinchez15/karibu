@@ -16,8 +16,9 @@ import com.karibuhealth.app.data.local.db.entity.*
         PatientVitalsEntity::class,
         PaymentEntity::class,
         SyncQueueEntry::class,
+        PharmacyStockItemEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {
@@ -30,4 +31,5 @@ abstract class KaribuDatabase : RoomDatabase() {
     abstract fun patientVitalsDao(): PatientVitalsDao
     abstract fun paymentDao(): PaymentDao
     abstract fun syncQueueDao(): SyncQueueDao
+    abstract fun pharmacyStockDao(): PharmacyStockDao
 }

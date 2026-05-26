@@ -34,6 +34,7 @@ data class HomeUiState(
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
     val isLoading: Boolean = true,
+    val openEncounters: List<VisitWithPatient> = emptyList(),
 ) {
     val todayEncounterCount: Int
         get() = buildSet {
@@ -66,6 +67,11 @@ class HomeViewModel @Inject constructor(
             launch {
                 staffRepository.getClinic(staff.clinicId).collect { clinic ->
                     _uiState.update { it.copy(clinic = clinic) }
+                }
+            }
+            launch {
+                visitRepository.getOpenEncountersToday(staff.clinicId).collect { list ->
+                    _uiState.update { it.copy(openEncounters = list) }
                 }
             }
             launch {

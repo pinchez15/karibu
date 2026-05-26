@@ -179,7 +179,7 @@ export function VisitDetailClient({
                   visitId={visit.id}
                   medications={visit.medications}
                   alreadySubmitted={!!visit.pharmacy_order_submitted_at}
-                  staffRole={staffRole}
+                  staffRole={staffRole ?? null}
                 />
               </div>
             )}

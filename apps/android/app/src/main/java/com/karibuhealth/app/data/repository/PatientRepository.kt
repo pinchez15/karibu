@@ -8,6 +8,9 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.FindDuplicateCandidatesRequest
+import com.karibuhealth.app.data.remote.dto.toRpcRequest
+import com.karibuhealth.app.data.sync.PatientMerge
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.remote.dto.GetPatientLatestVitalsRequest
 import com.karibuhealth.app.data.remote.dto.GetPatientTimelineRequest
 import com.karibuhealth.app.domain.model.DuplicateCandidate
@@ -30,6 +33,7 @@ class PatientRepository @Inject constructor(
     private val database: KaribuDatabase,
     private val patientDao: PatientDao,
     private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
@@ -169,23 +173,27 @@ class PatientRepository @Inject constructor(
         // Local-first write: insert as unsynced.
         patientDao.upsert(patient.toEntity(isSynced = false, localCreatedAt = System.currentTimeMillis()))
 
+        val syncEntryId = UUID.randomUUID().toString()
+
         if (networkMonitor.isOnline()) {
             try {
-                val result = supabaseApi.createPatient(createDto)
-                val serverPatient = result.firstOrNull()
-                if (serverPatient != null) {
-                    patientDao.upsert(serverPatient.toEntity(isSynced = true))
-                } else {
-                    patientDao.upsert(patient.toEntity(isSynced = true))
+                val response = supabaseApi.rpcCreatePatient(createDto.toRpcRequest(clientOpId = syncEntryId))
+                if (response.isSuccessful) {
+                    val serverPatient = supabaseApi.getPatientById("eq.${patient.id}").firstOrNull()
+                    if (serverPatient != null) {
+                        patientDao.upsert(serverPatient.toEntity(isSynced = true))
+                    } else {
+                        patientDao.upsert(patient.toEntity(isSynced = true))
+                    }
+                    return@withContext patient to null
                 }
-                return@withContext patient to null
             } catch (_: Exception) {
                 // Fall through to queue path
             }
         }
 
         val syncEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
+            id = syncEntryId,
             operationType = "create_patient",
             entityType = "patients",
             entityId = patient.id,
@@ -197,8 +205,8 @@ class PatientRepository @Inject constructor(
             attempts = 0,
             createdAt = System.currentTimeMillis(),
         )
-        syncQueueDao.insert(syncEntry)
-        patient to syncEntry.id
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        patient to queuedId
     }
 
     suspend fun refreshPatients(clinicId: String) {
@@ -206,7 +214,11 @@ class PatientRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val remote = supabaseApi.getPatients("eq.$clinicId")
-                patientDao.upsertAll(remote.map { it.toEntity(isSynced = true) })
+                remote.forEach { dto ->
+                    val local = patientDao.getByIdOnce(dto.id)
+                    val merged = PatientMerge.mergeRemote(local, dto.toEntity(isSynced = true))
+                    patientDao.upsert(merged)
+                }
             } catch (_: Exception) {
                 // Silently fail -- offline-first means we use cached data
             }

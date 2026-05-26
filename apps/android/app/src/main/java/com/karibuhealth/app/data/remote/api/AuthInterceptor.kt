@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.remote.api
 
 import com.karibuhealth.app.BuildConfig
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.sync.SyncMetrics
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -23,11 +24,12 @@ class AuthInterceptor @Inject constructor(
 
         if (response.code == 401 && authTokenStore.getTokenBlocking() != null) {
             response.close()
-            runBlocking {
-                runCatching { clerkAuthManager.get().refreshToken() }
+            val refreshed = runBlocking {
+                runCatching { clerkAuthManager.get().refreshToken() }.isSuccess
             }
             request = buildRequest(chain, authTokenStore.getTokenBlocking())
             response = chain.proceed(request)
+            SyncMetrics.recordAuth401(retrySucceeded = response.code != 401 && refreshed)
         }
 
         return response

@@ -144,6 +144,9 @@ fun PatientTimelineScreen(
                         if (!sub.isNullOrBlank()) {
                             KhMetaText(text = sub)
                         }
+                        uiState.todayVisit?.let { visit ->
+                            TodayCarePathwayBadges(visit = visit)
+                        }
                     }
                 },
                 navigationIcon = {
@@ -674,6 +677,45 @@ private fun EmptyHint(text: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun TodayCarePathwayBadges(visit: Visit) {
+    val hasLab = visit.testsOrdered?.isNotBlank() == true || visit.labStatus != "not_ordered"
+    val hasPharm = !visit.medications.isNullOrBlank()
+    if (!hasLab && !hasPharm) return
+
+    Row(
+        modifier = Modifier.padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (hasLab) {
+            KhStatusPill(
+                text = "Lab · ${visit.labStatus.replace('_', ' ')}",
+                kind = when (visit.labStatus) {
+                    "done", "complete" -> KhStatusKind.Sent
+                    "running", "pending" -> KhStatusKind.Lab
+                    else -> KhStatusKind.Waiting
+                },
+            )
+        }
+        if (hasPharm) {
+            val pharmText = if (visit.pharmacyOrderSubmittedAt == null) {
+                "Pharm · order pending"
+            } else {
+                "Pharm · ${visit.dispensingStatus.replace('_', ' ')}"
+            }
+            KhStatusPill(
+                text = pharmText,
+                kind = when (visit.dispensingStatus) {
+                    "complete" -> KhStatusKind.Sent
+                    "in_progress", "partial" -> KhStatusKind.PendingReview
+                    "out_of_stock" -> KhStatusKind.Errored
+                    else -> KhStatusKind.Waiting
+                },
+            )
+        }
     }
 }
 

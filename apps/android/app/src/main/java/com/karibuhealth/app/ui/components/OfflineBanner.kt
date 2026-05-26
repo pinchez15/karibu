@@ -23,11 +23,12 @@ import com.karibuhealth.app.ui.theme.Amber as KaribuWarning
 fun OfflineBanner(
     isOnline: Boolean,
     pendingSyncCount: Int,
+    deviceSavedCount: Int = 0,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
-        visible = !isOnline || pendingSyncCount > 0,
+        visible = !isOnline || pendingSyncCount > 0 || deviceSavedCount > 0,
         enter = slideInVertically(),
         exit = slideOutVertically(),
         modifier = modifier,
@@ -55,9 +56,14 @@ fun OfflineBanner(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = when {
-                    !isOnline -> "You're offline. Data is saved locally."
-                    tappable -> "$pendingSyncCount item${if (pendingSyncCount != 1) "s" else ""} pending sync — tap to review"
-                    else -> "$pendingSyncCount item${if (pendingSyncCount != 1) "s" else ""} pending sync"
+                    !isOnline -> "Offline — saved on this device"
+                    pendingSyncCount > 0 && tappable ->
+                        "$pendingSyncCount to sync to cloud — tap for details"
+                    pendingSyncCount > 0 ->
+                        "$pendingSyncCount to sync to cloud"
+                    deviceSavedCount > 0 ->
+                        "$deviceSavedCount saved on device"
+                    else -> "Syncing…"
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = if (!isOnline) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,

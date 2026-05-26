@@ -79,6 +79,64 @@ data class PatientCreateDto(
     @SerialName("national_id") val nationalId: String? = null,
 )
 
+@Serializable
+data class RpcCreatePatientRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_first_name") val firstName: String? = null,
+    @SerialName("p_last_name") val lastName: String? = null,
+    @SerialName("p_whatsapp_number") val whatsappNumber: String? = null,
+    @SerialName("p_date_of_birth") val dateOfBirth: String? = null,
+    @SerialName("p_sex") val sex: String? = null,
+    @SerialName("p_birth_year") val birthYear: Int? = null,
+    @SerialName("p_approximate_age") val approximateAge: Int? = null,
+    @SerialName("p_age_recorded_at") val ageRecordedAt: String? = null,
+    @SerialName("p_dob_precision") val dobPrecision: String = "unknown",
+    @SerialName("p_village") val village: String? = null,
+    @SerialName("p_parish") val parish: String? = null,
+    @SerialName("p_subcounty") val subcounty: String? = null,
+    @SerialName("p_district") val district: String? = null,
+    @SerialName("p_guardian_name") val guardianName: String? = null,
+    @SerialName("p_national_id") val nationalId: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+fun PatientCreateDto.toRpcRequest(clientOpId: String? = null) = RpcCreatePatientRequest(
+    id = id,
+    clinicId = clinicId,
+    firstName = firstName,
+    lastName = lastName,
+    whatsappNumber = whatsappNumber,
+    dateOfBirth = dateOfBirth,
+    sex = sex,
+    birthYear = birthYear,
+    approximateAge = approximateAge,
+    ageRecordedAt = ageRecordedAt,
+    dobPrecision = dobPrecision,
+    village = village,
+    parish = parish,
+    subcounty = subcounty,
+    district = district,
+    guardianName = guardianName,
+    nationalId = nationalId,
+    clientOpId = clientOpId,
+)
+
+@Serializable
+data class PharmacyStockItemDto(
+    val id: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("drug_code") val drugCode: String,
+    @SerialName("drug_name") val drugName: String,
+    val formulation: String,
+    val strength: String? = null,
+    val unit: String,
+    @SerialName("quantity_on_hand") val quantityOnHand: Double,
+    @SerialName("low_stock_threshold") val lowStockThreshold: Double? = null,
+    val active: Boolean = true,
+    @SerialName("updated_at") val updatedAt: String = "",
+)
+
 // Return shape of rpc_find_duplicate_candidates / rpc_search_patients (migration
 // 038). match_reasons is an ARRAY_REMOVE(...) result so SQL guarantees no NULLs
 // inside, but we model it as List<String?> defensively in case Postgres returns

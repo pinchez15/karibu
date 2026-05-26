@@ -33,4 +33,7 @@ sealed interface NavRoute {
     // Reached from the Home app bar; HC III role-specific homes will
     // hand-pick which sections to render but reuse the same RPCs.
     @Serializable data object Worklists : NavRoute
+
+    /** Visits with outstanding payment — `rpc_worklist_needs_payment`. */
+    @Serializable data object Billing : NavRoute
 }

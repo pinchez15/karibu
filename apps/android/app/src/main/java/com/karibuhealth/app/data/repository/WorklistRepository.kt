@@ -1,5 +1,7 @@
 package com.karibuhealth.app.data.repository
 
+import com.karibuhealth.app.data.local.db.dao.PatientDao
+import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.CareTaskRow
 import com.karibuhealth.app.data.remote.dto.CareTasksWorklistRequest
@@ -41,6 +43,8 @@ import javax.inject.Singleton
 class WorklistRepository @Inject constructor(
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val visitDao: VisitDao,
+    private val patientDao: PatientDao,
 ) {
 
     suspend fun getNeedsVitals(
@@ -68,22 +72,28 @@ class WorklistRepository @Inject constructor(
     }
 
     suspend fun getNeedsLab(clinicId: String): List<NeedsLabItem> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
-        runCatching {
-            supabaseApi.rpcWorklistNeedsLab(
-                WorklistClinicOnlyRequest(clinicId = clinicId),
-            ).map { it.toDomain() }
-        }.getOrElse { emptyList() }
+        if (networkMonitor.isOnline()) {
+            runCatching {
+                supabaseApi.rpcWorklistNeedsLab(
+                    WorklistClinicOnlyRequest(clinicId = clinicId),
+                ).map { it.toDomain() }
+            }.getOrElse { visitDao.mapLocalLabQueue(clinicId, patientDao) }
+        } else {
+            visitDao.mapLocalLabQueue(clinicId, patientDao)
+        }
     }
 
     suspend fun getNeedsPharmacy(clinicId: String): List<NeedsPharmacyItem> =
         withContext(Dispatchers.IO) {
-            if (!networkMonitor.isOnline()) return@withContext emptyList()
-            runCatching {
-                supabaseApi.rpcWorklistNeedsPharmacy(
-                    WorklistClinicOnlyRequest(clinicId = clinicId),
-                ).map { it.toDomain() }
-            }.getOrElse { emptyList() }
+            if (networkMonitor.isOnline()) {
+                runCatching {
+                    supabaseApi.rpcWorklistNeedsPharmacy(
+                        WorklistClinicOnlyRequest(clinicId = clinicId),
+                    ).map { it.toDomain() }
+                }.getOrElse { visitDao.mapLocalPharmacyQueue(clinicId, patientDao) }
+            } else {
+                visitDao.mapLocalPharmacyQueue(clinicId, patientDao)
+            }
         }
 
     suspend fun getNeedsPayment(clinicId: String): List<NeedsPaymentItem> =

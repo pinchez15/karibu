@@ -62,4 +62,7 @@ interface PatientDao {
 
     @Query("SELECT COUNT(*) FROM patients WHERE clinic_id = :clinicId AND is_synced = 0")
     suspend fun getUnsyncedCount(clinicId: String): Int
+
+    @Query("UPDATE patients SET is_synced = :isSynced WHERE id = :id")
+    suspend fun updateSyncState(id: String, isSynced: Boolean)
 }
