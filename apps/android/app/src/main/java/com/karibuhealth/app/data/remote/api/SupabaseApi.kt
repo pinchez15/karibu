@@ -224,6 +224,9 @@ interface SupabaseApi {
         @Query("order") order: String = "created_at.asc",
     ): List<AiReviewSuggestionDto>
 
+    @POST("rpc/rpc_record_review_response")
+    suspend fun rpcRecordReviewResponse(@Body request: RecordReviewResponseRequest): Response<ResponseBody>
+
     // EHR pivot (migration 045)
     @POST("rpc/rpc_submit_pharmacy_order")
     suspend fun rpcSubmitPharmacyOrder(@Body request: SubmitPharmacyOrderRequest): Response<ResponseBody>

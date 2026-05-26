@@ -642,13 +642,7 @@ data class PatientLatestVitalsDto(
     @SerialName("muac_cm_at") val muacCmAt: String? = null,
 )
 
-// Mirrors ai_review_suggestions from migration 033. The AI surfaces high-
-// confidence questions about the clinician's note (Uganda HC III guideline
-// conflicts, missing red flags, etc.) and the clinician is the authority —
-// they can dismiss or re-open the note. Android currently displays these
-// read-only; write paths (clinician_response) ship in a follow-up once the
-// SECURITY DEFINER RPC for the response lands (table has no UPDATE RLS
-// policy for Clerk JWTs).
+// Mirrors ai_review_suggestions from migration 033.
 @Serializable
 data class AiReviewSuggestionDto(
     val id: String,
@@ -659,6 +653,12 @@ data class AiReviewSuggestionDto(
     val confidence: String,
     @SerialName("clinician_response") val clinicianResponse: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class RecordReviewResponseRequest(
+    @SerialName("p_suggestion_id") val suggestionId: String,
+    @SerialName("p_response") val response: String,
 )
 
 // EHR pivot RPCs (migration 045)

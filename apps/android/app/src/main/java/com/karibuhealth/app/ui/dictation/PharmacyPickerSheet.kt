@@ -1,5 +1,6 @@
 package com.karibuhealth.app.ui.dictation
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -28,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -44,15 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.karibuhealth.app.domain.catalog.HcDrugCatalog
+import com.karibuhealth.app.ui.theme.Amber
+import com.karibuhealth.app.ui.theme.Line
+
+private enum class RxPickerStep { Category, Drug, Sig, Confirm }
 
 /**
- * Discrete prescription builder. Replaces free-text dispensing strings with a
- * picker that emits a canonical Sig — drug, strength, qty, route, frequency,
- * duration — so the dispenser never has to decode "twice a day" vs "BID" vs
- * "bd". Built on the HC III formulary in [HcDrugCatalog].
- *
- * @param onConfirm called with the formatted prescription line to append to
- *                  the medications free-text field.
+ * Category-first prescription builder with a confirm step to reduce wrong-drug taps.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +64,9 @@ fun PharmacyPickerSheet(
     onConfirm: (String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    var step by remember { mutableStateOf(RxPickerStep.Category) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var categoryQuery by remember { mutableStateOf("") }
     var drugQuery by remember { mutableStateOf("") }
     var selectedDrug by remember { mutableStateOf<HcDrugCatalog.Drug?>(null) }
     var strength by remember { mutableStateOf<String?>(null) }
@@ -71,6 +76,29 @@ fun PharmacyPickerSheet(
     var durationDays by remember { mutableStateOf<Int?>(null) }
     var customDurationText by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var pendingSig by remember { mutableStateOf("") }
+
+    val categories = remember { HcDrugCatalog.drugsByCategory() }
+    val filteredCategories by remember(categoryQuery, categories) {
+        derivedStateOf {
+            if (categoryQuery.isBlank()) categories
+            else categories.filter { (title, drugs) ->
+                title.contains(categoryQuery, ignoreCase = true) ||
+                    drugs.any { it.name.contains(categoryQuery, ignoreCase = true) }
+            }
+        }
+    }
+    val drugsInCategory by remember(selectedCategory, drugQuery) {
+        derivedStateOf {
+            val base = categories.firstOrNull { it.first == selectedCategory }?.second.orEmpty()
+            if (drugQuery.isBlank()) base
+            else base.filter { drug ->
+                drug.name.contains(drugQuery, ignoreCase = true) ||
+                    drug.code.contains(drugQuery, ignoreCase = true) ||
+                    drug.aliases.any { it.contains(drugQuery, ignoreCase = true) }
+            }
+        }
+    }
 
     LaunchedEffect(selectedDrug) {
         selectedDrug?.let { d ->
@@ -84,210 +112,332 @@ fun PharmacyPickerSheet(
         }
     }
 
-    val filteredDrugs by remember(drugQuery) {
-        derivedStateOf {
-            if (drugQuery.isBlank()) HcDrugCatalog.drugs
-            else HcDrugCatalog.drugs.filter { drug ->
-                drug.name.contains(drugQuery, ignoreCase = true) ||
-                    drug.code.contains(drugQuery, ignoreCase = true) ||
-                    drug.aliases.any { it.contains(drugQuery, ignoreCase = true) }
-            }
-        }
-    }
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        modifier = Modifier.heightIn(min = 240.dp, max = 720.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .heightIn(min = 200.dp, max = 700.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (selectedDrug == null) "Pick a medication" else "Prescribe ${selectedDrug?.name}",
+                    text = when (step) {
+                        RxPickerStep.Category -> "Pick category"
+                        RxPickerStep.Drug -> selectedCategory ?: "Pick medication"
+                        RxPickerStep.Sig -> "Prescribe ${selectedDrug?.name ?: ""}"
+                        RxPickerStep.Confirm -> "Confirm prescription"
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
                 )
-                if (selectedDrug != null) {
-                    TextButton(onClick = { selectedDrug = null }) {
-                        Text("Change")
+                if (step != RxPickerStep.Category) {
+                    TextButton(onClick = {
+                        when (step) {
+                            RxPickerStep.Drug -> {
+                                step = RxPickerStep.Category
+                                selectedDrug = null
+                                drugQuery = ""
+                            }
+                            RxPickerStep.Sig -> step = RxPickerStep.Drug
+                            RxPickerStep.Confirm -> step = RxPickerStep.Sig
+                            else -> {}
+                        }
+                    }) {
+                        Text("Back")
                     }
                 }
             }
 
-            if (selectedDrug == null) {
-                OutlinedTextField(
-                    value = drugQuery,
-                    onValueChange = { drugQuery = it },
-                    placeholder = { Text("Search formulary…") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-                LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false),
-                ) {
-                    items(filteredDrugs, key = { it.code }) { drug ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedDrug = drug }
-                                .padding(vertical = 8.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = drug.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = drug.category,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (drug.strengths.isNotEmpty()) {
-                                Text(
-                                    text = drug.strengths.first(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            when (step) {
+                RxPickerStep.Category -> {
+                    OutlinedTextField(
+                        value = categoryQuery,
+                        onValueChange = { categoryQuery = it },
+                        placeholder = { Text("Search categories…") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 480.dp),
+                    ) {
+                        items(filteredCategories, key = { it.first }) { (title, drugs) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedCategory = title
+                                        step = RxPickerStep.Drug
+                                        drugQuery = ""
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text = "${drugs.size} medications",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Icon(
+                                    Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
                     }
-                }
-            } else {
-                val drug = selectedDrug!!
-                drug.warning?.let { warn ->
-                    Text(
-                        text = "⚠ $warn",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-                    )
                 }
 
-                LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    if (drug.strengths.isNotEmpty()) {
-                        item {
-                            DropdownPickerRow(
-                                label = "Strength",
-                                value = strength ?: "—",
-                                options = drug.strengths,
-                                onSelect = { strength = it },
-                            )
-                        }
-                    }
-                    item {
-                        OutlinedTextField(
-                            value = quantityText,
-                            onValueChange = { quantityText = it },
-                            label = { Text("Quantity (e.g. 1 tab, 5 mL)") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    item {
-                        DropdownPickerRow(
-                            label = "Route",
-                            value = route?.code ?: "—",
-                            options = HcDrugCatalog.Route.entries.map { it.label },
-                            onSelect = { picked ->
-                                route = HcDrugCatalog.Route.entries.firstOrNull { it.label == picked }
-                            },
-                        )
-                    }
-                    item {
-                        DropdownPickerRow(
-                            label = "Frequency",
-                            value = frequency?.code ?: "—",
-                            options = HcDrugCatalog.Frequency.entries.map { it.label },
-                            onSelect = { picked ->
-                                frequency = HcDrugCatalog.Frequency.entries.firstOrNull { it.label == picked }
-                            },
-                        )
-                    }
-                    item {
-                        DropdownPickerRow(
-                            label = "Duration",
-                            value = when {
-                                durationDays != null -> "${durationDays}d"
-                                customDurationText.isNotBlank() -> customDurationText
-                                else -> "—"
-                            },
-                            options = HcDrugCatalog.durations.map { it.label } + "Custom…",
-                            onSelect = { picked ->
-                                val matched = HcDrugCatalog.durations.firstOrNull { it.label == picked }
-                                if (matched != null) {
-                                    durationDays = matched.days
-                                    customDurationText = ""
-                                } else {
-                                    durationDays = null
+                RxPickerStep.Drug -> {
+                    OutlinedTextField(
+                        value = drugQuery,
+                        onValueChange = { drugQuery = it },
+                        placeholder = { Text("Search in $selectedCategory…") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 480.dp),
+                    ) {
+                        items(drugsInCategory, key = { it.code }) { drug ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedDrug = drug
+                                        step = RxPickerStep.Sig
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .padding(end = 8.dp),
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = drug.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    Text(
+                                        text = drug.strengths.joinToString(" · ").ifBlank { drug.category },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
-                            },
-                        )
-                        if (durationDays == null && customDurationText.isEmpty()) {
-                            // Custom path: only show when user picked "Custom…"
-                            // — gated below by emptying durationDays.
+                            }
                         }
                     }
-                    if (durationDays == null) {
+                }
+
+                RxPickerStep.Sig -> {
+                    val drug = selectedDrug ?: return@Column
+                    drug.warning?.let { warn ->
+                        Text(
+                            text = "⚠ $warn",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+                        )
+                    }
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        if (drug.strengths.isNotEmpty()) {
+                            item {
+                                DropdownPickerRow(
+                                    label = "Strength",
+                                    value = strength ?: "—",
+                                    options = drug.strengths,
+                                    onSelect = { strength = it },
+                                )
+                            }
+                        }
                         item {
                             OutlinedTextField(
-                                value = customDurationText,
-                                onValueChange = { customDurationText = it },
-                                label = { Text("Custom duration (optional)") },
-                                placeholder = { Text("e.g. until follow-up, until empty") },
+                                value = quantityText,
+                                onValueChange = { quantityText = it },
+                                label = { Text("Quantity (e.g. 1 tab, 5 mL)") },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
+                        item {
+                            DropdownPickerRow(
+                                label = "Route",
+                                value = route?.code ?: "—",
+                                options = HcDrugCatalog.Route.entries.map { it.label },
+                                onSelect = { picked ->
+                                    route = HcDrugCatalog.Route.entries.firstOrNull { it.label == picked }
+                                },
+                            )
+                        }
+                        item {
+                            DropdownPickerRow(
+                                label = "Frequency",
+                                value = frequency?.code ?: "—",
+                                options = HcDrugCatalog.Frequency.entries.map { it.label },
+                                onSelect = { picked ->
+                                    frequency = HcDrugCatalog.Frequency.entries.firstOrNull { it.label == picked }
+                                },
+                            )
+                        }
+                        item {
+                            DropdownPickerRow(
+                                label = "Duration",
+                                value = when {
+                                    durationDays != null -> "${durationDays}d"
+                                    customDurationText.isNotBlank() -> customDurationText
+                                    else -> "—"
+                                },
+                                options = HcDrugCatalog.durations.map { it.label } + "Custom…",
+                                onSelect = { picked ->
+                                    val matched = HcDrugCatalog.durations.firstOrNull { it.label == picked }
+                                    if (matched != null) {
+                                        durationDays = matched.days
+                                        customDurationText = ""
+                                    } else {
+                                        durationDays = null
+                                    }
+                                },
+                            )
+                        }
+                        if (durationDays == null) {
+                            item {
+                                OutlinedTextField(
+                                    value = customDurationText,
+                                    onValueChange = { customDurationText = it },
+                                    label = { Text("Custom duration (optional)") },
+                                    placeholder = { Text("e.g. until follow-up") },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+                        item {
+                            OutlinedTextField(
+                                value = notes,
+                                onValueChange = { notes = it },
+                                label = { Text("Notes (optional)") },
+                                singleLine = false,
+                                minLines = 1,
+                                maxLines = 3,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
-                    item {
-                        OutlinedTextField(
-                            value = notes,
-                            onValueChange = { notes = it },
-                            label = { Text("Notes (optional)") },
-                            placeholder = { Text("e.g. with food, hold if BP <100") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                            singleLine = false,
-                            minLines = 1,
-                            maxLines = 3,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            pendingSig = HcDrugCatalog.formatSig(
+                                drug = drug,
+                                strength = strength,
+                                quantityText = quantityText.trim().ifBlank { null },
+                                frequency = frequency,
+                                route = route,
+                                durationDays = durationDays,
+                                notes = notes.trim().ifBlank { customDurationText.trim().ifBlank { null } },
+                            )
+                            step = RxPickerStep.Confirm
+                        },
+                        enabled = strength != null || drug.strengths.isEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Review prescription")
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = {
-                        val sig = HcDrugCatalog.formatSig(
-                            drug = drug,
-                            strength = strength,
-                            quantityText = quantityText.trim().ifBlank { null },
-                            frequency = frequency,
-                            route = route,
-                            durationDays = durationDays,
-                            notes = notes.trim().ifBlank { customDurationText.trim().ifBlank { null } },
-                        )
-                        onConfirm(sig)
-                    },
-                    enabled = strength != null || drug.strengths.isEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text("Add to prescription")
+                RxPickerStep.Confirm -> {
+                    val drug = selectedDrug ?: return@Column
+                    val confusables = HcDrugCatalog.confusableDrugNames(drug)
+                    Column(
+                        modifier = Modifier.heightIn(max = 420.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = "You are prescribing",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = pendingSig,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = drug.category,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                        }
+                        if (confusables.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Amber.copy(alpha = 0.12f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, Amber.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "Not these look-alikes:",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Amber,
+                                    )
+                                    confusables.forEach { name ->
+                                        Text(
+                                            text = "• $name",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = { onConfirm(pendingSig) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text("Confirm prescription")
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -338,7 +488,6 @@ private fun DropdownPickerRow(
     }
 }
 
-/** Compact chip used by the dictation header — open the prescription builder. */
 @Composable
 fun AddRxChip(onClick: () -> Unit, modifier: Modifier = Modifier) {
     AssistChip(

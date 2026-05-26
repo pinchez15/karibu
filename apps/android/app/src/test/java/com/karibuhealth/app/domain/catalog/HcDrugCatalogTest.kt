@@ -89,4 +89,18 @@ class HcDrugCatalogTest {
         assertEquals("PRN", HcDrugCatalog.Frequency.PRN.code)
         assertEquals("STAT", HcDrugCatalog.Frequency.STAT.code)
     }
+
+    @Test
+    fun confusableDrugNames_lists_siblings() {
+        val amox = HcDrugCatalog.drugs.first { it.code == "AMOX" }
+        val names = HcDrugCatalog.confusableDrugNames(amox)
+        assertTrue(names.any { it.contains("Clavulanic", ignoreCase = true) })
+    }
+
+    @Test
+    fun drugsByCategory_groups_all_drugs() {
+        val grouped = HcDrugCatalog.drugsByCategory()
+        assertTrue(grouped.isNotEmpty())
+        assertEquals(HcDrugCatalog.drugs.size, grouped.sumOf { it.second.size })
+    }
 }

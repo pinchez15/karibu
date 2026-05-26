@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.util.BottomBarScrollPadding
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Body
 import com.karibuhealth.app.ui.theme.Cobalt
@@ -48,6 +49,10 @@ import com.karibuhealth.app.ui.theme.Muted
 fun DictationScreen(
     visitId: String,
     aiMode: Boolean,
+    incorporateSection: String? = null,
+    incorporatePrefill: String? = null,
+    openLabPicker: Boolean = false,
+    openRxPicker: Boolean = false,
     onNavigateBack: () -> Unit,
     onSubmitted: (String) -> Unit,
     viewModel: DictationViewModel = hiltViewModel(),
@@ -66,8 +71,15 @@ fun DictationScreen(
         }
     }
 
-    LaunchedEffect(visitId) {
-        viewModel.load(visitId)
+    LaunchedEffect(visitId, incorporateSection, incorporatePrefill, openLabPicker, openRxPicker) {
+        val section = incorporateSection?.let { runCatching { NoteSection.valueOf(it) }.getOrNull() }
+        viewModel.load(
+            visitId = visitId,
+            incorporateSection = section,
+            incorporatePrefill = incorporatePrefill,
+            openLabPickerOnLoad = openLabPicker,
+            openRxPickerOnLoad = openRxPicker,
+        )
     }
 
     LaunchedEffect(uiState.submitted) {
@@ -116,6 +128,16 @@ private fun DictationScreenContent(
         .split(Regex("\\s+"))
         .filter { it.isNotEmpty() }
         .size
+
+    var showLabPicker by remember { mutableStateOf(false) }
+    var showRxPicker by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.openLabPickerOnLoad) {
+        if (uiState.openLabPickerOnLoad) showLabPicker = true
+    }
+    LaunchedEffect(uiState.openRxPickerOnLoad) {
+        if (uiState.openRxPickerOnLoad) showRxPicker = true
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -176,7 +198,8 @@ private fun DictationScreenContent(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(bottom = BottomBarScrollPadding.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val sections = uiState.sections
@@ -201,6 +224,7 @@ private fun DictationScreenContent(
                 section = NoteSection.ChiefComplaint,
                 onFocusChange = onFocusedSectionChange,
                 minLines = 1,
+                placeholder = "e.g. fever and cough x3 days",
                 onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -209,6 +233,7 @@ private fun DictationScreenContent(
                 value = sections.hpi,
                 section = NoteSection.Hpi,
                 onFocusChange = onFocusedSectionChange,
+                placeholder = "Onset, duration, severity, associated symptoms…",
                 onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -217,6 +242,7 @@ private fun DictationScreenContent(
                 value = sections.physicalExam,
                 section = NoteSection.PhysicalExam,
                 onFocusChange = onFocusedSectionChange,
+                placeholder = "Vitals, general appearance, focused exam…",
                 onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -225,6 +251,7 @@ private fun DictationScreenContent(
                 value = sections.familySocialHistory,
                 section = NoteSection.FamilySocialHistory,
                 onFocusChange = onFocusedSectionChange,
+                placeholder = "Relevant family history, social context…",
                 onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -234,6 +261,7 @@ private fun DictationScreenContent(
                 section = NoteSection.Diagnosis,
                 onFocusChange = onFocusedSectionChange,
                 minLines = 1,
+                placeholder = "Primary diagnosis or working impression…",
                 onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -242,12 +270,10 @@ private fun DictationScreenContent(
                 value = sections.assessmentPlan,
                 section = NoteSection.AssessmentPlan,
                 onFocusChange = onFocusedSectionChange,
+                placeholder = "Clinical reasoning, plan, counseling…",
                 onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
                 enabled = !uiState.isSubmitting,
             )
-            var showRxPicker by remember { mutableStateOf(false) }
-            var showLabPicker by remember { mutableStateOf(false) }
-
             // PHARMACY — free-text persists alongside the structured picker so
             // clinicians can drop in items like "give from clinic stock" that
             // don't fit the formulary.
@@ -271,6 +297,7 @@ private fun DictationScreenContent(
                     value = sections.medications,
                     section = NoteSection.Medications,
                     onFocusChange = onFocusedSectionChange,
+                    placeholder = "Medications or use Add Rx…",
                     onValueChange = { onSectionsChange(sections.copy(medications = it)) },
                     enabled = !uiState.isSubmitting,
                 )
@@ -321,6 +348,7 @@ private fun DictationScreenContent(
                     value = sections.testsOrdered,
                     section = NoteSection.TestsOrdered,
                     onFocusChange = onFocusedSectionChange,
+                    placeholder = "Labs ordered or use Add labs…",
                     onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
                     enabled = !uiState.isSubmitting,
                 )
@@ -366,6 +394,7 @@ private fun DictationScreenContent(
                 value = sections.followUpInstructions,
                 section = NoteSection.FollowUpInstructions,
                 onFocusChange = onFocusedSectionChange,
+                placeholder = "Return precautions, referrals, next visit…",
                 onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
                 enabled = !uiState.isSubmitting,
             )
@@ -484,6 +513,7 @@ private fun SectionField(
     onFocusChange: (NoteSection?) -> Unit,
     enabled: Boolean,
     minLines: Int = 2,
+    placeholder: String? = null,
 ) {
     Column {
         if (label != null) {
@@ -493,6 +523,7 @@ private fun SectionField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
+            placeholder = placeholder?.let { { Text(it) } },
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
@@ -559,6 +590,20 @@ private fun DictationBottomToolbar(
     onSaveDraft: () -> Unit,
     wordCount: Int,
 ) {
+    val statusText = when {
+        uiState.isRecording -> "Recording… tap to stop"
+        uiState.isTranscribing -> "Whisper transcribing…"
+        uiState.savedLocally -> "Ready to sign · keep dictating to add more"
+        !uiState.canSubmit && wordCount == 0 -> "Add documentation before signing"
+        !uiState.canSubmit && uiState.isRecording -> "Stop recording to sign"
+        else -> "Tap mic, or use keyboard voice"
+    }
+    val submitHint = when {
+        uiState.isSubmitting -> ""
+        !uiState.canSubmit -> " · Sign when note has content"
+        else -> ""
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -566,24 +611,19 @@ private fun DictationBottomToolbar(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
     ) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Line, RoundedCornerShape(0.dp))
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, Line, RoundedCornerShape(0.dp))
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Big primary mic button — 56dp per design.
-                //
-                // Stop is ALWAYS available while recording, even if a chunk
-                // is mid-upload. In-flight transcription continues
-                // independently after stop and gets appended when it lands.
-                // The button only gates Start (new recording) on no other
-                // operation in flight.
                 val buttonEnabled = uiState.isRecording ||
                     (!uiState.isSubmitting && !uiState.isTranscribing)
                 Box(
@@ -597,9 +637,6 @@ private fun DictationBottomToolbar(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Always show the action icon when recording — never
-                    // swap it for a spinner. The "Transcribing…" label in
-                    // the toolbar already conveys the in-flight state.
                     when {
                         uiState.isRecording -> Icon(
                             imageVector = Icons.Default.Stop,
@@ -623,12 +660,7 @@ private fun DictationBottomToolbar(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = when {
-                            uiState.isRecording -> "Recording… tap to stop"
-                            uiState.isTranscribing -> "Whisper transcribing…"
-                            uiState.savedLocally -> "Ready to sign · keep dictating to add more"
-                            else -> "Tap mic, or use keyboard voice"
-                        },
+                        text = statusText + submitHint,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -637,16 +669,16 @@ private fun DictationBottomToolbar(
                         text = "$wordCount WORDS" + if (uiState.savedLocally) " · AUTO-SAVED" else "",
                     )
                 }
+            }
 
-                // Save draft & exit — the dictation flow is incremental:
-                // clinicians want to record into History, then move to
-                // Physical Exam, then jump out and back. Autosave already
-                // persists every keystroke; this button flushes the pending
-                // debounce window and pops back to the visit screen so they
-                // aren't trapped between mic and Sign.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 OutlinedButton(
                     onClick = onSaveDraft,
                     enabled = !uiState.isSubmitting && !uiState.isRecording,
+                    modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
                 ) {
@@ -656,7 +688,12 @@ private fun DictationBottomToolbar(
                 Button(
                     onClick = onSubmit,
                     enabled = uiState.canSubmit,
-                    colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Cobalt,
+                        disabledContainerColor = Line,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 ) {
@@ -667,11 +704,6 @@ private fun DictationBottomToolbar(
                             color = Color.White,
                         )
                     } else {
-                        // Phase 2 split: Save is now Sign + Complete. Every
-                        // entrypoint into this screen is visit-tied; the
-                        // "& Complete" tail signals that signing also runs
-                        // the documentation-complete chain and unlocks
-                        // payment.
                         Text("Sign & Complete", fontWeight = FontWeight.SemiBold)
                     }
                 }

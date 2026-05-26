@@ -65,7 +65,7 @@ export function ReviewQuestionBanner({ suggestion }: ReviewQuestionBannerProps) 
         <Sparkles className="h-5 w-5 text-amber mt-0.5 shrink-0" />
         <div>
           <p className="text-base font-semibold text-ink leading-snug">{suggestion.question}</p>
-          <p className="text-sm text-body mt-2 leading-relaxed">{suggestion.reasoning}</p>
+          <p className="text-sm text-body mt-2 leading-relaxed">{suggestion.reasoning.replace(/\[chunk_id=\d+]/g, '').replace(/\s{2,}/g, ' ').trim()}</p>
         </div>
       </div>
 

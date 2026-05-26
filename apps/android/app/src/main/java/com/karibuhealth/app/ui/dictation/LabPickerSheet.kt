@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -115,19 +116,24 @@ fun LabPickerSheet(
                                         .padding(vertical = 6.dp, horizontal = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .height(20.dp)
-                                            .padding(end = 8.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (isSelected) {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                            )
-                                        }
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(end = 8.dp),
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Outlined.RadioButtonUnchecked,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(end = 8.dp),
+                                        )
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
@@ -136,13 +142,11 @@ fun LabPickerSheet(
                                             color = MaterialTheme.colorScheme.onSurface,
                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                         )
-                                        test.hint?.let { hint ->
-                                            Text(
-                                                text = hint,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
+                                        Text(
+                                            text = test.hint ?: "Standard HC III test",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
                                     }
                                 }
                             }

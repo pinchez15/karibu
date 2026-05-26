@@ -115,8 +115,17 @@ fun KaribuNavHost(
             VisitDetailsScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToDictation = { visitId, aiMode ->
-                    navController.navigate(NavRoute.Dictation(visitId, aiMode))
+                onNavigateToDictation = { visitId, aiMode, incorporate ->
+                    navController.navigate(
+                        NavRoute.Dictation(
+                            visitId = visitId,
+                            aiMode = aiMode,
+                            incorporateSection = incorporate?.section?.name,
+                            incorporatePrefill = incorporate?.prefill,
+                            openLabPicker = incorporate?.openLabPicker == true,
+                            openRxPicker = incorporate?.openRxPicker == true,
+                        ),
+                    )
                 },
                 onNavigateToReview = { visitId ->
                     navController.navigate(NavRoute.Review(visitId))
@@ -134,6 +143,10 @@ fun KaribuNavHost(
             DictationScreen(
                 visitId = route.visitId,
                 aiMode = route.aiMode,
+                incorporateSection = route.incorporateSection,
+                incorporatePrefill = route.incorporatePrefill,
+                openLabPicker = route.openLabPicker,
+                openRxPicker = route.openRxPicker,
                 onNavigateBack = { navController.popBackStack() },
                 onSubmitted = { visitId ->
                     // Dictation submitted; visit is now in 'pending' while

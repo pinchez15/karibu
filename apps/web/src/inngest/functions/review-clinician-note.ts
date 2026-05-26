@@ -77,6 +77,35 @@ const VALID_TYPES = new Set([
 ])
 const VALID_CONFIDENCES = new Set(['high', 'medium', 'low'])
 
+function stripChunkCitations(text: string): string {
+  return text.replace(/\[chunk_id=\d+]/g, '').replace(/\s{2,}/g, ' ').trim()
+}
+
+function questionSimilarity(a: string, b: string): number {
+  const wordsA = new Set(a.split(/\s+/).filter((w) => w.length > 2))
+  const wordsB = new Set(b.split(/\s+/).filter((w) => w.length > 2))
+  if (wordsA.size === 0 || wordsB.size === 0) return 0
+  let intersection = 0
+  for (const w of wordsA) if (wordsB.has(w)) intersection++
+  return intersection / (wordsA.size + wordsB.size - intersection)
+}
+
+function dedupeSuggestions(items: ValidatedSuggestion[]): ValidatedSuggestion[] {
+  const kept: ValidatedSuggestion[] = []
+  for (const candidate of items) {
+    const normQ = candidate.question.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim()
+    const duplicate = kept.some((existing) => {
+      const normExisting = existing.question.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim()
+      return (
+        existing.type === candidate.type &&
+        questionSimilarity(normExisting, normQ) >= 0.72
+      )
+    })
+    if (!duplicate) kept.push(candidate)
+  }
+  return kept
+}
+
 async function markReviewFailed(
   visit_id: string,
   clinic_id: string,
@@ -366,13 +395,13 @@ export const reviewClinicianNote = inngest.createFunction(
           validated.push({
             type: s.type as ValidatedSuggestion['type'],
             question: s.question.trim(),
-            reasoning: s.reasoning.trim(),
+            reasoning: stripChunkCitations(s.reasoning.trim()),
             citation_ids: validCitations,
             confidence: 'high',
           })
         }
 
-        return validated
+        return dedupeSuggestions(validated)
       },
     )
 

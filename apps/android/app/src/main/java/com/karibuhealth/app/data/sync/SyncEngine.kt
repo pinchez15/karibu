@@ -125,6 +125,7 @@ class SyncEngine @Inject constructor(
             "rpc_record_lab_result" -> syncRecordLabResult(entry)
             "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
             "rpc_record_dispense" -> syncRecordDispense(entry)
+            "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
     }
@@ -445,6 +446,16 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
         }
         visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(RecordReviewResponseRequest.serializer(), entry.payload)
+        Log.d(TAG, "Syncing record_review_response: ${entry.entityId}")
+        val result = supabaseApi.rpcRecordReviewResponse(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("record_review_response HTTP ${result.code()} ${body.take(300)}".trim())
+        }
     }
 
     private suspend fun decodeVisitCreatePayload(entry: SyncQueueEntry): VisitCreateRpcDto {

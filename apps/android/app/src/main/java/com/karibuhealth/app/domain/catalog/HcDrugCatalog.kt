@@ -255,6 +255,32 @@ object HcDrugCatalog {
         ),
     )
 
+    /** Drugs grouped by therapeutic category for the safety-first picker. */
+    fun drugsByCategory(): List<Pair<String, List<Drug>>> =
+        drugs.groupBy { it.category }
+            .toList()
+            .sortedBy { it.first }
+
+    private val confusableCodes: Map<String, List<String>> = mapOf(
+        "AMOX" to listOf("AMOX_CLAV"),
+        "AMOX_CLAV" to listOf("AMOX"),
+        "NIFED" to listOf("METHYL", "HCTZ"),
+        "METHYL" to listOf("NIFED", "HCTZ"),
+        "HCTZ" to listOf("NIFED", "METHYL"),
+        "AL" to listOf("DHA_PPQ", "ARTESUNATE"),
+        "DHA_PPQ" to listOf("AL", "ARTESUNATE"),
+        "ARTESUNATE" to listOf("AL", "DHA_PPQ"),
+        "COTRIM" to listOf("CIPRO"),
+        "CIPRO" to listOf("COTRIM"),
+        "PARA" to listOf("IBU"),
+        "IBU" to listOf("PARA"),
+    )
+
+    fun confusableDrugNames(drug: Drug): List<String> =
+        confusableCodes[drug.code]
+            ?.mapNotNull { code -> drugs.find { it.code == code }?.name }
+            ?: emptyList()
+
     /** Format the picker selections into the canonical Sig string we append
      *  to the visit's `medications` free-text field. */
     fun formatSig(

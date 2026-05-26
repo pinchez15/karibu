@@ -40,6 +40,13 @@ import com.karibuhealth.app.domain.model.VisitStatus
 import com.karibuhealth.app.ui.components.KhAccentPill
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhVitalChip
+import com.karibuhealth.app.ui.components.AiReviewBanner
+import com.karibuhealth.app.ui.components.incorporationFor
+import com.karibuhealth.app.ui.components.DictationIncorporate
+import com.karibuhealth.app.ui.util.BottomBarScrollPadding
+import com.karibuhealth.app.ui.util.formatClinicalLine
+import com.karibuhealth.app.ui.util.formatClinicalList
+import com.karibuhealth.app.ui.util.formatPatientName
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.AmberSoft
 import com.karibuhealth.app.ui.theme.Body
@@ -55,7 +62,7 @@ import java.time.LocalDate
 fun VisitDetailsScreen(
     visitId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToDictation: (String, Boolean) -> Unit,
+    onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToPayment: (String) -> Unit,
     viewModel: VisitDetailsViewModel = hiltViewModel(),
@@ -88,6 +95,7 @@ fun VisitDetailsScreen(
                     val visit = uiState.visit
                     val docComplete = visit?.documentationComplete == true
                     val isStreaming = visit?.status == VisitStatus.pending && docComplete
+                    val pendingAi = uiState.pendingAiReviewCount
                     val isReady = visit?.status == VisitStatus.review || visit?.status == VisitStatus.sent
 
                     Row(
@@ -105,6 +113,14 @@ fun VisitDetailsScreen(
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = "STRUCTURING",
+                                    color = Amber,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp,
+                                )
+                            }
+                            isReady && pendingAi > 0 -> {
+                                Text(
+                                    text = "NEEDS REVIEW",
                                     color = Amber,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 11.sp,
@@ -161,13 +177,10 @@ fun VisitDetailsScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(bottom = BottomBarScrollPadding.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Sync error surface — top of screen so it's the first thing
-                // the clinician sees if items are stuck. Tells them which RPC
-                // failed and why, instead of just an opaque "X items pending
-                // sync" badge.
                 if (uiState.syncErrors.isNotEmpty()) {
                     SyncErrorBanner(
                         errors = uiState.syncErrors,
@@ -177,19 +190,13 @@ fun VisitDetailsScreen(
                     )
                 }
 
-                // AI review questions from the Inngest pipeline (migration
-                // 033). Read-only banner — responses still go through the web
-                // until the SECURITY DEFINER RPC ships in a follow-up.
-                com.karibuhealth.app.ui.components.AiReviewBanner(
-                    suggestions = uiState.aiReviewSuggestions,
-                )
-
-                // Patient card with inline vital chips
                 uiState.patient?.let { patient ->
                     PatientCard(
-                        name = listOfNotNull(patient.firstName, patient.lastName)
-                            .joinToString(" ")
-                            .ifBlank { patient.displayName ?: "Unknown" },
+                        name = formatPatientName(
+                            patient.firstName,
+                            patient.lastName,
+                            patient.displayName,
+                        ),
                         patientId = patient.patientNumber ?: "PT-${patient.id.take(6)}",
                         ageBand = listOfNotNull(
                             patient.dateOfBirth?.let(::formatAgeFromDob),
@@ -212,10 +219,6 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                // Clinician note (always expanded — receipt-of-record).
-                // Prefers patient_notes.content when source='clinician_fallback';
-                // falls back to provider_notes.transcript while the clinician
-                // hasn't fully synced.
                 run {
                     val clinicianText = uiState.patientNote?.content
                         ?.takeIf { it.isNotBlank() }
@@ -225,9 +228,6 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                // Note lifecycle actions (cosign / addend / amend / void).
-                // Inline below the clinician-note card; the composable handles
-                // its own role + status gating and renders nothing for drafts.
                 uiState.providerNote?.let { note ->
                     NoteLifecycleActionsCard(
                         noteStatus = note.status.name,
@@ -243,22 +243,10 @@ fun VisitDetailsScreen(
                     )
                 }
 
-                // AI receipt summary — when present, show as reference. The
-                // clinician's note above is the receipt-of-record; this is the
-                // plain-language version that may print on the thermal slip.
                 uiState.aiPatientNote?.content?.takeIf { it.isNotBlank() }?.let { summary ->
                     AiReceiptCard(summary = summary)
                 }
 
-                // The disagreement-question banner ships in Android v1.0.12
-                // after the corpus is seeded and the web flow is validated.
-                // Until then the clinician views any AI question on the web
-                // visit-details page; the cashier-side workflow proceeds the
-                // same on Android.
-
-                // Care delivered — lab + pharmacy outcomes (read-only).
-                // Renders only when there's something to show: tests ordered,
-                // a lab result, medications, or a dispensing decision.
                 uiState.visit?.let { visit ->
                     val canSendPharmacy =
                         !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
@@ -286,7 +274,27 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                // Sync card — only when there are actually pending syncs.
+                AiReviewBanner(
+                    suggestions = uiState.aiReviewSuggestions,
+                    onDismiss = { suggestion ->
+                        viewModel.dismissAiSuggestion(suggestion.id)
+                    },
+                    onIncorporate = { suggestion ->
+                        val incorporate = incorporationFor(suggestion)
+                        viewModel.incorporateAiSuggestion(suggestion.id) {
+                            onNavigateToDictation(visitId, false, incorporate)
+                        }
+                    },
+                )
+
+                uiState.aiReviewError?.let { err ->
+                    Text(
+                        text = err,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
                 if (uiState.hasPendingVisitSync || uiState.syncErrors.isNotEmpty()) {
                     SyncCard(
                         statusMessage = uiState.aiAvailabilityMessage,
@@ -327,6 +335,7 @@ private fun PatientCard(
     complaint: String?,
     vitals: PatientVitals?,
 ) {
+    var complaintExpanded by rememberSaveable { mutableStateOf(false) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -355,13 +364,24 @@ private fun PatientCard(
                 }
 
                 if (!complaint.isNullOrBlank()) {
+                    val showFull = complaintExpanded || complaint.length <= 28
                     KhAccentPill(
-                        label = complaint.take(20).let { if (complaint.length > 20) "$it…" else it },
+                        label = if (showFull) complaint else "${complaint.take(28)}…",
                         fg = Amber,
                         bg = AmberSoft,
                         paddingValues = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.clickable { complaintExpanded = !complaintExpanded },
                     )
                 }
+            }
+
+            if (!complaint.isNullOrBlank() && complaintExpanded && complaint.length > 28) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = complaint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             // Inline vital chips — only when we have at least one reading
@@ -480,17 +500,38 @@ private fun ClinicalSummaryCard(visit: Visit) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             KhMetaText(text = "CLINICAL SUMMARY")
             visit.diagnosis?.takeIf { it.isNotBlank() }?.let {
-                SummaryRow(label = "Diagnosis", value = it)
+                SummaryRow(label = "Diagnosis", value = formatClinicalLine(it))
             }
             visit.medications?.takeIf { it.isNotBlank() }?.let {
-                SummaryRow(label = "Pharmacy", value = it)
+                SummaryListRow(label = "Pharmacy", lines = it.lines().filter { line -> line.isNotBlank() })
             }
             visit.testsOrdered?.takeIf { it.isNotBlank() }?.let {
-                SummaryRow(label = "Labs", value = it)
+                SummaryListRow(label = "Labs", lines = formatClinicalList(it))
             }
             visit.followUpInstructions?.takeIf { it.isNotBlank() }?.let {
-                SummaryRow(label = "Follow-up", value = it)
+                SummaryRow(label = "Follow-up", value = formatClinicalLine(it))
             }
+        }
+    }
+}
+
+@Composable
+private fun SummaryListRow(label: String, lines: List<String>) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Cobalt,
+        )
+        Spacer(Modifier.height(4.dp))
+        lines.forEach { line ->
+            Text(
+                text = "• $line",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
         }
     }
 }
@@ -853,7 +894,7 @@ private fun VisitDetailsBottomAction(
     visit: Visit,
     visitId: String,
     hasLocalDraft: Boolean,
-    onNavigateToDictation: (String, Boolean) -> Unit,
+    onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToPayment: (String) -> Unit,
 ) {
@@ -866,7 +907,7 @@ private fun VisitDetailsBottomAction(
         visit.status == VisitStatus.pending && !docComplete -> {
             primary = BottomActionConfig(
                 label = if (hasLocalDraft) "Continue note" else "Write note",
-                onClick = { onNavigateToDictation(visitId, false) },
+                onClick = { onNavigateToDictation(visitId, false, null) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
@@ -884,7 +925,7 @@ private fun VisitDetailsBottomAction(
         visit.status == VisitStatus.sent -> {
             primary = BottomActionConfig(
                 label = "Edit note",
-                onClick = { onNavigateToDictation(visitId, false) },
+                onClick = { onNavigateToDictation(visitId, false, null) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
@@ -907,7 +948,7 @@ private fun VisitDetailsBottomAction(
         visit.status == VisitStatus.error -> {
             primary = BottomActionConfig(
                 label = "Edit and retry",
-                onClick = { onNavigateToDictation(visitId, false) },
+                onClick = { onNavigateToDictation(visitId, false, null) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
@@ -916,7 +957,7 @@ private fun VisitDetailsBottomAction(
         visit.status == VisitStatus.completed -> {
             primary = BottomActionConfig(
                 label = "Edit note",
-                onClick = { onNavigateToDictation(visitId, false) },
+                onClick = { onNavigateToDictation(visitId, false, null) },
                 icon = Icons.Default.Mic,
                 enabled = true,
             )

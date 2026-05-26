@@ -10,12 +10,18 @@ import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.VitalsRepository
+import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.dto.RecordReviewResponseRequest
 import com.karibuhealth.app.data.sync.SyncEngine
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 import javax.inject.Inject
 
 data class VisitDetailsUiState(
@@ -39,13 +45,11 @@ data class VisitDetailsUiState(
     ),
     val syncErrors: List<SyncErrorInfo> = emptyList(),
     /**
-     * AI review questions for this visit (migration 033). Surfaced as amber
-     * banners on the visit screen — these are Uganda HC III guideline
-     * conflicts or red-flag prompts the AI raised against the clinician's
-     * note. Read-only for now; the response action ships once the
-     * record_review_response RPC lands.
+     * AI review questions for this visit (migration 033). Actionable via swipe
+     * on the visit screen; responses go through rpc_record_review_response.
      */
     val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
+    val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
 )
@@ -74,6 +78,9 @@ val VisitDetailsUiState.aiAvailabilityMessage: String
         else -> "AI ready on ${connectionStatus.transportLabel} (${connectionStatus.barsLabel})"
     }
 
+val VisitDetailsUiState.pendingAiReviewCount: Int
+    get() = aiReviewSuggestions.count { it.clinicianResponse == null }
+
 @HiltViewModel
 class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
@@ -83,7 +90,9 @@ class VisitDetailsViewModel @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
     private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
+    private val json: Json,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
@@ -205,6 +214,74 @@ class VisitDetailsViewModel @Inject constructor(
         val noteId = _uiState.value.providerNote?.id ?: return
         viewModelScope.launch {
             noteRepository.cosignNote(noteId = noteId)
+        }
+    }
+
+    fun dismissAiSuggestion(suggestionId: String) {
+        recordAiReviewResponse(suggestionId, "dismissed")
+    }
+
+    fun incorporateAiSuggestion(suggestionId: String, onNavigate: () -> Unit) {
+        recordAiReviewResponse(suggestionId, "reopened_note", onSuccess = onNavigate)
+    }
+
+    private fun recordAiReviewResponse(
+        suggestionId: String,
+        response: String,
+        onSuccess: (() -> Unit)? = null,
+    ) {
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(
+                    aiReviewSuggestions = state.aiReviewSuggestions.filter { it.id != suggestionId },
+                    aiReviewError = null,
+                )
+            }
+            val request = RecordReviewResponseRequest(
+                suggestionId = suggestionId,
+                response = response,
+            )
+            runCatching {
+                if (networkMonitor.isOnline()) {
+                    val result = supabaseApi.rpcRecordReviewResponse(request)
+                    if (!result.isSuccessful) {
+                        val body = result.errorBody()?.string().orEmpty()
+                        throw IllegalStateException(
+                            "record_review_response HTTP ${result.code()} ${body.take(200)}".trim(),
+                        )
+                    }
+                } else {
+                    syncQueueHelper.enqueue(
+                        SyncQueueEntry(
+                            id = UUID.randomUUID().toString(),
+                            operationType = "record_review_response",
+                            entityType = "ai_review_suggestion",
+                            entityId = suggestionId,
+                            payload = json.encodeToString(request),
+                            status = "pending",
+                            createdAt = System.currentTimeMillis(),
+                        ),
+                    )
+                    syncEngine.processQueue()
+                }
+                onSuccess?.invoke()
+            }.onFailure { e ->
+                _uiState.update { state ->
+                    state.copy(aiReviewError = e.message ?: "Could not save AI response")
+                }
+                refreshAiSuggestions(_uiState.value.visit?.id)
+            }
+        }
+    }
+
+    private fun refreshAiSuggestions(visitId: String?) {
+        if (visitId == null) return
+        viewModelScope.launch {
+            runCatching {
+                supabaseApi.getAiReviewSuggestions(visitId = "eq.$visitId")
+            }.onSuccess { suggestions ->
+                _uiState.update { it.copy(aiReviewSuggestions = suggestions) }
+            }
         }
     }
 

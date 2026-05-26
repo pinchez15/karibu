@@ -133,6 +133,8 @@ data class DictationUiState(
     val focusedSection: NoteSection? = null,
     val pharmacyOrderSubmitted: Boolean = false,
     val isSendingToPharmacy: Boolean = false,
+    val openLabPickerOnLoad: Boolean = false,
+    val openRxPickerOnLoad: Boolean = false,
 ) {
     /** Back-compat alias — true while any chunk is in flight. */
     val isTranscribing: Boolean
@@ -175,13 +177,19 @@ class DictationViewModel @Inject constructor(
         const val AUTOSAVE_DEBOUNCE_MS = 1_500L
     }
 
-    fun load(visitId: String) {
+    fun load(
+        visitId: String,
+        incorporateSection: NoteSection? = null,
+        incorporatePrefill: String? = null,
+        openLabPickerOnLoad: Boolean = false,
+        openRxPickerOnLoad: Boolean = false,
+    ) {
         viewModelScope.launch {
             val existing = noteRepository.getProviderNoteOnce(visitId)
             val visit = visitRepository.getVisitByIdOnce(visitId)
             val patient = visit?.patientId?.let { patientRepository.getPatientByIdOnce(it) }
             val ageYears = patient?.dateOfBirth?.let(::computeAgeYears)
-            val parsedSections = existing?.structuredData
+            var parsedSections = existing?.structuredData
                 ?.let(::decodeClinicalSections)
                 ?: ClinicalNoteSections(
                     chiefComplaint = visit?.chiefComplaint.orEmpty(),
@@ -191,6 +199,12 @@ class DictationViewModel @Inject constructor(
                     followUpInstructions = visit?.followUpInstructions.orEmpty(),
                     additionalNote = existing?.transcript.orEmpty(),
                 )
+            if (incorporateSection != null && !incorporatePrefill.isNullOrBlank()) {
+                parsedSections = parsedSections.appendToSection(
+                    incorporateSection,
+                    incorporatePrefill,
+                )
+            }
             _uiState.update {
                 it.copy(
                     transcript = parsedSections.toClinicianText().ifBlank { existing?.transcript.orEmpty() },
@@ -198,10 +212,6 @@ class DictationViewModel @Inject constructor(
                     savedLocally = existing?.transcript?.isNotBlank() == true,
                     submitted = false,
                     error = null,
-                    // Reuse the existing note id so server-side ON CONFLICT
-                    // (id) keeps merging into the same row across resume.
-                    // We also stash patient_id here so the autosave path
-                    // doesn't have to re-fetch the visit each time.
                     noteId = existing?.id ?: it.noteId,
                     patientId = visit?.patientId ?: it.patientId,
                     patientSex = patient?.sex ?: it.patientSex,
@@ -209,7 +219,13 @@ class DictationViewModel @Inject constructor(
                     visitId = visitId,
                     pharmacyOrderSubmitted = visit?.pharmacyOrderSubmittedAt != null,
                     autosaveStatus = AutosaveStatus.Idle,
+                    focusedSection = incorporateSection ?: it.focusedSection,
+                    openLabPickerOnLoad = openLabPickerOnLoad,
+                    openRxPickerOnLoad = openRxPickerOnLoad,
                 )
+            }
+            if (incorporateSection != null) {
+                scheduleAutosave()
             }
         }
     }
