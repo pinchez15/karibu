@@ -110,6 +110,11 @@ class SyncEngine @Inject constructor(
             "cosign_provider_note" -> syncCosignProviderNote(entry)
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
+            "rpc_submit_pharmacy_order" -> syncSubmitPharmacyOrder(entry)
+            "rpc_start_lab" -> syncStartLab(entry)
+            "rpc_record_lab_result" -> syncRecordLabResult(entry)
+            "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
+            "rpc_record_dispense" -> syncRecordDispense(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
     }
@@ -350,6 +355,7 @@ class SyncEngine @Inject constructor(
             "claim_patient" -> supabaseApi.claimPatient(rpcParams)
             "start_visit_self_triage" -> supabaseApi.startVisitSelfTriage(rpcParams)
             "complete_visit_queue" -> supabaseApi.completeVisitQueue(rpcParams)
+            "check_in_patient" -> supabaseApi.checkInPatient(rpcParams)
             else -> {
                 Log.w(TAG, "Unknown queue RPC: $rpcName")
                 null
@@ -362,15 +368,98 @@ class SyncEngine @Inject constructor(
     }
 
     private suspend fun syncRecordPayment(entry: SyncQueueEntry) {
-        val dto = json.decodeFromString(PaymentCreateDto.serializer(), entry.payload)
+        val decoded = json.decodeFromString(RecordPaymentRpcRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
         Log.d(TAG, "Syncing record_payment: ${entry.entityId}")
 
-        val result = supabaseApi.createPayment(dto)
-        val serverPayment = result.firstOrNull()
-        if (serverPayment != null) {
-            paymentDao.upsert(serverPayment.toEntity(isSynced = true))
-            Log.d(TAG, "Payment synced: ${serverPayment.id}, receipt: ${serverPayment.receiptNumber}")
+        val response = supabaseApi.rpcRecordPayment(dto)
+        val existing = paymentDao.getByVisitIdOnce(dto.visitId)
+        val now = java.time.Instant.now().toString()
+        paymentDao.upsert(
+            (existing ?: com.karibuhealth.app.data.local.db.entity.PaymentEntity(
+                id = dto.id,
+                visitId = dto.visitId,
+                clinicId = dto.clinicId,
+                patientId = dto.patientId,
+                amountUgx = dto.amountUgx,
+                paymentMethod = dto.paymentMethod,
+                status = dto.status,
+                receiptNumber = "",
+                serviceType = dto.serviceType,
+                notes = dto.notes,
+                collectedBy = dto.collectedBy,
+                createdAt = now,
+                updatedAt = now,
+                isSynced = false,
+            )).copy(
+                receiptNumber = response.receiptNumber.orEmpty().ifBlank {
+                    existing?.receiptNumber.orEmpty()
+                },
+                isSynced = true,
+                updatedAt = now,
+            ),
+        )
+        Log.d(TAG, "Payment synced via RPC: ${dto.id}, receipt: ${response.receiptNumber}")
+    }
+
+    private suspend fun syncSubmitPharmacyOrder(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(SubmitPharmacyOrderRequest.serializer(), entry.payload)
+            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_submit_pharmacy_order: ${entry.entityId}")
+        val result = supabaseApi.rpcSubmitPharmacyOrder(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_submit_pharmacy_order HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncStartLab(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(StartLabRequest.serializer(), entry.payload)
+            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_start_lab: ${entry.entityId}")
+        val result = supabaseApi.rpcStartLab(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_start_lab HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncRecordLabResult(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(RecordLabResultRequest.serializer(), entry.payload)
+            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_record_lab_result: ${entry.entityId}")
+        val result = supabaseApi.rpcRecordLabResult(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_lab_result HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncSetDispensingStatus(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(SetDispensingStatusRequest.serializer(), entry.payload)
+            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_set_dispensing_status: ${entry.entityId}")
+        val result = supabaseApi.rpcSetDispensingStatus(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_set_dispensing_status HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncRecordDispense(entry: SyncQueueEntry) {
+        val dto = json.decodeFromString(RecordDispenseRequest.serializer(), entry.payload)
+            .copy(clientOpId = dto.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_record_dispense: ${entry.entityId}")
+        val result = supabaseApi.rpcRecordDispense(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        visitDao.updateSyncState(entry.entityId, true)
     }
 
     private suspend fun decodeVisitCreatePayload(entry: SyncQueueEntry): VisitCreateRpcDto {

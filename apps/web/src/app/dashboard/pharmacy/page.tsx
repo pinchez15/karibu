@@ -9,10 +9,9 @@ import { PharmacyQueueClient, type DispensingRow } from './PharmacyQueueClient'
 /**
  * Pharmacy dispensing board — MVP.
  *
- * Queue source: visits where the clinician has saved a `medications` text
- * (free-text orders) and dispensing_status is not yet 'dispensed'. We don't
- * have structured prescriptions yet — those land in a follow-up migration
- * once we've validated the dispensing workflow with real users.
+ * Queue source: visits where the clinician submitted a pharmacy order
+ * (`pharmacy_order_submitted_at`) with non-empty `medications` and dispensing
+ * is not yet terminal. Independent of `documentation_complete`.
  */
 
 const STATUS_FILTER = ['not_started', 'in_progress', 'partial', 'out_of_stock']
@@ -30,8 +29,7 @@ async function getPharmacyQueue(clinicId: string): Promise<DispensingRow[]> {
       medications,
       dispensing_status,
       dispense_notes,
-      documentation_complete,
-      documentation_completed_at,
+      pharmacy_order_submitted_at,
       patient:patients!inner (
         id,
         patient_number,
@@ -44,11 +42,11 @@ async function getPharmacyQueue(clinicId: string): Promise<DispensingRow[]> {
       )
     `)
     .eq('clinic_id', clinicId)
-    .eq('documentation_complete', true)
+    .not('pharmacy_order_submitted_at', 'is', null)
     .not('medications', 'is', null)
     .neq('medications', '')
     .in('dispensing_status', STATUS_FILTER)
-    .order('documentation_completed_at', { ascending: true })
+    .order('pharmacy_order_submitted_at', { ascending: true })
     .limit(100)
 
   if (error) {
@@ -92,7 +90,7 @@ export default async function PharmacyPage() {
               </div>
               <h2 className="text-2xl font-semibold tracking-tight mb-2">No prescriptions to dispense</h2>
               <p className="text-base text-body leading-relaxed">
-                Visits with medications written by the clinician land here once they finish documenting.
+                Visits appear here after the clinician taps Send to pharmacy (note may still be open).
                 Check back as patients move through the clinic.
               </p>
             </div>

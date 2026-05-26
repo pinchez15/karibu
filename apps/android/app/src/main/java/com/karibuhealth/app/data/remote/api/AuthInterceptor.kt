@@ -2,22 +2,39 @@ package com.karibuhealth.app.data.remote.api
 
 import com.karibuhealth.app.BuildConfig
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Singleton
 class AuthInterceptor @Inject constructor(
     private val authTokenStore: AuthTokenStore,
+    private val clerkAuthManager: Provider<ClerkAuthManager>,
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        var request = buildRequest(chain, authTokenStore.getTokenBlocking())
+
+        var response = chain.proceed(request)
+
+        if (response.code == 401 && authTokenStore.getTokenBlocking() != null) {
+            response.close()
+            runBlocking {
+                runCatching { clerkAuthManager.get().refreshToken() }
+            }
+            request = buildRequest(chain, authTokenStore.getTokenBlocking())
+            response = chain.proceed(request)
+        }
+
+        return response
+    }
+
+    private fun buildRequest(chain: Interceptor.Chain, token: String?): okhttp3.Request {
         val originalRequest = chain.request()
-
-        val token = runBlocking { authTokenStore.getToken() }
-
         val builder = originalRequest.newBuilder()
             .header("apikey", BuildConfig.SUPABASE_ANON_KEY)
             .apply {
@@ -27,22 +44,21 @@ class AuthInterceptor @Inject constructor(
                     header("Authorization", "Bearer ${BuildConfig.SUPABASE_ANON_KEY}")
                 }
             }
-            // Only set Prefer if the request didn't already supply one.
-            // Endpoints that need return=minimal (e.g. visits POST) annotate
-            // it via Retrofit @Headers; overriding here would clobber that.
             .apply {
                 if (originalRequest.header("Prefer") == null) {
                     header("Prefer", "return=representation")
                 }
             }
 
-        // Only force Content-Type when the request body hasn't set one. The
-        // dictation flow uploads multipart/form-data audio to /functions/v1/dictate
-        // and overriding that here would break the boundary parsing.
-        if (originalRequest.header("Content-Type") == null && originalRequest.body?.contentType() == null) {
+        if (originalRequest.header("Content-Type") == null &&
+            originalRequest.body?.contentType() == null
+        ) {
             builder.header("Content-Type", "application/json")
         }
 
-        return chain.proceed(builder.build())
+        return builder.build()
     }
+
+    private fun AuthTokenStore.getTokenBlocking(): String? =
+        runBlocking { getToken() }
 }

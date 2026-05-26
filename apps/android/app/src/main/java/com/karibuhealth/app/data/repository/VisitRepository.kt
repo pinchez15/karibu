@@ -9,7 +9,13 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.MarkDocumentationCompleteDto
+import com.karibuhealth.app.data.remote.dto.RecordDispenseRequest
+import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
+import com.karibuhealth.app.data.remote.dto.SetDispensingStatusRequest
+import com.karibuhealth.app.data.remote.dto.StartLabRequest
+import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.domain.model.*
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +34,7 @@ class VisitRepository @Inject constructor(
     private val database: KaribuDatabase,
     private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
@@ -81,7 +88,7 @@ class VisitRepository @Inject constructor(
                 attempts = 0,
                 createdAt = System.currentTimeMillis(),
             )
-            syncQueueDao.insert(syncEntry)
+            syncQueueHelper.enqueue(syncEntry)
         }
     }
 
@@ -175,8 +182,264 @@ class VisitRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = patientSyncEntryId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         visit to syncEntry.id
+    }
+
+    /**
+     * Clinician sends medications to pharmacy while the note may remain open.
+     */
+    suspend fun submitPharmacyOrder(
+        visitId: String,
+        medications: String,
+        staffId: String,
+    ): String? = withContext(Dispatchers.IO) {
+        val trimmed = medications.trim()
+        if (trimmed.isEmpty()) return@withContext null
+
+        val now = Instant.now().toString()
+        visitDao.updatePharmacyOrderSubmitted(
+            id = visitId,
+            medications = trimmed,
+            submittedAt = now,
+            submittedBy = staffId,
+            updatedAt = now,
+        )
+
+        val syncEntryId = UUID.randomUUID().toString()
+        val rpcBody = SubmitPharmacyOrderRequest(
+            visitId = visitId,
+            medications = trimmed,
+            clientOpId = syncEntryId,
+        )
+
+        if (networkMonitor.isOnline()) {
+            try {
+                val response = supabaseApi.rpcSubmitPharmacyOrder(rpcBody)
+                if (response.isSuccessful) {
+                    visitDao.updateSyncState(visitId, true)
+                    return@withContext null
+                }
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = syncEntryId,
+            operationType = "rpc_submit_pharmacy_order",
+            entityType = "visits",
+            entityId = visitId,
+            payload = json.encodeToString(SubmitPharmacyOrderRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+        )
+        syncQueueHelper.enqueue(syncEntry)
+        syncEntry.id
+    }
+
+    suspend fun startLab(visitId: String): String? = enqueueVisitRpc(
+        visitId = visitId,
+        operationType = "rpc_start_lab",
+        payload = json.encodeToString(
+            StartLabRequest.serializer(),
+            StartLabRequest(visitId = visitId),
+        ),
+        localMutator = {
+            visitDao.updateLabState(
+                id = visitId,
+                labStatus = "running",
+                labResults = null,
+                labAbnormal = false,
+                labCompletedAt = null,
+                labCompletedBy = null,
+                updatedAt = Instant.now().toString(),
+            )
+        },
+        onlineCall = { supabaseApi.rpcStartLab(StartLabRequest(visitId = visitId, clientOpId = it)) },
+    )
+
+    suspend fun recordLabResult(
+        visitId: String,
+        result: String,
+        abnormal: Boolean,
+        staffId: String,
+    ): String? {
+        val trimmed = result.trim()
+        if (trimmed.isEmpty()) return null
+        val now = Instant.now().toString()
+        val status = if (abnormal) "abnormal" else "done"
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_record_lab_result",
+            payload = json.encodeToString(
+                RecordLabResultRequest.serializer(),
+                RecordLabResultRequest(visitId = visitId, result = trimmed, abnormal = abnormal),
+            ),
+            localMutator = {
+                visitDao.updateLabState(
+                    id = visitId,
+                    labStatus = status,
+                    labResults = trimmed,
+                    labAbnormal = abnormal,
+                    labCompletedAt = now,
+                    labCompletedBy = staffId,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcRecordLabResult(
+                    RecordLabResultRequest(
+                        visitId = visitId,
+                        result = trimmed,
+                        abnormal = abnormal,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
+    suspend fun setDispensingStatus(
+        visitId: String,
+        status: String,
+        notes: String?,
+        staffId: String,
+    ): String? {
+        val now = Instant.now().toString()
+        val terminal = status in listOf("dispensed", "partial", "out_of_stock")
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_set_dispensing_status",
+            payload = json.encodeToString(
+                SetDispensingStatusRequest.serializer(),
+                SetDispensingStatusRequest(visitId = visitId, status = status, notes = notes),
+            ),
+            localMutator = {
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = status,
+                    dispenseNotes = notes,
+                    dispensedAt = if (terminal) now else null,
+                    dispensedBy = if (terminal) staffId else null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcSetDispensingStatus(
+                    SetDispensingStatusRequest(
+                        visitId = visitId,
+                        status = status,
+                        notes = notes,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
+    suspend fun recordDispense(
+        visitId: String,
+        status: String,
+        notes: String?,
+        staffId: String,
+    ): String? {
+        val now = Instant.now().toString()
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_record_dispense",
+            payload = json.encodeToString(
+                RecordDispenseRequest.serializer(),
+                RecordDispenseRequest(visitId = visitId, status = status, notes = notes),
+            ),
+            localMutator = {
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = status,
+                    dispenseNotes = notes,
+                    dispensedAt = now,
+                    dispensedBy = staffId,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcRecordDispense(
+                    RecordDispenseRequest(
+                        visitId = visitId,
+                        status = status,
+                        notes = notes,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
+    private suspend fun enqueueVisitRpc(
+        visitId: String,
+        operationType: String,
+        payload: String,
+        localMutator: suspend () -> Unit,
+        onlineCall: suspend (clientOpId: String) -> retrofit2.Response<okhttp3.ResponseBody>,
+    ): String? = withContext(Dispatchers.IO) {
+        localMutator()
+        val syncEntryId = UUID.randomUUID().toString()
+
+        if (networkMonitor.isOnline()) {
+            try {
+                val response = onlineCall(syncEntryId)
+                if (response.isSuccessful) {
+                    visitDao.updateSyncState(visitId, true)
+                    return@withContext null
+                }
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val finalPayload = when (operationType) {
+            "rpc_submit_pharmacy_order" -> payload
+            "rpc_start_lab" -> json.encodeToString(
+                StartLabRequest.serializer(),
+                StartLabRequest(visitId = visitId, clientOpId = syncEntryId),
+            )
+            "rpc_record_lab_result" -> {
+                val decoded = json.decodeFromString(RecordLabResultRequest.serializer(), payload)
+                json.encodeToString(
+                    RecordLabResultRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_set_dispensing_status" -> {
+                val decoded = json.decodeFromString(SetDispensingStatusRequest.serializer(), payload)
+                json.encodeToString(
+                    SetDispensingStatusRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_record_dispense" -> {
+                val decoded = json.decodeFromString(RecordDispenseRequest.serializer(), payload)
+                json.encodeToString(
+                    RecordDispenseRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            else -> payload
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = syncEntryId,
+            operationType = operationType,
+            entityType = "visits",
+            entityId = visitId,
+            payload = finalPayload,
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+        )
+        syncQueueHelper.enqueue(syncEntry)
+        syncEntry.id
     }
 
     /**
@@ -216,7 +479,7 @@ class VisitRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 

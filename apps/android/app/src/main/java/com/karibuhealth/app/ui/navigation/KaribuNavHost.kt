@@ -150,7 +150,7 @@ fun KaribuNavHost(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
                 onApproved = { visitId ->
-                    navController.navigate(NavRoute.Payment(visitId)) {
+                    navController.navigate(NavRoute.VisitDetails(visitId)) {
                         popUpTo(NavRoute.Home)
                     }
                 },

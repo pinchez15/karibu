@@ -3,6 +3,18 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v10 -> v11: EHR pivot pharmacy order submitted columns on visits.
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE visits ADD COLUMN pharmacy_order_submitted_at TEXT",
+        )
+        db.execSQL(
+            "ALTER TABLE visits ADD COLUMN pharmacy_order_submitted_by TEXT",
+        )
+    }
+}
+
 // v9 -> v10: cosign lifecycle (migration 044 mirror). Additive columns on
 // provider_notes so the mobile cache can read back which mid-level notes are
 // awaiting attending cosign. NOT NULL with a 0 default keeps the column

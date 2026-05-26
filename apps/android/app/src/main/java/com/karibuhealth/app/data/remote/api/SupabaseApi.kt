@@ -212,4 +212,26 @@ interface SupabaseApi {
         @Query("select") select: String = "id,visit_id,suggestion_type,question,reasoning,confidence,clinician_response,created_at",
         @Query("order") order: String = "created_at.asc",
     ): List<AiReviewSuggestionDto>
+
+    // EHR pivot (migration 045)
+    @POST("rpc/rpc_submit_pharmacy_order")
+    suspend fun rpcSubmitPharmacyOrder(@Body request: SubmitPharmacyOrderRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_payment")
+    suspend fun rpcRecordPayment(@Body request: RecordPaymentRpcRequest): RecordPaymentRpcResponse
+
+    @POST("rpc/rpc_start_lab")
+    suspend fun rpcStartLab(@Body request: StartLabRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_lab_result")
+    suspend fun rpcRecordLabResult(@Body request: RecordLabResultRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_reopen_lab")
+    suspend fun rpcReopenLab(@Body request: StartLabRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_set_dispensing_status")
+    suspend fun rpcSetDispensingStatus(@Body request: SetDispensingStatusRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_dispense")
+    suspend fun rpcRecordDispense(@Body request: RecordDispenseRequest): Response<ResponseBody>
 }

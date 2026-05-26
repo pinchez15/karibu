@@ -354,10 +354,13 @@ class NewVisitViewModel @Inject constructor(
 
         _uiState.update { it.copy(isCreating = true, error = null) }
         return try {
+            val normalizedFirstName = normalizeHumanName(state.firstName)
+            val normalizedLastName = normalizeHumanName(state.lastName)
+
             val candidates = patientRepository.findDuplicateCandidates(
                 clinicId = clinicId,
-                firstName = state.firstName.trim(),
-                lastName = state.lastName.trim(),
+                firstName = normalizedFirstName,
+                lastName = normalizedLastName,
                 village = state.village.trim().takeIf { it.isNotBlank() },
                 parish = state.parish.trim().takeIf { it.isNotBlank() },
                 age = ageEstimate,
@@ -370,8 +373,8 @@ class NewVisitViewModel @Inject constructor(
 
             val (patient, patientSyncId) = patientRepository.createPatient(
                 clinicId = clinicId,
-                firstName = state.firstName.trim(),
-                lastName = state.lastName.trim(),
+                firstName = normalizedFirstName,
+                lastName = normalizedLastName,
                 whatsappNumber = phone,
                 dateOfBirth = dateOfBirthIso,
                 sex = state.sex?.name,
@@ -402,6 +405,16 @@ class NewVisitViewModel @Inject constructor(
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message ?: "Failed to create patient", isCreating = false) }
             null
+        }
+    }
+
+    private fun normalizeHumanName(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.isEmpty()) return trimmed
+        // Minimal normalization: ensure the first letter is uppercase without
+        // forcing the rest of the name into lowercase (preserves intentional casing).
+        return trimmed.replaceFirstChar { ch ->
+            if (ch.isLowerCase()) ch.titlecase() else ch.toString()
         }
     }
 

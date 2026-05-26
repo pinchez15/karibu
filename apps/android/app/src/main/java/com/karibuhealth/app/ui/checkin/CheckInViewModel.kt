@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.KaribuDatabase
-import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
@@ -35,7 +35,7 @@ class CheckInViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
-    private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val database: KaribuDatabase,
 ) : ViewModel() {
 
@@ -107,7 +107,7 @@ class CheckInViewModel @Inject constructor(
                     attempts = 0,
                     createdAt = System.currentTimeMillis(),
                 )
-                syncQueueDao.insert(syncEntry)
+                syncQueueHelper.enqueue(syncEntry)
 
                 _uiState.update {
                     it.copy(checkedInVisitId = visit.id, isCheckingIn = false)

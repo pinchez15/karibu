@@ -138,6 +138,8 @@ data class VisitEntity(
     @ColumnInfo(name = "dispense_notes") val dispenseNotes: String? = null,
     @ColumnInfo(name = "dispensed_at") val dispensedAt: String? = null,
     @ColumnInfo(name = "dispensed_by") val dispensedBy: String? = null,
+    @ColumnInfo(name = "pharmacy_order_submitted_at") val pharmacyOrderSubmittedAt: String? = null,
+    @ColumnInfo(name = "pharmacy_order_submitted_by") val pharmacyOrderSubmittedBy: String? = null,
     // Lab MVP — workflow state for completing the clinician's `tests_ordered`
     // text. Set on the web by the lab tech; synced read-only to Android.
     @ColumnInfo(name = "lab_status") val labStatus: String = "not_ordered",

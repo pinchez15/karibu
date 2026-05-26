@@ -8,8 +8,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.DictationException
+import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.PatientRepository
+import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
@@ -129,6 +131,8 @@ data class DictationUiState(
      * is focused — Whisper transcripts then fall back to `additionalNote`.
      */
     val focusedSection: NoteSection? = null,
+    val pharmacyOrderSubmitted: Boolean = false,
+    val isSendingToPharmacy: Boolean = false,
 ) {
     /** Back-compat alias — true while any chunk is in flight. */
     val isTranscribing: Boolean
@@ -145,6 +149,8 @@ class DictationViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val visitRepository: VisitRepository,
     private val patientRepository: PatientRepository,
+    private val staffRepository: StaffRepository,
+    private val authTokenStore: AuthTokenStore,
     private val syncEngine: SyncEngine,
     private val clerkAuthManager: ClerkAuthManager,
     private val networkMonitor: NetworkMonitor,
@@ -201,8 +207,39 @@ class DictationViewModel @Inject constructor(
                     patientSex = patient?.sex ?: it.patientSex,
                     patientAgeYears = ageYears ?: it.patientAgeYears,
                     visitId = visitId,
+                    pharmacyOrderSubmitted = visit?.pharmacyOrderSubmittedAt != null,
                     autosaveStatus = AutosaveStatus.Idle,
                 )
+            }
+        }
+    }
+
+    fun sendToPharmacy() {
+        val visitId = _uiState.value.visitId ?: return
+        val meds = _uiState.value.sections.medications.trim()
+        if (meds.isEmpty()) {
+            _uiState.update { it.copy(error = "Add medications before sending to pharmacy") }
+            return
+        }
+        viewModelScope.launch {
+            val clerkUserId = authTokenStore.getClerkUserId()
+            val staffId = clerkUserId?.let { staffRepository.fetchAndCacheStaff(it)?.id }
+            if (staffId == null) {
+                _uiState.update { it.copy(error = "Staff session required") }
+                return@launch
+            }
+            _uiState.update { it.copy(isSendingToPharmacy = true, error = null) }
+            runCatching {
+                visitRepository.submitPharmacyOrder(visitId, meds, staffId)
+                syncEngine.processQueue()
+            }.onSuccess {
+                _uiState.update {
+                    it.copy(pharmacyOrderSubmitted = true, isSendingToPharmacy = false)
+                }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(isSendingToPharmacy = false, error = e.message)
+                }
             }
         }
     }

@@ -1,7 +1,8 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
-import { getStaff } from '@/lib/auth'
+import { getStaff, requireStaff } from '@/lib/auth'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
 export type DobPrecision = 'exact' | 'year_only' | 'age_estimate' | 'unknown'
@@ -372,3 +373,44 @@ export async function updatePatientSex(patientId: string, sex: 'M' | 'F') {
 // errored visit" path is for the clinician to navigate to the dictation
 // screen and re-submit, which fires the Inngest structure-dictation
 // workflow fresh.
+
+/** Submit a pharmacy order without closing the clinical note (EHR pivot). */
+export async function submitPharmacyOrder(
+  visitId: string,
+  medications: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const trimmed = medications.trim()
+  if (!trimmed) {
+    return { success: false, error: 'Medications are required' }
+  }
+
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  if (
+    !['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(
+      staff.role,
+    )
+  ) {
+    return { success: false, error: 'Forbidden: clinician role required' }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_submit_pharmacy_order', {
+    p_visit_id: visitId,
+    p_medications: trimmed,
+    p_client_op_id: null,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/dashboard/pharmacy')
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  return { success: true }
+}

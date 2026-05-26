@@ -144,6 +144,8 @@ export interface Visit {
   dispense_notes: string | null;
   dispensed_at: string | null;
   dispensed_by: string | null;
+  pharmacy_order_submitted_at: string | null;
+  pharmacy_order_submitted_by: string | null;
   // Lab MVP — workflow state for completing the clinician's `tests_ordered`
   // text. Set by the lab tech via /dashboard/lab actions.
   lab_status: 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal';

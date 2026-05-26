@@ -170,6 +170,8 @@ data class VisitDto(
     @SerialName("dispense_notes") val dispenseNotes: String? = null,
     @SerialName("dispensed_at") val dispensedAt: String? = null,
     @SerialName("dispensed_by") val dispensedBy: String? = null,
+    @SerialName("pharmacy_order_submitted_at") val pharmacyOrderSubmittedAt: String? = null,
+    @SerialName("pharmacy_order_submitted_by") val pharmacyOrderSubmittedBy: String? = null,
     @SerialName("lab_status") val labStatus: String = "not_ordered",
     @SerialName("lab_results") val labResults: String? = null,
     @SerialName("lab_abnormal") val labAbnormal: Boolean = false,
@@ -599,4 +601,64 @@ data class AiReviewSuggestionDto(
     val confidence: String,
     @SerialName("clinician_response") val clinicianResponse: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+// EHR pivot RPCs (migration 045)
+@Serializable
+data class SubmitPharmacyOrderRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_medications") val medications: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordPaymentRpcRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_amount_ugx") val amountUgx: Int,
+    @SerialName("p_payment_method") val paymentMethod: String,
+    @SerialName("p_status") val status: String = "paid",
+    @SerialName("p_service_type") val serviceType: String? = null,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_collected_by") val collectedBy: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordPaymentRpcResponse(
+    val id: String? = null,
+    @SerialName("receipt_number") val receiptNumber: String? = null,
+)
+
+@Serializable
+data class StartLabRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordLabResultRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_result") val result: String,
+    @SerialName("p_abnormal") val abnormal: Boolean = false,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class SetDispensingStatusRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_status") val status: String,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordDispenseRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_status") val status: String,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_movements") val movements: String = "[]",
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
 )

@@ -93,6 +93,7 @@ fun DictationScreen(
                 micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
         },
+        onSendToPharmacy = viewModel::sendToPharmacy,
     )
 }
 
@@ -109,6 +110,7 @@ private fun DictationScreenContent(
     onSaveDraft: () -> Unit,
     onStructureWithAi: () -> Unit,
     onToggleWhisper: () -> Unit,
+    onSendToPharmacy: () -> Unit,
 ) {
     val wordCount = uiState.transcript.trim()
         .split(Regex("\\s+"))
@@ -272,6 +274,29 @@ private fun DictationScreenContent(
                     onValueChange = { onSectionsChange(sections.copy(medications = it)) },
                     enabled = !uiState.isSubmitting,
                 )
+                Spacer(Modifier.height(8.dp))
+                if (uiState.pharmacyOrderSubmitted) {
+                    Text(
+                        "Sent to pharmacy",
+                        color = Green,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                } else {
+                    OutlinedButton(
+                        onClick = onSendToPharmacy,
+                        enabled = !uiState.isSubmitting &&
+                            !uiState.isSendingToPharmacy &&
+                            sections.medications.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (uiState.isSendingToPharmacy) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        } else {
+                            Text("Send to pharmacy")
+                        }
+                    }
+                }
             }
 
             // LABS — picker is sex/age-filtered (no pregnancy tests for males,
@@ -673,6 +698,7 @@ private fun DictationScreenPreview() {
             onSaveDraft = {},
             onStructureWithAi = {},
             onToggleWhisper = {},
+            onSendToPharmacy = {},
         )
     }
 }

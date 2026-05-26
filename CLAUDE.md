@@ -1,3 +1,16 @@
+## EHR pivot (authoritative implementation guide)
+
+The clinic queue model is being replaced with a **patient-centered EHR** (pre-launch big-bang).
+Before implementing sync, Android role homes, lab/pharmacy, pharmacy order timing, or schema
+changes for this effort, read **`docs/ehr-pivot-implementation.md`** end-to-end.
+
+That doc supersedes older planning docs when they conflict. Key locked decisions:
+
+- Pharmacy queues on **order submitted**, not note finalization
+- Lab + pharmacy on **one Android app** (role-based homes)
+- Offline dispense with **local stock decrement**, sync when online
+- Payment **decoupled** from clinical closure; all writes via **SECURITY DEFINER RPCs**
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill

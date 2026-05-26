@@ -174,6 +174,8 @@ data class Visit(
     val dispenseNotes: String? = null,
     val dispensedAt: String? = null,
     val dispensedBy: String? = null,
+    val pharmacyOrderSubmittedAt: String? = null,
+    val pharmacyOrderSubmittedBy: String? = null,
     val labStatus: String = "not_ordered",
     val labResults: String? = null,
     val labAbnormal: Boolean = false,

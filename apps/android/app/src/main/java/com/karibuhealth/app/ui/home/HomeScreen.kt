@@ -31,6 +31,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.domain.model.Staff
+import com.karibuhealth.app.domain.model.StaffRole
+import com.karibuhealth.app.ui.lab.LabHomeScreen
+import com.karibuhealth.app.ui.pharmacy.PharmacyHomeScreen
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
@@ -58,6 +61,25 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    when (uiState.staff?.role) {
+        StaffRole.lab_tech -> {
+            LabHomeScreen(
+                onNavigateToVisit = onNavigateToVisitDetails,
+                onNavigateToWorklists = onNavigateToWorklists,
+            )
+            return
+        }
+        StaffRole.dispenser -> {
+            PharmacyHomeScreen(
+                onNavigateToVisit = onNavigateToVisitDetails,
+                onNavigateToWorklists = onNavigateToWorklists,
+            )
+            return
+        }
+        else -> Unit
+    }
+
     var isRefreshing by remember { mutableStateOf(false) }
     var profileMenuOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()

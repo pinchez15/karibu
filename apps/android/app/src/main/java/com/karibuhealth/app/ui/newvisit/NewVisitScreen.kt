@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
@@ -172,6 +173,7 @@ fun NewVisitScreen(
                     error = uiState.fieldErrors.firstName,
                     modifier = Modifier.weight(1f),
                     imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.Words,
                 )
                 LabeledOutlinedField(
                     label = "LAST NAME",
@@ -181,6 +183,7 @@ fun NewVisitScreen(
                     error = uiState.fieldErrors.lastName,
                     modifier = Modifier.weight(1f),
                     imeAction = ImeAction.Next,
+                    capitalization = KeyboardCapitalization.Words,
                 )
             }
 
@@ -581,6 +584,7 @@ private fun LabeledOutlinedField(
     modifier: Modifier = Modifier,
     imeAction: ImeAction = ImeAction.Next,
     helper: String? = null,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
 ) {
     Column(modifier = modifier) {
         KhMetaText(text = label)
@@ -596,7 +600,10 @@ private fun LabeledOutlinedField(
                 else -> null
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = imeAction),
+            keyboardOptions = KeyboardOptions(
+                imeAction = imeAction,
+                capitalization = capitalization,
+            ),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             colors = OutlinedTextFieldDefaults.colors(

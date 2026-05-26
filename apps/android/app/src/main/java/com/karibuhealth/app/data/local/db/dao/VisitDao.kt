@@ -153,4 +153,62 @@ interface VisitDao {
 
     @Query("SELECT COUNT(*) FROM visits WHERE clinic_id = :clinicId AND is_synced = 0")
     suspend fun getUnsyncedCount(clinicId: String): Int
+
+    @Query("""
+        UPDATE visits
+        SET medications = :medications,
+            pharmacy_order_submitted_at = :submittedAt,
+            pharmacy_order_submitted_by = :submittedBy,
+            dispensing_status = CASE
+                WHEN dispensing_status = 'dispensed' THEN dispensing_status
+                ELSE 'not_started'
+            END,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updatePharmacyOrderSubmitted(
+        id: String,
+        medications: String,
+        submittedAt: String,
+        submittedBy: String,
+        updatedAt: String,
+    )
+
+    @Query("""
+        UPDATE visits
+        SET lab_status = :labStatus,
+            lab_results = :labResults,
+            lab_abnormal = :labAbnormal,
+            lab_completed_at = :labCompletedAt,
+            lab_completed_by = :labCompletedBy,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateLabState(
+        id: String,
+        labStatus: String,
+        labResults: String?,
+        labAbnormal: Boolean,
+        labCompletedAt: String?,
+        labCompletedBy: String?,
+        updatedAt: String,
+    )
+
+    @Query("""
+        UPDATE visits
+        SET dispensing_status = :dispensingStatus,
+            dispense_notes = :dispenseNotes,
+            dispensed_at = :dispensedAt,
+            dispensed_by = :dispensedBy,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateDispensingState(
+        id: String,
+        dispensingStatus: String,
+        dispenseNotes: String?,
+        dispensedAt: String?,
+        dispensedBy: String?,
+        updatedAt: String,
+    )
 }

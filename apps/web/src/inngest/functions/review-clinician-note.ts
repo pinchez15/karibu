@@ -261,9 +261,11 @@ export const reviewClinicianNote = inngest.createFunction(
             ai_review_status: 'completed',
             ai_review_completed_at: new Date().toISOString(),
             ai_review_no_concerns: true,
+            status: 'review',
           })
           .eq('id', visit_id)
           .eq('clinic_id', clinic_id)
+          .eq('status', 'pending')
       })
       return { visit_id, ai_review_status: 'completed' as const, suggestions: 0 }
     }
@@ -400,9 +402,13 @@ export const reviewClinicianNote = inngest.createFunction(
           ai_review_status: 'completed',
           ai_review_completed_at: new Date().toISOString(),
           ai_review_no_concerns: suggestions.length === 0,
+          // AI dictation pipeline: submit-dictation leaves status='pending';
+          // advance to 'review' when the primary note.dictated handler completes.
+          status: 'review',
         })
         .eq('id', visit_id)
         .eq('clinic_id', clinic_id)
+        .eq('status', 'pending')
       if (updateErr) {
         throw new Error(`persist status: ${updateErr.message}`)
       }

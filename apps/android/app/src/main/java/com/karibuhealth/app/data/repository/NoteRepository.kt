@@ -10,6 +10,7 @@ import com.karibuhealth.app.data.local.db.entity.PatientNoteEntity
 import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.remote.dto.AddendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.AmendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.CosignProviderNoteRequest
@@ -37,6 +38,7 @@ class NoteRepository @Inject constructor(
     private val patientNoteDao: PatientNoteDao,
     private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
@@ -179,7 +181,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         entity.toDomain() to syncEntry.id
     }
 
@@ -273,7 +275,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 
@@ -334,7 +336,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 
@@ -382,7 +384,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 
@@ -438,7 +440,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 
@@ -490,7 +492,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 
@@ -551,7 +553,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         entity.toDomain() to syncEntry.id
     }
 
@@ -610,7 +612,7 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueDao.insert(syncEntry)
+        syncQueueHelper.enqueue(syncEntry)
         syncEntry.id
     }
 

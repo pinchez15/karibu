@@ -1,14 +1,12 @@
 package com.karibuhealth.app.data.repository
 
 import com.karibuhealth.app.data.local.db.KaribuDatabase
-import com.karibuhealth.app.data.local.db.converter.toCreateDto
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.converter.toEntity
 import com.karibuhealth.app.data.local.db.dao.PaymentDao
-import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
-import com.karibuhealth.app.data.local.db.dao.VisitDao
-import androidx.room.withTransaction
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.dto.RecordPaymentRpcRequest
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.domain.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -24,8 +22,7 @@ import javax.inject.Singleton
 class PaymentRepository @Inject constructor(
     private val database: KaribuDatabase,
     private val paymentDao: PaymentDao,
-    private val visitDao: VisitDao,
-    private val syncQueueDao: SyncQueueDao,
+    private val syncQueueHelper: SyncQueueHelper,
     private val json: Json,
 ) {
     fun getPaymentForVisit(visitId: String): Flow<Payment?> =
@@ -43,15 +40,16 @@ class PaymentRepository @Inject constructor(
         waived: Boolean = false,
     ): Payment {
         val now = Instant.now().toString()
+        val paymentId = UUID.randomUUID().toString()
         val payment = Payment(
-            id = UUID.randomUUID().toString(),
+            id = paymentId,
             visitId = visitId,
             clinicId = clinicId,
             patientId = patientId,
             amountUgx = amountUgx,
             paymentMethod = paymentMethod,
             status = if (waived) PaymentStatus.waived else PaymentStatus.paid,
-            receiptNumber = "", // Assigned by server
+            receiptNumber = "",
             serviceType = serviceType,
             notes = notes,
             collectedBy = collectedBy,
@@ -59,84 +57,43 @@ class PaymentRepository @Inject constructor(
             updatedAt = now,
         )
 
-        val entity = payment.toEntity(isSynced = false)
-        val createDto = payment.toCreateDto()
+        val syncEntryId = UUID.randomUUID().toString()
+        val rpcBody = RecordPaymentRpcRequest(
+            id = paymentId,
+            visitId = visitId,
+            clinicId = clinicId,
+            patientId = patientId,
+            amountUgx = amountUgx,
+            paymentMethod = paymentMethod.name,
+            status = payment.status.name,
+            serviceType = serviceType,
+            notes = notes,
+            collectedBy = collectedBy,
+            clientOpId = syncEntryId,
+        )
         val syncEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
+            id = syncEntryId,
             operationType = "record_payment",
             entityType = "payments",
-            entityId = payment.id,
-            payload = json.encodeToString(
-                com.karibuhealth.app.data.remote.dto.PaymentCreateDto.serializer(),
-                createDto,
-            ),
+            entityId = paymentId,
+            payload = json.encodeToString(RecordPaymentRpcRequest.serializer(), rpcBody),
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
-        )
-        val completeEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
-            operationType = "queue_op",
-            entityType = "visits",
-            entityId = visitId,
-            payload = """{"rpc":"complete_visit_queue","params":{"p_visit_id":"$visitId","p_staff_id":"$collectedBy"}}""",
-            status = "pending",
-            attempts = 0,
-            createdAt = System.currentTimeMillis(),
-            dependsOn = syncEntry.id,
         )
 
-        // withTransaction is the suspend-friendly Room transaction API. The
-        // previous runInTransaction { runBlocking { ... } } pattern crashed
-        // when called from viewModelScope (Main dispatcher) because the
-        // sync database.runInTransaction enforces "not on main thread."
-        // withContext(IO) for belt-and-braces in case withTransaction
-        // dispatches differently across Room versions.
         withContext(Dispatchers.IO) {
             database.withTransaction {
-                paymentDao.upsert(entity)
-                syncQueueDao.insert(syncEntry)
-                syncQueueDao.insert(completeEntry)
-                visitDao.updateStatusAndQueueStatus(
-                    id = visitId,
-                    status = VisitStatus.completed.name,
-                    queueStatus = QueueStatus.completed.name,
-                    finalizedAt = now,
-                    updatedAt = now,
-                )
+                paymentDao.upsert(payment.toEntity(isSynced = false))
+                syncQueueHelper.enqueue(syncEntry)
             }
         }
 
         return payment
     }
 
-    suspend fun skipPayment(
-        visitId: String,
-        staffId: String,
-    ) {
-        val now = Instant.now().toString()
-        val completeEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
-            operationType = "queue_op",
-            entityType = "visits",
-            entityId = visitId,
-            payload = """{"rpc":"complete_visit_queue","params":{"p_visit_id":"$visitId","p_staff_id":"$staffId"}}""",
-            status = "pending",
-            attempts = 0,
-            createdAt = System.currentTimeMillis(),
-        )
-
-        withContext(Dispatchers.IO) {
-            database.withTransaction {
-                syncQueueDao.insert(completeEntry)
-                visitDao.updateStatusAndQueueStatus(
-                    id = visitId,
-                    status = VisitStatus.completed.name,
-                    queueStatus = QueueStatus.completed.name,
-                    finalizedAt = now,
-                    updatedAt = now,
-                )
-            }
-        }
+    /** Billing skipped — payment no longer closes the clinical encounter. */
+    suspend fun skipPayment(visitId: String, staffId: String) {
+        // No queue mutation; visit lifecycle is independent of payment (EHR pivot).
     }
 }
