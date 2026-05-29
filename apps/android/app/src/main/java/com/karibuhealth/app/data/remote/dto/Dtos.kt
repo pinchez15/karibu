@@ -5,6 +5,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
+data class ClinicWorkflowConfigDto(
+    @SerialName("default_opd_filters") val defaultOpdFilters: List<String> = emptyList(),
+    @SerialName("show_physical_queue_filter") val showPhysicalQueueFilter: Boolean = true,
+    @SerialName("enabled_protocol_slugs") val enabledProtocolSlugs: List<String> = emptyList(),
+)
+
+@Serializable
 data class ClinicDto(
     val id: String,
     val name: String,
@@ -12,6 +19,7 @@ data class ClinicDto(
     @SerialName("clerk_organization_id") val clerkOrganizationId: String? = null,
     val timezone: String = "Africa/Kampala",
     @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("workflow_config") val workflowConfig: ClinicWorkflowConfigDto? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
@@ -767,4 +775,49 @@ data class ClinicFormularyItemDto(
     @SerialName("display_order") val displayOrder: Int = 0,
     @SerialName("is_available") val isAvailable: Boolean = true,
     val notes: String? = null,
+)
+
+@Serializable
+data class GetOpdPatientsTodayRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_filter") val filter: String? = null,
+)
+
+@Serializable
+data class OpdPatientTodayDto(
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val sex: String? = null,
+    @SerialName("derived_age") val derivedAge: Int? = null,
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("queue_status") val queueStatus: String,
+    @SerialName("lab_status") val labStatus: String,
+    @SerialName("dispensing_status") val dispensingStatus: String,
+    @SerialName("documentation_complete") val documentationComplete: Boolean = false,
+    @SerialName("pharmacy_order_submitted_at") val pharmacyOrderSubmittedAt: String? = null,
+    @SerialName("note_status") val noteStatus: String? = null,
+    @SerialName("visit_date") val visitDate: String,
+)
+
+@Serializable
+data class AdmitPatientRequest(
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_ward_label") val wardLabel: String? = null,
+    @SerialName("p_chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ActivateClinicalProtocolRequest(
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_protocol_slug") val protocolSlug: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RequestDraftAiAssistRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_sections_snapshot") val sectionsSnapshot: String? = null,
 )

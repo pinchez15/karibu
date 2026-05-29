@@ -24,7 +24,7 @@ class SyncEngine @Inject constructor(
     private val providerNoteDao: ProviderNoteDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
-    private val outboxReconciler: OutboxReconciler,
+    private val pullReconciliationService: PullReconciliationService,
     private val json: Json,
 ) {
     companion object {
@@ -94,7 +94,7 @@ class SyncEngine @Inject constructor(
         syncQueueDao.deleteCompleted(sevenDaysAgo)
 
         if (processedCount > 0) {
-            outboxReconciler.reconcilePendingWithLocalState()
+            pullReconciliationService.reconcileAfterPull()
         }
         SyncMetrics.recordQueueProcessed(processedCount, failedCount)
         SyncMetrics.recordOutboxDepth(syncQueueDao.getPending().size)

@@ -102,5 +102,8 @@ verify_jwt = false
 [functions.reject-dictation]
 verify_jwt = false
 
+[functions.request-draft-ai-assist]
+verify_jwt = false
+
 [analytics]
 enabled = false

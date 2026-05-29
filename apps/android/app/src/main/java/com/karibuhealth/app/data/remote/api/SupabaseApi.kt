@@ -255,4 +255,16 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_get_clinic_catalog")
     suspend fun rpcGetClinicCatalog(@Body request: GetClinicCatalogRequest): ClinicCatalogDto
+
+    @POST("rpc/rpc_get_opd_patients_today")
+    suspend fun rpcGetOpdPatientsToday(@Body request: GetOpdPatientsTodayRequest): List<OpdPatientTodayDto>
+
+    @POST("rpc/rpc_admit_patient")
+    suspend fun rpcAdmitPatient(@Body request: AdmitPatientRequest): String
+
+    @POST("rpc/rpc_activate_clinical_protocol")
+    suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
+
+    @POST("rpc/rpc_request_draft_ai_assist")
+    suspend fun rpcRequestDraftAiAssist(@Body request: RequestDraftAiAssistRequest): kotlinx.serialization.json.JsonObject
 }

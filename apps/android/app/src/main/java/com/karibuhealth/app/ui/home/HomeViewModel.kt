@@ -26,6 +26,8 @@ import javax.inject.Inject
 data class HomeUiState(
     val staff: Staff? = null,
     val clinic: Clinic? = null,
+    /** When false, legacy physical queue entry points are hidden (migration 048). */
+    val showPhysicalQueueFilter: Boolean = true,
     val opdPatients: List<OpdPatientRow> = emptyList(),
     val selectedFilter: OpdPatientFilter? = null,
     val pendingSyncCount: Int = 0,
@@ -68,8 +70,16 @@ class HomeViewModel @Inject constructor(
 
             launch {
                 staffRepository.getClinic(staff.clinicId).collect { clinic ->
-                    _uiState.update { it.copy(clinic = clinic) }
+                    _uiState.update {
+                        it.copy(
+                            clinic = clinic,
+                            showPhysicalQueueFilter = clinic?.workflowConfig?.showPhysicalQueueFilter != false,
+                        )
+                    }
                 }
+            }
+            launch {
+                visitRepository.refreshOpdPatientsToday(staff.clinicId)
             }
             launch {
                 visitRepository.getOpdPatientsToday(staff.clinicId).collect { list ->
@@ -110,6 +120,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val clinicId = authTokenStore.getClinicId() ?: return@launch
             visitRepository.refreshTodayVisits(clinicId)
+            visitRepository.refreshOpdPatientsToday(clinicId)
         }
     }
 

@@ -24,6 +24,8 @@ interface ClinicianDashboardProps {
   visitsToday?: number
   /** Average visit time today, in minutes (lightweight metric, can default later). */
   avgVisitMinutes?: number
+  /** When false, hide the legacy physical queue table (chart-first workflow). */
+  showPhysicalQueue?: boolean
 }
 
 export function ClinicianDashboard({
@@ -31,6 +33,7 @@ export function ClinicianDashboard({
   reviewCount,
   visitsToday = 0,
   avgVisitMinutes,
+  showPhysicalQueue = true,
 }: ClinicianDashboardProps) {
   const waiting = queue.length
   const avgLabel = avgVisitMinutes
@@ -84,8 +87,14 @@ export function ClinicianDashboard({
           />
         </div>
 
-        <div className="grid grid-cols-[1.6fr_1fr] gap-4">
-          {/* Legacy physical queue — demoted operational view */}
+        <div
+          className={
+            showPhysicalQueue
+              ? 'grid grid-cols-[1.6fr_1fr] gap-4'
+              : 'grid grid-cols-1 gap-4'
+          }
+        >
+          {showPhysicalQueue ? (
           <div className="bg-card border border-border rounded-xl opacity-90">
             <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">
               <div>
@@ -155,6 +164,7 @@ export function ClinicianDashboard({
               })
             )}
           </div>
+          ) : null}
 
           {/* Side column */}
           <div className="flex flex-col gap-4">

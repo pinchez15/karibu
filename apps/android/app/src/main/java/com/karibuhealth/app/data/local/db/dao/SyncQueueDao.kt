@@ -88,6 +88,19 @@ interface SyncQueueDao {
     """)
     fun getPendingCountForPatient(patientId: String): Flow<Int>
 
+    @Query("""
+        SELECT COUNT(*) FROM sync_queue sq
+        WHERE sq.status IN ('pending', 'failed') AND sq.attempts < sq.max_attempts
+        AND (
+            sq.entity_id = :visitId
+            OR sq.entity_id IN (SELECT id FROM provider_notes WHERE visit_id = :visitId)
+            OR sq.entity_id IN (SELECT id FROM patient_vitals WHERE visit_id = :visitId)
+            OR sq.entity_id IN (SELECT id FROM patient_notes WHERE visit_id = :visitId)
+            OR sq.entity_id IN (SELECT patient_id FROM visits WHERE id = :visitId)
+        )
+    """)
+    fun getPendingCountForVisit(visitId: String): Flow<Int>
+
     /**
      * Escape hatch: mark a single queue entry as completed without
      * re-attempting the RPC. The user invokes this from the sync details

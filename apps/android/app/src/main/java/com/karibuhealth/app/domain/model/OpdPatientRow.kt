@@ -1,6 +1,7 @@
 package com.karibuhealth.app.domain.model
 
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
+import com.karibuhealth.app.data.remote.dto.OpdPatientTodayDto
 
 /** OPD home filter chips — mirrors clinics.workflow_config default_opd_filters. */
 enum class OpdPatientFilter(val label: String) {
@@ -32,6 +33,40 @@ data class OpdPatientRow(
     val bucket: OpdPatientFilter,
 ) {
     companion object {
+        fun from(dto: OpdPatientTodayDto): OpdPatientRow {
+            val name = dto.patientName?.trim().orEmpty().ifBlank { "Unknown" }
+            val ageLabel = dto.derivedAge?.let { "${it}y" }
+            return OpdPatientRow(
+                patientId = dto.patientId,
+                visitId = dto.visitId,
+                patientName = name,
+                sex = dto.sex,
+                ageLabel = ageLabel,
+                chiefComplaint = dto.chiefComplaint,
+                checkedInAt = null,
+                priority = "normal",
+                queueStatus = dto.queueStatus,
+                bucket = deriveBucketFromRpc(dto),
+            )
+        }
+
+        /** Mirrors server filters in rpc_get_opd_patients_today (migration 048). */
+        private fun deriveBucketFromRpc(dto: OpdPatientTodayDto): OpdPatientFilter {
+            val atPharmacy = dto.pharmacyOrderSubmittedAt != null &&
+                dto.dispensingStatus !in listOf("dispensed", "partial", "complete")
+            val labPending = dto.labStatus in listOf("pending", "running")
+            return when {
+                dto.documentationComplete -> OpdPatientFilter.DoneToday
+                atPharmacy -> OpdPatientFilter.AtPharmacy
+                labPending -> OpdPatientFilter.AwaitingLabs
+                dto.queueStatus == "waiting" -> OpdPatientFilter.Waiting
+                dto.queueStatus == "with_nurse" -> OpdPatientFilter.NeedsVitals
+                dto.queueStatus in listOf("ready_for_doctor", "with_doctor") &&
+                    !dto.documentationComplete -> OpdPatientFilter.WithClinician
+                else -> OpdPatientFilter.Waiting
+            }
+        }
+
         fun from(vwp: VisitWithPatient): OpdPatientRow {
             val v = vwp.visit
             val p = vwp.patient

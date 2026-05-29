@@ -26,7 +26,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +48,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -88,6 +94,7 @@ fun PatientTimelineScreen(
     onNavigateToVisit: (String) -> Unit,
     onAddNote: (String) -> Unit,
     onRecordVitals: (String) -> Unit,
+    onNavigateToBilling: () -> Unit = {},
     viewModel: PatientTimelineViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -111,6 +118,7 @@ fun PatientTimelineScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    var protocolMenuExpanded by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     // Trigger pagination when the user is within ~6 items of the tail. Using
     // derivedStateOf so we don't rerun the predicate on every visible-item
@@ -163,8 +171,37 @@ fun PatientTimelineScreen(
                     SyncStatusPill(
                         pendingCount = uiState.pendingSyncCount,
                         isOnline = uiState.isOnline,
-                        modifier = Modifier.padding(end = 8.dp),
+                        modifier = Modifier.padding(end = 4.dp),
                     )
+                    IconButton(onClick = onNavigateToBilling) {
+                        Icon(Icons.Default.Payments, contentDescription = "Billing")
+                    }
+                    if (uiState.enabledProtocolSlugs.isNotEmpty()) {
+                        Box {
+                            IconButton(onClick = { protocolMenuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Protocols")
+                            }
+                            DropdownMenu(
+                                expanded = protocolMenuExpanded,
+                                onDismissRequest = { protocolMenuExpanded = false },
+                            ) {
+                                uiState.enabledProtocolSlugs.forEach { slug ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (uiState.protocolActivating == slug) "Activating…" else slug,
+                                            )
+                                        },
+                                        onClick = {
+                                            protocolMenuExpanded = false
+                                            viewModel.activateProtocol(slug)
+                                        },
+                                        enabled = uiState.protocolActivating == null,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 },
             )
         },
@@ -205,6 +242,16 @@ fun PatientTimelineScreen(
             contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            uiState.protocolMessage?.let { msg ->
+                item {
+                    Text(
+                        text = msg,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
             item {
                 LatestVitalsCard(latestVitals = uiState.latestVitals)
             }
@@ -689,19 +736,40 @@ private fun EmptyHint(text: String) {
     }
 }
 
+private fun labStatusLabel(status: String): String = when (status) {
+    "pending" -> "Pending"
+    "running" -> "Running"
+    "done", "complete" -> "Complete"
+    "not_ordered" -> "Not ordered"
+    else -> status.replace('_', ' ').replaceFirstChar { it.uppercase() }
+}
+
+private fun dispensingStatusLabel(status: String, hasOrder: Boolean): String = when {
+    !hasOrder && status == "not_started" -> ""
+    !hasOrder -> "Pharmacy queued"
+    status == "not_started" -> "Awaiting dispense"
+    status == "in_progress" -> "Dispensing"
+    status == "partial" -> "Partial dispense"
+    status == "complete" -> "Dispensed"
+    status == "out_of_stock" -> "Out of stock"
+    else -> status.replace('_', ' ').replaceFirstChar { it.uppercase() }
+}
+
 @Composable
 private fun TodayCarePathwayBadges(visit: Visit) {
     val hasLab = visit.testsOrdered?.isNotBlank() == true || visit.labStatus != "not_ordered"
-    val hasPharm = !visit.medications.isNullOrBlank()
-    if (!hasLab && !hasPharm) return
+    val hasPharmOrder = visit.pharmacyOrderSubmittedAt != null || !visit.medications.isNullOrBlank()
+    val pharmLabel = dispensingStatusLabel(visit.dispensingStatus, hasPharmOrder)
+    if (!hasLab && pharmLabel.isBlank()) return
 
     Row(
         modifier = Modifier.padding(top = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (hasLab) {
+            val labText = labStatusLabel(visit.labStatus)
             KhStatusPill(
-                label = "Lab · ${visit.labStatus.replace('_', ' ')}",
+                label = "Lab · $labText${if (visit.labAbnormal) " · flagged" else ""}",
                 kind = when (visit.labStatus) {
                     "done", "complete" -> KhStatusKind.Sent
                     "running", "pending" -> KhStatusKind.Lab
@@ -709,16 +777,11 @@ private fun TodayCarePathwayBadges(visit: Visit) {
                 },
             )
         }
-        if (hasPharm) {
-            val pharmText = if (visit.pharmacyOrderSubmittedAt == null) {
-                "Pharm · order pending"
-            } else {
-                "Pharm · ${visit.dispensingStatus.replace('_', ' ')}"
-            }
+        if (pharmLabel.isNotBlank()) {
             KhStatusPill(
-                label = pharmText,
+                label = "Pharm · $pharmLabel",
                 kind = when (visit.dispensingStatus) {
-                    "complete" -> KhStatusKind.Sent
+                    "complete" -> KhStatusKind.Signed
                     "in_progress", "partial" -> KhStatusKind.PendingReview
                     "out_of_stock" -> KhStatusKind.Errored
                     else -> KhStatusKind.Waiting

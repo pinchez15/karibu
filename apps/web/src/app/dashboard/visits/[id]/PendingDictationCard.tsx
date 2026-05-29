@@ -18,7 +18,12 @@ import {
   appendToSection,
   sectionDisplayLabel,
 } from '@/lib/clinical-note-sections'
-import { autosaveDraftNote, saveDraftNote, signClinicianNote } from './note-actions'
+import {
+  autosaveDraftNote,
+  queueDraftAiAssist,
+  saveDraftNote,
+  signClinicianNote,
+} from './note-actions'
 import { submitPharmacyOrder } from '../actions'
 import type { StaffRole } from '@karibu/shared'
 
@@ -86,6 +91,7 @@ export function PendingDictationCard({
   const recordedChunksRef = useRef<Blob[]>([])
 
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const draftAiQueuedRef = useRef(false)
   const lastSavedTranscriptRef = useRef<string>(sectionsToClinicianText(sections))
   const inFlightAutosaveRef = useRef<Promise<void> | null>(null)
 
@@ -113,6 +119,10 @@ export function PendingDictationCard({
         if (result.success) {
           lastSavedTranscriptRef.current = text
           setAutosaveStatus('saved')
+          if (!draftAiQueuedRef.current && text.trim().length >= 50) {
+            draftAiQueuedRef.current = true
+            void queueDraftAiAssist({ visit_id: visitId, sections: nextSections })
+          }
         } else {
           setAutosaveStatus('failed')
         }

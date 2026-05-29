@@ -52,6 +52,8 @@ data class VisitDetailsUiState(
     val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
+    val pendingSyncCount: Int = 0,
+    val isOnline: Boolean = true,
 )
 
 data class SyncErrorInfo(
@@ -123,7 +125,15 @@ class VisitDetailsViewModel @Inject constructor(
 
         viewModelScope.launch {
             networkMonitor.connectionStatusFlow.collect { status ->
-                _uiState.update { it.copy(connectionStatus = status) }
+                _uiState.update {
+                    it.copy(connectionStatus = status, isOnline = status.isOnline)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            syncQueueDao.getPendingCountForVisit(visitId).collect { count ->
+                _uiState.update { it.copy(pendingSyncCount = count) }
             }
         }
 

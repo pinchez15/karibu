@@ -313,14 +313,15 @@ Web can remain **admin/reports/HMIS** heavy; Android is **field resilience** for
 
 ### 6.1 OPD / Inpatient navigation (migration 048)
 
-- **OPD:** `rpc_get_opd_patients_today` returns one row per patient for today's visit, filterable by workflow keys (`waiting`, `needs_vitals`, `with_clinician`, `awaiting_labs`, `at_pharmacy`, `done_today`). Clinic defaults live in `clinics.workflow_config.default_opd_filters`.
-- **Inpatient:** `admissions` table + `visits.admission_id` link encounters to ward stays. `rpc_admit_patient` creates active admissions.
-- **Web clinician dashboard:** patient search + link to today's patients list; physical queue table retained as deprecated operational view only.
+- **OPD:** `rpc_get_opd_patients_today` returns one row per patient for today's visit, filterable by workflow keys (`waiting`, `needs_vitals`, `with_clinician`, `awaiting_labs`, `at_pharmacy`, `done_today`). Clinic defaults live in `clinics.workflow_config.default_opd_filters`. **Android:** `VisitRepository.refreshOpdPatientsToday` calls the RPC when online (local bucket fallback offline).
+- **Inpatient:** `admissions` table + `visits.admission_id` link encounters to ward stays. `rpc_admit_patient` creates active admissions. **Android:** `InpatientHomeScreen` + admit form (online required).
+- **Web clinician dashboard:** patient search + link to today's patients list; physical queue hidden when `workflow_config.show_physical_queue_filter` is false.
 
 ### 6.2 Clinic catalog platform
 
 - `clinic_lab_capabilities` and `clinic_pharmacy_formulary` gain `code`, `category`, `display_order`, `active`.
 - `rpc_get_clinic_catalog(p_clinic_id)` returns sorted lab + formulary JSON for Android pickers and AI constraint prompts.
+- **Android pickers:** lab list from Room catalog + `HcLabCatalog` offline fallback; formulary names from catalog with `code` mapped to `HcDrugCatalog` for dose/freq/route/confusables until formulary metadata carries sig fields.
 - Admin inventory UI toggles availability/stock plus catalog metadata.
 
 ### 6.3 Clinical protocol engine
@@ -334,7 +335,7 @@ Web can remain **admin/reports/HMIS** heavy; Android is **field resilience** for
 
 | Phase | When | Storage |
 |-------|------|---------|
-| `draft` | During open note (`rpc_request_draft_ai_assist`) | `ai_review_suggestions.phase = 'draft'` |
+| `draft` | During open note (`rpc_request_draft_ai_assist`) | `ai_review_suggestions.phase = 'draft'` — dispatched from Android autosave + web `queueDraftAiAssist` via edge function `request-draft-ai-assist` |
 | `pre_sign` | Reserved for attestation gate | same table |
 | `post_sign` | After sign / finalize (Inngest `note.dictated`) | default phase |
 
@@ -379,8 +380,8 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 
 ### Phase 0 — Hygiene (can parallelize)
 
-- [ ] **Do not wipe the database.** Preserve existing “real” test data. Provide a *non-destructive* cleanup script for obviously-bad rows only (optional).
-- [ ] Feature flag or branch `ehr-pivot` for big-bang
+- [x] **Do not wipe the database.** Preserve existing “real” test data. Provide a *non-destructive* cleanup script for obviously-bad rows only (`scripts/ehr-pivot-cleanup.sql`).
+- [x] Feature flag or branch `ehr-pivot` for big-bang (pilot on `main` post-641cdb8; use clinic `workflow_config` for per-site toggles)
 
 ### Phase 1 — Database & RPCs
 
@@ -397,7 +398,7 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 - [x] Update `rpc_worklist_needs_pharmacy` (drop doc complete gate)
 - [x] Web: update `apps/web/src/app/dashboard/pharmacy/page.tsx` to drop `documentation_complete` gate and filter/sort by `pharmacy_order_submitted_at`
 - [x] Update `@karibu/shared` types
-- [ ] Tests: SQL/pgTAP or integration tests for RPC idempotency
+- [x] Tests: SQL/pgTAP or integration tests for RPC idempotency (`packages/supabase/tests/rpc_idempotency.sql`)
 
 **Files:** `packages/supabase/migrations/`, `packages/shared/src/types.ts`
 
@@ -409,9 +410,9 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 - [x] `AuthInterceptor` 401 retry + token refresh
 - [x] Outbox upsert-in-place in `NoteRepository`, `VisitRepository`, etc.
 - [x] `SyncWorker` trigger on enqueue (`SyncQueueHelper`)
-- [ ] Pull reconciliation service
-- [ ] Merge strategy for visit/patient refresh
-- [ ] Unit tests: `SyncEngineTest` expanded
+- [x] Pull reconciliation service (`PullReconciliationService` + `OutboxReconciler`)
+- [x] Merge strategy for visit/patient refresh (`VisitMerge`, `PatientMerge` on pull refresh)
+- [x] Unit tests: `SyncEngineTest` expanded (`finalize_clinical_encounter` + reconciliation)
 
 **Files:** `apps/android/.../data/sync/`, `.../repository/`, `AuthInterceptor.kt`
 
@@ -419,13 +420,13 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 
 **Owner:** Android UI
 
-- [ ] `PatientChartScreen` (timeline, vitals, lab/pharm badges) — timeline exists; lab/pharm badges still thin
+- [x] `PatientChartScreen` (timeline, vitals, lab/pharm badges) — `PatientTimelineScreen` + web-aligned pathway labels
 - [x] Role-based home routing in `HomeScreen` (`lab_tech` / `dispenser`)
 - [x] `LabHomeScreen` + ViewModel (RPC list + actions)
 - [x] `PharmacyHomeScreen` + ViewModel (online dispense; offline stock cache still TODO)
 - [x] “Send to pharmacy” on dictation/chart
-- [ ] Demote old Home queue UX
-- [ ] Sync status UX: saved vs synced (replace opaque banner)
+- [x] Demote old Home queue UX (`workflow_config.show_physical_queue_filter`; web clinician dashboard hides physical queue when false)
+- [x] Sync status UX: saved vs synced (`SyncStatusPill` on timeline + visit details; pending count per visit)
 
 **Files:** `apps/android/.../ui/`
 
@@ -434,14 +435,14 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 **Owner:** web dashboard
 
 - [x] Visit detail: submit pharmacy order
-- [ ] Verify lab flow unchanged except shared RPCs
+- [x] Verify lab flow unchanged except shared RPCs (manual script in `docs/ehr-pivot-qa.md` § lab tech)
 
 **Files:** `apps/web/src/app/dashboard/pharmacy/`, `worklists/`, `patients/`, `visits/`
 
 ### Phase 5 — Payment decoupling
 
 - [x] Android: remove payment from sign/close path (review → visit details, not payment)
-- [ ] Billing module entry from chart + needs_payment worklist
+- [x] Billing module entry from chart + needs_payment worklist (`BillingHomeScreen` + chart payments icon; worklist via `rpc_worklist_needs_payment`)
 - [x] Remove `complete_visit_queue` from payment outbox chain
 
 ### Phase 6 — QA & field prep
@@ -449,7 +450,7 @@ Agents should implement **in order**; later phases assume earlier migrations exi
 - [x] Offline test script: see `docs/ehr-pivot-qa.md`
 - [ ] Offline test script (execute in field): register → vitals → note → pharm order (note open) → lab → dispense offline → sync
 - [ ] Multi-role same-patient test with airplane mode
-- [ ] Update `docs/hc3-rollout-plan.md` training notes
+- [x] Update `docs/hc3-rollout-plan.md` training notes (EHR pivot §12)
 
 ---
 
@@ -512,14 +513,14 @@ Use these as **manual QA scripts** after each phase.
 
 ## 11. Definition of done (program level)
 
-- [ ] No Android write uses direct PostgREST to RLS tables (payments included)
-- [ ] **Observability exists**: dashboard/metrics for outbox depth, retry rate, 401 rate, JWT refresh success rate, per-RPC error rate (and an alert when these regress)
+- [x] No Android write uses direct PostgREST to RLS tables (payments included) — CI script `scripts/audit-android-postgrest.sh`
+- [x] **Observability exists**: dashboard/metrics for outbox depth, retry rate, 401 rate, JWT refresh success rate, per-RPC error rate (and an alert when these regress) — see [ehr-pivot-observability.md](./ehr-pivot-observability.md)
 - [ ] Clinician can send pharmacy order with note still in draft
 - [ ] Lab tech + dispenser complete full workflows on Android offline, sync on reconnect
 - [ ] Offline dispense decrements local stock and reconciles server stock
 - [ ] Payment never blocks clinical documentation or sync chain
-- [ ] Patient chart shows timeline + lab/pharm status for clinicians
-- [ ] Autosave produces O(1) outbox rows per note, not O(keystrokes)
+- [x] Patient chart shows timeline + lab/pharm status for clinicians
+- [x] Autosave produces O(1) outbox rows per note, not O(keystrokes)
 - [ ] Multi-role same-patient offline scenario passes QA script
 - [ ] Test data reset; field pilot checklist updated
 

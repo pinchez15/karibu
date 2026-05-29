@@ -87,19 +87,24 @@ fun PharmacyPickerSheet(
     val categories = remember(catalogState.formularyCategories) {
         val hcByCategory = HcDrugCatalog.drugsByCategory()
         val allHcDrugs = hcByCategory.flatMap { it.second }
-        fun drugFromName(name: String): HcDrugCatalog.Drug =
-            allHcDrugs.find { drug ->
-                drug.name.equals(name, ignoreCase = true) ||
-                    drug.aliases.any { it.equals(name, ignoreCase = true) }
+        fun drugFromRef(ref: FormularyDrugRef): HcDrugCatalog.Drug {
+            val byCode = ref.code?.let { code ->
+                allHcDrugs.find { it.code.equals(code, ignoreCase = true) }
+            }
+            if (byCode != null) return byCode
+            return allHcDrugs.find { drug ->
+                drug.name.equals(ref.name, ignoreCase = true) ||
+                    drug.aliases.any { it.equals(ref.name, ignoreCase = true) }
             } ?: HcDrugCatalog.Drug(
-                code = name.uppercase().replace(" ", "_").take(32),
-                name = name,
+                code = ref.code ?: ref.name.uppercase().replace(" ", "_").take(32),
+                name = ref.name,
                 category = "Clinic formulary",
             )
+        }
 
         if (catalogState.formularyCategories.isNotEmpty()) {
-            catalogState.formularyCategories.map { (title, drugNames) ->
-                title to drugNames.map(::drugFromName)
+            catalogState.formularyCategories.map { (title, drugs) ->
+                title to drugs.map(::drugFromRef)
             }
         } else {
             hcByCategory

@@ -1346,3 +1346,18 @@ This sequence assumes the current `offline-first-refactor.md` lands first: clini
 - decide which clinics get laptop desks and which are phone-only
 
 The sequencing principle is simple: **build the operational branches before polishing more AI**. Reception, lab, pharmacy, maternity, and payment are the clinic. AI is still augmentation layered on top.
+
+---
+
+## 12. EHR pivot training (post-641cdb8)
+
+Use [ehr-pivot-implementation.md](./ehr-pivot-implementation.md) and [ehr-pivot-qa.md](./ehr-pivot-qa.md) as the field scripts. Key messages for staff:
+
+1. **Chart-first** — Search the patient, open the timeline; OPD buckets on the home screen are a summary, not the only way to find someone.
+2. **Sign vs payment** — Signing the note does not require payment. Cashier uses Billing when the clinic collects fees.
+3. **Pharmacy before sign** — Send to pharmacy while the note is still in draft; the dispensary queue opens on order submit, not after sign.
+4. **Inpatient** — Use the Inpatient tab to admit (ward + complaint); requires connectivity for `rpc_admit_patient`.
+5. **Protocols** — Superadmin enables protocol slugs per clinic; clinicians activate from the patient chart menu when configured.
+6. **Physical queue** — If the clinic disables “physical queue” in workflow settings, Android hides the queue shortcut and the web dashboard hides the legacy queue table.
+
+Run the multi-role offline scenario in ehr-pivot-qa before go-live; record pass/fail on the pilot checklist.

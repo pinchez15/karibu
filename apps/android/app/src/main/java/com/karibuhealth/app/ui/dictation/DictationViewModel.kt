@@ -188,12 +188,14 @@ class DictationViewModel @Inject constructor(
     // flush once typing settles (AUTOSAVE_DEBOUNCE_MS). signNote() awaits any
     // in-flight job so the final autosave landed before flipping to signed.
     private var autosaveJob: Job? = null
+    private var draftAiQueuedForVisit: String? = null
 
     private companion object {
         // Idle delay before the autosave fires. 1.5s matches the prompt's
         // recommendation; long enough to coalesce burst typing, short enough
         // that a stop-mid-edit gets persisted before the user moves on.
         const val AUTOSAVE_DEBOUNCE_MS = 1_500L
+        const val DRAFT_AI_MIN_CHARS = 50
     }
 
     fun load(
@@ -420,6 +422,30 @@ class DictationViewModel @Inject constructor(
         }
     }
 
+    private suspend fun maybeQueueDraftAiAssist(
+        visitId: String?,
+        transcript: String,
+        sections: ClinicalNoteSections,
+        syncEntryId: String?,
+    ) {
+        if (visitId == null || syncEntryId != null) return
+        if (!networkMonitor.isOnline()) return
+        if (transcript.length < DRAFT_AI_MIN_CHARS) return
+        if (draftAiQueuedForVisit == visitId) return
+        draftAiQueuedForVisit = visitId
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val snapshot = mapOf(
+                    "chief_complaint" to sections.chiefComplaint,
+                    "diagnosis" to sections.diagnosis,
+                    "medications" to sections.medications,
+                    "tests_ordered" to sections.testsOrdered,
+                ).filterValues { it.isNotBlank() }
+                dictationApi.requestDraftAiAssist(visitId, snapshot.ifEmpty { null })
+            }
+        }
+    }
+
     /**
      * Run one autosave cycle. Generates a stable noteId on first save and
      * keeps it in UI state so subsequent saves (and the final Sign) reuse
@@ -462,6 +488,12 @@ class DictationViewModel @Inject constructor(
                     autosaveStatus = if (syncEntryId == null) AutosaveStatus.Saved else AutosaveStatus.Offline,
                 )
             }
+            maybeQueueDraftAiAssist(
+                visitId = visitId,
+                transcript = transcript,
+                sections = snapshot.sections,
+                syncEntryId = syncEntryId,
+            )
             savedNote.id to syncEntryId
         } catch (e: Exception) {
             _uiState.update {

@@ -60,7 +60,10 @@ fun MainShell(
                 onNavigateToBilling = onNavigateToBilling,
                 modifier = Modifier.fillMaxSize(),
             )
-            else -> InpatientHomeScreen(modifier = Modifier.fillMaxSize())
+            else -> InpatientHomeScreen(
+                onNavigateToPatient = onNavigateToPatient,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }

@@ -119,13 +119,38 @@ class DictationApiClient @Inject constructor(
         post("reject-dictation", payload)
     }
 
+    /**
+     * Queue draft-stage AI assist (RPC + Inngest). Best-effort; callers should
+     * swallow failures so autosave is never blocked.
+     */
+    suspend fun requestDraftAiAssist(
+        visitId: String,
+        sectionsSnapshot: Map<String, String>? = null,
+    ) {
+        val payload = json.encodeToString(
+            DraftAiAssistBody.serializer(),
+            DraftAiAssistBody(visit_id = visitId, sections_snapshot = sectionsSnapshot),
+        )
+        post("request-draft-ai-assist", payload, requireSuccessField = false)
+    }
+
     @Serializable
     private data class VisitIdBody(val visit_id: String)
 
     @Serializable
+    private data class DraftAiAssistBody(
+        val visit_id: String,
+        val sections_snapshot: Map<String, String>? = null,
+    )
+
+    @Serializable
     private data class RejectDictationBody(val visit_id: String, val reason: String? = null)
 
-    private fun post(endpoint: String, jsonBody: String) {
+    private fun post(
+        endpoint: String,
+        jsonBody: String,
+        requireSuccessField: Boolean = true,
+    ) {
         val request = Request.Builder()
             .url("${BuildConfig.SUPABASE_URL}/functions/v1/$endpoint")
             .post(jsonBody.toRequestBody("application/json".toMediaType()))
@@ -137,6 +162,7 @@ class DictationApiClient @Inject constructor(
             if (!it.isSuccessful) {
                 throw DictationException("$endpoint failed (${it.code}): ${raw.take(200)}")
             }
+            if (!requireSuccessField) return@use
             val parsed = runCatching {
                 json.decodeFromString(SubmitDictationResponse.serializer(), raw)
             }.getOrNull()

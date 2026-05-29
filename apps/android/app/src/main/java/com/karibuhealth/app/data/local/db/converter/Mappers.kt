@@ -3,6 +3,8 @@ package com.karibuhealth.app.data.local.db.converter
 import com.karibuhealth.app.data.local.db.entity.*
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.domain.model.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -12,17 +14,30 @@ import kotlinx.serialization.json.jsonPrimitive
 
 // ========== Clinic ==========
 
+private val clinicJson = Json { ignoreUnknownKeys = true }
+
 fun ClinicDto.toEntity() = ClinicEntity(
     id = id, name = name, slug = slug,
     clerkOrganizationId = clerkOrganizationId,
     timezone = timezone, isActive = isActive,
     createdAt = createdAt, updatedAt = updatedAt,
+    workflowConfigJson = workflowConfig?.let { clinicJson.encodeToString(it) },
 )
 
 fun ClinicEntity.toDomain() = Clinic(
     id = id, name = name, slug = slug,
     clerkOrganizationId = clerkOrganizationId,
     timezone = timezone, isActive = isActive,
+    workflowConfig = workflowConfigJson?.let {
+        runCatching {
+            val dto = clinicJson.decodeFromString<ClinicWorkflowConfigDto>(it)
+            ClinicWorkflowConfig(
+                defaultOpdFilters = dto.defaultOpdFilters,
+                showPhysicalQueueFilter = dto.showPhysicalQueueFilter,
+                enabledProtocolSlugs = dto.enabledProtocolSlugs,
+            )
+        }.getOrDefault(ClinicWorkflowConfig())
+    } ?: ClinicWorkflowConfig(),
     createdAt = createdAt, updatedAt = updatedAt,
 )
 

@@ -15,6 +15,7 @@ data class ClinicEntity(
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
+    @ColumnInfo(name = "workflow_config_json") val workflowConfigJson: String? = null,
 )
 
 @Entity(

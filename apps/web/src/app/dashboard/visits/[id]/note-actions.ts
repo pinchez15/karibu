@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { inngest } from '@/inngest/client'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import {
@@ -125,6 +126,48 @@ export async function autosaveDraftNote(input: {
   if (!summary.success) return summary
 
   return { success: true }
+}
+
+/**
+ * Best-effort draft-stage AI assist after autosave. Records intent via RPC and
+ * dispatches Inngest — failures must not block the clinician's typing flow.
+ */
+export async function queueDraftAiAssist(input: {
+  visit_id: string
+  sections: ClinicalNoteSections
+}): Promise<void> {
+  const staff = await getStaff()
+  if (!staff) return
+  if (!CLINICAL_ROLES.has(staff.role)) return
+
+  const visit = await loadVisitForStaff(input.visit_id, staff.clinic_id)
+  if (!visit) return
+
+  const transcript = sectionsToClinicianText(input.sections)
+  if (transcript.trim().length < 50) return
+
+  const supabase = createServiceClient()
+  const { error: rpcErr } = await supabase.rpc('rpc_request_draft_ai_assist', {
+    p_visit_id: input.visit_id,
+    p_sections_snapshot: input.sections,
+  })
+  if (rpcErr) {
+    console.warn('queueDraftAiAssist rpc failed:', rpcErr.message)
+    return
+  }
+
+  try {
+    await inngest.send({
+      name: 'note.draft-ai-assist',
+      data: {
+        visit_id: input.visit_id,
+        clinic_id: visit.clinic_id,
+        phase: 'draft',
+      },
+    })
+  } catch (err) {
+    console.warn('queueDraftAiAssist inngest failed:', err)
+  }
 }
 
 /** Explicit save — same persistence as autosave, with path revalidation. */

@@ -3,13 +3,16 @@ package com.karibuhealth.app.data.sync
 import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.FinalizeClinicalEncounterRequest
 import com.karibuhealth.app.util.NetworkMonitor
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import retrofit2.Response
 
 class SyncEngineTest {
 
@@ -21,8 +24,9 @@ class SyncEngineTest {
     private lateinit var providerNoteDao: ProviderNoteDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
-    private lateinit var outboxReconciler: OutboxReconciler
+    private lateinit var pullReconciliationService: PullReconciliationService
     private lateinit var syncEngine: SyncEngine
+    private val json = Json { ignoreUnknownKeys = true }
 
     @Before
     fun setup() {
@@ -34,7 +38,7 @@ class SyncEngineTest {
         providerNoteDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
-        outboxReconciler = mockk(relaxed = true)
+        pullReconciliationService = mockk(relaxed = true)
 
         syncEngine = SyncEngine(
             syncQueueDao = syncQueueDao,
@@ -45,8 +49,8 @@ class SyncEngineTest {
             providerNoteDao = providerNoteDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
-            outboxReconciler = outboxReconciler,
-            json = Json { ignoreUnknownKeys = true },
+            pullReconciliationService = pullReconciliationService,
+            json = json,
         )
     }
 
@@ -106,6 +110,41 @@ class SyncEngineTest {
                 it.attempts == 1 && it.status == "pending" && it.lastError != null
             })
         }
+    }
+
+    @Test
+    fun `processes finalize_clinical_encounter and reconciles`() = runTest {
+        every { networkMonitor.isOnline() } returns true
+
+        val payload = json.encodeToString(
+            FinalizeClinicalEncounterRequest.serializer(),
+            FinalizeClinicalEncounterRequest(
+                noteId = "note-1",
+                visitId = "visit-1",
+                patientId = "patient-1",
+                transcript = "Patient presents with fever for two days.",
+                patientSummary = "You were seen today for fever. Take paracetamol as directed.",
+            ),
+        )
+        val entry = makeSyncEntry(
+            id = "sync-finalize-1",
+            operationType = "finalize_clinical_encounter",
+            payload = payload,
+            entityId = "visit-1",
+        )
+
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { syncQueueDao.getPending() } returns emptyList()
+        coEvery { supabaseApi.rpcFinalizeClinicalEncounter(any()) } returns
+            Response.success("".toResponseBody())
+        coEvery { supabaseApi.getProviderNote(any()) } returns emptyList()
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify { supabaseApi.rpcFinalizeClinicalEncounter(any()) }
+        coVerify { visitDao.updateSyncState("visit-1", true) }
+        coVerify { pullReconciliationService.reconcileAfterPull() }
     }
 
     @Test

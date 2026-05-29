@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.PatientRepository
+import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.domain.model.Patient
@@ -46,13 +47,17 @@ data class PatientTimelineUiState(
     val todayVisit: Visit? = null,
     val pendingSyncCount: Int = 0,
     val isOnline: Boolean = true,
+    val enabledProtocolSlugs: List<String> = emptyList(),
+    val protocolActivating: String? = null,
+    val protocolMessage: String? = null,
 )
 
 @HiltViewModel
 class PatientTimelineViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
-    @Suppress("unused") private val authTokenStore: AuthTokenStore,
+    private val staffRepository: StaffRepository,
+    private val authTokenStore: AuthTokenStore,
     private val syncQueueDao: SyncQueueDao,
     private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
@@ -127,17 +132,26 @@ class PatientTimelineViewModel @Inject constructor(
             val todayVisitDeferred = async {
                 visitRepository.getLatestVisitForPatientToday(patientId)
             }
+            val protocolsDeferred = async {
+                val clinicId = authTokenStore.getClinicId() ?: return@async emptyList()
+                staffRepository.getClinic(clinicId).first()
+                    ?.workflowConfig
+                    ?.enabledProtocolSlugs
+                    .orEmpty()
+            }
 
             val patient = patientDeferred.await()
             val vitals = vitalsDeferred.await()
             val events = timelineDeferred.await()
             val todayVisit = todayVisitDeferred.await()
+            val protocolSlugs = protocolsDeferred.await()
 
             _uiState.update {
                 it.copy(
                     patient = patient ?: it.patient,
                     latestVitals = vitals ?: it.latestVitals,
                     todayVisit = todayVisit,
+                    enabledProtocolSlugs = protocolSlugs,
                     events = events,
                     isLoading = false,
                     hasMore = events.size >= PAGE_SIZE,
@@ -173,6 +187,38 @@ class PatientTimelineViewModel @Inject constructor(
                     isLoadingMore = false,
                     hasMore = next.size >= PAGE_SIZE,
                 )
+            }
+        }
+    }
+
+    fun activateProtocol(slug: String) {
+        val patientId = loadedPatientId ?: return
+        if (!_uiState.value.isOnline) {
+            _uiState.update { it.copy(protocolMessage = "Protocol activation requires connection.") }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(protocolActivating = slug, protocolMessage = null) }
+            try {
+                visitRepository.activateClinicalProtocol(
+                    patientId = patientId,
+                    protocolSlug = slug,
+                    visitId = _uiState.value.todayVisit?.id,
+                )
+                _uiState.update {
+                    it.copy(
+                        protocolActivating = null,
+                        protocolMessage = "Protocol activated: $slug",
+                    )
+                }
+                refresh()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        protocolActivating = null,
+                        protocolMessage = e.message ?: "Protocol activation failed",
+                    )
+                }
             }
         }
     }

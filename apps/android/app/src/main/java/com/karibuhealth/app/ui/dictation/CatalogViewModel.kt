@@ -11,9 +11,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class FormularyDrugRef(
+    val name: String,
+    val code: String? = null,
+)
+
 data class CatalogUiState(
     val labCategories: List<Pair<String, List<String>>> = emptyList(),
-    val formularyCategories: List<Pair<String, List<String>>> = emptyList(),
+    val formularyCategories: List<Pair<String, List<FormularyDrugRef>>> = emptyList(),
     val loaded: Boolean = false,
 )
 
@@ -39,7 +44,9 @@ class CatalogViewModel @Inject constructor(
                     .map { (cat, items) -> cat to items.map { it.testName } },
                 formularyCategories = formulary
                     .groupBy { it.category?.ifBlank { "General" } ?: "General" }
-                    .map { (cat, items) -> cat to items.map { it.drugName } },
+                    .map { (cat, items) ->
+                        cat to items.map { FormularyDrugRef(name = it.drugName, code = it.code) }
+                    },
                 loaded = true,
             )
         }

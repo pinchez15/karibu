@@ -13,6 +13,9 @@ import com.karibuhealth.app.data.remote.dto.RecordDispenseRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
 import com.karibuhealth.app.data.remote.dto.SetDispensingStatusRequest
 import com.karibuhealth.app.data.remote.dto.StartLabRequest
+import com.karibuhealth.app.data.remote.dto.ActivateClinicalProtocolRequest
+import com.karibuhealth.app.data.remote.dto.AdmitPatientRequest
+import com.karibuhealth.app.data.remote.dto.GetOpdPatientsTodayRequest
 import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.data.sync.SyncQueueHelper
@@ -28,6 +31,8 @@ import com.karibuhealth.app.domain.model.VisitStatus
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -47,6 +52,8 @@ class VisitRepository @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
 ) {
+    private val opdPatientsCache = MutableStateFlow<List<OpdPatientRow>>(emptyList())
+
     fun getOpenEncountersToday(clinicId: String): Flow<List<VisitWithPatient>> {
         val today = LocalDate.now().toString()
         return visitDao.getOpenEncountersToday(clinicId, today)
@@ -92,16 +99,64 @@ class VisitRepository @Inject constructor(
      * Patient-centric OPD list for today's clinic — one row per patient,
      * using the most recently checked-in visit when multiple exist.
      */
-    fun getOpdPatientsToday(clinicId: String): Flow<List<OpdPatientRow>> {
+    fun getOpdPatientsToday(clinicId: String): Flow<List<OpdPatientRow>> = opdPatientsCache
+
+    private suspend fun loadOpdPatientsLocal(clinicId: String): List<OpdPatientRow> {
         val today = LocalDate.now().toString()
-        return visitDao.getTodayVisitsWithPatients(clinicId, today).map { rows ->
-            rows
-                .groupBy { it.patient.id }
-                .mapNotNull { (_, visits) ->
-                    visits.maxByOrNull { it.visit.checkedInAt ?: "" }
-                }
-                .map { OpdPatientRow.from(it) }
-                .sortedByDescending { it.checkedInAt }
+        val rows = visitDao.getTodayVisitsWithPatients(clinicId, today).first()
+        return rows
+            .groupBy { it.patient.id }
+            .mapNotNull { (_, visits) ->
+                visits.maxByOrNull { it.visit.checkedInAt ?: "" }
+            }
+            .map { OpdPatientRow.from(it) }
+            .sortedByDescending { it.checkedInAt }
+    }
+
+    suspend fun admitPatient(
+        patientId: String,
+        wardLabel: String?,
+        chiefComplaint: String?,
+    ): String = withContext(Dispatchers.IO) {
+        supabaseApi.rpcAdmitPatient(
+            AdmitPatientRequest(
+                patientId = patientId,
+                wardLabel = wardLabel?.takeIf { it.isNotBlank() },
+                chiefComplaint = chiefComplaint?.takeIf { it.isNotBlank() },
+                clientOpId = UUID.randomUUID().toString(),
+            ),
+        )
+    }
+
+    suspend fun activateClinicalProtocol(
+        patientId: String,
+        protocolSlug: String,
+        visitId: String? = null,
+    ): String = withContext(Dispatchers.IO) {
+        supabaseApi.rpcActivateClinicalProtocol(
+            ActivateClinicalProtocolRequest(
+                patientId = patientId,
+                protocolSlug = protocolSlug,
+                visitId = visitId,
+                clientOpId = UUID.randomUUID().toString(),
+            ),
+        )
+    }
+
+    suspend fun refreshOpdPatientsToday(clinicId: String) {
+        withContext(Dispatchers.IO) {
+            if (!networkMonitor.isOnline()) {
+                opdPatientsCache.value = loadOpdPatientsLocal(clinicId)
+                return@withContext
+            }
+            try {
+                val remote = supabaseApi.rpcGetOpdPatientsToday(
+                    GetOpdPatientsTodayRequest(clinicId = clinicId),
+                )
+                opdPatientsCache.value = remote.map { OpdPatientRow.from(it) }
+            } catch (_: Exception) {
+                opdPatientsCache.value = loadOpdPatientsLocal(clinicId)
+            }
         }
     }
 

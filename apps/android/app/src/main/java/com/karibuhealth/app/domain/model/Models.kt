@@ -57,6 +57,12 @@ enum class PaymentStatus { paid, pending, failed, waived }
 
 // Domain models
 
+data class ClinicWorkflowConfig(
+    val defaultOpdFilters: List<String> = emptyList(),
+    val showPhysicalQueueFilter: Boolean = true,
+    val enabledProtocolSlugs: List<String> = emptyList(),
+)
+
 data class Clinic(
     val id: String,
     val name: String,
@@ -64,6 +70,7 @@ data class Clinic(
     val clerkOrganizationId: String?,
     val timezone: String,
     val isActive: Boolean,
+    val workflowConfig: ClinicWorkflowConfig = ClinicWorkflowConfig(),
     val createdAt: String,
     val updatedAt: String,
 )

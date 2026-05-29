@@ -223,6 +223,9 @@ fun KaribuNavHost(
                 onRecordVitals = { patientId ->
                     navController.navigate(NavRoute.PatientVitals(patientId))
                 },
+                onNavigateToBilling = {
+                    navController.navigate(NavRoute.Billing)
+                },
             )
         }
 

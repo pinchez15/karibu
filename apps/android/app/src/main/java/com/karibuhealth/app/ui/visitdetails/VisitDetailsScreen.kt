@@ -37,6 +37,7 @@ import com.karibuhealth.app.domain.model.AiStructuredSuggestions
 import com.karibuhealth.app.domain.model.PatientVitals
 import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.domain.model.VisitStatus
+import com.karibuhealth.app.ui.components.SyncStatusPill
 import com.karibuhealth.app.ui.components.KhAccentPill
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhVitalChip
@@ -92,6 +93,11 @@ fun VisitDetailsScreen(
                     }
                 },
                 actions = {
+                    SyncStatusPill(
+                        pendingCount = uiState.pendingSyncCount,
+                        isOnline = uiState.isOnline,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
                     val visit = uiState.visit
                     val docComplete = visit?.documentationComplete == true
                     val isStreaming = visit?.status == VisitStatus.pending && docComplete

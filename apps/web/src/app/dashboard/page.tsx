@@ -29,6 +29,17 @@ async function getReviewCount(clinicId: string): Promise<number> {
   return count || 0
 }
 
+async function getShowPhysicalQueue(clinicId: string): Promise<boolean> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('clinics')
+    .select('workflow_config')
+    .eq('id', clinicId)
+    .maybeSingle()
+  const config = data?.workflow_config as { show_physical_queue_filter?: boolean } | null
+  return config?.show_physical_queue_filter !== false
+}
+
 async function getVisitsToday(clinicId: string): Promise<number> {
   const supabase = createServiceClient()
   const today = new Date().toISOString().slice(0, 10)
@@ -52,10 +63,11 @@ export default async function DashboardPage() {
   if (staff.role === 'lab_tech') redirect('/dashboard/lab')
   if (staff.role === 'dispenser') redirect('/dashboard/pharmacy')
 
-  const [queue, reviewCount, visitsToday] = await Promise.all([
+  const [queue, reviewCount, visitsToday, showPhysicalQueue] = await Promise.all([
     getQueueData(staff.clinic_id),
     getReviewCount(staff.clinic_id),
     getVisitsToday(staff.clinic_id),
+    getShowPhysicalQueue(staff.clinic_id),
   ])
 
   return (
@@ -63,6 +75,7 @@ export default async function DashboardPage() {
       queue={queue}
       reviewCount={reviewCount}
       visitsToday={visitsToday}
+      showPhysicalQueue={showPhysicalQueue}
     />
   )
 }

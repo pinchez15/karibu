@@ -295,7 +295,7 @@ fun HomeScreen(
                         }
                     }
 
-                    if (uiState.doneTodayCount > 0) {
+                    if (uiState.showPhysicalQueueFilter && uiState.doneTodayCount > 0) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -305,11 +305,20 @@ fun HomeScreen(
                                     .clickable(onClick = onNavigateToQueue),
                             ) {
                                 Text(
-                                    text = "${uiState.doneTodayCount} completed today",
+                                    text = "${uiState.doneTodayCount} completed today · open queue",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                        }
+                    } else if (!uiState.showPhysicalQueueFilter && uiState.doneTodayCount > 0) {
+                        item {
+                            Text(
+                                text = "${uiState.doneTodayCount} completed today",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                            )
                         }
                     }
                 }

@@ -20,7 +20,7 @@ import com.karibuhealth.app.data.local.db.entity.*
         ClinicLabCatalogEntity::class,
         ClinicFormularyCatalogEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {
