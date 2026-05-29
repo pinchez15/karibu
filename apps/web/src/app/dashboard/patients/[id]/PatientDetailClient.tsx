@@ -100,6 +100,22 @@ const TASK_STATUS_CONFIG: Record<CareTaskStatus, { label: string; color: string;
   cancelled: { label: 'Cancelled', color: 'text-muted-foreground', bg: 'bg-muted' },
 }
 
+const LAB_STATUS_LABEL: Record<string, string> = {
+  not_ordered: 'No labs',
+  pending: 'Lab pending',
+  running: 'Lab in progress',
+  done: 'Lab done',
+  abnormal: 'Lab abnormal',
+}
+
+const DISPENSING_STATUS_LABEL: Record<string, string> = {
+  not_started: 'Pharmacy not started',
+  in_progress: 'Dispensing',
+  dispensed: 'Dispensed',
+  partial: 'Partial dispense',
+  out_of_stock: 'Out of stock',
+}
+
 // Match the staff role enum from packages/shared. Used to humanise role chips
 // on task cards without pulling in a Title-Case helper.
 const ROLE_LABEL: Record<StaffRole, string> = {
@@ -348,6 +364,16 @@ function LatestVitalsCard({ vitals }: { vitals: PatientLatestVitals | null }) {
 
 function VisitCard({ data, eventAt }: { data: VisitEventData; eventAt: string }) {
   const cfg = VISIT_STATUS_CONFIG[data.status] || VISIT_STATUS_CONFIG.error
+  const labLabel =
+    data.lab_status && data.lab_status !== 'not_ordered'
+      ? LAB_STATUS_LABEL[data.lab_status] ?? data.lab_status
+      : null
+  const pharmLabel =
+    data.dispensing_status && data.dispensing_status !== 'not_started'
+      ? DISPENSING_STATUS_LABEL[data.dispensing_status] ?? data.dispensing_status
+      : data.pharmacy_order_submitted_at || data.medications
+        ? 'Pharmacy queued'
+        : null
   return (
     <Link
       href={`/dashboard/visits/${data.visit_id}`}
@@ -363,6 +389,17 @@ function VisitCard({ data, eventAt }: { data: VisitEventData; eventAt: string })
             >
               {cfg.label}
             </span>
+            {labLabel && (
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-soft text-slate">
+                {labLabel}
+                {data.lab_abnormal ? ' · flagged' : ''}
+              </span>
+            )}
+            {pharmLabel && (
+              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-cobalt-soft text-cobalt">
+                {pharmLabel}
+              </span>
+            )}
           </div>
         </div>
       </div>

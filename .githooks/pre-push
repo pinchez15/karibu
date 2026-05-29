@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Pre-push: if any commit being pushed touches apps/android/, run a debug build
+# locally so kotlinc / KSP / Hilt errors are caught before they hit CI / beta.
+# Bypass with `git push --no-verify` if you really need to.
+
+set -euo pipefail
+
+remote="$1"
+# shellcheck disable=SC2034
+url="$2"
+
+zero=0000000000000000000000000000000000000000
+range=""
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -z "$local_sha" ] && continue
+    [ "$local_sha" = "$zero" ] && continue  # deletion
+
+    if [ "$remote_sha" = "$zero" ]; then
+        # New branch — diff against the remote's default upstream if we can,
+        # otherwise fall back to the full commit history of the local ref.
+        base=$(git merge-base "$local_sha" "$(git rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>/dev/null || echo origin/main)" 2>/dev/null || true)
+        range="${base:-}..$local_sha"
+        [ -z "$base" ] && range="$local_sha"
+    else
+        range="$remote_sha..$local_sha"
+    fi
+done
+
+if [ -z "$range" ]; then
+    exit 0
+fi
+
+if ! git diff --name-only "$range" 2>/dev/null | grep -q '^apps/android/'; then
+    exit 0
+fi
+
+echo "pre-push: apps/android/ changed — running :app:assembleDebug"
+cd apps/android
+JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}" \
+    ./gradlew :app:assembleDebug --quiet

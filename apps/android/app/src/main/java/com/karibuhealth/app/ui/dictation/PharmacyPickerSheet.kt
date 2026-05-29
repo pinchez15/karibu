@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.catalog.HcDrugCatalog
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Line
@@ -78,7 +80,31 @@ fun PharmacyPickerSheet(
     var notes by remember { mutableStateOf("") }
     var pendingSig by remember { mutableStateOf("") }
 
-    val categories = remember { HcDrugCatalog.drugsByCategory() }
+    val catalogViewModel: CatalogViewModel = hiltViewModel()
+    LaunchedEffect(Unit) { catalogViewModel.ensureLoaded() }
+    val catalogState by catalogViewModel.state.collectAsState()
+
+    val categories = remember(catalogState.formularyCategories) {
+        val hcByCategory = HcDrugCatalog.drugsByCategory()
+        val allHcDrugs = hcByCategory.flatMap { it.second }
+        fun drugFromName(name: String): HcDrugCatalog.Drug =
+            allHcDrugs.find { drug ->
+                drug.name.equals(name, ignoreCase = true) ||
+                    drug.aliases.any { it.equals(name, ignoreCase = true) }
+            } ?: HcDrugCatalog.Drug(
+                code = name.uppercase().replace(" ", "_").take(32),
+                name = name,
+                category = "Clinic formulary",
+            )
+
+        if (catalogState.formularyCategories.isNotEmpty()) {
+            catalogState.formularyCategories.map { (title, drugNames) ->
+                title to drugNames.map(::drugFromName)
+            }
+        } else {
+            hcByCategory
+        }
+    }
     val filteredCategories by remember(categoryQuery, categories) {
         derivedStateOf {
             if (categoryQuery.isBlank()) categories

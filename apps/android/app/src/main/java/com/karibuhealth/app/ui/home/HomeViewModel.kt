@@ -4,20 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
-import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Clinic
+import com.karibuhealth.app.domain.model.OpdPatientFilter
+import com.karibuhealth.app.domain.model.OpdPatientRow
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.domain.model.Staff
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,23 +26,24 @@ import javax.inject.Inject
 data class HomeUiState(
     val staff: Staff? = null,
     val clinic: Clinic? = null,
-    val queue: List<VisitWithPatient> = emptyList(),
-    val toDictate: List<VisitWithPatient> = emptyList(),
-    val toReview: List<VisitWithPatient> = emptyList(),
-    val doneTodayCount: Int = 0,
+    val opdPatients: List<OpdPatientRow> = emptyList(),
+    val selectedFilter: OpdPatientFilter? = null,
     val pendingSyncCount: Int = 0,
     val searchQuery: String = "",
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
     val isLoading: Boolean = true,
-    val openEncounters: List<VisitWithPatient> = emptyList(),
 ) {
-    val todayEncounterCount: Int
-        get() = buildSet {
-            queue.forEach { add(it.visit.id) }
-            toDictate.forEach { add(it.visit.id) }
-            toReview.forEach { add(it.visit.id) }
-        }.size + doneTodayCount
+    val filteredPatients: List<OpdPatientRow>
+        get() = selectedFilter?.let { filter ->
+            opdPatients.filter { filter.matches(it) }
+        } ?: opdPatients
+
+    val waitingCount: Int
+        get() = opdPatients.count { it.bucket == OpdPatientFilter.Waiting }
+
+    val doneTodayCount: Int
+        get() = opdPatients.count { it.bucket == OpdPatientFilter.DoneToday }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -70,28 +72,8 @@ class HomeViewModel @Inject constructor(
                 }
             }
             launch {
-                visitRepository.getOpenEncountersToday(staff.clinicId).collect { list ->
-                    _uiState.update { it.copy(openEncounters = list) }
-                }
-            }
-            launch {
-                visitRepository.getTodayClinicianQueue(staff.clinicId, staff.id).collect { list ->
-                    _uiState.update { it.copy(queue = list) }
-                }
-            }
-            launch {
-                visitRepository.getMyPendingDictations(staff.id).collect { list ->
-                    _uiState.update { it.copy(toDictate = list) }
-                }
-            }
-            launch {
-                visitRepository.getMyVisitsToReview(staff.id).collect { list ->
-                    _uiState.update { it.copy(toReview = list) }
-                }
-            }
-            launch {
-                visitRepository.getMyDoneTodayCount(staff.id).collect { count ->
-                    _uiState.update { it.copy(doneTodayCount = count) }
+                visitRepository.getOpdPatientsToday(staff.clinicId).collect { list ->
+                    _uiState.update { it.copy(opdPatients = list) }
                 }
             }
             launch {
@@ -99,6 +81,12 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { it.copy(pendingSyncCount = count) }
                 }
             }
+        }
+    }
+
+    fun selectFilter(filter: OpdPatientFilter?) {
+        _uiState.update {
+            it.copy(selectedFilter = if (it.selectedFilter == filter) null else filter)
         }
     }
 
@@ -125,9 +113,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // One-tap claim from the queue: optimistic local update + queued RPC.
-    // The visit-details screen is opened immediately by the caller; sync runs
-    // in the background.
     fun startVisit(visitId: String) {
         viewModelScope.launch {
             val staffId = authTokenStore.getStaffId() ?: return@launch
@@ -139,7 +124,6 @@ class HomeViewModel @Inject constructor(
         val clinicId = authTokenStore.getClinicId() ?: return null
         val staffId = authTokenStore.getStaffId()
         return runCatching {
-            // Existing patient looked up from search — already in Supabase.
             val (visit, _) = visitRepository.createVisit(
                 clinicId = clinicId,
                 patientId = patientId,

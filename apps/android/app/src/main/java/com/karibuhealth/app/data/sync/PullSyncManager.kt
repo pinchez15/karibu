@@ -20,6 +20,7 @@ class PullSyncManager @Inject constructor(
     private val staffRepository: StaffRepository,
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
+    private val noteRepository: NoteRepository,
     private val authTokenStore: AuthTokenStore,
     private val networkMonitor: NetworkMonitor,
     private val outboxReconciler: OutboxReconciler,
@@ -90,6 +91,9 @@ class PullSyncManager @Inject constructor(
             launch {
                 try {
                     visitRepository.refreshTodayVisits(clinicId)
+                    visitRepository.getTodayVisitIds(clinicId).forEach { visitId ->
+                        noteRepository.refreshNotes(visitId)
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Pull visits failed: ${e.message}")
                 }

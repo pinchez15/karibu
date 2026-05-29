@@ -3,13 +3,16 @@ package com.karibuhealth.app.ui.patientdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.domain.model.PatientLatestVitals
 import com.karibuhealth.app.domain.model.PatientTimelineEvent
+import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +44,8 @@ data class PatientTimelineUiState(
     val error: String? = null,
     /** Today's visit for lab/pharmacy pathway badges on the chart header. */
     val todayVisit: Visit? = null,
+    val pendingSyncCount: Int = 0,
+    val isOnline: Boolean = true,
 )
 
 @HiltViewModel
@@ -48,12 +53,15 @@ class PatientTimelineViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
     @Suppress("unused") private val authTokenStore: AuthTokenStore,
+    private val syncQueueDao: SyncQueueDao,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatientTimelineUiState())
     val uiState: StateFlow<PatientTimelineUiState> = _uiState.asStateFlow()
 
     private var loadedPatientId: String? = null
+    private var syncObserversJob: Job? = null
 
     private companion object {
         // Server-side default is 50 — keep mobile-bandwidth sensible. If a
@@ -69,7 +77,24 @@ class PatientTimelineViewModel @Inject constructor(
     fun loadPatient(patientId: String) {
         if (loadedPatientId == patientId) return
         loadedPatientId = patientId
+        observeSyncForPatient(patientId)
         fetch(patientId, resetState = true)
+    }
+
+    private fun observeSyncForPatient(patientId: String) {
+        syncObserversJob?.cancel()
+        syncObserversJob = viewModelScope.launch {
+            launch {
+                syncQueueDao.getPendingCountForPatient(patientId).collect { count ->
+                    _uiState.update { it.copy(pendingSyncCount = count) }
+                }
+            }
+            launch {
+                networkMonitor.isOnlineFlow.collect { online ->
+                    _uiState.update { it.copy(isOnline = online) }
+                }
+            }
+        }
     }
 
     /**

@@ -14,6 +14,7 @@ import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.remote.dto.AddendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.AmendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.CosignProviderNoteRequest
+import com.karibuhealth.app.data.remote.dto.FinalizeClinicalEncounterRequest
 import com.karibuhealth.app.data.remote.dto.PatientNoteSummaryUpsertDto
 import com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto
 import com.karibuhealth.app.data.remote.dto.SignProviderNoteRequest
@@ -164,7 +165,18 @@ class NoteRepository @Inject constructor(
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
                 val response = supabaseApi.rpcUpsertProviderNote(rpcBody)
-                if (response.isSuccessful) return@withContext entity.toDomain() to null
+                if (response.isSuccessful) {
+                    val merged = mergeProviderNoteFromServer(entity.visitId, entity.id) ?: entity
+                    return@withContext merged.toDomain() to null
+                }
+                val body = response.errorBody()?.string().orEmpty()
+                if (response.code() == 409 && entity.visitId != null &&
+                    body.contains("idx_provider_notes_visit_unique")
+                ) {
+                    val merged = mergeProviderNoteFromServer(entity.visitId, entity.id) ?: entity
+                    providerNoteDao.upsert(merged)
+                    return@withContext merged.toDomain() to null
+                }
             } catch (_: Exception) {
                 // Fall through to queue
             }
@@ -497,6 +509,107 @@ class NoteRepository @Inject constructor(
     }
 
     /**
+     * Atomically sign the note, save patient receipt fallback, persist clinical
+     * summary fields, and mark documentation complete (migration 048 RPC).
+     * Optimistic local updates mirror the server transaction; queues a single
+     * `finalize_clinical_encounter` op when offline or when [predecessorSyncId]
+     * linearizes against a pending upsert.
+     */
+    suspend fun finalizeClinicalEncounter(
+        noteId: String,
+        visitId: String,
+        patientId: String,
+        transcript: String,
+        patientSummary: String,
+        diagnosis: String?,
+        medications: String?,
+        followUpInstructions: String?,
+        testsOrdered: String?,
+        structuredData: String?,
+        predecessorSyncId: String? = null,
+    ): String? = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+
+        providerNoteDao.updateLifecycle(
+            id = noteId,
+            status = "signed",
+            finalizedAt = now,
+            finalizedBy = null,
+            amendedAt = null,
+            amendedBy = null,
+            voidedAt = null,
+            voidedBy = null,
+            voidReason = null,
+            updatedAt = now,
+        )
+        providerNoteDao.updateStructuredData(visitId, structuredData, now)
+
+        val existingFallback = patientNoteDao.getByVisitAndSourceOnce(visitId, "clinician_fallback")
+        patientNoteDao.upsert(
+            PatientNoteEntity(
+                id = existingFallback?.id ?: UUID.randomUUID().toString(),
+                visitId = visitId,
+                content = patientSummary,
+                language = existingFallback?.language ?: "en",
+                status = existingFallback?.status ?: "draft",
+                source = "clinician_fallback",
+                createdAt = existingFallback?.createdAt ?: now,
+                updatedAt = now,
+            ),
+        )
+
+        visitDao.updateClinicalSummary(
+            id = visitId,
+            diagnosis = diagnosis,
+            medications = medications,
+            followUpInstructions = followUpInstructions,
+            testsOrdered = testsOrdered,
+            updatedAt = now,
+        )
+        visitDao.updateDocumentationComplete(visitId, true, now)
+
+        val syncEntryId = UUID.randomUUID().toString()
+        val rpcBody = FinalizeClinicalEncounterRequest(
+            noteId = noteId,
+            visitId = visitId,
+            patientId = patientId,
+            transcript = transcript,
+            patientSummary = patientSummary,
+            diagnosis = diagnosis,
+            medications = medications,
+            followUpInstructions = followUpInstructions,
+            testsOrdered = testsOrdered,
+            structuredData = structuredData,
+            clientOpId = syncEntryId,
+        )
+
+        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+
+        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+            try {
+                val response = supabaseApi.rpcFinalizeClinicalEncounter(rpcBody)
+                if (response.isSuccessful) return@withContext null
+            } catch (_: Exception) {
+                // Fall through to queue
+            }
+        }
+
+        val syncEntry = SyncQueueEntry(
+            id = syncEntryId,
+            operationType = "finalize_clinical_encounter",
+            entityType = "visits",
+            entityId = visitId,
+            payload = json.encodeToString(FinalizeClinicalEncounterRequest.serializer(), rpcBody),
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+            dependsOn = effectivePredecessor,
+        )
+        syncQueueHelper.enqueue(syncEntry)
+        syncEntry.id
+    }
+
+    /**
      * Save a clinician-authored fallback for the patient receipt summary.
      * The content is the raw clinician transcript — printed if AI never runs.
      * Server-side `rpc_upsert_patient_note_summary` only writes / overwrites
@@ -630,5 +743,21 @@ class NoteRepository @Inject constructor(
                 patientNoteDao.upsertAll(patientNotes.map { it.toEntity() })
             }
         } catch (_: Exception) {}
+    }
+
+    /** Align local note id with the server row for this visit (one note per visit). */
+    private suspend fun mergeProviderNoteFromServer(
+        visitId: String?,
+        localNoteId: String,
+    ): ProviderNoteEntity? {
+        val vid = visitId ?: return null
+        val server = supabaseApi.getProviderNote("eq.$vid").firstOrNull() ?: return null
+        val local = providerNoteDao.getByVisitIdOnce(vid)
+        if (local != null && local.id != server.id) {
+            providerNoteDao.deleteById(local.id)
+        }
+        val entity = server.toEntity()
+        providerNoteDao.upsert(entity)
+        return if (entity.id != localNoteId) entity else entity
     }
 }

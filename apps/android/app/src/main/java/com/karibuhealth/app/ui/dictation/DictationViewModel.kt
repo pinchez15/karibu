@@ -375,11 +375,6 @@ class DictationViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        recorder.cancel()
-    }
-
     fun updateTranscript(text: String) {
         _uiState.update {
             val nextSections = it.sections.copy(additionalNote = text)
@@ -430,7 +425,7 @@ class DictationViewModel @Inject constructor(
      * keeps it in UI state so subsequent saves (and the final Sign) reuse
      * the same row server-side.
      */
-    private suspend fun performAutosave(patientId: String): String? {
+    private suspend fun performAutosave(patientId: String): Pair<String, String?>? {
         val snapshot = _uiState.value
         val transcript = snapshot.sections.toClinicianText().ifBlank { snapshot.transcript }
         if (transcript.isBlank()) return null
@@ -467,7 +462,7 @@ class DictationViewModel @Inject constructor(
                     autosaveStatus = if (syncEntryId == null) AutosaveStatus.Saved else AutosaveStatus.Offline,
                 )
             }
-            savedNote.id
+            savedNote.id to syncEntryId
         } catch (e: Exception) {
             _uiState.update {
                 it.copy(autosaveStatus = AutosaveStatus.Error(e.message ?: "Autosave failed"))
@@ -540,33 +535,23 @@ class DictationViewModel @Inject constructor(
                 val patientId = _uiState.value.patientId
                     ?: visitRepository.getVisitByIdOnce(visitId)?.patientId
                     ?: error("Cannot resolve patient_id for visit $visitId")
-                val noteId = withContext(Dispatchers.IO) {
+                val (noteId, upsertSyncId) = withContext(Dispatchers.IO) {
                     performAutosave(patientId)
                 } ?: error("Final autosave failed")
 
                 withContext(Dispatchers.IO) {
-                    // 1. Flip provider_notes.status -> signed.
-                    val signSyncId = noteRepository.signNote(noteId = noteId)
-                    // 2. Patient-receipt fallback (clinician_fallback row).
-                    val (_, summarySyncId) = noteRepository.saveSummaryFallback(
+                    noteRepository.finalizeClinicalEncounter(
+                        noteId = noteId,
                         visitId = visitId,
-                        content = transcript,
-                        predecessorSyncId = signSyncId,
-                    )
-                    // 3. Structured clinical summary (diagnosis / meds / etc.).
-                    val clinicalSyncId = noteRepository.saveClinicalSummary(
-                        visitId = visitId,
+                        patientId = patientId,
+                        transcript = transcript,
+                        patientSummary = transcript,
                         diagnosis = sections.diagnosis.cleanOrNull(),
                         medications = sections.medications.cleanOrNull(),
                         followUpInstructions = sections.followUpInstructionsWithTasks().cleanOrNull(),
                         testsOrdered = sections.testsOrdered.cleanOrNull(),
                         structuredData = json.encodeToString(sections),
-                        predecessorSyncId = summarySyncId ?: signSyncId,
-                    )
-                    // 4. Mark documentation complete + pending -> sent.
-                    visitRepository.markDocumentationComplete(
-                        visitId = visitId,
-                        predecessorSyncId = clinicalSyncId ?: summarySyncId ?: signSyncId,
+                        predecessorSyncId = upsertSyncId,
                     )
                 }
                 analytics.capture(

@@ -2,6 +2,21 @@
 
 Use this guide after your Supabase project exists and all SQL migrations have been run.
 
+### Apply database migrations (required for Android sync)
+
+Edge Functions deploy separately from Postgres. If Android shows **`rpc_create_patient HTTP 404`**, the database is missing migration `046_ehr_pivot_followup.sql` (and likely `045`).
+
+From **`packages/supabase`** (linked to your project):
+
+```bash
+cd packages/supabase
+supabase db push
+```
+
+Or run pending files in **SQL Editor** (Dashboard → SQL) in order through `047_provider_note_visit_id_upsert.sql`.
+
+After push, retry sync on the phone (**Retry all**). If a patient/visit already exists on the web app, you can **Mark synced** on stale queue rows once you’ve confirmed the data is in the dashboard.
+
 ---
 
 ## Part 1: Enable Realtime (queue updates)
@@ -76,6 +91,8 @@ supabase functions deploy approve-dictation
 supabase functions deploy reject-dictation
 ```
 
+`config.toml` sets `verify_jwt = false` on all four functions so Supabase’s gateway does not reject Clerk tokens before your code runs. Auth is enforced in `_shared/auth.ts` via `CLERK_ISSUER`. **Redeploy after changing `config.toml`.**
+
 ### Set secrets (required for Edge Functions)
 
 Supabase automatically provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to deployed functions. You must set the rest.
@@ -135,6 +152,13 @@ supabase secrets set CLERK_ISSUER=https://clerk.karibu.health
 - Confirm **Database → Replication**: Realtime is on and `visits` is in `supabase_realtime`.
 - Confirm RLS allows the client to read `visits` (Realtime respects RLS).
 - Check browser dev tools for WebSocket errors to `realtime.supabase.co`.
+
+**Edge Function 401 / `UNAUTHORIZED_ASYMMETRIC_JWT` on `dictate`**
+
+- Supabase’s platform is trying to validate the Bearer token as a **Supabase** JWT. Clients send a **Clerk** JWT (`issuer: https://clerk.karibu.health`).
+- Fix: redeploy with `verify_jwt = false` (see `packages/supabase/config.toml`), **or** Dashboard → Edge Functions → `dictate` → **Settings** → turn off **Verify JWT** / JWT verification.
+- Then confirm secret `CLERK_ISSUER=https://clerk.karibu.health` is set (Edge Functions → Secrets).
+- Redeploy: `supabase functions deploy dictate`
 
 **Edge Function 500 / "Missing key"**
 

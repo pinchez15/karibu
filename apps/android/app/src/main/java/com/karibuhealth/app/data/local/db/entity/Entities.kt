@@ -297,6 +297,36 @@ data class PharmacyStockItemEntity(
     @ColumnInfo(name = "updated_at") val updatedAt: String = "",
 )
 
+@Entity(
+    tableName = "clinic_lab_catalog",
+    indices = [Index(value = ["clinic_id", "test_name"], unique = true)],
+)
+data class ClinicLabCatalogEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "clinic_id") val clinicId: String,
+    @ColumnInfo(name = "test_name") val testName: String,
+    val code: String? = null,
+    val category: String? = null,
+    @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
+    @ColumnInfo(name = "is_available") val isAvailable: Boolean = true,
+    val notes: String? = null,
+)
+
+@Entity(
+    tableName = "clinic_formulary_catalog",
+    indices = [Index(value = ["clinic_id", "drug_name"], unique = true)],
+)
+data class ClinicFormularyCatalogEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "clinic_id") val clinicId: String,
+    @ColumnInfo(name = "drug_name") val drugName: String,
+    val code: String? = null,
+    val category: String? = null,
+    @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
+    @ColumnInfo(name = "is_available") val isAvailable: Boolean = true,
+    val notes: String? = null,
+)
+
 @Entity(tableName = "sync_queue")
 data class SyncQueueEntry(
     @PrimaryKey val id: String,

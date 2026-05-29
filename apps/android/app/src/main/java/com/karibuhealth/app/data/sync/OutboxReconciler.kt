@@ -3,6 +3,7 @@ package com.karibuhealth.app.data.sync
 import android.util.Log
 import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.PatientVitalsDao
+import com.karibuhealth.app.data.local.db.dao.ProviderNoteDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import javax.inject.Inject
@@ -18,6 +19,7 @@ class OutboxReconciler @Inject constructor(
     private val patientDao: PatientDao,
     private val visitDao: VisitDao,
     private val patientVitalsDao: PatientVitalsDao,
+    private val providerNoteDao: ProviderNoteDao,
 ) {
     companion object {
         private const val TAG = "OutboxReconciler"
@@ -31,6 +33,10 @@ class OutboxReconciler @Inject constructor(
                 "patients" -> patientDao.getByIdOnce(entry.entityId)?.isSynced == true
                 "visits" -> visitDao.getByIdOnce(entry.entityId)?.isSynced == true
                 "patient_vitals" -> patientVitalsDao.getByIdOnce(entry.entityId)?.isSynced == true
+                "provider_notes" -> {
+                    val note = providerNoteDao.getByIdOnce(entry.entityId)
+                    note != null && note.status in setOf("signed", "cosigned", "amended", "addended")
+                }
                 else -> false
             }
             if (alreadyOnServer) {

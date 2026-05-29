@@ -87,5 +87,20 @@ enabled = false
 [auth.external.zoom]
 enabled = false
 
+# Clerk session JWTs are verified inside each function via requireAuth() — not
+# by Supabase's platform JWT gate (which expects a Supabase-issued token and
+# returns 401 UNAUTHORIZED_ASYMMETRIC_JWT for Clerk RS256 tokens).
+[functions.dictate]
+verify_jwt = false
+
+[functions.submit-dictation]
+verify_jwt = false
+
+[functions.approve-dictation]
+verify_jwt = false
+
+[functions.reject-dictation]
+verify_jwt = false
+
 [analytics]
 enabled = false

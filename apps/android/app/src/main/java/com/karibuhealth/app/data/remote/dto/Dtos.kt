@@ -720,3 +720,51 @@ data class RecordDispenseRequest(
     @SerialName("p_movements") val movements: String = "[]",
     @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
+
+// Migration 048 — atomic sign + summary + documentation complete.
+@Serializable
+data class FinalizeClinicalEncounterRequest(
+    @SerialName("p_note_id") val noteId: String,
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_transcript") val transcript: String,
+    @SerialName("p_patient_summary") val patientSummary: String,
+    @SerialName("p_diagnosis") val diagnosis: String? = null,
+    @SerialName("p_medications") val medications: String? = null,
+    @SerialName("p_follow_up_instructions") val followUpInstructions: String? = null,
+    @SerialName("p_tests_ordered") val testsOrdered: String? = null,
+    @SerialName("p_structured_data") val structuredData: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+// Migration 048 — clinic-scoped lab + formulary catalog (rpc_get_clinic_catalog).
+@Serializable
+data class GetClinicCatalogRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+@Serializable
+data class ClinicCatalogDto(
+    val labs: List<ClinicLabCatalogItemDto> = emptyList(),
+    val formulary: List<ClinicFormularyItemDto> = emptyList(),
+)
+
+@Serializable
+data class ClinicLabCatalogItemDto(
+    @SerialName("test_name") val testName: String,
+    val code: String? = null,
+    val category: String? = null,
+    @SerialName("display_order") val displayOrder: Int = 0,
+    @SerialName("is_available") val isAvailable: Boolean = true,
+    val notes: String? = null,
+)
+
+@Serializable
+data class ClinicFormularyItemDto(
+    @SerialName("drug_name") val drugName: String,
+    val code: String? = null,
+    val category: String? = null,
+    @SerialName("display_order") val displayOrder: Int = 0,
+    @SerialName("is_available") val isAvailable: Boolean = true,
+    val notes: String? = null,
+)

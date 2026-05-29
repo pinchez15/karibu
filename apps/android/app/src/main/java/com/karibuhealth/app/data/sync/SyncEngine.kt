@@ -21,6 +21,7 @@ class SyncEngine @Inject constructor(
     private val visitDao: VisitDao,
     private val paymentDao: PaymentDao,
     private val patientVitalsDao: PatientVitalsDao,
+    private val providerNoteDao: ProviderNoteDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val outboxReconciler: OutboxReconciler,
@@ -118,6 +119,7 @@ class SyncEngine @Inject constructor(
             // Migration 044 lifecycle ops.
             "addend_provider_note" -> syncAddendProviderNote(entry)
             "cosign_provider_note" -> syncCosignProviderNote(entry)
+            "finalize_clinical_encounter" -> syncFinalizeClinicalEncounter(entry)
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             "rpc_submit_pharmacy_order" -> syncSubmitPharmacyOrder(entry)
@@ -136,9 +138,15 @@ class SyncEngine @Inject constructor(
 
         val response = supabaseApi.rpcCreatePatient(dto.toRpcRequest(clientOpId = entry.id))
         if (!response.isSuccessful) {
-            SyncMetrics.recordRpcError("create_patient", response.code(), response.errorBody()?.string())
+            val body = response.errorBody()?.string().orEmpty()
+            SyncMetrics.recordRpcError("create_patient", response.code(), body)
+            val hint = if (response.code() == 404) {
+                " (database missing rpc_create_patient — run Supabase migration 046+ on the project)"
+            } else {
+                ""
+            }
             throw IllegalStateException(
-                "rpc_create_patient HTTP ${response.code()} ${response.errorBody()?.string()?.take(300)}".trim(),
+                "rpc_create_patient HTTP ${response.code()} ${body.take(300)}$hint".trim(),
             )
         }
 
@@ -213,9 +221,43 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcUpsertProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
+            if (result.code() == 409 && dto.visitId != null &&
+                body.contains("idx_provider_notes_visit_unique")
+            ) {
+                reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.id)
+                Log.d(TAG, "Provider note reconciled after visit_id conflict: ${dto.visitId}")
+                return
+            }
             throw IllegalStateException("upsert_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.id)
         Log.d(TAG, "Provider note synced: ${entry.entityId}")
+    }
+
+    /**
+     * After a successful visit-tied upsert (or a 409 we treated as success), align
+     * local Room id with the canonical server row for that visit.
+     */
+    private suspend fun reconcileProviderNoteByVisit(visitId: String?, localNoteId: String) {
+        if (visitId.isNullOrBlank()) return
+        val server = supabaseApi.getProviderNote(visitId = "eq.$visitId").firstOrNull() ?: return
+        val local = providerNoteDao.getByVisitIdOnce(visitId)
+        if (local != null && local.id != server.id) {
+            providerNoteDao.deleteById(local.id)
+        }
+        providerNoteDao.upsert(server.toEntity())
+        if (server.id != localNoteId) {
+            propagateRemoteIdForEntity(localNoteId, server.id)
+        }
+    }
+
+    private suspend fun propagateRemoteIdForEntity(localId: String, remoteId: String) {
+        if (localId == remoteId) return
+        val entries = syncQueueDao.getPending()
+        for (entry in entries) {
+            if (!entry.payload.contains(localId)) continue
+            syncQueueDao.update(entry.copy(payload = entry.payload.replace(localId, remoteId)))
+        }
     }
 
     private suspend fun syncSignProviderNote(entry: SyncQueueEntry) {
@@ -271,6 +313,20 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("cosign_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
         }
         Log.d(TAG, "Provider note cosigned: ${entry.entityId}")
+    }
+
+    private suspend fun syncFinalizeClinicalEncounter(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(FinalizeClinicalEncounterRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing finalize_clinical_encounter: ${entry.entityId}")
+        val result = supabaseApi.rpcFinalizeClinicalEncounter(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("finalize_clinical_encounter HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        visitDao.updateSyncState(entry.entityId, true)
+        reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.noteId)
+        Log.d(TAG, "Clinical encounter finalized: ${entry.entityId}")
     }
 
     private suspend fun syncUpsertPatientNoteSummary(entry: SyncQueueEntry) {

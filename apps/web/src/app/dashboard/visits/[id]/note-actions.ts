@@ -267,6 +267,76 @@ export async function signClinicianNote(
  */
 export const saveClinicianNote = signClinicianNote
 
+/**
+ * Atomic finalize via rpc_finalize_clinical_encounter — sign + patient receipt +
+ * visit clinical summary in one SECURITY DEFINER RPC (migration 048). Optional
+ * parallel to signClinicianNote for clients that prefer a single round-trip.
+ */
+export async function finalizeClinicalEncounter(input: {
+  note_id: string
+  visit_id: string
+  transcript: string
+  patient_summary: string
+  sections?: ClinicalNoteSections
+  client_op_id?: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const text = input.transcript.trim()
+  const summary = input.patient_summary.trim()
+  if (text.length < 10) {
+    return { success: false, error: 'Add a bit more to the note before finalizing.' }
+  }
+  if (summary.length < 10) {
+    return { success: false, error: 'Patient summary is too short.' }
+  }
+
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  if (!CLINICAL_ROLES.has(staff.role)) {
+    return { success: false, error: 'Your role cannot finalize clinical encounters.' }
+  }
+
+  const visit = await loadVisitForStaff(input.visit_id, staff.clinic_id)
+  if (!visit) return { success: false, error: 'Visit not found' }
+
+  let diagnosis: string | null = null
+  let medications: string | null = null
+  let followUp: string | null = null
+  let testsOrdered: string | null = null
+  let structuredData: string | null = null
+
+  if (input.sections) {
+    const followUpTasks = input.sections.followUpTasks.filter(Boolean).join('; ')
+    followUp = [input.sections.followUpInstructions.trim(), followUpTasks]
+      .filter(Boolean)
+      .join('\n')
+    diagnosis = input.sections.diagnosis.trim() || null
+    medications = input.sections.medications.trim() || null
+    testsOrdered = input.sections.testsOrdered.trim() || null
+    structuredData = JSON.stringify(input.sections)
+  }
+
+  const supabase = createServiceClient()
+  const { error: rpcErr } = await supabase.rpc('rpc_finalize_clinical_encounter', {
+    p_note_id: input.note_id,
+    p_visit_id: input.visit_id,
+    p_patient_id: visit.patient_id,
+    p_transcript: text,
+    p_patient_summary: summary,
+    p_diagnosis: diagnosis,
+    p_medications: medications,
+    p_follow_up_instructions: followUp,
+    p_tests_ordered: testsOrdered,
+    p_structured_data: structuredData,
+    p_client_op_id: input.client_op_id ?? null,
+  })
+  if (rpcErr) {
+    return { success: false, error: `finalize failed: ${rpcErr.message}` }
+  }
+
+  revalidatePath(`/dashboard/visits/${input.visit_id}`)
+  return { success: true }
+}
+
 type NoteRow = {
   id: string
   visit_id: string | null

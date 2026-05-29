@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.karibuhealth.app.ui.auth.AuthScreen
 import com.karibuhealth.app.ui.home.HomeScreen
+import com.karibuhealth.app.ui.home.MainShell
 import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
@@ -42,7 +43,7 @@ fun KaribuNavHost(
         }
 
         composable<NavRoute.Home> {
-            HomeScreen(
+            MainShell(
                 onNavigateToQueue = { navController.navigate(NavRoute.Queue) },
                 onNavigateToNewVisit = { navController.navigate(NavRoute.NewVisit) },
                 onNavigateToVisitDetails = { visitId ->

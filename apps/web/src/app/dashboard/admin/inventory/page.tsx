@@ -25,14 +25,16 @@ async function getInventory(clinicId: string): Promise<{
 
   const { data: labs } = await supabase
     .from('clinic_lab_capabilities')
-    .select('test_name, is_available, notes, updated_at')
+    .select('test_name, is_available, notes, code, category, display_order, active, updated_at')
     .eq('clinic_id', clinicId)
+    .order('display_order')
     .order('test_name')
 
   const { data: drugs } = await supabase
     .from('clinic_pharmacy_formulary')
-    .select('drug_name, in_stock, notes, updated_at')
+    .select('drug_name, in_stock, notes, code, category, display_order, active, updated_at')
     .eq('clinic_id', clinicId)
+    .order('display_order')
     .order('drug_name')
 
   return {
@@ -40,11 +42,19 @@ async function getInventory(clinicId: string): Promise<{
       name: l.test_name,
       enabled: l.is_available,
       notes: l.notes,
+      code: l.code,
+      category: l.category,
+      display_order: l.display_order ?? 0,
+      active: l.active ?? true,
     })),
     drugs: (drugs ?? []).map((d) => ({
       name: d.drug_name,
       enabled: d.in_stock,
       notes: d.notes,
+      code: d.code,
+      category: d.category,
+      display_order: d.display_order ?? 0,
+      active: d.active ?? true,
     })),
   }
 }

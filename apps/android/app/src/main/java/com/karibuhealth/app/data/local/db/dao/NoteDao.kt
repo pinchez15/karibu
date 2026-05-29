@@ -25,6 +25,9 @@ interface ProviderNoteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(note: ProviderNoteEntity)
 
+    @Query("DELETE FROM provider_notes WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("""
         UPDATE provider_notes
         SET structured_data = :structuredData,

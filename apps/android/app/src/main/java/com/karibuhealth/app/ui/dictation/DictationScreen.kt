@@ -263,6 +263,34 @@ private fun DictationScreenContent(
                 isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
                 isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
             )
+            // LABS — after family history; picker is sex/age-filtered.
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "LABS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    AddLabsChip(onClick = { showLabPicker = true })
+                }
+                Spacer(Modifier.height(4.dp))
+                SectionField(
+                    label = null,
+                    value = sections.testsOrdered,
+                    section = NoteSection.TestsOrdered,
+                    onFocusChange = onFocusedSectionChange,
+                    placeholder = "Labs ordered or use Add labs…",
+                    onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
+                    enabled = sectionFieldEnabled(uiState, NoteSection.TestsOrdered),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.TestsOrdered && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.TestsOrdered && uiState.isTranscribing,
+                )
+            }
             SectionField(
                 label = "DIAGNOSIS",
                 value = sections.diagnosis,
@@ -340,36 +368,6 @@ private fun DictationScreenContent(
                         }
                     }
                 }
-            }
-
-            // LABS — picker is sex/age-filtered (no pregnancy tests for males,
-            // etc.). Selections append to the free-text field.
-            Column {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "LABS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    AddLabsChip(onClick = { showLabPicker = true })
-                }
-                Spacer(Modifier.height(4.dp))
-                SectionField(
-                    label = null,
-                    value = sections.testsOrdered,
-                    section = NoteSection.TestsOrdered,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Labs ordered or use Add labs…",
-                    onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.TestsOrdered),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.TestsOrdered && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.TestsOrdered && uiState.isTranscribing,
-                )
             }
 
             if (showLabPicker) {
@@ -524,13 +522,13 @@ private fun AutosaveStatusIndicator(status: AutosaveStatus) {
     }
 }
 
-@Composable
 private fun sectionFieldEnabled(uiState: DictationUiState, section: NoteSection): Boolean {
     if (uiState.isSubmitting || uiState.isTranscribing) return false
     if (!uiState.isRecording) return true
     return uiState.recordingSection == section
 }
 
+@Composable
 private fun SectionField(
     label: String?,
     value: String,

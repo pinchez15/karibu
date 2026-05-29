@@ -4,6 +4,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { requireProvisioningAccess, requireStaff } from '@/lib/auth'
+import type { ClinicWorkflowConfig, OpdPatientFilter, VisitDepartment } from '@karibu/shared'
 
 const DEPARTMENTS = ['opd', 'anc', 'maternity', 'family_planning', 'immunization'] as const
 const STAFF_ROLES = [
@@ -394,6 +395,85 @@ export async function updateProvisionedStaffAction(formData: FormData) {
       role,
     })
   }
+
+  revalidatePath('/dashboard/superadmin')
+}
+
+const OPD_FILTERS: OpdPatientFilter[] = [
+  'waiting',
+  'needs_vitals',
+  'with_clinician',
+  'awaiting_labs',
+  'at_pharmacy',
+  'done_today',
+]
+
+const WORKFLOW_DEPARTMENTS: VisitDepartment[] = [
+  'opd',
+  'anc',
+  'maternity',
+  'family_planning',
+  'immunization',
+]
+
+function parseWorkflowConfig(formData: FormData): ClinicWorkflowConfig {
+  const filters = formData
+    .getAll('default_opd_filters')
+    .map((v) => (typeof v === 'string' ? v : ''))
+    .filter((v): v is OpdPatientFilter => (OPD_FILTERS as readonly string[]).includes(v))
+
+  const departments = formData
+    .getAll('prominent_departments')
+    .map((v) => (typeof v === 'string' ? v : ''))
+    .filter((v): v is VisitDepartment =>
+      (WORKFLOW_DEPARTMENTS as readonly string[]).includes(v),
+    )
+
+  const protocolSlugs = asText(formData.get('enabled_protocol_slugs'))
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  return {
+    default_opd_filters: filters.length > 0 ? filters : ['waiting', 'done_today'],
+    prominent_departments: departments.length > 0 ? departments : ['opd'],
+    show_physical_queue_filter: formData.get('show_physical_queue_filter') === 'on',
+    enabled_protocol_slugs: protocolSlugs,
+  }
+}
+
+export async function updateClinicWorkflowConfigAction(formData: FormData) {
+  await requireProvisioningAccess()
+
+  const clinicId = asText(formData.get('clinic_id'))
+  if (!clinicId) throw new Error('Missing clinic id')
+
+  const workflow_config = parseWorkflowConfig(formData)
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('clinics')
+    .update({ workflow_config })
+    .eq('id', clinicId)
+  if (error) throw error
+
+  revalidatePath('/dashboard/superadmin')
+}
+
+export async function updateProtocolEnrollmentAction(formData: FormData) {
+  await requireProvisioningAccess()
+
+  const clinicId = asText(formData.get('clinic_id'))
+  const protocolId = asText(formData.get('protocol_id'))
+  const enabled = formData.get('enabled') === 'on'
+
+  if (!clinicId || !protocolId) throw new Error('Missing clinic or protocol id')
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.from('clinic_protocol_enrollments').upsert(
+    { clinic_id: clinicId, protocol_id: protocolId, enabled },
+    { onConflict: 'clinic_id,protocol_id' },
+  )
+  if (error) throw error
 
   revalidatePath('/dashboard/superadmin')
 }

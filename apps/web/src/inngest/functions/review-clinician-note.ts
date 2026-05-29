@@ -143,9 +143,15 @@ export const reviewClinicianNote = inngest.createFunction(
       }
     },
   },
-  { event: 'note.dictated' },
+  [{ event: 'note.dictated' }, { event: 'note.draft-ai-assist' }],
   async ({ event, step, logger }) => {
-    const { visit_id, clinic_id } = event.data
+    const { visit_id, clinic_id, phase: eventPhase } = event.data
+    const reviewPhase =
+      event.name === 'note.draft-ai-assist' || eventPhase === 'draft'
+        ? 'draft'
+        : eventPhase === 'pre_sign'
+          ? 'pre_sign'
+          : 'post_sign'
 
     // ---------------------------------------------------------- mark running
     await step.run('mark-running', async () => {
@@ -284,17 +290,23 @@ export const reviewClinicianNote = inngest.createFunction(
       // for any reasonable clinician note.
       await step.run('finish-no-corpus', async () => {
         const supabase = createServiceClient()
-        await supabase
+        const patch: Record<string, unknown> = {
+          ai_review_status: 'completed',
+          ai_review_completed_at: new Date().toISOString(),
+          ai_review_no_concerns: true,
+        }
+        if (reviewPhase === 'post_sign') {
+          patch.status = 'review'
+        }
+        let query = supabase
           .from('visits')
-          .update({
-            ai_review_status: 'completed',
-            ai_review_completed_at: new Date().toISOString(),
-            ai_review_no_concerns: true,
-            status: 'review',
-          })
+          .update(patch)
           .eq('id', visit_id)
           .eq('clinic_id', clinic_id)
-          .eq('status', 'pending')
+        if (reviewPhase === 'post_sign') {
+          query = query.eq('status', 'pending')
+        }
+        await query
       })
       return { visit_id, ai_review_status: 'completed' as const, suggestions: 0 }
     }
@@ -418,6 +430,7 @@ export const reviewClinicianNote = inngest.createFunction(
           reasoning: s.reasoning,
           citation_ids: s.citation_ids,
           confidence: s.confidence,
+          phase: reviewPhase,
         }))
         const { error: insertErr } = await supabase.from('ai_review_suggestions').insert(rows)
         if (insertErr) {
@@ -425,19 +438,26 @@ export const reviewClinicianNote = inngest.createFunction(
         }
       }
 
-      const { error: updateErr } = await supabase
+      const visitPatch: Record<string, unknown> = {
+        ai_review_status: 'completed',
+        ai_review_completed_at: new Date().toISOString(),
+        ai_review_no_concerns: suggestions.length === 0,
+      }
+      if (reviewPhase === 'post_sign') {
+        visitPatch.status = 'review'
+      }
+
+      let statusQuery = supabase
         .from('visits')
-        .update({
-          ai_review_status: 'completed',
-          ai_review_completed_at: new Date().toISOString(),
-          ai_review_no_concerns: suggestions.length === 0,
-          // AI dictation pipeline: submit-dictation leaves status='pending';
-          // advance to 'review' when the primary note.dictated handler completes.
-          status: 'review',
-        })
+        .update(visitPatch)
         .eq('id', visit_id)
         .eq('clinic_id', clinic_id)
-        .eq('status', 'pending')
+
+      if (reviewPhase === 'post_sign') {
+        statusQuery = statusQuery.eq('status', 'pending')
+      }
+
+      const { error: updateErr } = await statusQuery
       if (updateErr) {
         throw new Error(`persist status: ${updateErr.message}`)
       }

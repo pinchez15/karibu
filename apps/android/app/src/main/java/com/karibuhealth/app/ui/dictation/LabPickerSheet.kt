@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +27,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.catalog.HcLabCatalog
 
 /**
@@ -56,8 +60,24 @@ fun LabPickerSheet(
     onConfirm: (String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val categories = remember(patientSex, ageYears) {
-        HcLabCatalog.filtered(patientSex, ageYears)
+    val catalogViewModel: CatalogViewModel = hiltViewModel()
+    LaunchedEffect(Unit) { catalogViewModel.ensureLoaded() }
+    val catalogState by catalogViewModel.state.collectAsState()
+    val categories = remember(catalogState.labCategories, patientSex, ageYears) {
+        val fromRoom = catalogState.labCategories.map { (title, names) ->
+            HcLabCatalog.LabCategory(
+                id = title,
+                title = title,
+                tests = names.map { name ->
+                    HcLabCatalog.LabTest(
+                        code = name.uppercase().replace(" ", "_"),
+                        name = name,
+                        hint = "Clinic catalog",
+                    )
+                },
+            )
+        }
+        if (fromRoom.isNotEmpty()) fromRoom else HcLabCatalog.filtered(patientSex, ageYears)
     }
     var selected by remember { mutableStateOf(setOf<String>()) }
 

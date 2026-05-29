@@ -72,6 +72,22 @@ interface SyncQueueDao {
     """)
     fun observePending(): Flow<List<SyncQueueEntry>>
 
+    @Query("""
+        SELECT COUNT(*) FROM sync_queue sq
+        WHERE sq.status IN ('pending', 'failed') AND sq.attempts < sq.max_attempts
+        AND (
+            sq.entity_id = :patientId
+            OR sq.entity_id IN (SELECT id FROM visits WHERE patient_id = :patientId)
+            OR sq.entity_id IN (SELECT id FROM provider_notes WHERE patient_id = :patientId)
+            OR sq.entity_id IN (SELECT id FROM patient_vitals WHERE patient_id = :patientId)
+            OR sq.entity_id IN (SELECT id FROM payments WHERE patient_id = :patientId)
+            OR sq.entity_id IN (SELECT id FROM patient_notes WHERE visit_id IN (
+                SELECT id FROM visits WHERE patient_id = :patientId
+            ))
+        )
+    """)
+    fun getPendingCountForPatient(patientId: String): Flow<Int>
+
     /**
      * Escape hatch: mark a single queue entry as completed without
      * re-attempting the RPC. The user invokes this from the sync details

@@ -17,7 +17,14 @@ import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.sync.VisitMerge
-import com.karibuhealth.app.domain.model.*
+import com.karibuhealth.app.domain.model.Department
+import com.karibuhealth.app.domain.model.OpdPatientFilter
+import com.karibuhealth.app.domain.model.OpdPatientRow
+import com.karibuhealth.app.domain.model.QueueStatus
+import com.karibuhealth.app.domain.model.ReviewStatus
+import com.karibuhealth.app.domain.model.Visit
+import com.karibuhealth.app.domain.model.VisitPriority
+import com.karibuhealth.app.domain.model.VisitStatus
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -79,6 +86,30 @@ class VisitRepository @Inject constructor(
     fun getMyDoneTodayCount(clinicianId: String): Flow<Int> {
         val today = LocalDate.now().toString()
         return visitDao.getMyDoneTodayCount(clinicianId, today)
+    }
+
+    /**
+     * Patient-centric OPD list for today's clinic — one row per patient,
+     * using the most recently checked-in visit when multiple exist.
+     */
+    fun getOpdPatientsToday(clinicId: String): Flow<List<OpdPatientRow>> {
+        val today = LocalDate.now().toString()
+        return visitDao.getTodayVisitsWithPatients(clinicId, today).map { rows ->
+            rows
+                .groupBy { it.patient.id }
+                .mapNotNull { (_, visits) ->
+                    visits.maxByOrNull { it.visit.checkedInAt ?: "" }
+                }
+                .map { OpdPatientRow.from(it) }
+                .sortedByDescending { it.checkedInAt }
+        }
+    }
+
+    suspend fun getTodayVisitIds(clinicId: String): List<String> {
+        val today = LocalDate.now().toString()
+        return withContext(Dispatchers.IO) {
+            visitDao.getTodayVisitIds(clinicId, today)
+        }
     }
 
     // One-tap "Start visit" for a clinician who self-triages. Optimistic local

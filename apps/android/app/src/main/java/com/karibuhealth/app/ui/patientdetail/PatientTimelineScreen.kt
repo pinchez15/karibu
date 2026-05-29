@@ -60,6 +60,7 @@ import com.karibuhealth.app.domain.model.PatientLatestVitals
 import com.karibuhealth.app.domain.model.PatientTimelineEvent
 import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.components.SyncStatusPill
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
 import com.karibuhealth.app.ui.theme.Amber
@@ -157,6 +158,13 @@ fun PatientTimelineScreen(
                             contentDescription = "Back",
                         )
                     }
+                },
+                actions = {
+                    SyncStatusPill(
+                        pendingCount = uiState.pendingSyncCount,
+                        isOnline = uiState.isOnline,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
                 },
             )
         },

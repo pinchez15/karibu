@@ -29,6 +29,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.karibuhealth.app.domain.model.OpdPatientFilter
+import com.karibuhealth.app.domain.model.OpdPatientRow
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.domain.model.Staff
@@ -60,6 +64,7 @@ fun HomeScreen(
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit = {},
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -109,7 +114,8 @@ fun HomeScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .then(modifier),
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -135,8 +141,27 @@ fun HomeScreen(
                 item {
                     HomeHero(
                         seen = uiState.doneTodayCount,
-                        waiting = uiState.openEncounters.size,
+                        waiting = uiState.waitingCount,
                     )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OpdPatientFilter.entries.forEach { filter ->
+                            val selected = uiState.selectedFilter == filter
+                            FilterChip(
+                                selected = selected,
+                                onClick = { viewModel.selectFilter(filter) },
+                                label = { Text(filter.label) },
+                            )
+                        }
+                    }
                 }
 
                 item {
@@ -147,8 +172,8 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         StatTile(
-                            label = "TO REVIEW",
-                            value = uiState.toReview.size.toString(),
+                            label = "PATIENTS",
+                            value = uiState.filteredPatients.size.toString(),
                             modifier = Modifier.weight(1f),
                         )
                         StatTile(
@@ -158,8 +183,8 @@ fun HomeScreen(
                             indicatorColor = if (uiState.pendingSyncCount > 0) Amber else null,
                         )
                         StatTile(
-                            label = "DRAFTS",
-                            value = uiState.toDictate.size.toString(),
+                            label = "DONE",
+                            value = uiState.doneTodayCount.toString(),
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -224,141 +249,67 @@ fun HomeScreen(
                     }
                 }
 
-                if (uiState.searchQuery.isBlank() && uiState.openEncounters.isNotEmpty()) {
+                if (uiState.searchQuery.isBlank()) {
                     item {
-                        SectionHeader(
-                            title = "Open encounters",
-                            countSuffix = uiState.openEncounters.size,
-                        )
-                    }
-                    items(uiState.openEncounters, key = { "enc-${it.visit.id}" }) { v ->
-                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                            QueueCard(
-                                visit = v,
-                                onClick = { onNavigateToVisitDetails(v.visit.id) },
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Today's patients",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
                             )
-                        }
-                    }
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "My queue",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f),
-                        )
-                        KhMetaText(
-                            text = if (uiState.queue.size == 1) "1 PATIENT" else "${uiState.queue.size} PATIENTS",
-                        )
-                    }
-                }
-
-                if (uiState.queue.isEmpty()) {
-                    item {
-                        EmptyHint(
-                            text = if (uiState.isLoading) "Loading..." else "No patients in the queue. Tap + to register one.",
-                        )
-                    }
-                } else {
-                    items(uiState.queue, key = { "q-${it.visit.id}" }) { v ->
-                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                            QueueCard(
-                                visit = v,
-                                onClick = {
-                                    if (v.visit.queueStatus == "with_doctor") {
-                                        onNavigateToVisitDetails(v.visit.id)
-                                    } else {
-                                        viewModel.startVisit(v.visit.id)
-                                        onNavigateToVisitDetails(v.visit.id)
-                                    }
+                            KhMetaText(
+                                text = if (uiState.filteredPatients.size == 1) {
+                                    "1 PATIENT"
+                                } else {
+                                    "${uiState.filteredPatients.size} PATIENTS"
                                 },
                             )
                         }
                     }
-                }
 
-                if (uiState.toReview.isNotEmpty()) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "AI review",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            KhMetaText(text = "${uiState.toReview.size} READY")
-                        }
-                    }
-                    items(uiState.toReview, key = { "r-${it.visit.id}" }) { v ->
-                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                            StatusCard(
-                                visit = v,
-                                kind = KhStatusKind.PendingReview,
-                                statusLabel = "Pending Review",
-                                onClick = { onNavigateToVisitDetails(v.visit.id) },
+                    if (uiState.filteredPatients.isEmpty()) {
+                        item {
+                            EmptyHint(
+                                text = if (uiState.isLoading) {
+                                    "Loading..."
+                                } else {
+                                    "No patients match this filter. Tap + to register one."
+                                },
                             )
                         }
+                    } else {
+                        items(uiState.filteredPatients, key = { "opd-${it.patientId}" }) { row ->
+                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                                OpdPatientCard(
+                                    row = row,
+                                    onClick = { onNavigateToPatient(row.patientId) },
+                                )
+                            }
+                        }
                     }
-                }
 
-                if (uiState.toDictate.isNotEmpty()) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "Drafts",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            KhMetaText(text = "${uiState.toDictate.size} TO FINISH")
-                        }
-                    }
-                    items(uiState.toDictate, key = { "d-${it.visit.id}" }) { v ->
-                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                            StatusCard(
-                                visit = v,
-                                kind = KhStatusKind.InNote,
-                                statusLabel = "Draft",
-                                onClick = { onNavigateToVisitDetails(v.visit.id) },
-                            )
-                        }
-                    }
-                }
-
-                if (uiState.doneTodayCount > 0) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(top = 12.dp, bottom = 16.dp)
-                                .clickable(onClick = onNavigateToQueue),
-                        ) {
-                            Text(
-                                text = "${uiState.doneTodayCount} completed today",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                    if (uiState.doneTodayCount > 0) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp)
+                                    .padding(top = 12.dp, bottom = 16.dp)
+                                    .clickable(onClick = onNavigateToQueue),
+                            ) {
+                                Text(
+                                    text = "${uiState.doneTodayCount} completed today",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
@@ -653,6 +604,72 @@ private fun SearchResultCard(
             ) {
                 Text("Start Visit")
             }
+        }
+    }
+}
+
+@Composable
+private fun OpdPatientCard(row: OpdPatientRow, onClick: () -> Unit) {
+    val (kind, statusLabel) = when (row.bucket) {
+        OpdPatientFilter.Waiting -> KhStatusKind.Waiting to "Waiting"
+        OpdPatientFilter.NeedsVitals -> KhStatusKind.Vitals to "Needs vitals"
+        OpdPatientFilter.WithClinician -> KhStatusKind.InNote to "With clinician"
+        OpdPatientFilter.AwaitingLabs -> KhStatusKind.Lab to "Awaiting labs"
+        OpdPatientFilter.AtPharmacy -> KhStatusKind.Ready to "At pharmacy"
+        OpdPatientFilter.DoneToday -> KhStatusKind.Done to "Done"
+    }
+    val accentColor: Color = when (kind) {
+        KhStatusKind.Urgent -> Amber
+        KhStatusKind.Vitals, KhStatusKind.Sent, KhStatusKind.Signed, KhStatusKind.Cosigned -> Green
+        KhStatusKind.Errored, KhStatusKind.Voided -> Amber
+        KhStatusKind.Addended, KhStatusKind.Amended -> Amber
+        KhStatusKind.InNote, KhStatusKind.Ready, KhStatusKind.Review,
+        KhStatusKind.Lab, KhStatusKind.Waiting, KhStatusKind.Done,
+        KhStatusKind.Draft, KhStatusKind.PendingReview -> Cobalt
+    }
+    val waitText = row.checkedInAt?.let { "${formatWaitTime(it)} ago" } ?: "—"
+    val ageBand = listOfNotNull(row.ageLabel, row.sex?.firstOrNull()?.uppercaseChar()?.toString())
+        .joinToString("")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(64.dp)
+                .background(accentColor),
+        )
+        Column(modifier = Modifier.padding(12.dp).weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = row.patientName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                if (ageBand.isNotBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    KhMetaText(text = ageBand)
+                }
+                Spacer(Modifier.width(8.dp))
+                KhStatusPill(kind = kind, label = statusLabel)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = row.chiefComplaint?.takeIf { it.isNotBlank() } ?: "—",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(6.dp))
+            KhMetaText(text = waitText)
         }
     }
 }

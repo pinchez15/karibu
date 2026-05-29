@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase'
 import { hasProvisioningAccess, isSuperadmin } from '@/lib/auth'
-import { createClinicAction, inviteStaffAction, updateClinicAction, updateProvisionedStaffAction } from './actions'
+import { createClinicAction, inviteStaffAction, updateClinicAction, updateClinicWorkflowConfigAction, updateProtocolEnrollmentAction, updateProvisionedStaffAction } from './actions'
+import type { ClinicWorkflowConfig } from '@karibu/shared'
 
 const DEPARTMENTS = [
   { value: 'opd', label: 'OPD' },
@@ -39,6 +40,21 @@ type ClinicRow = {
   parish: string | null
   village: string | null
   level: string | null
+  workflow_config: ClinicWorkflowConfig
+}
+
+type ProtocolRow = {
+  id: string
+  slug: string
+  title: string
+  description: string | null
+  active: boolean
+}
+
+type ProtocolEnrollmentRow = {
+  clinic_id: string
+  protocol_id: string
+  enabled: boolean
 }
 
 type ClinicDepartmentRow = {
@@ -69,10 +85,10 @@ type InvitationRow = {
 async function getProvisioningData() {
   const supabase = createServiceClient()
 
-  const [{ data: clinics }, { data: departments }, { data: staff }, { data: invitations }] = await Promise.all([
+  const [{ data: clinics }, { data: departments }, { data: staff }, { data: invitations }, { data: protocols }, { data: enrollments }] = await Promise.all([
     supabase
       .from('clinics')
-      .select('id, name, slug, timezone, is_active, clerk_organization_id, phone, umdpc_number, diocese, district, subcounty, parish, village, level')
+      .select('id, name, slug, timezone, is_active, clerk_organization_id, phone, umdpc_number, diocese, district, subcounty, parish, village, level, workflow_config')
       .order('name'),
     supabase
       .from('clinic_departments')
@@ -86,6 +102,14 @@ async function getProvisioningData() {
       .from('staff_invitations')
       .select('id, clinic_id, email, display_name, role, status, created_at')
       .order('created_at', { ascending: false }),
+    supabase
+      .from('clinical_protocol_definitions')
+      .select('id, slug, title, description, active')
+      .eq('active', true)
+      .order('title'),
+    supabase
+      .from('clinic_protocol_enrollments')
+      .select('clinic_id, protocol_id, enabled'),
   ])
 
   return {
@@ -93,6 +117,8 @@ async function getProvisioningData() {
     departments: (departments ?? []) as ClinicDepartmentRow[],
     staff: (staff ?? []) as StaffRow[],
     invitations: (invitations ?? []) as InvitationRow[],
+    protocols: (protocols ?? []) as ProtocolRow[],
+    enrollments: (enrollments ?? []) as ProtocolEnrollmentRow[],
   }
 }
 
@@ -112,6 +138,23 @@ function groupedStaff(rows: StaffRow[]) {
   }, {})
 }
 
+const OPD_FILTER_OPTIONS = [
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'needs_vitals', label: 'Needs vitals' },
+  { value: 'with_clinician', label: 'With clinician' },
+  { value: 'awaiting_labs', label: 'Awaiting labs' },
+  { value: 'at_pharmacy', label: 'At pharmacy' },
+  { value: 'done_today', label: 'Done today' },
+] as const
+
+function groupedEnrollments(rows: ProtocolEnrollmentRow[]) {
+  return rows.reduce<Record<string, Record<string, boolean>>>((acc, row) => {
+    acc[row.clinic_id] ??= {}
+    acc[row.clinic_id][row.protocol_id] = row.enabled
+    return acc
+  }, {})
+}
+
 function groupedInvitations(rows: InvitationRow[]) {
   return rows.reduce<Record<string, InvitationRow[]>>((acc, row) => {
     acc[row.clinic_id] ??= []
@@ -127,10 +170,12 @@ export default async function SuperadminProvisioningPage() {
   }
 
   const superadmin = await isSuperadmin()
-  const { clinics, departments, staff, invitations } = await getProvisioningData()
+  const { clinics, departments, staff, invitations, protocols, enrollments } =
+    await getProvisioningData()
   const departmentsByClinic = groupedDepartments(departments)
   const staffByClinic = groupedStaff(staff)
   const invitationsByClinic = groupedInvitations(invitations)
+  const enrollmentsByClinic = groupedEnrollments(enrollments)
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -226,6 +271,13 @@ export default async function SuperadminProvisioningPage() {
           const clinicDepartments = departmentsByClinic[clinic.id] ?? new Set<string>()
           const clinicStaff = staffByClinic[clinic.id] ?? []
           const clinicInvitations = invitationsByClinic[clinic.id] ?? []
+          const clinicEnrollments = enrollmentsByClinic[clinic.id] ?? {}
+          const workflow = clinic.workflow_config ?? {
+            default_opd_filters: ['waiting', 'done_today'],
+            prominent_departments: ['opd'],
+            show_physical_queue_filter: true,
+            enabled_protocol_slugs: [],
+          }
 
           return (
             <article key={clinic.id} className="rounded-2xl border border-border bg-card p-6">
@@ -318,6 +370,111 @@ export default async function SuperadminProvisioningPage() {
                       </button>
                     </div>
                   </form>
+
+                  <form action={updateClinicWorkflowConfigAction} className="rounded-xl border border-border bg-muted/40 p-4">
+                    <input type="hidden" name="clinic_id" value={clinic.id} />
+                    <h4 className="text-lg font-semibold">Workflow config</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      OPD filters, prominent departments, and physical queue visibility for Android/web homes.
+                    </p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-medium">Default OPD filters</p>
+                        <div className="mt-2 flex flex-wrap gap-3">
+                          {OPD_FILTER_OPTIONS.map((filter) => (
+                            <label key={filter.value} className="inline-flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                name="default_opd_filters"
+                                value={filter.value}
+                                defaultChecked={workflow.default_opd_filters?.includes(filter.value)}
+                              />
+                              {filter.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Prominent departments</p>
+                        <div className="mt-2 flex flex-wrap gap-3">
+                          {DEPARTMENTS.map((department) => (
+                            <label key={department.value} className="inline-flex items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                name="prominent_departments"
+                                value={department.value}
+                                defaultChecked={workflow.prominent_departments?.includes(department.value)}
+                              />
+                              {department.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <label className="inline-flex items-center gap-2 text-sm md:col-span-2">
+                        <input
+                          type="checkbox"
+                          name="show_physical_queue_filter"
+                          defaultChecked={workflow.show_physical_queue_filter !== false}
+                        />
+                        Show physical queue filter
+                      </label>
+                      <label className="text-sm md:col-span-2">
+                        Enabled protocol slugs (comma-separated)
+                        <input
+                          name="enabled_protocol_slugs"
+                          defaultValue={(workflow.enabled_protocol_slugs ?? []).join(', ')}
+                          placeholder="ebola-suspect-v1, cholera-suspect-v1"
+                          className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="mt-4 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                    >
+                      Save workflow config
+                    </button>
+                  </form>
+
+                  <div>
+                    <h4 className="text-lg font-semibold">Clinical protocols</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Enroll clinics in outbreak / isolation protocols. Activations require enrollment.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {protocols.map((protocol) => (
+                        <form
+                          key={protocol.id}
+                          action={updateProtocolEnrollmentAction}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2"
+                        >
+                          <input type="hidden" name="clinic_id" value={clinic.id} />
+                          <input type="hidden" name="protocol_id" value={protocol.id} />
+                          <div>
+                            <div className="font-medium text-sm">{protocol.title}</div>
+                            <div className="text-xs text-muted-foreground">{protocol.slug}</div>
+                          </div>
+                          <label className="inline-flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              name="enabled"
+                              defaultChecked={clinicEnrollments[protocol.id] === true}
+                            />
+                            Enrolled
+                          </label>
+                          <button
+                            type="submit"
+                            className="rounded-md bg-foreground px-3 py-1 text-xs font-medium text-background"
+                          >
+                            Save
+                          </button>
+                        </form>
+                      ))}
+                      {protocols.length === 0 && (
+                        <p className="text-sm text-muted-foreground">No protocol definitions seeded.</p>
+                      )}
+                    </div>
+                  </div>
 
                   <div>
                     <h4 className="text-lg font-semibold">Staff</h4>

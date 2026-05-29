@@ -248,4 +248,11 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_record_dispense")
     suspend fun rpcRecordDispense(@Body request: RecordDispenseRequest): Response<ResponseBody>
+
+    // Migration 048 — atomic encounter finalization + clinic catalog.
+    @POST("rpc/rpc_finalize_clinical_encounter")
+    suspend fun rpcFinalizeClinicalEncounter(@Body request: FinalizeClinicalEncounterRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_get_clinic_catalog")
+    suspend fun rpcGetClinicCatalog(@Body request: GetClinicCatalogRequest): ClinicCatalogDto
 }

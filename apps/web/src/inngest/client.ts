@@ -11,6 +11,16 @@ type Events = {
     data: {
       visit_id: string
       clinic_id: string
+      phase?: 'pre_sign' | 'post_sign'
+    }
+  }
+  // Fired when rpc_request_draft_ai_assist records draft-stage assist intent.
+  // Same review pipeline as note.dictated, but suggestions persist with phase='draft'.
+  'note.draft-ai-assist': {
+    data: {
+      visit_id: string
+      clinic_id: string
+      phase?: 'draft'
     }
   }
 }

@@ -87,6 +87,80 @@ export async function setDrugAvailability(
   return { success: true }
 }
 
+export async function updateLabCatalogFields(
+  testName: string,
+  fields: {
+    code?: string | null
+    category?: string | null
+    display_order?: number
+    active?: boolean
+  },
+): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await assertAdmin()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const patch: Record<string, unknown> = {
+    last_updated_by: staff.id,
+    updated_at: new Date().toISOString(),
+  }
+  if (fields.code !== undefined) patch.code = fields.code?.trim() || null
+  if (fields.category !== undefined) patch.category = fields.category?.trim() || null
+  if (fields.display_order !== undefined) patch.display_order = fields.display_order
+  if (fields.active !== undefined) patch.active = fields.active
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('clinic_lab_capabilities')
+    .update(patch)
+    .eq('clinic_id', staff.clinic_id)
+    .eq('test_name', testName.trim())
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/admin/inventory')
+  return { success: true }
+}
+
+export async function updateDrugCatalogFields(
+  drugName: string,
+  fields: {
+    code?: string | null
+    category?: string | null
+    display_order?: number
+    active?: boolean
+  },
+): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await assertAdmin()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const patch: Record<string, unknown> = {
+    last_updated_by: staff.id,
+    updated_at: new Date().toISOString(),
+  }
+  if (fields.code !== undefined) patch.code = fields.code?.trim() || null
+  if (fields.category !== undefined) patch.category = fields.category?.trim() || null
+  if (fields.display_order !== undefined) patch.display_order = fields.display_order
+  if (fields.active !== undefined) patch.active = fields.active
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('clinic_pharmacy_formulary')
+    .update(patch)
+    .eq('clinic_id', staff.clinic_id)
+    .eq('drug_name', drugName.trim())
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/admin/inventory')
+  return { success: true }
+}
+
 export async function addCustomLab(
   testName: string,
 ): Promise<{ success: true } | { success: false; error: string }> {

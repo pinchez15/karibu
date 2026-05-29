@@ -253,4 +253,17 @@ interface VisitDao {
         ORDER BY checked_in_at DESC
     """)
     fun getOpenEncountersToday(clinicId: String, date: String): Flow<List<VisitWithPatient>>
+
+    /** All of today's visits with patient rows — OPD home dedupes by patient_id. */
+    @Transaction
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+        ORDER BY checked_in_at DESC
+    """)
+    fun getTodayVisitsWithPatients(clinicId: String, date: String): Flow<List<VisitWithPatient>>
+
+    @Query("SELECT id FROM visits WHERE clinic_id = :clinicId AND visit_date = :date")
+    suspend fun getTodayVisitIds(clinicId: String, date: String): List<String>
 }

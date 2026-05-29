@@ -18,6 +18,7 @@ class SyncEngineTest {
     private lateinit var visitDao: VisitDao
     private lateinit var paymentDao: PaymentDao
     private lateinit var patientVitalsDao: PatientVitalsDao
+    private lateinit var providerNoteDao: ProviderNoteDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var outboxReconciler: OutboxReconciler
@@ -30,6 +31,7 @@ class SyncEngineTest {
         visitDao = mockk(relaxed = true)
         paymentDao = mockk(relaxed = true)
         patientVitalsDao = mockk(relaxed = true)
+        providerNoteDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
         outboxReconciler = mockk(relaxed = true)
@@ -40,6 +42,7 @@ class SyncEngineTest {
             visitDao = visitDao,
             paymentDao = paymentDao,
             patientVitalsDao = patientVitalsDao,
+            providerNoteDao = providerNoteDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             outboxReconciler = outboxReconciler,

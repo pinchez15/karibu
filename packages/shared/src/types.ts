@@ -3,6 +3,23 @@
 // the dictation into a SOAP note with citations, clinician reviews + prints.
 // No ambient audio capture, no DPPA cross-border consent flow, no audio storage.
 
+/** OPD worklist filter keys — mirrors clinics.workflow_config.default_opd_filters. */
+export type OpdPatientFilter =
+  | 'waiting'
+  | 'needs_vitals'
+  | 'with_clinician'
+  | 'awaiting_labs'
+  | 'at_pharmacy'
+  | 'done_today';
+
+/** Per-clinic operational UI config (migration 048). */
+export interface ClinicWorkflowConfig {
+  default_opd_filters: OpdPatientFilter[];
+  prominent_departments: VisitDepartment[];
+  show_physical_queue_filter: boolean;
+  enabled_protocol_slugs: string[];
+}
+
 export interface Clinic {
   id: string;
   name: string;
@@ -13,6 +30,7 @@ export interface Clinic {
   umdpc_number: string | null;
   timezone: string;
   is_active: boolean;
+  workflow_config: ClinicWorkflowConfig;
   created_at: string;
   updated_at: string;
 }
@@ -334,6 +352,7 @@ export interface VisitEventData {
   dispensing_status: string | null;
   lab_status: string | null;
   lab_abnormal: boolean | null;
+  pharmacy_order_submitted_at?: string | null;
   documentation_complete: boolean;
   visit_date: string;
   doctor_id: string | null;
@@ -478,6 +497,131 @@ export interface FinalizeVisitResponse {
   provider_note: ProviderNote;
   patient_note: PatientNote;
   print_url: string;
+}
+
+/** Input for rpc_finalize_clinical_encounter (migration 048). */
+export interface FinalizeClinicalEncounter {
+  note_id: string;
+  visit_id: string;
+  patient_id: string;
+  transcript: string;
+  patient_summary: string;
+  diagnosis?: string | null;
+  medications?: string | null;
+  follow_up_instructions?: string | null;
+  tests_ordered?: string | null;
+  structured_data?: string | null;
+  client_op_id?: string | null;
+}
+
+/** Lab or formulary row from rpc_get_clinic_catalog. */
+export interface ClinicCatalogLabItem {
+  test_name: string;
+  code: string | null;
+  category: string | null;
+  display_order: number;
+  is_available: boolean;
+  notes: string | null;
+}
+
+export interface ClinicCatalogFormularyItem {
+  drug_name: string;
+  code: string | null;
+  category: string | null;
+  display_order: number;
+  is_available: boolean;
+  notes: string | null;
+}
+
+export interface ClinicCatalog {
+  labs: ClinicCatalogLabItem[];
+  formulary: ClinicCatalogFormularyItem[];
+}
+
+export type AdmissionStatus = 'active' | 'discharged' | 'transferred';
+
+export interface Admission {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  admitted_at: string;
+  discharged_at: string | null;
+  ward_label: string | null;
+  chief_complaint: string | null;
+  status: AdmissionStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClinicalProtocolStep {
+  type: string;
+  title?: string;
+  assignee_role?: StaffRole;
+}
+
+export interface ClinicalProtocolDefinition {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  trigger_hint: string | null;
+  steps: ClinicalProtocolStep[];
+  lab_bundle: string[] | null;
+  isolation_required: boolean;
+  active: boolean;
+  created_at: string;
+}
+
+export type ProtocolActivationStatus = 'active' | 'completed' | 'cancelled';
+
+export interface ProtocolActivation {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  visit_id: string | null;
+  protocol_id: string;
+  status: ProtocolActivationStatus;
+  activated_by: string;
+  activated_at: string;
+  completed_at: string | null;
+  metadata: Record<string, unknown>;
+}
+
+/** Row from rpc_get_opd_patients_today (migration 048). */
+export interface OpdPatientRow {
+  patient_id: string;
+  patient_name: string | null;
+  sex: 'M' | 'F' | null;
+  derived_age: number | null;
+  visit_id: string;
+  chief_complaint: string | null;
+  queue_status: QueueStatus;
+  lab_status: Visit['lab_status'];
+  dispensing_status: Visit['dispensing_status'];
+  documentation_complete: boolean;
+  pharmacy_order_submitted_at: string | null;
+  note_status: ProviderNoteStatus | null;
+  visit_date: string;
+}
+
+/** Progressive AI assist tier on ai_review_suggestions (migration 048). */
+export type AiReviewPhase = 'draft' | 'pre_sign' | 'post_sign';
+
+export interface AiReviewSuggestion {
+  id: string;
+  visit_id: string;
+  clinic_id: string;
+  suggestion_type: 'ask_lab' | 'ask_dx' | 'ask_med' | 'ask_history' | 'ask_red_flag';
+  question: string;
+  reasoning: string;
+  citation_ids: number[];
+  confidence: 'high' | 'medium' | 'low';
+  phase: AiReviewPhase;
+  clinician_response: 'considered_proceeded' | 'reopened_note' | 'dismissed' | null;
+  responded_at: string | null;
+  responded_by: string | null;
+  created_at: string;
 }
 
 // Queue Types

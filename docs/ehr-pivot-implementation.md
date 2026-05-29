@@ -221,6 +221,12 @@ WHERE clinic_id = p_clinic_id
 | `rpc_record_lab_result(p_visit_id, p_result, p_abnormal, ...)` | Mirror web `recordLabResult` |
 | `rpc_record_dispense(p_visit_id, p_status, p_movements jsonb, ...)` | Mirror web `recordDispenseAndStock` |
 | `rpc_set_dispensing_status(...)` | Mirror web in-progress transitions |
+| `rpc_finalize_clinical_encounter(...)` | Atomic sign + patient receipt + visit summary (migration 048) |
+| `rpc_get_clinic_catalog(p_clinic_id)` | Sorted lab + formulary catalog for pickers and AI |
+| `rpc_get_opd_patients_today(p_clinic_id, p_filter)` | Patient-first OPD list for today's encounters |
+| `rpc_admit_patient(...)` | Create inpatient admission |
+| `rpc_activate_clinical_protocol(...)` | Activate enrolled outbreak/isolation protocol |
+| `rpc_request_draft_ai_assist(p_visit_id, ...)` | Gate + queue draft-stage AI assist |
 
 Implement `check_in_patient` in Android `SyncEngine.syncQueueOperation` (currently no-op).
 
@@ -299,8 +305,44 @@ Optional: **“Order labs”** similarly if tests should queue before note final
 | Visit detail | “Send to pharmacy” button independent of sign |
 | Queue dashboard | Demote to Operations; patient list / search as primary |
 | Patient chart | Already strong — ensure lab/pharm status visible |
+| Clinician home | **Patient search + today's patients** primary; physical queue deprecated |
+| Admin inventory | Edit catalog code, category, display_order, active per lab/formulary item |
+| Superadmin | Edit `clinics.workflow_config`; enroll clinics in clinical protocols |
 
 Web can remain **admin/reports/HMIS** heavy; Android is **field resilience** for all clinical + lab + pharm roles.
+
+### 6.1 OPD / Inpatient navigation (migration 048)
+
+- **OPD:** `rpc_get_opd_patients_today` returns one row per patient for today's visit, filterable by workflow keys (`waiting`, `needs_vitals`, `with_clinician`, `awaiting_labs`, `at_pharmacy`, `done_today`). Clinic defaults live in `clinics.workflow_config.default_opd_filters`.
+- **Inpatient:** `admissions` table + `visits.admission_id` link encounters to ward stays. `rpc_admit_patient` creates active admissions.
+- **Web clinician dashboard:** patient search + link to today's patients list; physical queue table retained as deprecated operational view only.
+
+### 6.2 Clinic catalog platform
+
+- `clinic_lab_capabilities` and `clinic_pharmacy_formulary` gain `code`, `category`, `display_order`, `active`.
+- `rpc_get_clinic_catalog(p_clinic_id)` returns sorted lab + formulary JSON for Android pickers and AI constraint prompts.
+- Admin inventory UI toggles availability/stock plus catalog metadata.
+
+### 6.3 Clinical protocol engine
+
+- `clinical_protocol_definitions` — seeded slugs (e.g. `ebola-suspect-v1`, `cholera-suspect-v1`).
+- `clinic_protocol_enrollments` — superadmin enables protocols per clinic.
+- `protocol_activations` — `rpc_activate_clinical_protocol` spawns care tasks from protocol steps.
+- `workflow_config.enabled_protocol_slugs` mirrors enrollments for client defaults.
+
+### 6.4 Progressive AI tiers
+
+| Phase | When | Storage |
+|-------|------|---------|
+| `draft` | During open note (`rpc_request_draft_ai_assist`) | `ai_review_suggestions.phase = 'draft'` |
+| `pre_sign` | Reserved for attestation gate | same table |
+| `post_sign` | After sign / finalize (Inngest `note.dictated`) | default phase |
+
+Draft suggestions coach in-note; post-sign suggestions surface on review queue. All tiers use the same disagreement prompt — questions only, clinician retains authority.
+
+### 6.5 Queue UI deprecated
+
+The legacy **physical queue** (`get_clinic_queue`, queue_status spine) remains for transition but is **not** the primary clinician surface. Chart search, OPD patient list, and role homes (lab/pharmacy) replace queue-as-spine UX. Set `workflow_config.show_physical_queue_filter` to hide queue filters on Android when ready.
 
 ---
 
@@ -494,4 +536,4 @@ Use these as **manual QA scripts** after each phase.
 
 ---
 
-*Last updated: 2026-05-26 — reflects pre-launch big-bang EHR pivot and field constraints (Uganda remote clinics).*
+*Last updated: 2026-05-29 — EHR pilot architecture (migration 048): finalize encounter RPC, catalog, protocols, OPD/inpatient nav, progressive AI phases, queue UI deprecated.*

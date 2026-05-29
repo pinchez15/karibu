@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Sparkles } from 'lucide-react'
+import { Filter, Search, Sparkles } from 'lucide-react'
 import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
 import { formatClinicDate } from '@/lib/format-clinic-date'
@@ -47,6 +47,30 @@ export function ClinicianDashboard({
       />
 
       <div className="p-6 overflow-auto flex-1">
+        {/* Patient-first entry — chart search is the primary clinician surface. */}
+        <div className="mb-5 rounded-xl border border-cobalt/30 bg-cobalt-soft/20 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-cobalt kh-meta mb-1">
+                <Search className="h-3.5 w-3.5" /> FIND A PATIENT
+              </div>
+              <p className="text-sm text-body max-w-xl">
+                Search by name, phone, or patient number to open the chart. Today&apos;s encounters
+                and open visits live on the patients list.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <ClinicianSearchBar className="w-[min(100%,320px)]" />
+              <Link
+                href="/dashboard/visits"
+                className="rounded-md bg-cobalt px-4 py-2 text-[13px] font-semibold text-white hover:bg-cobalt/90 transition-colors"
+              >
+                Today&apos;s patients
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           <Stat label="VISITS TODAY" value={String(visitsToday + waiting)} delta={null} />
@@ -61,13 +85,14 @@ export function ClinicianDashboard({
         </div>
 
         <div className="grid grid-cols-[1.6fr_1fr] gap-4">
-          {/* Queue table */}
-          <div className="bg-card border border-border rounded-xl">
+          {/* Legacy physical queue — demoted operational view */}
+          <div className="bg-card border border-border rounded-xl opacity-90">
             <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">
               <div>
-                <div className="text-sm font-semibold">Queue</div>
+                <div className="text-sm font-semibold">Physical queue</div>
                 <div className="text-xs text-muted-foreground">
-                  {waiting} {waiting === 1 ? 'patient' : 'patients'} · ordered by wait time
+                  Operational view · {waiting} {waiting === 1 ? 'patient' : 'patients'} · use
+                  patient search for chart-first workflow
                 </div>
               </div>
               <button className="bg-background text-body border border-border rounded-md px-2.5 py-[5px] text-xs font-medium inline-flex items-center gap-1">
