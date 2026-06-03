@@ -1,0 +1,108 @@
+{
+  "citations": [
+    {
+      "id": "hc3-child-diarrhoea-dehydration-001-source",
+      "section": "IMNCI diarrhoea dehydration classification",
+      "sourceDocumentId": "who-imnci-chart-booklet",
+      "title": "IMNCI diarrhoea dehydration classification"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "None required for initial dehydration classification"
+    ],
+    "chiefComplaint": "Watery diarrhoea",
+    "dangerSigns": [
+      "Lethargic or unconscious",
+      "Unable to drink",
+      "Severe dehydration",
+      "Blood in stool"
+    ],
+    "diagnosis": "Diarrhoea with dehydration requiring classification and rehydration plan",
+    "differentials": [
+      "Acute watery diarrhoea",
+      "Dysentery if blood present",
+      "Sepsis if danger signs present"
+    ],
+    "examFindings": [
+      "Restless and irritable",
+      "Sunken eyes",
+      "Drinks eagerly",
+      "Skin pinch returns slowly"
+    ],
+    "followUp": [
+      "Counsel caregiver on fluids, feeding, and danger signs."
+    ],
+    "history": [
+      "Watery stool for two days",
+      "No blood in stool",
+      "Mother reports reduced drinking"
+    ],
+    "management": [
+      "Assess dehydration signs systematically.",
+      "Choose rehydration plan according to classification.",
+      "Check for blood in stool and general danger signs."
+    ],
+    "medicines": [
+      "ORS and zinc according to age and classification where appropriate"
+    ],
+    "referralThreshold": "Severe dehydration, lethargy/unconsciousness, inability to drink, or shock require urgent referral or higher-level management.",
+    "reviewOfSystems": [
+      "No convulsions",
+      "No cough"
+    ],
+    "vitals": {
+      "pulse": "126 bpm",
+      "respiratory_rate": "30/min",
+      "temperature": "37.8 C",
+      "weight": "10 kg"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "The correct task is dehydration classification before treatment selection.",
+      "ORS and zinc counseling is part of practical HC III care."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-child-diarrhoea-dehydration-001",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 88,
+    "complexity": 46,
+    "hc3Reality": 91,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this child health presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Child with diarrhoea and dehydration assessment"
+  },
+  "simulatedPatient": {
+    "ageLabel": "18 months",
+    "displayName": "Simulated child patient",
+    "sex": "male"
+  },
+  "sourceGuidelineIds": [
+    "who-imnci-chart-booklet",
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "The correct task is dehydration classification before treatment selection.",
+    "ORS and zinc counseling is part of practical HC III care."
+  ],
+  "title": "Child with diarrhoea and dehydration assessment",
+  "topic": "child_health"
+}

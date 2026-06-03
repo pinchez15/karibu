@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/case-scores.schema.json",
+  "title": "CaseScores",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["clinicalCorrectness", "hc3Reality", "learningValue", "complexity"],
+  "properties": {
+    "clinicalCorrectness": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "hc3Reality": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "learningValue": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "complexity": { "type": "integer", "minimum": 0, "maximum": 100 }
+  }
+}

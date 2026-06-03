@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/question.schema.json",
+  "title": "Question",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "prompt", "answers"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "prompt": { "type": "string", "minLength": 1 },
+    "mode": { "type": "string", "enum": ["single_select", "multi_select", "free_text"] },
+    "answers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "answer.schema.json" }
+    }
+  }
+}

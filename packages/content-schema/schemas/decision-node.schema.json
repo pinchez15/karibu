@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/decision-node.schema.json",
+  "title": "DecisionNode",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "question"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "enum": ["history", "exam", "diagnosis", "management", "referral", "reflection"] },
+    "chartContext": { "type": "string" },
+    "question": { "$ref": "question.schema.json" },
+    "nextNodeByAnswerId": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

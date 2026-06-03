@@ -1,0 +1,180 @@
+{
+  "cases": [
+    {
+      "checksum": "d920e70aa5395948cd72891aa86d406e3e03c19f87326bae960d7ace8e5797a5",
+      "id": "hc3-fever-malaria-triage-001",
+      "path": "cases/hc3-fever-malaria-triage-001.json"
+    },
+    {
+      "checksum": "b92e0253231313acb90345e252bcc7dd03e13c76cc6d651e29c0cf2186436b83",
+      "id": "hc3-severe-malaria-referral-001",
+      "path": "cases/hc3-severe-malaria-referral-001.json"
+    },
+    {
+      "checksum": "7eae23c5955f8dd32c1cf3f614acf61a0cbe192c9999fa35bee17ab449250129",
+      "id": "hc3-child-cough-fast-breathing-001",
+      "path": "cases/hc3-child-cough-fast-breathing-001.json"
+    },
+    {
+      "checksum": "a8845a2f4912abe98c5638d13af493ef6d3754bb207197a875075dc61d84a534",
+      "id": "hc3-child-diarrhoea-dehydration-001",
+      "path": "cases/hc3-child-diarrhoea-dehydration-001.json"
+    },
+    {
+      "checksum": "a63f094a105e10224c55d7fae4cf49c7fa39f944fef373178134eb18397eedf3",
+      "id": "hc3-anc-hypertension-danger-signs-001",
+      "path": "cases/hc3-anc-hypertension-danger-signs-001.json"
+    },
+    {
+      "checksum": "655b7e55f7fba2b101ba31dd9012acaced16413f0eaaebf561e96c3eec1afdda",
+      "id": "hc3-adult-cough-tb-screen-001",
+      "path": "cases/hc3-adult-cough-tb-screen-001.json"
+    },
+    {
+      "checksum": "4dc16ced8485da8aa07825fef46a0089df6476070948ca4ddab5e5e62772dd9c",
+      "id": "hc3-hiv-art-continuity-001",
+      "path": "cases/hc3-hiv-art-continuity-001.json"
+    },
+    {
+      "checksum": "1b56143529a5b31a89206b9db72265fa9076a1a7d3a60c08a1ad139b8a55dd3c",
+      "id": "hc3-adult-dysuria-pregnancy-check-001",
+      "path": "cases/hc3-adult-dysuria-pregnancy-check-001.json"
+    },
+    {
+      "checksum": "175c8db697fe786504abbea8f822a81afa8143278cb8d37912cba5dbae41c7ff",
+      "id": "hc3-suspected-sti-partner-management-001",
+      "path": "cases/hc3-suspected-sti-partner-management-001.json"
+    },
+    {
+      "checksum": "c2a02d9cf24b370c46ebd7bcd2ed699b520b4e17efd89b0afe4ec70c1150b1d9",
+      "id": "hc3-wound-tetanus-risk-001",
+      "path": "cases/hc3-wound-tetanus-risk-001.json"
+    }
+  ],
+  "id": "hc3-core-draft",
+  "schemaVersion": "0.1.0",
+  "title": "HC III Core Practice Draft",
+  "variants": [
+    {
+      "canonicalCaseId": "hc3-fever-malaria-triage-001",
+      "checksum": "d91b7a2b6ef569394c22715ca98a2b041b640346cf0087d40c69069d56eaa4fc",
+      "id": "hc3-fever-malaria-triage-001-level-1",
+      "path": "variants/hc3-fever-malaria-triage-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-malaria-triage-001",
+      "checksum": "87d11870fe3c873ea6d1ea0292ff4b0b9b74d93179b9b17514ada0cb4c1f4a84",
+      "id": "hc3-fever-malaria-triage-001-level-3",
+      "path": "variants/hc3-fever-malaria-triage-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-severe-malaria-referral-001",
+      "checksum": "d83143d8085614b31890386b7c278a6ac5ae2fabd7a3ec3f58f5cc6e43efedf1",
+      "id": "hc3-severe-malaria-referral-001-level-1",
+      "path": "variants/hc3-severe-malaria-referral-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-severe-malaria-referral-001",
+      "checksum": "3d83054883df75777698d3bd974ed37f8d275f36cf604d279ce0dd3b84e752e0",
+      "id": "hc3-severe-malaria-referral-001-level-3",
+      "path": "variants/hc3-severe-malaria-referral-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-cough-fast-breathing-001",
+      "checksum": "9eedb020530e7dc175fd98c589fee9a5b08baf0a0d5db713c08298757bf7fd42",
+      "id": "hc3-child-cough-fast-breathing-001-level-1",
+      "path": "variants/hc3-child-cough-fast-breathing-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-cough-fast-breathing-001",
+      "checksum": "6737035a70fc863b52ccefad9bd4291c9bcf8f9f0814f67dbb44a1e59dd8ac1d",
+      "id": "hc3-child-cough-fast-breathing-001-level-3",
+      "path": "variants/hc3-child-cough-fast-breathing-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-diarrhoea-dehydration-001",
+      "checksum": "aea00ca6596f8eba2f18529287a0c035e7c96fb9901c5be91e5ffa1fa0494a98",
+      "id": "hc3-child-diarrhoea-dehydration-001-level-1",
+      "path": "variants/hc3-child-diarrhoea-dehydration-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-diarrhoea-dehydration-001",
+      "checksum": "73976cbdf01ea970a1a919ffbc042513145a312d003b051908c823a3dde2f628",
+      "id": "hc3-child-diarrhoea-dehydration-001-level-3",
+      "path": "variants/hc3-child-diarrhoea-dehydration-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anc-hypertension-danger-signs-001",
+      "checksum": "1838bd3acc28c7d821b5e9525f344659d57cd504387b1aaa16262493ddfb9985",
+      "id": "hc3-anc-hypertension-danger-signs-001-level-1",
+      "path": "variants/hc3-anc-hypertension-danger-signs-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anc-hypertension-danger-signs-001",
+      "checksum": "d2bbf5659193464898d2eeae0f2f8a743c90d2d7f4e517a7f3fb5f437e767fcc",
+      "id": "hc3-anc-hypertension-danger-signs-001-level-3",
+      "path": "variants/hc3-anc-hypertension-danger-signs-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-cough-tb-screen-001",
+      "checksum": "15637c4daa56582b66882f766270f41896884c8922942df1bfc99674ececd231",
+      "id": "hc3-adult-cough-tb-screen-001-level-1",
+      "path": "variants/hc3-adult-cough-tb-screen-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-cough-tb-screen-001",
+      "checksum": "4cb78f3ff6513daed7e5c2aece21dcc81016327211faf9b46ed3e8ceba652007",
+      "id": "hc3-adult-cough-tb-screen-001-level-3",
+      "path": "variants/hc3-adult-cough-tb-screen-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hiv-art-continuity-001",
+      "checksum": "17709fbc8c86999f7cede92b97a8b34da1440268e0a782436d0027c310fe68eb",
+      "id": "hc3-hiv-art-continuity-001-level-1",
+      "path": "variants/hc3-hiv-art-continuity-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hiv-art-continuity-001",
+      "checksum": "6d780395821ae9ec18bde5e46d551db5741d6887f68646aa1152c4e1e186413a",
+      "id": "hc3-hiv-art-continuity-001-level-3",
+      "path": "variants/hc3-hiv-art-continuity-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-dysuria-pregnancy-check-001",
+      "checksum": "1e45828bda5e841dd082feb7efc89006e9e5df14e7910068194e58eabd1145c7",
+      "id": "hc3-adult-dysuria-pregnancy-check-001-level-1",
+      "path": "variants/hc3-adult-dysuria-pregnancy-check-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-dysuria-pregnancy-check-001",
+      "checksum": "1ef22c50f77f61757ee7788a5e0482ba443c2ec447f7a5a860037e7c029769d2",
+      "id": "hc3-adult-dysuria-pregnancy-check-001-level-3",
+      "path": "variants/hc3-adult-dysuria-pregnancy-check-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-suspected-sti-partner-management-001",
+      "checksum": "c97842b8d0dfe29d8c3054cef106ca39ab6da9229452aecd50d7e57491def038",
+      "id": "hc3-suspected-sti-partner-management-001-level-1",
+      "path": "variants/hc3-suspected-sti-partner-management-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-suspected-sti-partner-management-001",
+      "checksum": "38a98e0eb845deb0d77874e6f369c1610f6845ee27920bbc742010f7aaabdc42",
+      "id": "hc3-suspected-sti-partner-management-001-level-3",
+      "path": "variants/hc3-suspected-sti-partner-management-001-level-3.json"
+    },
+    {
+      "canonicalCaseId": "hc3-wound-tetanus-risk-001",
+      "checksum": "0906f1b7a2085b8b2781e51c56d388f63f667598d762c37120a0324a8a111e7d",
+      "id": "hc3-wound-tetanus-risk-001-level-1",
+      "path": "variants/hc3-wound-tetanus-risk-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-wound-tetanus-risk-001",
+      "checksum": "664b205ef56e434a1868cb2e34776a45cf075a6b37a2a6f8e470b25953905b6f",
+      "id": "hc3-wound-tetanus-risk-001-level-3",
+      "path": "variants/hc3-wound-tetanus-risk-001-level-3.json"
+    }
+  ],
+  "version": "0.1.0"
+}

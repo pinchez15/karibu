@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "0.1.0",
+  "documents": [
+    {
+      "id": "uganda-clinical-guidelines-2023",
+      "title": "Uganda Clinical Guidelines 2023",
+      "sourceOrg": "Ministry of Health, Uganda",
+      "sourceYear": 2023,
+      "officialUrl": "https://www.health.go.ug/wp-content/uploads/2023/11/UCG-2023-Publication-Final-PDF-Version-1.pdf",
+      "localPath": "Medical Corpus/UCG-2023-Publication-Final-PDF-Version-1.pdf",
+      "sha256": "5824cce1a87be6dbafb4ca2014e6eca08224c9e18352dbbea9916b709ad4d84b",
+      "jurisdiction": "uganda",
+      "topics": ["guidelines_general"],
+      "facilityLevels": ["HC II", "HC III", "HC IV"],
+      "reviewStatus": "source_verified"
+    },
+    {
+      "id": "uganda-hiv-aids-consolidated-guidelines-2023",
+      "title": "Uganda Consolidated HIV and AIDS Guidelines, May 2023",
+      "sourceOrg": "Ministry of Health, Uganda",
+      "sourceYear": 2023,
+      "officialUrl": "https://library.health.go.ug/",
+      "localPath": "Medical Corpus/Consolidated-HIV-and-AIDS-Guidelines-20230516.pdf",
+      "sha256": "9aeef02ca96adaa719fa01c325a2716d07ec64dbd038cc29b7bcefea877c0e13",
+      "jurisdiction": "uganda",
+      "topics": ["hiv_tb"],
+      "facilityLevels": ["HC II", "HC III", "HC IV"],
+      "reviewStatus": "source_verified"
+    },
+    {
+      "id": "who-imnci-chart-booklet",
+      "title": "WHO IMNCI Chart Booklet",
+      "sourceOrg": "World Health Organization",
+      "sourceYear": 2014,
+      "officialUrl": "https://www.who.int/",
+      "localPath": "Medical Corpus/IMNCI_BOOKLET.pdf",
+      "sha256": "aa01ebf39c0811adb911063c217c6a68532f0295191ff4f49c3ab1c960680933",
+      "jurisdiction": "global",
+      "topics": ["imci", "child_health"],
+      "facilityLevels": ["HC II", "HC III", "HC IV"],
+      "reviewStatus": "source_verified"
+    },
+    {
+      "id": "uganda-essential-medicines-list-2023",
+      "title": "Essential Medicines and Health Supplies List for Uganda 2023",
+      "sourceOrg": "Ministry of Health, Uganda",
+      "sourceYear": 2023,
+      "officialUrl": "https://www.health.go.ug/wp-content/uploads/2023/11/Uganda-EMHSLU-2023-Publication-Final-Interractive-Version.pdf",
+      "localPath": "Medical Corpus/uganda-2023 EMHSLU.pdf",
+      "sha256": "7e8c4a721b7c3a52820328f25c922c3fa9e4c3da80bda8f0d119f91088852f4c",
+      "jurisdiction": "uganda",
+      "topics": ["pharmacology"],
+      "facilityLevels": ["HC II", "HC III", "HC IV"],
+      "reviewStatus": "source_verified"
+    }
+  ]
+}

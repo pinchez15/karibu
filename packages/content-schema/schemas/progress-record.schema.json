@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/progress-record.schema.json",
+  "title": "ProgressRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["learnerId", "packId", "caseId", "status", "updatedAt"],
+  "properties": {
+    "learnerId": { "type": "string", "minLength": 1 },
+    "packId": { "type": "string", "minLength": 1 },
+    "caseId": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["not_started", "in_progress", "completed"] },
+    "currentNodeId": { "type": "string" },
+    "answeredQuestionIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "score": { "type": "number", "minimum": 0 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "syncState": { "type": "string", "enum": ["local_only", "pending_sync", "synced", "conflict"] }
+  }
+}

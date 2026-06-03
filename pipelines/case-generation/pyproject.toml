@@ -1,0 +1,19 @@
+[project]
+name = "karibu-case-generation"
+version = "0.1.0"
+description = "Karibu Learn case-generation pipeline."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+karibu-casegen = "karibu_case_generation.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
