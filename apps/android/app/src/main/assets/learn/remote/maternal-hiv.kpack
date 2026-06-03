@@ -1,0 +1,30 @@
+{
+  "id": "maternal-hiv",
+  "title": "Maternal & HIV",
+  "cases": [
+    {
+      "id": "anc-first",
+      "ready": false,
+      "title": "First antenatal visit",
+      "topic": "Maternal health",
+      "difficulty": "Core",
+      "mins": 13,
+      "credit": 0.25,
+      "patient": { "name": "Namusoke Grace", "age": "28F" },
+      "blurb": "A routine first ANC visit. Build the profile, screen, and plan the schedule of care.",
+      "skills": ["ANC", "Screening", "Danger signs"]
+    },
+    {
+      "id": "hiv-counsel",
+      "ready": false,
+      "title": "A request for an HIV test",
+      "topic": "HIV",
+      "difficulty": "Intermediate",
+      "mins": 12,
+      "credit": 0.25,
+      "patient": { "name": "Auma Beatrice", "age": "29F" },
+      "blurb": "A woman asks quietly for an HIV test. Counsel, test, and plan — whatever the result.",
+      "skills": ["HTS", "Counselling", "Linkage"]
+    }
+  ]
+}

@@ -176,11 +176,12 @@ class SyncEngineTest {
         payload: String = "{}",
         dependsOn: String? = null,
         attempts: Int = 0,
+        entityId: String? = null,
     ) = SyncQueueEntry(
         id = id,
         operationType = operationType,
         entityType = "test",
-        entityId = "entity-$id",
+        entityId = entityId ?: "entity-$id",
         payload = payload,
         status = status,
         attempts = attempts,

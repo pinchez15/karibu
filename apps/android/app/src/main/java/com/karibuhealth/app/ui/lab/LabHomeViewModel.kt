@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.StaffRepository
+import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.data.repository.WorklistRepository
 import com.karibuhealth.app.domain.model.NeedsLabItem
 import com.karibuhealth.app.domain.model.Staff
@@ -30,6 +32,8 @@ class LabHomeViewModel @Inject constructor(
     private val staffRepository: StaffRepository,
     private val worklistRepository: WorklistRepository,
     private val visitRepository: VisitRepository,
+    private val dictationApiClient: DictationApiClient,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LabHomeUiState())
@@ -70,6 +74,11 @@ class LabHomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching { visitRepository.recordLabResult(visitId, result, abnormal, staffId) }
+                .onSuccess {
+                    if (networkMonitor.isOnline() && networkMonitor.currentStatus().isGoodForAi) {
+                        runCatching { dictationApiClient.requestLabAiAssist(visitId) }
+                    }
+                }
                 .onFailure { e ->
                     _uiState.update { it.copy(error = e.message) }
                 }
