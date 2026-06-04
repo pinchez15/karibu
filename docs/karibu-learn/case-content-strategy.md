@@ -149,6 +149,16 @@ The same canonical case can produce multiple variants:
 
 This allows reuse of clinically reviewed cases across multiple difficulty levels while keeping the clinical core stable.
 
+Level 1 to Level 3 can evolve along several dimensions:
+
+- Information gating: reveal less clinical data up front as the level rises.
+- EHR task load: move from recognition to documenting vitals, focused history, plan, and referral.
+- Cognitive noise: add distractors, normal early findings, or competing priorities.
+- Autonomy: reduce guided prompts and make learners choose what to ask, examine, document, and escalate.
+- Clinic workflow: move from isolated cases to queue-based “day in clinic” cases where unrelated patients arrive back to back.
+
+The default generated progression uses a conservative version of these methods: Level 1 is information-rich pattern recognition, Level 2 hides one management-changing history detail while keeping vitals visible, and Level 3 starts from chief complaint only with EHR-like tasks for vitals, focused history, and referral decision.
+
 ## EHR-Like Practice
 
 Karibu Learn should include simulated use of Karibu EHR-style workflows so learners build clinical documentation muscle memory on mobile.
@@ -468,4 +478,3 @@ The pipeline should optimize for:
 ```text
 correct + realistic + challenging + discussable + reviewable
 ```
-

@@ -680,6 +680,12 @@
     },
     {
       "canonicalCaseId": "hc3-fever-malaria-triage-001",
+      "checksum": "6ed4b8524e1b53c9ba60a4e28df2bdb23f200177e1dcc7de4770c3ecfbcdd8fc",
+      "id": "hc3-fever-malaria-triage-001-level-2",
+      "path": "variants/hc3-fever-malaria-triage-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-malaria-triage-001",
       "checksum": "87d11870fe3c873ea6d1ea0292ff4b0b9b74d93179b9b17514ada0cb4c1f4a84",
       "id": "hc3-fever-malaria-triage-001-level-3",
       "path": "variants/hc3-fever-malaria-triage-001-level-3.json"
@@ -689,6 +695,12 @@
       "checksum": "d83143d8085614b31890386b7c278a6ac5ae2fabd7a3ec3f58f5cc6e43efedf1",
       "id": "hc3-severe-malaria-referral-001-level-1",
       "path": "variants/hc3-severe-malaria-referral-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-severe-malaria-referral-001",
+      "checksum": "a77a2c30715704425f5f0e214836b2ed26a65d5d17a51dfe84f30d0a75c7b1e2",
+      "id": "hc3-severe-malaria-referral-001-level-2",
+      "path": "variants/hc3-severe-malaria-referral-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-severe-malaria-referral-001",
@@ -704,6 +716,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-cough-fast-breathing-001",
+      "checksum": "c11e6b1e647732ba14f42c7476e47b5aa4650ba7523b2982c94067ecae51fd63",
+      "id": "hc3-child-cough-fast-breathing-001-level-2",
+      "path": "variants/hc3-child-cough-fast-breathing-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-cough-fast-breathing-001",
       "checksum": "6737035a70fc863b52ccefad9bd4291c9bcf8f9f0814f67dbb44a1e59dd8ac1d",
       "id": "hc3-child-cough-fast-breathing-001-level-3",
       "path": "variants/hc3-child-cough-fast-breathing-001-level-3.json"
@@ -713,6 +731,12 @@
       "checksum": "aea00ca6596f8eba2f18529287a0c035e7c96fb9901c5be91e5ffa1fa0494a98",
       "id": "hc3-child-diarrhoea-dehydration-001-level-1",
       "path": "variants/hc3-child-diarrhoea-dehydration-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-diarrhoea-dehydration-001",
+      "checksum": "56fcdd5e09a2357ae0b31dc83ca9e2e157b4486bd0ed99562bfe1a9c6fddfd45",
+      "id": "hc3-child-diarrhoea-dehydration-001-level-2",
+      "path": "variants/hc3-child-diarrhoea-dehydration-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-child-diarrhoea-dehydration-001",
@@ -728,6 +752,12 @@
     },
     {
       "canonicalCaseId": "hc3-anc-hypertension-danger-signs-001",
+      "checksum": "f218561f331bce1c93379617b5dae7225c51f66137c072fdfca5e23112626f0f",
+      "id": "hc3-anc-hypertension-danger-signs-001-level-2",
+      "path": "variants/hc3-anc-hypertension-danger-signs-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anc-hypertension-danger-signs-001",
       "checksum": "d2bbf5659193464898d2eeae0f2f8a743c90d2d7f4e517a7f3fb5f437e767fcc",
       "id": "hc3-anc-hypertension-danger-signs-001-level-3",
       "path": "variants/hc3-anc-hypertension-danger-signs-001-level-3.json"
@@ -737,6 +767,12 @@
       "checksum": "15637c4daa56582b66882f766270f41896884c8922942df1bfc99674ececd231",
       "id": "hc3-adult-cough-tb-screen-001-level-1",
       "path": "variants/hc3-adult-cough-tb-screen-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-cough-tb-screen-001",
+      "checksum": "020d10234088ec785fb12478e6793a7d9b9620c9a7c2eba3ede5066ced46f925",
+      "id": "hc3-adult-cough-tb-screen-001-level-2",
+      "path": "variants/hc3-adult-cough-tb-screen-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-adult-cough-tb-screen-001",
@@ -752,6 +788,12 @@
     },
     {
       "canonicalCaseId": "hc3-hiv-art-continuity-001",
+      "checksum": "7242aef0890f5b64d77d26f283bed7249d1a0d67bd485f824bee33a9cb4fce57",
+      "id": "hc3-hiv-art-continuity-001-level-2",
+      "path": "variants/hc3-hiv-art-continuity-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hiv-art-continuity-001",
       "checksum": "6d780395821ae9ec18bde5e46d551db5741d6887f68646aa1152c4e1e186413a",
       "id": "hc3-hiv-art-continuity-001-level-3",
       "path": "variants/hc3-hiv-art-continuity-001-level-3.json"
@@ -761,6 +803,12 @@
       "checksum": "1e45828bda5e841dd082feb7efc89006e9e5df14e7910068194e58eabd1145c7",
       "id": "hc3-adult-dysuria-pregnancy-check-001-level-1",
       "path": "variants/hc3-adult-dysuria-pregnancy-check-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adult-dysuria-pregnancy-check-001",
+      "checksum": "8e8133f88523d53322cec43e4e28cd4ec660533fecb17256e45ca063d99912fc",
+      "id": "hc3-adult-dysuria-pregnancy-check-001-level-2",
+      "path": "variants/hc3-adult-dysuria-pregnancy-check-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-adult-dysuria-pregnancy-check-001",
@@ -776,6 +824,12 @@
     },
     {
       "canonicalCaseId": "hc3-suspected-sti-partner-management-001",
+      "checksum": "516a16b2a5f4672863e35ccd257ccec7a8ebe92fa81ff045fa4e33fa775b86b4",
+      "id": "hc3-suspected-sti-partner-management-001-level-2",
+      "path": "variants/hc3-suspected-sti-partner-management-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-suspected-sti-partner-management-001",
       "checksum": "38a98e0eb845deb0d77874e6f369c1610f6845ee27920bbc742010f7aaabdc42",
       "id": "hc3-suspected-sti-partner-management-001-level-3",
       "path": "variants/hc3-suspected-sti-partner-management-001-level-3.json"
@@ -785,6 +839,12 @@
       "checksum": "0906f1b7a2085b8b2781e51c56d388f63f667598d762c37120a0324a8a111e7d",
       "id": "hc3-wound-tetanus-risk-001-level-1",
       "path": "variants/hc3-wound-tetanus-risk-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-wound-tetanus-risk-001",
+      "checksum": "8f88a95ed609e00214df61ac7c62508b1b3b9f653c22cdcd883e64c54c482018",
+      "id": "hc3-wound-tetanus-risk-001-level-2",
+      "path": "variants/hc3-wound-tetanus-risk-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-wound-tetanus-risk-001",
@@ -800,6 +860,12 @@
     },
     {
       "canonicalCaseId": "hc3-postpartum-haemorrhage-001",
+      "checksum": "38728fbce488627156302f49119a79ff7406c09559ccac4839ae950d0faa0195",
+      "id": "hc3-postpartum-haemorrhage-001-level-2",
+      "path": "variants/hc3-postpartum-haemorrhage-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-postpartum-haemorrhage-001",
       "checksum": "58e5f19a476d07ae625a6310414b667c7af1c0273d0425682d4cdd20020bf8ac",
       "id": "hc3-postpartum-haemorrhage-001-level-3",
       "path": "variants/hc3-postpartum-haemorrhage-001-level-3.json"
@@ -809,6 +875,12 @@
       "checksum": "fbcebda724369495dd4b3f80cc0ed629e796c9573c0f497a72b557d3eb3840d3",
       "id": "hc3-eclampsia-convulsion-001-level-1",
       "path": "variants/hc3-eclampsia-convulsion-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-eclampsia-convulsion-001",
+      "checksum": "1e525e96d41094602a67474fff5de7c2cf592d6ae5a1399dd4c52c86475ab59e",
+      "id": "hc3-eclampsia-convulsion-001-level-2",
+      "path": "variants/hc3-eclampsia-convulsion-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-eclampsia-convulsion-001",
@@ -824,6 +896,12 @@
     },
     {
       "canonicalCaseId": "hc3-prolonged-labour-partograph-001",
+      "checksum": "186ad3c6499371b62dad8e2ed9cb78c955a2ad73b47f6081e5504d15d44acee8",
+      "id": "hc3-prolonged-labour-partograph-001-level-2",
+      "path": "variants/hc3-prolonged-labour-partograph-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-prolonged-labour-partograph-001",
       "checksum": "74d9feb62d8a42edd44ca96f19ab5348cd8a719c797fea110f38471f57bb4b6d",
       "id": "hc3-prolonged-labour-partograph-001-level-3",
       "path": "variants/hc3-prolonged-labour-partograph-001-level-3.json"
@@ -833,6 +911,12 @@
       "checksum": "c7085958fe640372908116acba5411cebd3ff00f7ba9ea52fb5e19ef50fe5875",
       "id": "hc3-newborn-not-breathing-001-level-1",
       "path": "variants/hc3-newborn-not-breathing-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-newborn-not-breathing-001",
+      "checksum": "06678a7e9633b809aa5843f1512d556cbd3f2477c841d59bdc6a17d46a67a85f",
+      "id": "hc3-newborn-not-breathing-001-level-2",
+      "path": "variants/hc3-newborn-not-breathing-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-newborn-not-breathing-001",
@@ -848,6 +932,12 @@
     },
     {
       "canonicalCaseId": "hc3-neonate-fever-sepsis-001",
+      "checksum": "a1be79d42999865d953ae0b7927b7b8b41c2fce0cdefbd5efa05dc99e9c86f6b",
+      "id": "hc3-neonate-fever-sepsis-001-level-2",
+      "path": "variants/hc3-neonate-fever-sepsis-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-neonate-fever-sepsis-001",
       "checksum": "a2cb86a1caaf1d9b1dfc85ec0d17d7eaa2b57594681cba612eaa39fdfc3f8fb3",
       "id": "hc3-neonate-fever-sepsis-001-level-3",
       "path": "variants/hc3-neonate-fever-sepsis-001-level-3.json"
@@ -857,6 +947,12 @@
       "checksum": "0c681b12600b2de045e0b961525367290cc169124056fc52991c01d5f29b2b0f",
       "id": "hc3-asthma-acute-wheeze-001-level-1",
       "path": "variants/hc3-asthma-acute-wheeze-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-asthma-acute-wheeze-001",
+      "checksum": "929b03e57d1a61e646098bb888aa81b15d39f506d8f552a78f43462ad9a9b016",
+      "id": "hc3-asthma-acute-wheeze-001-level-2",
+      "path": "variants/hc3-asthma-acute-wheeze-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-asthma-acute-wheeze-001",
@@ -872,6 +968,12 @@
     },
     {
       "canonicalCaseId": "hc3-hypoglycaemia-altered-consciousness-001",
+      "checksum": "4358e602af75cd754f02c17c89370233ce24a73dd83748187cf5966a712eaa34",
+      "id": "hc3-hypoglycaemia-altered-consciousness-001-level-2",
+      "path": "variants/hc3-hypoglycaemia-altered-consciousness-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hypoglycaemia-altered-consciousness-001",
       "checksum": "287dc2da812a67ca1c1f47d7d3107e46fab9363a82fa23f1eaed595027d75fb1",
       "id": "hc3-hypoglycaemia-altered-consciousness-001-level-3",
       "path": "variants/hc3-hypoglycaemia-altered-consciousness-001-level-3.json"
@@ -881,6 +983,12 @@
       "checksum": "d0eba7b659637c905e6e2a69e7a85be7b97246d96ea318529f44f6026c7334af",
       "id": "hc3-burns-fluid-risk-001-level-1",
       "path": "variants/hc3-burns-fluid-risk-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-burns-fluid-risk-001",
+      "checksum": "8b57cd23626d071f213f4cfebd80e64ebf416fc749fda902792b7c5d13873fe1",
+      "id": "hc3-burns-fluid-risk-001-level-2",
+      "path": "variants/hc3-burns-fluid-risk-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-burns-fluid-risk-001",
@@ -896,6 +1004,12 @@
     },
     {
       "canonicalCaseId": "hc3-intimate-partner-violence-001",
+      "checksum": "2ce3364c201bb44412058f6a6e18d30c7ff1c40c7f979657a806a03a1de2497a",
+      "id": "hc3-intimate-partner-violence-001-level-2",
+      "path": "variants/hc3-intimate-partner-violence-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-intimate-partner-violence-001",
       "checksum": "3e635d05e066cf3dd0aecd8ae55664eebe6633fdf0b0ffdca28e26ee87bb3cd8",
       "id": "hc3-intimate-partner-violence-001-level-3",
       "path": "variants/hc3-intimate-partner-violence-001-level-3.json"
@@ -905,6 +1019,12 @@
       "checksum": "9a3f2e75ac73da8b723f578387bccc7a800290b3ec9367dae25f8443dbddb0c5",
       "id": "hc3-needlestick-exposure-001-level-1",
       "path": "variants/hc3-needlestick-exposure-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-needlestick-exposure-001",
+      "checksum": "df41f97092d6841d4bfe334dd4dfdc351253c2932370bc7fd968b6f41a585d11",
+      "id": "hc3-needlestick-exposure-001-level-2",
+      "path": "variants/hc3-needlestick-exposure-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-needlestick-exposure-001",
@@ -920,6 +1040,12 @@
     },
     {
       "canonicalCaseId": "hc3-medication-allergy-documentation-001",
+      "checksum": "e0cb5877828087d0dcf4c17adad16814fbc9167eccc117a0e15990204d04f563",
+      "id": "hc3-medication-allergy-documentation-001-level-2",
+      "path": "variants/hc3-medication-allergy-documentation-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-medication-allergy-documentation-001",
       "checksum": "dd14029142f830add8fae078bed6910f9090c3171964ebbc66895ff3fd5a5bfa",
       "id": "hc3-medication-allergy-documentation-001-level-3",
       "path": "variants/hc3-medication-allergy-documentation-001-level-3.json"
@@ -929,6 +1055,12 @@
       "checksum": "4eca15531288c160ae17b9f5c7c063678b1179e1930d8317b0f47a13afca093f",
       "id": "hc3-adolescent-confidentiality-sti-001-level-1",
       "path": "variants/hc3-adolescent-confidentiality-sti-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-adolescent-confidentiality-sti-001",
+      "checksum": "656c92253d4de90f7bb8e6a647fc15f93c0e695eed5fa58e9a5de99c99450bd3",
+      "id": "hc3-adolescent-confidentiality-sti-001-level-2",
+      "path": "variants/hc3-adolescent-confidentiality-sti-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-adolescent-confidentiality-sti-001",
@@ -944,6 +1076,12 @@
     },
     {
       "canonicalCaseId": "hc3-anaemia-pregnancy-fatigue-001",
+      "checksum": "af20f75c92ba4d39bb33cdd49532dc37fe5a9d3f28857a49448a804871bac68f",
+      "id": "hc3-anaemia-pregnancy-fatigue-001-level-2",
+      "path": "variants/hc3-anaemia-pregnancy-fatigue-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anaemia-pregnancy-fatigue-001",
       "checksum": "d1f2aeb7e7e61143016695f273c794c1f926bb2b8a40fed641e79dd945c50782",
       "id": "hc3-anaemia-pregnancy-fatigue-001-level-3",
       "path": "variants/hc3-anaemia-pregnancy-fatigue-001-level-3.json"
@@ -953,6 +1091,12 @@
       "checksum": "83b779d34c19e8cc9fad0e678a06da14d39cb4ed26e83e3015963fc58202568a",
       "id": "hc3-malnutrition-oedema-child-001-level-1",
       "path": "variants/hc3-malnutrition-oedema-child-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-malnutrition-oedema-child-001",
+      "checksum": "68d33d43ffd0948027af471929b13e7b958eef1ffe2b89ceacafd1c316f8dd5e",
+      "id": "hc3-malnutrition-oedema-child-001-level-2",
+      "path": "variants/hc3-malnutrition-oedema-child-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-malnutrition-oedema-child-001",
@@ -968,6 +1112,12 @@
     },
     {
       "canonicalCaseId": "hc3-measles-suspected-rash-fever-001",
+      "checksum": "052d437c977d16108a0917704a38e93b2e55444721f35a881dc26a3f417e1829",
+      "id": "hc3-measles-suspected-rash-fever-001-level-2",
+      "path": "variants/hc3-measles-suspected-rash-fever-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-measles-suspected-rash-fever-001",
       "checksum": "1f55e76a9ab014f79af6a2d31a51128d26d81daae9c6f2e6efbeea30ef568836",
       "id": "hc3-measles-suspected-rash-fever-001-level-3",
       "path": "variants/hc3-measles-suspected-rash-fever-001-level-3.json"
@@ -977,6 +1127,12 @@
       "checksum": "51f21e04a87a18d88a6387f19d57054ab5c3baf06677a1242f7c68de6188b7aa",
       "id": "hc3-postpartum-fever-sepsis-001-level-1",
       "path": "variants/hc3-postpartum-fever-sepsis-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-postpartum-fever-sepsis-001",
+      "checksum": "51434a309d143421ba1d479567a441152eb4d1179b80253bc4ea747531094971",
+      "id": "hc3-postpartum-fever-sepsis-001-level-2",
+      "path": "variants/hc3-postpartum-fever-sepsis-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-postpartum-fever-sepsis-001",
@@ -992,6 +1148,12 @@
     },
     {
       "canonicalCaseId": "hc3-family-planning-danger-headache-001",
+      "checksum": "298fc7af7e34f0dd6f0afca774b961cd27e977f27b68daacac00e7f8e33af504",
+      "id": "hc3-family-planning-danger-headache-001-level-2",
+      "path": "variants/hc3-family-planning-danger-headache-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-family-planning-danger-headache-001",
       "checksum": "2e90d905d5ffab975e8080776c4defcd613283a49f6edf776c91baea27b2cc1a",
       "id": "hc3-family-planning-danger-headache-001-level-3",
       "path": "variants/hc3-family-planning-danger-headache-001-level-3.json"
@@ -1001,6 +1163,12 @@
       "checksum": "1a1a41d5a078de1901d3361a48861b2a00d4fba9f861a513f4706b6fa537d283",
       "id": "hc3-queue-deterioration-triage-001-level-1",
       "path": "variants/hc3-queue-deterioration-triage-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-queue-deterioration-triage-001",
+      "checksum": "64eb5aa70eaaf44995d1f0cb04a372e8244aa2f6265885d7f359db0ea3085bb7",
+      "id": "hc3-queue-deterioration-triage-001-level-2",
+      "path": "variants/hc3-queue-deterioration-triage-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-queue-deterioration-triage-001",
@@ -1016,6 +1184,12 @@
     },
     {
       "canonicalCaseId": "hc3-poisoning-pesticide-001",
+      "checksum": "0b5cd464de711abccd5b825a1e5efee9631f05e332f086fd9abf1fe7db980668",
+      "id": "hc3-poisoning-pesticide-001-level-2",
+      "path": "variants/hc3-poisoning-pesticide-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-poisoning-pesticide-001",
       "checksum": "156dc44179bd25ce4a5bad2e1a9be33f4f62e3bbb96baafba425d5d2368f04a6",
       "id": "hc3-poisoning-pesticide-001-level-3",
       "path": "variants/hc3-poisoning-pesticide-001-level-3.json"
@@ -1025,6 +1199,12 @@
       "checksum": "152f3a655c6ce4eebbf693d3f59d8625e8dae4671f9efdf0644a2aeb13ece86c",
       "id": "hc3-sickle-cell-pain-fever-001-level-1",
       "path": "variants/hc3-sickle-cell-pain-fever-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-sickle-cell-pain-fever-001",
+      "checksum": "4a34c339bd23b1e0a605a6300426023a4a3c81b5d9f5264bd3b3930f47cac2bf",
+      "id": "hc3-sickle-cell-pain-fever-001-level-2",
+      "path": "variants/hc3-sickle-cell-pain-fever-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-sickle-cell-pain-fever-001",
@@ -1040,6 +1220,12 @@
     },
     {
       "canonicalCaseId": "hc3-mental-health-suicide-risk-001",
+      "checksum": "d7b6ddc21ab90d2ff6478d19728cb36c2301f3eb49efe6605990b3cb38790096",
+      "id": "hc3-mental-health-suicide-risk-001-level-2",
+      "path": "variants/hc3-mental-health-suicide-risk-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-mental-health-suicide-risk-001",
       "checksum": "2120a967ba34c41b8d300bb62724c8c2f03648dac5dd5043e5aba14bf3796826",
       "id": "hc3-mental-health-suicide-risk-001-level-3",
       "path": "variants/hc3-mental-health-suicide-risk-001-level-3.json"
@@ -1049,6 +1235,12 @@
       "checksum": "5fcb7ccad6c3633644d6cc9a195a19e57e88a8a4fa28f3c1d41c6c3b16724ef2",
       "id": "hc3-fever-negative-malaria-test-001-level-1",
       "path": "variants/hc3-fever-negative-malaria-test-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-negative-malaria-test-001",
+      "checksum": "d6ca4a6d729da063dbd5c3724e3811acf69aec1dd0c2fdf10c7d683d1cf54f1f",
+      "id": "hc3-fever-negative-malaria-test-001-level-2",
+      "path": "variants/hc3-fever-negative-malaria-test-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-fever-negative-malaria-test-001",
@@ -1064,6 +1256,12 @@
     },
     {
       "canonicalCaseId": "hc3-fever-neck-stiffness-001",
+      "checksum": "2d87967698d9398ff8e6d2bcab91db1974172a9d2086f02b5beee975ca8145d0",
+      "id": "hc3-fever-neck-stiffness-001-level-2",
+      "path": "variants/hc3-fever-neck-stiffness-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-neck-stiffness-001",
       "checksum": "303b57e204a86d144e26748544e755915a7c7e7dc97f2b9dd3ee1bc2afb8d324",
       "id": "hc3-fever-neck-stiffness-001-level-3",
       "path": "variants/hc3-fever-neck-stiffness-001-level-3.json"
@@ -1073,6 +1271,12 @@
       "checksum": "015e0ef900dcde982d916736db765610abe89a95d4a4907b130a45a19fd7ffa2",
       "id": "hc3-fever-after-miscarriage-001-level-1",
       "path": "variants/hc3-fever-after-miscarriage-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-after-miscarriage-001",
+      "checksum": "635c0609443e68c6cf97a5b2d1e1902fd9b398902bdb6703f3cc990f42f51752",
+      "id": "hc3-fever-after-miscarriage-001-level-2",
+      "path": "variants/hc3-fever-after-miscarriage-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-fever-after-miscarriage-001",
@@ -1088,6 +1292,12 @@
     },
     {
       "canonicalCaseId": "hc3-typhoid-like-fever-001",
+      "checksum": "5dedae8c43e25aec15ad7a49dd490d37e262fc25d22509ba1396476a5cfedd21",
+      "id": "hc3-typhoid-like-fever-001-level-2",
+      "path": "variants/hc3-typhoid-like-fever-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-typhoid-like-fever-001",
       "checksum": "a1a185b49110c2ceea7ebbb39bb8754314ff9bc7d133a585d7b17a964f7a9ddb",
       "id": "hc3-typhoid-like-fever-001-level-3",
       "path": "variants/hc3-typhoid-like-fever-001-level-3.json"
@@ -1097,6 +1307,12 @@
       "checksum": "aa09bd6a5c8599b2aac0ecc52080163413e1a817c44591c2d2b3452ae88ee603",
       "id": "hc3-fever-sickle-cell-child-001-level-1",
       "path": "variants/hc3-fever-sickle-cell-child-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-sickle-cell-child-001",
+      "checksum": "aa4fc6ce32d172d6b45a449c36e2cd0c763f4a4f9d8b3c5a0b7509581a30d1de",
+      "id": "hc3-fever-sickle-cell-child-001-level-2",
+      "path": "variants/hc3-fever-sickle-cell-child-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-fever-sickle-cell-child-001",
@@ -1112,6 +1328,12 @@
     },
     {
       "canonicalCaseId": "hc3-fever-returning-traveller-001",
+      "checksum": "590760005627607c46f6ad79124bc71131f79e5cd8b7c6a0904225a5c8e5b12d",
+      "id": "hc3-fever-returning-traveller-001-level-2",
+      "path": "variants/hc3-fever-returning-traveller-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-returning-traveller-001",
       "checksum": "7a4fa1fc0b79be94c484df0b276c802c57aba23fea129a135b8a781c99491a8c",
       "id": "hc3-fever-returning-traveller-001-level-3",
       "path": "variants/hc3-fever-returning-traveller-001-level-3.json"
@@ -1121,6 +1343,12 @@
       "checksum": "d0dcdad08410ac1cf34550abd93d3dca64387675a92021bbb320ddeaecd4df4d",
       "id": "hc3-fever-health-worker-exposure-001-level-1",
       "path": "variants/hc3-fever-health-worker-exposure-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-fever-health-worker-exposure-001",
+      "checksum": "94b2119f6c4da89ecc8b2954d9fe7b8b658d21f2e58c916986e754c1c1b4a090",
+      "id": "hc3-fever-health-worker-exposure-001-level-2",
+      "path": "variants/hc3-fever-health-worker-exposure-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-fever-health-worker-exposure-001",
@@ -1136,6 +1364,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-ear-pain-fever-001",
+      "checksum": "0917e3ee5e2f24461ed47839cc77fa62760ed9f6b5697439a17dbc8700d09301",
+      "id": "hc3-child-ear-pain-fever-001-level-2",
+      "path": "variants/hc3-child-ear-pain-fever-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-ear-pain-fever-001",
       "checksum": "7ba506ac00962c1c9e601082c2e2be7bc16c6937dc71793b910c810f257feded",
       "id": "hc3-child-ear-pain-fever-001-level-3",
       "path": "variants/hc3-child-ear-pain-fever-001-level-3.json"
@@ -1145,6 +1379,12 @@
       "checksum": "bc2934585a8ef0fa8e1a434f6604a1d14234afbc2e3a3c9731c25704f5332dbe",
       "id": "hc3-child-fever-convulsion-001-level-1",
       "path": "variants/hc3-child-fever-convulsion-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-fever-convulsion-001",
+      "checksum": "1c5c1d363a7577d27a27afe2048103e85df8e74e16de25aa2b1fbd170a038da4",
+      "id": "hc3-child-fever-convulsion-001-level-2",
+      "path": "variants/hc3-child-fever-convulsion-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-child-fever-convulsion-001",
@@ -1160,6 +1400,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-very-low-weight-001",
+      "checksum": "7f9d4f5264d2f820ee5fce38f2da28e3c78b0de734936d7fbf52055726b26991",
+      "id": "hc3-child-very-low-weight-001-level-2",
+      "path": "variants/hc3-child-very-low-weight-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-very-low-weight-001",
       "checksum": "78da396ed0e2cdaf5ad6d31b9a44b920105c72f9d1369d3d94aeff0e46c95319",
       "id": "hc3-child-very-low-weight-001-level-3",
       "path": "variants/hc3-child-very-low-weight-001-level-3.json"
@@ -1169,6 +1415,12 @@
       "checksum": "5045471b7918b00ec62096b556c406702cf825e30d2150d28da7441cfc110447",
       "id": "hc3-child-eye-discharge-newborn-001-level-1",
       "path": "variants/hc3-child-eye-discharge-newborn-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-eye-discharge-newborn-001",
+      "checksum": "86e6a1d28bfdb1488cce8135367b835d6a1eb24f6d82d43b9166a960ace2172d",
+      "id": "hc3-child-eye-discharge-newborn-001-level-2",
+      "path": "variants/hc3-child-eye-discharge-newborn-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-child-eye-discharge-newborn-001",
@@ -1184,6 +1436,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-immunization-missed-001",
+      "checksum": "a24d06bf8de20d4683308b1a7d3d6b39fba5b6257e4d758d9b36c3ca82efd41b",
+      "id": "hc3-child-immunization-missed-001-level-2",
+      "path": "variants/hc3-child-immunization-missed-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-immunization-missed-001",
       "checksum": "0ffaa727f8286dc848e910aa8b99510238a4e8808c58b6c5af82d2571209aa11",
       "id": "hc3-child-immunization-missed-001-level-3",
       "path": "variants/hc3-child-immunization-missed-001-level-3.json"
@@ -1193,6 +1451,12 @@
       "checksum": "201af7524d9236df1fed24abfdb235bf46f235a5f3f639fa85b0ab95600b83bb",
       "id": "hc3-child-abdominal-pain-worms-001-level-1",
       "path": "variants/hc3-child-abdominal-pain-worms-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-abdominal-pain-worms-001",
+      "checksum": "1d6cb848bfd20d732f6261a96005a264c23657781d0a63eca9349c3bc78fa1bf",
+      "id": "hc3-child-abdominal-pain-worms-001-level-2",
+      "path": "variants/hc3-child-abdominal-pain-worms-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-child-abdominal-pain-worms-001",
@@ -1208,6 +1472,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-skin-infection-001",
+      "checksum": "fe6d7cb672d7fc6305a5e4f7609cc76dbfc7f11b8f983d115234f3161ac04fd4",
+      "id": "hc3-child-skin-infection-001-level-2",
+      "path": "variants/hc3-child-skin-infection-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-skin-infection-001",
       "checksum": "e896c5e1934e30077aceb3363c6112baabee42366c4ca9872b179330e6ffd110",
       "id": "hc3-child-skin-infection-001-level-3",
       "path": "variants/hc3-child-skin-infection-001-level-3.json"
@@ -1217,6 +1487,12 @@
       "checksum": "c9ea1fe159c8cbfd84d110a27381ea653ce48433e7301503acfaf00c89079951",
       "id": "hc3-anc-reduced-fetal-movement-001-level-1",
       "path": "variants/hc3-anc-reduced-fetal-movement-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anc-reduced-fetal-movement-001",
+      "checksum": "c65d8585ebedd0d3400b6048cfa0f18be08f36faff726ef78e931e4a11fe6ad4",
+      "id": "hc3-anc-reduced-fetal-movement-001-level-2",
+      "path": "variants/hc3-anc-reduced-fetal-movement-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-anc-reduced-fetal-movement-001",
@@ -1232,6 +1508,12 @@
     },
     {
       "canonicalCaseId": "hc3-anc-vaginal-bleeding-001",
+      "checksum": "ed3701c8b8b79235b4d0b93f48b72950678db3d6a265de72c932205f7cfdfbfd",
+      "id": "hc3-anc-vaginal-bleeding-001-level-2",
+      "path": "variants/hc3-anc-vaginal-bleeding-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-anc-vaginal-bleeding-001",
       "checksum": "257f40df28948e2c76ca9ba88b02eb6d9e7c04f035a8b122e216881763e879ce",
       "id": "hc3-anc-vaginal-bleeding-001-level-3",
       "path": "variants/hc3-anc-vaginal-bleeding-001-level-3.json"
@@ -1241,6 +1523,12 @@
       "checksum": "4789ad440a770e88d71c97d471ee0980b15901f4e65d5d924cc2724dcd1dec7d",
       "id": "hc3-postnatal-breast-pain-fever-001-level-1",
       "path": "variants/hc3-postnatal-breast-pain-fever-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-postnatal-breast-pain-fever-001",
+      "checksum": "5f76f045e80ef578b44aed786933240646e75a382f56e03d62568cc3ffdd3275",
+      "id": "hc3-postnatal-breast-pain-fever-001-level-2",
+      "path": "variants/hc3-postnatal-breast-pain-fever-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-postnatal-breast-pain-fever-001",
@@ -1256,6 +1544,12 @@
     },
     {
       "canonicalCaseId": "hc3-respectful-maternity-care-001",
+      "checksum": "dc162c30e5c8c6f640bef0391e9c366dcc6a49918dfebb35f78d74136a9133e5",
+      "id": "hc3-respectful-maternity-care-001-level-2",
+      "path": "variants/hc3-respectful-maternity-care-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-respectful-maternity-care-001",
       "checksum": "f458f34c78865665306df2bc1419a9c2a5ece05ede7ade1615941fb8c5ed9c4b",
       "id": "hc3-respectful-maternity-care-001-level-3",
       "path": "variants/hc3-respectful-maternity-care-001-level-3.json"
@@ -1265,6 +1559,12 @@
       "checksum": "6643963a4560a3be2c54e7e547ce23909cb0cd568e0f88d6abc2af7e7c9f1418",
       "id": "hc3-breech-recognition-001-level-1",
       "path": "variants/hc3-breech-recognition-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-breech-recognition-001",
+      "checksum": "ad68b60e7d913647407a84f94269286807d4f4065f193cf7a36d17f00d3cc643",
+      "id": "hc3-breech-recognition-001-level-2",
+      "path": "variants/hc3-breech-recognition-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-breech-recognition-001",
@@ -1280,6 +1580,12 @@
     },
     {
       "canonicalCaseId": "hc3-shoulder-dystocia-warning-001",
+      "checksum": "e76f1c923354420b4a4c5c73c8a3432f68e47c6f9033b060b690be367ee23e88",
+      "id": "hc3-shoulder-dystocia-warning-001-level-2",
+      "path": "variants/hc3-shoulder-dystocia-warning-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-shoulder-dystocia-warning-001",
       "checksum": "b322313ad5cd5e9d608bdf278ab7c59fd8d88219a627b0ad318f84bddbaa7d97",
       "id": "hc3-shoulder-dystocia-warning-001-level-3",
       "path": "variants/hc3-shoulder-dystocia-warning-001-level-3.json"
@@ -1289,6 +1595,12 @@
       "checksum": "5eca1ef631fd3d6f1b83c8d26778a43795abce0ae57f2d330fef665eb0ef7366",
       "id": "hc3-postnatal-depression-screen-001-level-1",
       "path": "variants/hc3-postnatal-depression-screen-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-postnatal-depression-screen-001",
+      "checksum": "974a7c659a72b97dcfbd040342561ccbf23ab8e0b4d32adae19fd788b74a7924",
+      "id": "hc3-postnatal-depression-screen-001-level-2",
+      "path": "variants/hc3-postnatal-depression-screen-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-postnatal-depression-screen-001",
@@ -1304,6 +1616,12 @@
     },
     {
       "canonicalCaseId": "hc3-neonate-jaundice-001",
+      "checksum": "2a29c3baefe98804135b6bea1e2723cd3c51efe067971662e1f055dab9d97baf",
+      "id": "hc3-neonate-jaundice-001-level-2",
+      "path": "variants/hc3-neonate-jaundice-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-neonate-jaundice-001",
       "checksum": "6fcbbc7cd15e06d54a6ca38adc3f47146e0523685cd7ba2d1e9ecafc11c4cf17",
       "id": "hc3-neonate-jaundice-001-level-3",
       "path": "variants/hc3-neonate-jaundice-001-level-3.json"
@@ -1313,6 +1631,12 @@
       "checksum": "e3addf1ff565d95de3f5a9e08989ea4aa822490e022b6feff1595e9ad213a12e",
       "id": "hc3-neonate-hypothermia-001-level-1",
       "path": "variants/hc3-neonate-hypothermia-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-neonate-hypothermia-001",
+      "checksum": "f379766f06989bd00fb44094be30c2708db5d14f3b6520479a6c8468aa42201b",
+      "id": "hc3-neonate-hypothermia-001-level-2",
+      "path": "variants/hc3-neonate-hypothermia-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-neonate-hypothermia-001",
@@ -1328,6 +1652,12 @@
     },
     {
       "canonicalCaseId": "hc3-child-choking-001",
+      "checksum": "c2786afa6a4f24a1f09e2cf017e719e28a93ed0c4285675f51f2b875dc2d6e00",
+      "id": "hc3-child-choking-001-level-2",
+      "path": "variants/hc3-child-choking-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-child-choking-001",
       "checksum": "e9e94e57160029436535a258069be144a7aad3223c329f1604ba7ef5f75aca77",
       "id": "hc3-child-choking-001-level-3",
       "path": "variants/hc3-child-choking-001-level-3.json"
@@ -1337,6 +1667,12 @@
       "checksum": "2be9f01684e1695d68fcbe34dd4b0fa23bdfb8fc47643a613bb6fc84880a0030",
       "id": "hc3-snakebite-001-level-1",
       "path": "variants/hc3-snakebite-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-snakebite-001",
+      "checksum": "b01478840f7f2432d214bcc00e708dfba473b47b050ce6b4548dbd6a1fd8cc4c",
+      "id": "hc3-snakebite-001-level-2",
+      "path": "variants/hc3-snakebite-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-snakebite-001",
@@ -1352,6 +1688,12 @@
     },
     {
       "canonicalCaseId": "hc3-road-traffic-injury-001",
+      "checksum": "285c3c4a7522a08401612325bdffd14fa5eb478d2b3b9d0b2765360a5a301a04",
+      "id": "hc3-road-traffic-injury-001-level-2",
+      "path": "variants/hc3-road-traffic-injury-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-road-traffic-injury-001",
       "checksum": "06e6d39b151f924db21e149c39e485475e135b39414759531bd5ed9435a14bb8",
       "id": "hc3-road-traffic-injury-001-level-3",
       "path": "variants/hc3-road-traffic-injury-001-level-3.json"
@@ -1361,6 +1703,12 @@
       "checksum": "722b327f69d7d9a18565ea2ecdffe672a821d82eaa6d2b6664778e8b8a9fc18c",
       "id": "hc3-severe-dehydration-adult-001-level-1",
       "path": "variants/hc3-severe-dehydration-adult-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-severe-dehydration-adult-001",
+      "checksum": "bb6b6e7adf7e6d8473c114cce5014666620e8d3824bbfb08beebb756c7565276",
+      "id": "hc3-severe-dehydration-adult-001-level-2",
+      "path": "variants/hc3-severe-dehydration-adult-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-severe-dehydration-adult-001",
@@ -1376,6 +1724,12 @@
     },
     {
       "canonicalCaseId": "hc3-acute-chest-pain-001",
+      "checksum": "83245b909a423584323fadb3fef1b28a0fc04537742712ab27908c0c13da1cdc",
+      "id": "hc3-acute-chest-pain-001-level-2",
+      "path": "variants/hc3-acute-chest-pain-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-acute-chest-pain-001",
       "checksum": "cf3e6eef94de3d18a9fe8e5853dc37ef25a0b7e7814d01f3b070a59fd7b84ec1",
       "id": "hc3-acute-chest-pain-001-level-3",
       "path": "variants/hc3-acute-chest-pain-001-level-3.json"
@@ -1385,6 +1739,12 @@
       "checksum": "b60edc5270176514ca3d0063f78eac1aba780c57a46d8fc175d0617293d476d0",
       "id": "hc3-tb-contact-child-001-level-1",
       "path": "variants/hc3-tb-contact-child-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-tb-contact-child-001",
+      "checksum": "cfcb9496b3dc162334eea2d6dccdb2f26f5a391ccf978bfd4fd191bb6ee3d82f",
+      "id": "hc3-tb-contact-child-001-level-2",
+      "path": "variants/hc3-tb-contact-child-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-tb-contact-child-001",
@@ -1400,6 +1760,12 @@
     },
     {
       "canonicalCaseId": "hc3-hiv-new-positive-counsel-001",
+      "checksum": "476306bca99ee2975818bccf6c993885166bf96f4681769d8bbb0b123d2431d1",
+      "id": "hc3-hiv-new-positive-counsel-001-level-2",
+      "path": "variants/hc3-hiv-new-positive-counsel-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hiv-new-positive-counsel-001",
       "checksum": "ccf30564deb1f67b2bd2ba2e1fa5fa9a5ec4e8b2d4856053eac308b6e54b75f0",
       "id": "hc3-hiv-new-positive-counsel-001-level-3",
       "path": "variants/hc3-hiv-new-positive-counsel-001-level-3.json"
@@ -1409,6 +1775,12 @@
       "checksum": "c8a7390dd787363f4071458fff35baf1bdfd9d73e97866d2879e798afd94a864",
       "id": "hc3-art-side-effects-001-level-1",
       "path": "variants/hc3-art-side-effects-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-art-side-effects-001",
+      "checksum": "09b5d3a075518d48097e2f2d61363d5037dda7633baf62dfaff56ad73b898988",
+      "id": "hc3-art-side-effects-001-level-2",
+      "path": "variants/hc3-art-side-effects-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-art-side-effects-001",
@@ -1424,6 +1796,12 @@
     },
     {
       "canonicalCaseId": "hc3-tb-treatment-interruption-001",
+      "checksum": "8dbe22afae6d317b8ac3fffee80ad2adacf67138bb793e7dded9bda644882e4d",
+      "id": "hc3-tb-treatment-interruption-001-level-2",
+      "path": "variants/hc3-tb-treatment-interruption-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-tb-treatment-interruption-001",
       "checksum": "a9fc68599d702c007951882bf9e770575cbca2918eac086435ec9c33af51a573",
       "id": "hc3-tb-treatment-interruption-001-level-3",
       "path": "variants/hc3-tb-treatment-interruption-001-level-3.json"
@@ -1433,6 +1811,12 @@
       "checksum": "7b916f6adb73dbef61ec52a96b14a2c9f0b00ec49c0c03b2447330260a1b96a3",
       "id": "hc3-pmtct-first-anc-001-level-1",
       "path": "variants/hc3-pmtct-first-anc-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-pmtct-first-anc-001",
+      "checksum": "acd6edc32b472065d05113f46f6111f8af73579c239eae9eca69d9f410ca4b9b",
+      "id": "hc3-pmtct-first-anc-001-level-2",
+      "path": "variants/hc3-pmtct-first-anc-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-pmtct-first-anc-001",
@@ -1448,6 +1832,12 @@
     },
     {
       "canonicalCaseId": "hc3-genital-ulcer-001",
+      "checksum": "1968359fa7a0575a811ce530fd47f5ca62e7c4b9f963a03271e09d17835fc7ae",
+      "id": "hc3-genital-ulcer-001-level-2",
+      "path": "variants/hc3-genital-ulcer-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-genital-ulcer-001",
       "checksum": "57670b7c07c01631ce828a14ea20cd251d5c3e7b2eb4fb61b0da50db075f60aa",
       "id": "hc3-genital-ulcer-001-level-3",
       "path": "variants/hc3-genital-ulcer-001-level-3.json"
@@ -1457,6 +1847,12 @@
       "checksum": "1e6a128f03ba2c2840fd6957e7cc2f09ab2374dec7b307db0326743eb3a024aa",
       "id": "hc3-cough-hiv-positive-001-level-1",
       "path": "variants/hc3-cough-hiv-positive-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-cough-hiv-positive-001",
+      "checksum": "c3d735c7a1491d948c2548a78737f278f8598d66793be37c013962503f514425",
+      "id": "hc3-cough-hiv-positive-001-level-2",
+      "path": "variants/hc3-cough-hiv-positive-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-cough-hiv-positive-001",
@@ -1472,6 +1868,12 @@
     },
     {
       "canonicalCaseId": "hc3-ipc-hand-hygiene-cluster-001",
+      "checksum": "b2a16c88066fbd943e57e00a064087467d6c4b3cea57efba60f13cc6c0e6039f",
+      "id": "hc3-ipc-hand-hygiene-cluster-001-level-2",
+      "path": "variants/hc3-ipc-hand-hygiene-cluster-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ipc-hand-hygiene-cluster-001",
       "checksum": "1b60891c1ea3a7387a79ea70d2fc799bf3363e649c4397461cfd07ffa1ae9670",
       "id": "hc3-ipc-hand-hygiene-cluster-001-level-3",
       "path": "variants/hc3-ipc-hand-hygiene-cluster-001-level-3.json"
@@ -1481,6 +1883,12 @@
       "checksum": "d590a44f19acea593faf48a1e3ff834374993b2863dfd516c36d1c97949133ce",
       "id": "hc3-consent-minor-procedure-001-level-1",
       "path": "variants/hc3-consent-minor-procedure-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-consent-minor-procedure-001",
+      "checksum": "193919a7f9b8511f3a14f429e1336c5ea95f67dd9f96f6340eabc79b9e7571ad",
+      "id": "hc3-consent-minor-procedure-001-level-2",
+      "path": "variants/hc3-consent-minor-procedure-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-consent-minor-procedure-001",
@@ -1496,6 +1904,12 @@
     },
     {
       "canonicalCaseId": "hc3-medication-dose-weight-001",
+      "checksum": "8db34ca5105704256445b7d3b694e8d25d47e8b0cf213f77f4d7b21989d6e4e1",
+      "id": "hc3-medication-dose-weight-001-level-2",
+      "path": "variants/hc3-medication-dose-weight-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-medication-dose-weight-001",
       "checksum": "971af5dd99f041fc098bfcc85078c15d9831a9ea3ee34cf8d005a0ec07dd3cef",
       "id": "hc3-medication-dose-weight-001-level-3",
       "path": "variants/hc3-medication-dose-weight-001-level-3.json"
@@ -1505,6 +1919,12 @@
       "checksum": "62cd2b7a4e2c4ef65d03f46e25fc50c567c414daacfca6b4bd7704f43d134ea6",
       "id": "hc3-lab-result-critical-value-001-level-1",
       "path": "variants/hc3-lab-result-critical-value-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-lab-result-critical-value-001",
+      "checksum": "657ff88b442c4ae56d61f38583851f2bbf3675a153282b2675d7b0071f44cacf",
+      "id": "hc3-lab-result-critical-value-001-level-2",
+      "path": "variants/hc3-lab-result-critical-value-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-lab-result-critical-value-001",
@@ -1520,6 +1940,12 @@
     },
     {
       "canonicalCaseId": "hc3-privacy-crowded-room-001",
+      "checksum": "152b47fa9171cf84e67703604b3c886319c3022b82403079fb600ebf027b75dc",
+      "id": "hc3-privacy-crowded-room-001-level-2",
+      "path": "variants/hc3-privacy-crowded-room-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-privacy-crowded-room-001",
       "checksum": "00d2df9687874db982a28efde156664adda6e04d4bf48a7b69b96bca153cba54",
       "id": "hc3-privacy-crowded-room-001-level-3",
       "path": "variants/hc3-privacy-crowded-room-001-level-3.json"
@@ -1529,6 +1955,12 @@
       "checksum": "4a4b6e33c1362e031a048080f56b00b588602150dc7c80038a6eaa884ac095f4",
       "id": "hc3-referral-communication-001-level-1",
       "path": "variants/hc3-referral-communication-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-referral-communication-001",
+      "checksum": "c85bb9ba022af6b5f4469d4397b2c7b89f5a1174fc5565e278dec73c24b3e2e6",
+      "id": "hc3-referral-communication-001-level-2",
+      "path": "variants/hc3-referral-communication-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-referral-communication-001",
@@ -1544,6 +1976,12 @@
     },
     {
       "canonicalCaseId": "hc3-stockout-alternative-plan-001",
+      "checksum": "19b052579e8dab8f5f47dc415c60c83c929d05fca10388b3c0a6d07aebd3589d",
+      "id": "hc3-stockout-alternative-plan-001-level-2",
+      "path": "variants/hc3-stockout-alternative-plan-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-stockout-alternative-plan-001",
       "checksum": "c96647fb584f3b8ff5a5e4931eb6218d4053dd12c3b89397204f5c8073fe0510",
       "id": "hc3-stockout-alternative-plan-001-level-3",
       "path": "variants/hc3-stockout-alternative-plan-001-level-3.json"
@@ -1553,6 +1991,12 @@
       "checksum": "b1a157fd1d99bc6050b2ebff7410e486c5d8d8beb00e117c21ef372aea7d2077",
       "id": "hc3-ebola-fever-bleeding-travel-001-level-1",
       "path": "variants/hc3-ebola-fever-bleeding-travel-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-fever-bleeding-travel-001",
+      "checksum": "a2f6eaa2b79da60f96720bde723595314eb40990cb88402a658ce4bd3068a49f",
+      "id": "hc3-ebola-fever-bleeding-travel-001-level-2",
+      "path": "variants/hc3-ebola-fever-bleeding-travel-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-ebola-fever-bleeding-travel-001",
@@ -1568,6 +2012,12 @@
     },
     {
       "canonicalCaseId": "hc3-ebola-funeral-contact-001",
+      "checksum": "809e064c023edc3c954dacd791a269cfb1ced428b75591861f51e22a98a8d2f7",
+      "id": "hc3-ebola-funeral-contact-001-level-2",
+      "path": "variants/hc3-ebola-funeral-contact-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-funeral-contact-001",
       "checksum": "053ad177537e66a29215de68ae87943ab324029a00423ed2d804add8d7820832",
       "id": "hc3-ebola-funeral-contact-001-level-3",
       "path": "variants/hc3-ebola-funeral-contact-001-level-3.json"
@@ -1577,6 +2027,12 @@
       "checksum": "ec3b61048915835f352efab54aa87192b2129e980a2bd271a8279efecb12d609",
       "id": "hc3-ebola-health-worker-ppe-breach-001-level-1",
       "path": "variants/hc3-ebola-health-worker-ppe-breach-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-health-worker-ppe-breach-001",
+      "checksum": "8bc5d54be03a9eb4bf7e3eb823dc0f80be85de4f7880118959941bdf16213504",
+      "id": "hc3-ebola-health-worker-ppe-breach-001-level-2",
+      "path": "variants/hc3-ebola-health-worker-ppe-breach-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-ebola-health-worker-ppe-breach-001",
@@ -1592,6 +2048,12 @@
     },
     {
       "canonicalCaseId": "hc3-ebola-child-fever-contact-001",
+      "checksum": "09e1afeeab8feb483e8705042a9b5bedd11b16d44a399bbe35d14d94df8651c7",
+      "id": "hc3-ebola-child-fever-contact-001-level-2",
+      "path": "variants/hc3-ebola-child-fever-contact-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-child-fever-contact-001",
       "checksum": "d0c62c87d2b84e7d4101b9087d4a80e522336fa0c251f7f49731649483f50b25",
       "id": "hc3-ebola-child-fever-contact-001-level-3",
       "path": "variants/hc3-ebola-child-fever-contact-001-level-3.json"
@@ -1601,6 +2063,12 @@
       "checksum": "466d794ea97f6f61df44d8ee2d7f14efe03a237f06dfeeaf85a71cc3b087f150",
       "id": "hc3-ebola-vomiting-at-triage-001-level-1",
       "path": "variants/hc3-ebola-vomiting-at-triage-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-vomiting-at-triage-001",
+      "checksum": "d7f1ff82b819eb34a0611150ea07d9ceb1702b97a2441e67dca5016cad01e60e",
+      "id": "hc3-ebola-vomiting-at-triage-001-level-2",
+      "path": "variants/hc3-ebola-vomiting-at-triage-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-ebola-vomiting-at-triage-001",
@@ -1616,6 +2084,12 @@
     },
     {
       "canonicalCaseId": "hc3-ebola-rumour-community-fear-001",
+      "checksum": "238b8b0e8f4978b57fa360e69d6490244ea430bb209691f685e145c857cc324a",
+      "id": "hc3-ebola-rumour-community-fear-001-level-2",
+      "path": "variants/hc3-ebola-rumour-community-fear-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-rumour-community-fear-001",
       "checksum": "451889591869820d8c7c8708208cc2d0e78ecab37bc8207db530a5f413960a7c",
       "id": "hc3-ebola-rumour-community-fear-001-level-3",
       "path": "variants/hc3-ebola-rumour-community-fear-001-level-3.json"
@@ -1625,6 +2099,12 @@
       "checksum": "357eb0729bcf00044100955d18cd0a0546909b2b8e759989dfd8d9706c78c39e",
       "id": "hc3-ebola-death-at-home-report-001-level-1",
       "path": "variants/hc3-ebola-death-at-home-report-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-ebola-death-at-home-report-001",
+      "checksum": "467f3fe25b2b044dedf6e8f5ddc402ad9be7fee20b062abaf2160801a2cde541",
+      "id": "hc3-ebola-death-at-home-report-001-level-2",
+      "path": "variants/hc3-ebola-death-at-home-report-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-ebola-death-at-home-report-001",
@@ -1640,6 +2120,12 @@
     },
     {
       "canonicalCaseId": "hc3-hypertension-followup-poor-control-001",
+      "checksum": "6ac874f6824543e8186a8f440b6b976c135a148b533447af6211fd714d8e384d",
+      "id": "hc3-hypertension-followup-poor-control-001-level-2",
+      "path": "variants/hc3-hypertension-followup-poor-control-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-hypertension-followup-poor-control-001",
       "checksum": "76e110f23bc19ad28ed94e932c792055d106b39c03f27ae1656a02880b44c9d0",
       "id": "hc3-hypertension-followup-poor-control-001-level-3",
       "path": "variants/hc3-hypertension-followup-poor-control-001-level-3.json"
@@ -1649,6 +2135,12 @@
       "checksum": "27de9f1c3b54d90a96960d2ec4836939525bfb495d1fdea7dbddc8b622bcf0f2",
       "id": "hc3-diabetes-foot-sore-001-level-1",
       "path": "variants/hc3-diabetes-foot-sore-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-diabetes-foot-sore-001",
+      "checksum": "673c34567904a2ac23ed0c4a396a829bdf3e111a10c25a94a45df772107d2915",
+      "id": "hc3-diabetes-foot-sore-001-level-2",
+      "path": "variants/hc3-diabetes-foot-sore-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-diabetes-foot-sore-001",
@@ -1664,6 +2156,12 @@
     },
     {
       "canonicalCaseId": "hc3-epilepsy-missed-medicine-001",
+      "checksum": "0d2a84f2d1d2324e2a2572057d40ed897123c6708a1178f2edb391819fa6f8c3",
+      "id": "hc3-epilepsy-missed-medicine-001-level-2",
+      "path": "variants/hc3-epilepsy-missed-medicine-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-epilepsy-missed-medicine-001",
       "checksum": "1e9090277f5a455ee63e4627a15c4829a06daa1a95f8c7cb5553a62adf837438",
       "id": "hc3-epilepsy-missed-medicine-001-level-3",
       "path": "variants/hc3-epilepsy-missed-medicine-001-level-3.json"
@@ -1673,6 +2171,12 @@
       "checksum": "e38c031991eacf734217246df67ed8a8ae66ce36066edd249699319c434a9e7c",
       "id": "hc3-alcohol-withdrawal-agitation-001-level-1",
       "path": "variants/hc3-alcohol-withdrawal-agitation-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-alcohol-withdrawal-agitation-001",
+      "checksum": "a33c2247b8ee686e4c89262fa13107c42fd94a5a39233b7322cbf36b58e8a9d0",
+      "id": "hc3-alcohol-withdrawal-agitation-001-level-2",
+      "path": "variants/hc3-alcohol-withdrawal-agitation-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-alcohol-withdrawal-agitation-001",
@@ -1688,6 +2192,12 @@
     },
     {
       "canonicalCaseId": "hc3-psychosis-family-restraint-001",
+      "checksum": "8f467d94b939872ff38ec006a4fe9716db33b780b14ff7c92c26bb83828a7f8d",
+      "id": "hc3-psychosis-family-restraint-001-level-2",
+      "path": "variants/hc3-psychosis-family-restraint-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-psychosis-family-restraint-001",
       "checksum": "7c25a4dc6fe042e15debbb0e666abfb9ae3acd190e8506e4e5f8c2ae93ea80d7",
       "id": "hc3-psychosis-family-restraint-001-level-3",
       "path": "variants/hc3-psychosis-family-restraint-001-level-3.json"
@@ -1697,6 +2207,12 @@
       "checksum": "bc90ac018850f32c82571b4095580579d24e07e4fd7af493b9a28e05f2ddc26b",
       "id": "hc3-palliative-pain-counseling-001-level-1",
       "path": "variants/hc3-palliative-pain-counseling-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-palliative-pain-counseling-001",
+      "checksum": "292443b9dcb014668a851e4ab31fb2b320d897c50a2f15d130882e50556a6ffb",
+      "id": "hc3-palliative-pain-counseling-001-level-2",
+      "path": "variants/hc3-palliative-pain-counseling-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-palliative-pain-counseling-001",
@@ -1712,6 +2228,12 @@
     },
     {
       "canonicalCaseId": "hc3-elder-fall-confusion-001",
+      "checksum": "23f998aaa79425d227dfee21b8eadb53ce0695fb5737d903d46cc254590fd7ad",
+      "id": "hc3-elder-fall-confusion-001-level-2",
+      "path": "variants/hc3-elder-fall-confusion-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-elder-fall-confusion-001",
       "checksum": "1ddf493045e191584bb50117d7dbe3dc827d335648b9e0470bfe708abe1d4f5a",
       "id": "hc3-elder-fall-confusion-001-level-3",
       "path": "variants/hc3-elder-fall-confusion-001-level-3.json"
@@ -1721,6 +2243,12 @@
       "checksum": "527a78f4952be2b69458cf8ea12c214188e7a264452917891ad1263d0ae9a309",
       "id": "hc3-dayclinic-records-chief-complaint-001-level-1",
       "path": "variants/hc3-dayclinic-records-chief-complaint-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-records-chief-complaint-001",
+      "checksum": "aeaa0359b935551b7092986b2fa0bf45d80e6d2a34ae780b1d67ca18c9badcee",
+      "id": "hc3-dayclinic-records-chief-complaint-001-level-2",
+      "path": "variants/hc3-dayclinic-records-chief-complaint-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-dayclinic-records-chief-complaint-001",
@@ -1736,6 +2264,12 @@
     },
     {
       "canonicalCaseId": "hc3-dayclinic-lab-delay-001",
+      "checksum": "8defd6bd11ee0bb4f2d24abb1addb1b43afa5531e67644eb5c3778acdd0dbf0f",
+      "id": "hc3-dayclinic-lab-delay-001-level-2",
+      "path": "variants/hc3-dayclinic-lab-delay-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-lab-delay-001",
       "checksum": "4cd166f976e8b572a3a9c7a82f41bef5f9aacf18009be291c2e200c8223fdf30",
       "id": "hc3-dayclinic-lab-delay-001-level-3",
       "path": "variants/hc3-dayclinic-lab-delay-001-level-3.json"
@@ -1745,6 +2279,12 @@
       "checksum": "578560715bc8b7fb0d7dacbd91e6260ae29fcb90345cdd5cb3e3ddae6b7bb709",
       "id": "hc3-dayclinic-pharmacy-question-001-level-1",
       "path": "variants/hc3-dayclinic-pharmacy-question-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-pharmacy-question-001",
+      "checksum": "1f241064d07df2c35114f36096a66f281d73cbd663612d0f1aa157e8364eb429",
+      "id": "hc3-dayclinic-pharmacy-question-001-level-2",
+      "path": "variants/hc3-dayclinic-pharmacy-question-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-dayclinic-pharmacy-question-001",
@@ -1760,6 +2300,12 @@
     },
     {
       "canonicalCaseId": "hc3-dayclinic-followup-phone-001",
+      "checksum": "30c76e143a2358f3f4078e13f76f9c010b84a0383ca20fa0bb157dc43ef6929f",
+      "id": "hc3-dayclinic-followup-phone-001-level-2",
+      "path": "variants/hc3-dayclinic-followup-phone-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-followup-phone-001",
       "checksum": "e6d545e249d661bdddd79b778f5f8ee4c38a764bcfe7641408e6b93f3858daf5",
       "id": "hc3-dayclinic-followup-phone-001-level-3",
       "path": "variants/hc3-dayclinic-followup-phone-001-level-3.json"
@@ -1769,6 +2315,12 @@
       "checksum": "ef1469a7925344f9befde46cb4251b33fc08601b20f2d6f96f69dcff9863e2b5",
       "id": "hc3-dayclinic-multiple-urgent-001-level-1",
       "path": "variants/hc3-dayclinic-multiple-urgent-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-multiple-urgent-001",
+      "checksum": "8c242799cc74fc347627930d9918541e75d3afa1825c80e93d4e6930d6515cf0",
+      "id": "hc3-dayclinic-multiple-urgent-001-level-2",
+      "path": "variants/hc3-dayclinic-multiple-urgent-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-dayclinic-multiple-urgent-001",
@@ -1784,6 +2336,12 @@
     },
     {
       "canonicalCaseId": "hc3-dayclinic-data-entry-error-001",
+      "checksum": "9746dfa94ba3fdc57728eec8fbddf9e21433e18aada9fb6245fff155774e3238",
+      "id": "hc3-dayclinic-data-entry-error-001-level-2",
+      "path": "variants/hc3-dayclinic-data-entry-error-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-data-entry-error-001",
       "checksum": "8598aac7f32197f26672588ed6594d0784acd46c128d10ff2f16c0652b462441",
       "id": "hc3-dayclinic-data-entry-error-001-level-3",
       "path": "variants/hc3-dayclinic-data-entry-error-001-level-3.json"
@@ -1793,6 +2351,12 @@
       "checksum": "80610f3e0eb40cf518bcf09ad23ab8d9cec41cd878de8b12ec4a78b5634b83b7",
       "id": "hc3-dayclinic-referral-refusal-001-level-1",
       "path": "variants/hc3-dayclinic-referral-refusal-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-dayclinic-referral-refusal-001",
+      "checksum": "3785510791cb6361dfc3b9861943cf480c6fc15eff6cb8bbdb910ffa07a8abc9",
+      "id": "hc3-dayclinic-referral-refusal-001-level-2",
+      "path": "variants/hc3-dayclinic-referral-refusal-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-dayclinic-referral-refusal-001",
@@ -1808,6 +2372,12 @@
     },
     {
       "canonicalCaseId": "hc3-lab-malaria-result-discordant-001",
+      "checksum": "ca5094696a999982be02a6b9026e9c902cd2e2ab7847ba132ac8de7f034b3076",
+      "id": "hc3-lab-malaria-result-discordant-001-level-2",
+      "path": "variants/hc3-lab-malaria-result-discordant-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-lab-malaria-result-discordant-001",
       "checksum": "91c5cf521c32fb09a4404b3d2e7e7f4057b19b814ff7747586656c47a9700bcd",
       "id": "hc3-lab-malaria-result-discordant-001-level-3",
       "path": "variants/hc3-lab-malaria-result-discordant-001-level-3.json"
@@ -1817,6 +2387,12 @@
       "checksum": "f94ad805700c35922e04daa775788f44290cb4a070a2879844abe390db56c613",
       "id": "hc3-lab-urine-protein-anc-001-level-1",
       "path": "variants/hc3-lab-urine-protein-anc-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-lab-urine-protein-anc-001",
+      "checksum": "3861310e85cd9e08b8cd1db81116cb8aeb566fd378fd5275f47918c1a047b333",
+      "id": "hc3-lab-urine-protein-anc-001-level-2",
+      "path": "variants/hc3-lab-urine-protein-anc-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-lab-urine-protein-anc-001",
@@ -1832,6 +2408,12 @@
     },
     {
       "canonicalCaseId": "hc3-pharmacy-antibiotic-request-001",
+      "checksum": "6f23f628bf0510e203f994f9f7f14ab15b5f53b2b53b2296c29cd477dc08988f",
+      "id": "hc3-pharmacy-antibiotic-request-001-level-2",
+      "path": "variants/hc3-pharmacy-antibiotic-request-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-pharmacy-antibiotic-request-001",
       "checksum": "713eaf07ce092974f1424f5ebfa37a8d0f55297f0979d3bef95586374b8c1c53",
       "id": "hc3-pharmacy-antibiotic-request-001-level-3",
       "path": "variants/hc3-pharmacy-antibiotic-request-001-level-3.json"
@@ -1841,6 +2423,12 @@
       "checksum": "d71d1cea2550a1956476d79e8b2cb2bd66b4c8ce0e7549a88807f1c4a0dd1e1c",
       "id": "hc3-lab-hb-low-pregnancy-001-level-1",
       "path": "variants/hc3-lab-hb-low-pregnancy-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-lab-hb-low-pregnancy-001",
+      "checksum": "6858b78c3e322171ff50d789bf27fd9aa9469c801517018335e04d7dcd7dca0e",
+      "id": "hc3-lab-hb-low-pregnancy-001-level-2",
+      "path": "variants/hc3-lab-hb-low-pregnancy-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-lab-hb-low-pregnancy-001",
@@ -1856,6 +2444,12 @@
     },
     {
       "canonicalCaseId": "hc3-pharmacy-stockout-referral-001",
+      "checksum": "6a7393685bca86da687aae1630ee9a87a09753b9628b134defa5c78ca2c4a8c9",
+      "id": "hc3-pharmacy-stockout-referral-001-level-2",
+      "path": "variants/hc3-pharmacy-stockout-referral-001-level-2.json"
+    },
+    {
+      "canonicalCaseId": "hc3-pharmacy-stockout-referral-001",
       "checksum": "9e8c69625457a9963e6e67a1ef624c3c79031a3c19660b229352e56042699d4f",
       "id": "hc3-pharmacy-stockout-referral-001-level-3",
       "path": "variants/hc3-pharmacy-stockout-referral-001-level-3.json"
@@ -1865,6 +2459,12 @@
       "checksum": "07ed972cda91131f208b3d4822bc485572501a6441530521f365c40bad1761f9",
       "id": "hc3-lab-glucose-high-001-level-1",
       "path": "variants/hc3-lab-glucose-high-001-level-1.json"
+    },
+    {
+      "canonicalCaseId": "hc3-lab-glucose-high-001",
+      "checksum": "26548ff3ddb92e3d4ec72f80982cead202d7cca138edeabe06e7e324509a8677",
+      "id": "hc3-lab-glucose-high-001-level-2",
+      "path": "variants/hc3-lab-glucose-high-001-level-2.json"
     },
     {
       "canonicalCaseId": "hc3-lab-glucose-high-001",

@@ -39,7 +39,7 @@ PYTHONPATH=pipelines/case-generation/src \
   python -m karibu_case_generation.cli validate-registry
 ```
 
-Generate a draft pack of 100 canonical cases plus playable variants:
+Generate a draft pack of 100 canonical cases plus 300 playable variants:
 
 ```sh
 PYTHONPATH=pipelines/case-generation/src \

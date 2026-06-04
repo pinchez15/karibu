@@ -988,6 +988,50 @@ def _variants_for_case(case: CanonicalCase) -> list[PlayableCaseVariant]:
             ],
         ),
     )
+    level_2 = build_playable_variant(
+        case.id,
+        VariantPlan(
+            id=f"{case.id}-level-2",
+            label="Guided Reasoning",
+            difficulty_level=2,
+            quest_type="guided_reasoning",
+            initially_visible=[
+                "chief_complaint",
+                "vitals",
+                "exam_findings[0]",
+                "available_tests",
+            ],
+            hidden_fields=_level_2_hidden_fields_for(case),
+            ehr_tasks=[
+                EhrLikeTask(
+                    id=f"{case.id}-ask-key-history",
+                    task_type="ask_history",
+                    prompt="Ask for the missing history detail that most changes risk or management.",
+                    scoring_weight=2,
+                ),
+                EhrLikeTask(
+                    id=f"{case.id}-document-next-step",
+                    task_type="write_plan",
+                    prompt="Document the safest next step in the simulated chart.",
+                    scoring_weight=2,
+                ),
+            ],
+            scoring_rules=[
+                ScoringRule(
+                    id=f"{case.id}-focused-history",
+                    description="Requests the missing history detail before choosing management.",
+                    points=3,
+                    citation_ids=[source_citation_id],
+                ),
+                ScoringRule(
+                    id=f"{case.id}-safe-next-step",
+                    description="Documents a safe next step consistent with the case risk.",
+                    points=3,
+                    citation_ids=[source_citation_id],
+                ),
+            ],
+        ),
+    )
     level_3 = build_playable_variant(
         case.id,
         VariantPlan(
@@ -1033,7 +1077,7 @@ def _variants_for_case(case: CanonicalCase) -> list[PlayableCaseVariant]:
             ],
         ),
     )
-    return [level_1, level_3]
+    return [level_1, level_2, level_3]
 
 
 def _hidden_fields_for(case: CanonicalCase) -> dict[str, str]:
@@ -1045,4 +1089,13 @@ def _hidden_fields_for(case: CanonicalCase) -> dict[str, str]:
         hidden["history[0]"] = "The learner should ask focused history rather than receiving it up front."
     if case.clinical_truth.exam_findings:
         hidden["exam_findings[0]"] = "The learner should perform or select a focused exam."
+    return hidden
+
+
+def _level_2_hidden_fields_for(case: CanonicalCase) -> dict[str, str]:
+    hidden: dict[str, str] = {}
+    if case.clinical_truth.history:
+        hidden["history[0]"] = "Level 2 keeps vitals visible but requires the learner to ask for the key history detail."
+    elif case.clinical_truth.exam_findings:
+        hidden["exam_findings[0]"] = "Level 2 requires one focused clinical action before the full picture is visible."
     return hidden

@@ -15,7 +15,7 @@ class DraftGenerationTest(unittest.TestCase):
 
             manifest = json.loads((output_dir / "manifest.json").read_text())
             self.assertEqual(len(manifest["cases"]), 3)
-            self.assertEqual(len(manifest["variants"]), 6)
+            self.assertEqual(len(manifest["variants"]), 9)
 
     def test_generate_hc3_draft_pack_defaults_to_curriculum_size(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -25,7 +25,7 @@ class DraftGenerationTest(unittest.TestCase):
 
             manifest = json.loads((output_dir / "manifest.json").read_text())
             self.assertEqual(len(manifest["cases"]), 100)
-            self.assertEqual(len(manifest["variants"]), 200)
+            self.assertEqual(len(manifest["variants"]), 300)
             self.assertGreaterEqual(len(manifest["chapters"]), 10)
 
 

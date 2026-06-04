@@ -165,7 +165,7 @@ class PlayableCaseVariant:
     canonical_case_id: str
     label: str
     difficulty_level: int
-    quest_type: Literal["core_practice", "challenge", "case_conference"]
+    quest_type: Literal["core_practice", "guided_reasoning", "challenge", "case_conference"]
     initially_visible: list[str]
     information_reveals: list[InformationReveal]
     ehr_tasks: list[EhrLikeTask]

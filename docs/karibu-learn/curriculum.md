@@ -210,6 +210,14 @@ Each canonical case can become multiple playable levels.
 - Level 4: conflicting cues and documentation tasks.
 - Level 5: case-conference style, ambiguous or high-stakes.
 
+Recommended Level 1 to Level 3 progression:
+
+- Method A, information gating: Level 1 gives vitals, history, exam, and tests; Level 2 gives vitals/exam but hides one key history item; Level 3 starts with chief complaint only and requires vitals, focused history, and referral decision.
+- Method B, EHR task load: Level 1 is recognition only; Level 2 asks the learner to document one focused next step; Level 3 adds simulated vitals entry, focused history, and referral documentation.
+- Method C, cognitive noise: Level 1 presents the clean teaching pattern; Level 2 withholds the management-changing clue; Level 3 adds distractors, competing priorities, or a normal-looking early presentation with hidden danger signs.
+- Method D, autonomy: Level 1 uses guided questions; Level 2 asks for the next best action after one missing data request; Level 3 lets the learner choose what to ask, examine, document, and escalate.
+- Method E, clinic workflow: Level 1 is a single-patient teaching case; Level 2 includes one workflow task such as charting or follow-up; Level 3 places the case inside a realistic HC III queue where missing information must be actively obtained.
+
 Learners unlock harder quests by demonstrating competence: not just by completing cases, but by safely recognizing danger signs, making correct referral decisions, and improving over time.
 
 ## Review Expectations
