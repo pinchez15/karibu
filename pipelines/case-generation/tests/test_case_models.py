@@ -26,6 +26,8 @@ def make_valid_canonical_case() -> CanonicalCase:
     return CanonicalCase(
         id="malaria-triage-001",
         title="Fever with danger-sign triage",
+        narrative="A patient arrives at a busy HC III with fever while the clinician is deciding who needs urgent assessment first.",
+        chapter_id="fever-malaria-acute-illness",
         source_type="generated_guideline",
         facility_level="HC III",
         topic="malaria",
@@ -125,6 +127,8 @@ class CaseModelTest(unittest.TestCase):
 
         self.assertEqual(payload["sourceType"], "generated_guideline")
         self.assertEqual(payload["facilityLevel"], "HC III")
+        self.assertEqual(payload["chapterId"], "fever-malaria-acute-illness")
+        self.assertTrue(payload["narrative"].startswith("A patient arrives"))
         self.assertEqual(payload["clinicalTruth"]["chiefComplaint"], "Fever and headache")
 
 

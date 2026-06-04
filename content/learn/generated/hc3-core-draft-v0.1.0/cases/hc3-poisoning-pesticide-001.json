@@ -1,0 +1,105 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-poisoning-pesticide-001-source",
+      "section": "Poisoning initial assessment and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Poisoning initial assessment and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Vomiting after possible pesticide exposure",
+    "dangerSigns": [
+      "Respiratory distress",
+      "Altered mental status",
+      "Seizure",
+      "Shock"
+    ],
+    "diagnosis": "Possible pesticide poisoning",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Sweating",
+      "Vomiting",
+      "Smells of chemicals"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Found near pesticide containers",
+      "Repeated vomiting",
+      "Exposure route uncertain"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "94/60 mmHg",
+      "pulse": "58 bpm",
+      "respiratory_rate": "24/min",
+      "temperature": "36.6 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Protect staff and patient from contamination.",
+      "Assess airway/breathing/circulation and arrange urgent referral while following poisoning guidance."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-poisoning-pesticide-001",
+  "narrative": "A farmer is brought by neighbours after being found vomiting near pesticide containers. They are not sure what he swallowed and want him given something quickly.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 66,
+    "hc3Reality": 85,
+    "learningValue": 86
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Possible pesticide poisoning"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Protect staff and patient from contamination.",
+    "Assess airway/breathing/circulation and arrange urgent referral while following poisoning guidance."
+  ],
+  "title": "Possible pesticide poisoning",
+  "topic": "emergency"
+}

@@ -1,4 +1,5 @@
 {
+  "chapterId": "general-hc3-practice",
   "citations": [
     {
       "id": "hc3-suspected-sti-partner-management-001-source",
@@ -77,6 +78,7 @@
   "facilityLevel": "HC III",
   "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
   "id": "hc3-suspected-sti-partner-management-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is urethral discharge. The case is titled 'Urethral discharge and partner management', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
   "reviewStatus": "needs_review",
   "scores": {
     "clinicalCorrectness": 84,

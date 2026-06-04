@@ -4,10 +4,12 @@
   "title": "CanonicalCase",
   "type": "object",
   "additionalProperties": true,
-  "required": ["id", "title", "sourceType", "facilityLevel", "topic", "simulatedPatient", "clinicalTruth", "citations", "scores", "sourceGuidelineIds"],
+  "required": ["id", "title", "narrative", "chapterId", "sourceType", "facilityLevel", "topic", "simulatedPatient", "clinicalTruth", "citations", "scores", "sourceGuidelineIds"],
   "properties": {
     "id": { "type": "string", "minLength": 1 },
     "title": { "type": "string", "minLength": 1 },
+    "narrative": { "type": "string", "minLength": 1 },
+    "chapterId": { "type": "string", "minLength": 1 },
     "sourceType": { "type": "string", "enum": ["generated_guideline", "reviewer_authored", "literature_adapted"] },
     "facilityLevel": { "type": "string" },
     "topic": { "type": "string" },

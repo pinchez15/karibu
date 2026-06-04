@@ -18,7 +18,7 @@ from karibu_case_generation.models import (
 )
 
 
-def generate_hc3_draft_pack(output_dir: Path, count: int = 10) -> None:
+def generate_hc3_draft_pack(output_dir: Path, count: int = 100) -> None:
     cases = _draft_cases()[:count]
     variants: list[PlayableCaseVariant] = []
     for case in cases:
@@ -26,8 +26,8 @@ def generate_hc3_draft_pack(output_dir: Path, count: int = 10) -> None:
 
     export_kpack_directory(
         output_dir=output_dir,
-        pack_id="hc3-core-draft",
-        title="HC III Core Practice Draft",
+        pack_id="hc3-cpd-curriculum-draft",
+        title="HC III CPD Curriculum Draft",
         version="0.1.0",
         canonical_cases=cases,
         variants=variants,
@@ -35,7 +35,7 @@ def generate_hc3_draft_pack(output_dir: Path, count: int = 10) -> None:
 
 
 def _draft_cases() -> list[CanonicalCase]:
-    return [
+    cases = [
         _case(
             case_id="hc3-fever-malaria-triage-001",
             title="Fever with malaria triage",
@@ -361,6 +361,522 @@ def _draft_cases() -> list[CanonicalCase]:
             scores=(82, 86, 78, 48),
         ),
     ]
+    return cases + _additional_cases() + _chapter_expansion_cases()
+
+
+def _additional_cases() -> list[CanonicalCase]:
+    return [
+        _compact_case(
+            "hc3-postpartum-haemorrhage-001",
+            "Bleeding after delivery",
+            "maternal_anc",
+            "A mother who delivered at the facility less than an hour ago is still bleeding heavily while the ward is busy. Her attendant says the cloths are soaking quickly and asks whether this is normal.",
+            "Heavy bleeding after delivery",
+            ["Delivered about 45 minutes ago", "Bleeding is continuing", "Feels dizzy when sitting up"],
+            {"bp": "88/54 mmHg", "pulse": "128 bpm", "respiratory_rate": "26/min", "temperature": "36.7 C"},
+            ["Pale", "Ongoing vaginal bleeding", "Uterus feels soft on abdominal exam"],
+            "Suspected postpartum haemorrhage",
+            ["Recognize PPH as an emergency.", "Call for help and start immediate HC III emergency actions while arranging escalation/referral."],
+            ["Shock", "Persistent heavy bleeding", "Altered mental status"],
+            ["uganda-clinical-guidelines-2023"],
+            "Postpartum haemorrhage emergency response",
+            (92, 90, 92, 68),
+        ),
+        _compact_case(
+            "hc3-eclampsia-convulsion-001",
+            "Convulsion in late pregnancy",
+            "maternal_anc",
+            "During an antenatal clinic morning, a pregnant woman waiting outside suddenly collapses and has a convulsion. Her sister says she complained of headache and blurred vision before leaving home.",
+            "Convulsion during pregnancy",
+            ["Approximately 34 weeks pregnant", "Severe headache earlier today", "Blurred vision reported"],
+            {"bp": "170/110 mmHg", "pulse": "112 bpm", "respiratory_rate": "24/min", "temperature": "36.8 C"},
+            ["Post-ictal but breathing", "No trauma seen", "Pedal oedema"],
+            "Suspected eclampsia",
+            ["Protect airway and safety during convulsion.", "Recognize eclampsia and arrange urgent referral after immediate stabilization."],
+            ["Convulsion", "Severe hypertension", "Severe headache", "Visual symptoms"],
+            ["uganda-clinical-guidelines-2023"],
+            "Eclampsia recognition and emergency referral",
+            (93, 88, 93, 74),
+        ),
+        _compact_case(
+            "hc3-prolonged-labour-partograph-001",
+            "Slow labour progress on the partograph",
+            "maternal_anc",
+            "A midwife hands over a mother in active labour whose cervical dilation has not changed as expected. The family is anxious because the labour started the previous night.",
+            "Labour not progressing",
+            ["Contractions began last night", "Membranes ruptured several hours ago", "No heavy bleeding reported"],
+            {"bp": "118/74 mmHg", "pulse": "98 bpm", "temperature": "37.4 C", "fetal_heart_rate": "166 bpm"},
+            ["Cervical progress slow on partograph", "Mother tired", "No obvious convulsion or shock"],
+            "Prolonged labour with concern for fetal/maternal risk",
+            ["Use the partograph to recognize abnormal progress.", "Escalate early when labour crosses danger thresholds or fetal distress is suspected."],
+            ["Fetal distress", "Maternal exhaustion", "Fever", "Obstructed labour concern"],
+            ["uganda-clinical-guidelines-2023"],
+            "Monitoring labour using a partograph",
+            (87, 86, 90, 70),
+        ),
+        _compact_case(
+            "hc3-newborn-not-breathing-001",
+            "Newborn not breathing well",
+            "neonatal",
+            "A baby is delivered at night after a long labour. The room becomes quiet when the newborn does not cry immediately, and the birth attendant looks to you for the next action.",
+            "Newborn not crying after birth",
+            ["Term baby by dates", "Long labour", "No cry immediately after birth"],
+            {"heart_rate": "Slow by quick assessment", "breathing": "Gasps irregularly", "temperature": "Not yet measured"},
+            ["Poor tone", "No strong cry", "Cord just clamped"],
+            "Newborn requiring immediate resuscitation assessment",
+            ["Recognize failure to breathe as an immediate emergency.", "Start appropriate newborn resuscitation steps and call for help."],
+            ["Not breathing", "Poor tone", "Slow heart rate"],
+            ["uganda-clinical-guidelines-2023"],
+            "Neonatal resuscitation initial response",
+            (90, 87, 94, 76),
+        ),
+        _compact_case(
+            "hc3-neonate-fever-sepsis-001",
+            "Newborn with fever and poor feeding",
+            "neonatal",
+            "A grandmother brings a 9-day-old baby wrapped tightly in a blanket. She says the baby has stopped breastfeeding well and feels hot.",
+            "Newborn fever and poor feeding",
+            ["Nine days old", "Poor feeding since yesterday", "Feels hot at home"],
+            {"temperature": "38.4 C", "pulse": "168 bpm", "respiratory_rate": "62/min", "weight": "3.1 kg"},
+            ["Weak suck", "Sleepy but rousable", "No obvious congenital abnormality"],
+            "Possible neonatal sepsis",
+            ["Treat fever and poor feeding in a neonate as high risk.", "Stabilize and arrange urgent referral according to neonatal guidance."],
+            ["Poor feeding", "Fever", "Fast breathing", "Lethargy"],
+            ["uganda-clinical-guidelines-2023", "who-imnci-chart-booklet"],
+            "Young infant fever and possible serious bacterial infection",
+            (89, 88, 90, 64),
+        ),
+        _compact_case(
+            "hc3-asthma-acute-wheeze-001",
+            "Young adult with acute wheeze",
+            "emergency",
+            "A boda rider arrives leaning forward and speaking in short phrases. He says the dust on the road made his chest tight and his inhaler finished last week.",
+            "Shortness of breath and wheeze",
+            ["Known episodes of wheeze", "Symptoms worsened today", "Reliever inhaler unavailable"],
+            {"respiratory_rate": "34/min", "pulse": "118 bpm", "spo2": "Not available", "bp": "126/78 mmHg"},
+            ["Audible wheeze", "Uses accessory muscles", "Speaks in short phrases"],
+            "Acute asthma/wheeze exacerbation",
+            ["Assess severity immediately.", "Give available bronchodilator treatment and refer if severe or not improving."],
+            ["Unable to speak", "Exhaustion", "Cyanosis", "Silent chest"],
+            ["uganda-clinical-guidelines-2023", "uganda-essential-medicines-list-2023"],
+            "Acute wheeze severity and referral",
+            (86, 86, 86, 60),
+        ),
+        _compact_case(
+            "hc3-hypoglycaemia-altered-consciousness-001",
+            "Sweating and confusion in a diabetic patient",
+            "emergency",
+            "A market vendor known to have diabetes is brought in confused and sweating. Her daughter says she took medicine in the morning but missed lunch.",
+            "Confusion and sweating",
+            ["Known diabetes", "Missed meal", "Became confused suddenly"],
+            {"temperature": "36.5 C", "pulse": "110 bpm", "bp": "132/80 mmHg", "respiratory_rate": "20/min"},
+            ["Sweaty", "Confused", "No focal weakness noted"],
+            "Suspected hypoglycaemia",
+            ["Check glucose rapidly if available.", "Treat suspected hypoglycaemia promptly when clinically likely and safe."],
+            ["Unconsciousness", "Seizure", "Unable to swallow safely"],
+            ["uganda-clinical-guidelines-2023"],
+            "Hypoglycaemia recognition and immediate management",
+            (86, 84, 84, 55),
+        ),
+        _compact_case(
+            "hc3-burns-fluid-risk-001",
+            "Child with hot water burns",
+            "emergency",
+            "A toddler is carried in crying after pulling hot water from a charcoal stove. The mother is frightened and asks for cream for the skin.",
+            "Hot water burn",
+            ["Burn occurred one hour ago", "Hot water spilled on chest and arm", "No inhalation injury reported"],
+            {"temperature": "36.9 C", "pulse": "132 bpm", "respiratory_rate": "30/min", "weight": "12 kg"},
+            ["Partial thickness burn over anterior chest and arm", "Crying", "No soot around mouth"],
+            "Paediatric burn requiring severity assessment",
+            ["Estimate burn severity and assess airway/breathing/circulation.", "Provide first aid, pain care, and referral when burn severity exceeds HC III capacity."],
+            ["Large surface area", "Face/airway involvement", "Shock", "Very young child"],
+            ["uganda-clinical-guidelines-2023"],
+            "Burn assessment and referral",
+            (84, 86, 84, 58),
+        ),
+        _compact_case(
+            "hc3-intimate-partner-violence-001",
+            "Injury with a hidden safety concern",
+            "patient_safety",
+            "A woman comes for treatment of a bruised arm and says she fell. When her partner steps outside to answer a call, she becomes tearful and says this has happened before.",
+            "Arm injury after reported fall",
+            ["Mechanism unclear", "Patient later discloses repeated violence", "No loss of consciousness"],
+            {"temperature": "36.7 C", "pulse": "94 bpm", "bp": "122/76 mmHg", "respiratory_rate": "18/min"},
+            ["Bruising on upper arm", "No obvious fracture deformity", "Anxious affect"],
+            "Injury with intimate partner violence concern",
+            ["Ensure privacy and immediate safety.", "Treat injuries, document clearly, and link to local safeguarding/referral pathways."],
+            ["Immediate danger", "Sexual violence", "Severe injury", "Suicidal thoughts"],
+            ["uganda-clinical-guidelines-2023"],
+            "Respectful communication and safeguarding",
+            (80, 86, 88, 67),
+        ),
+        _compact_case(
+            "hc3-needlestick-exposure-001",
+            "Needle-stick injury after injection",
+            "patient_safety",
+            "A nursing assistant quietly reports that she pricked her finger while cleaning up after an injection. She is embarrassed and asks whether she should just wash it and continue working.",
+            "Needle-stick injury",
+            ["Injury occurred minutes ago", "Source patient HIV status not immediately known", "Finger washed briefly"],
+            {"temperature": "36.8 C", "pulse": "82 bpm", "bp": "118/72 mmHg", "respiratory_rate": "16/min"},
+            ["Small puncture wound", "No active bleeding", "Anxious staff member"],
+            "Occupational exposure requiring post-exposure pathway",
+            ["Respond promptly and non-punitively.", "Follow occupational exposure protocol, documentation, testing, and PEP pathway as indicated."],
+            ["Delay in reporting", "High-risk exposure", "Unknown source status"],
+            ["uganda-hiv-aids-consolidated-guidelines-2023"],
+            "Post-exposure prophylaxis and infection prevention",
+            (86, 88, 86, 56),
+        ),
+        _compact_case(
+            "hc3-medication-allergy-documentation-001",
+            "Rash after previous antibiotic",
+            "patient_safety",
+            "A mother says her child developed a bad rash the last time a similar medicine was given. The queue is long and the dispenser asks whether to continue with the usual prescription.",
+            "Previous rash after medicine",
+            ["Rash occurred after prior antibiotic", "No current severe illness", "Caregiver remembers the medicine color but not name"],
+            {"temperature": "37.2 C", "pulse": "98 bpm", "respiratory_rate": "22/min", "weight": "18 kg"},
+            ["No current rash", "Well appearing", "No respiratory distress"],
+            "Possible medication allergy requiring documentation and safe prescribing",
+            ["Clarify and document allergy history.", "Avoid unsafe prescribing when allergy history is concerning and seek safer alternatives according to guidance."],
+            ["Anaphylaxis history", "Breathing difficulty", "Mucosal involvement", "Severe rash"],
+            ["uganda-clinical-guidelines-2023", "uganda-essential-medicines-list-2023"],
+            "Medication allergy safety and documentation",
+            (80, 84, 86, 50),
+        ),
+        _compact_case(
+            "hc3-adolescent-confidentiality-sti-001",
+            "Adolescent asks for private advice",
+            "hiv_tb",
+            "A 17-year-old waits until her aunt leaves the room and then quietly asks if she can talk privately about discharge and pain during urination.",
+            "Genital symptoms and request for privacy",
+            ["Adolescent requests confidential discussion", "Dysuria and discharge", "Worried family will find out"],
+            {"temperature": "36.9 C", "pulse": "86 bpm", "bp": "108/70 mmHg", "respiratory_rate": "16/min"},
+            ["Anxious", "No severe abdominal pain", "No fever"],
+            "Possible STI with confidentiality and safeguarding needs",
+            ["Create a private, respectful space.", "Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care."],
+            ["Sexual violence", "Pregnancy danger signs", "Severe pelvic pain", "Fever"],
+            ["uganda-clinical-guidelines-2023", "uganda-hiv-aids-consolidated-guidelines-2023"],
+            "Adolescent STI care and respectful communication",
+            (80, 85, 88, 62),
+        ),
+        _compact_case(
+            "hc3-anaemia-pregnancy-fatigue-001",
+            "Pregnant woman with severe fatigue",
+            "maternal_anc",
+            "At an ANC visit, a pregnant woman says she becomes breathless walking from the trading centre. She looks pale but says she thought this was normal pregnancy tiredness.",
+            "Fatigue and breathlessness in pregnancy",
+            ["Pregnant in second trimester", "Progressive fatigue", "Breathless on exertion"],
+            {"bp": "104/66 mmHg", "pulse": "112 bpm", "temperature": "36.8 C", "respiratory_rate": "22/min"},
+            ["Pale conjunctiva", "No active bleeding", "No fever"],
+            "Possible anaemia in pregnancy",
+            ["Assess severity and danger signs.", "Use available testing and supplementation/referral pathway according to ANC guidance."],
+            ["Severe pallor", "Shortness of breath at rest", "Syncope", "Bleeding"],
+            ["uganda-clinical-guidelines-2023", "uganda-essential-medicines-list-2023"],
+            "Anaemia in pregnancy assessment",
+            (82, 87, 84, 52),
+        ),
+        _compact_case(
+            "hc3-malnutrition-oedema-child-001",
+            "Child with swollen feet",
+            "child_health",
+            "A caregiver brings a quiet 3-year-old whose feet have become swollen. The child has been treated twice for cough recently and is no longer playing.",
+            "Swollen feet and poor appetite",
+            ["Reduced appetite", "Swollen feet noticed this week", "Recurrent illness"],
+            {"temperature": "37.3 C", "pulse": "112 bpm", "respiratory_rate": "28/min", "weight": "10.5 kg"},
+            ["Bilateral pedal oedema", "Thin upper arms", "Quiet but rousable"],
+            "Possible severe acute malnutrition",
+            ["Recognize bilateral oedema as high-risk malnutrition sign.", "Assess danger signs and refer/manage according to nutrition protocol availability."],
+            ["Bilateral oedema", "Lethargy", "Poor appetite", "Severe wasting"],
+            ["who-imnci-chart-booklet", "uganda-clinical-guidelines-2023"],
+            "Child malnutrition danger signs",
+            (84, 88, 86, 58),
+        ),
+        _compact_case(
+            "hc3-measles-suspected-rash-fever-001",
+            "Fever with rash in an unimmunized child",
+            "child_health",
+            "A child is brought during a busy immunization day with fever, cough, red eyes, and a spreading rash. The caregiver is unsure whether the child completed vaccines.",
+            "Fever and rash",
+            ["Fever began before rash", "Cough and red eyes", "Immunization status uncertain"],
+            {"temperature": "38.7 C", "pulse": "120 bpm", "respiratory_rate": "30/min", "weight": "14 kg"},
+            ["Generalized rash", "Conjunctival redness", "No severe respiratory distress"],
+            "Suspected measles or other febrile rash illness",
+            ["Recognize possible measles and infection prevention implications.", "Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe."],
+            ["Respiratory distress", "Dehydration", "Altered mental status", "Severe eye involvement"],
+            ["uganda-clinical-guidelines-2023", "who-imnci-chart-booklet"],
+            "Fever with rash and immunization assessment",
+            (80, 86, 84, 60),
+        ),
+        _compact_case(
+            "hc3-postpartum-fever-sepsis-001",
+            "Fever after delivery",
+            "maternal_anc",
+            "Three days after delivering at home, a mother arrives with fever and lower abdominal pain. Her aunt says the baby is well but the mother has been getting weaker.",
+            "Postpartum fever and abdominal pain",
+            ["Delivered at home three days ago", "Fever since yesterday", "Lower abdominal pain"],
+            {"temperature": "39.1 C", "pulse": "118 bpm", "bp": "100/62 mmHg", "respiratory_rate": "24/min"},
+            ["Tender lower abdomen", "Foul-smelling discharge reported", "Weak but alert"],
+            "Possible postpartum infection/sepsis",
+            ["Recognize postpartum fever as potentially serious.", "Assess sepsis signs, start appropriate urgent management within scope, and refer/escalate."],
+            ["Hypotension", "High fever", "Altered mental status", "Heavy bleeding"],
+            ["uganda-clinical-guidelines-2023"],
+            "Postpartum infection and sepsis recognition",
+            (86, 88, 88, 64),
+        ),
+        _compact_case(
+            "hc3-family-planning-danger-headache-001",
+            "Severe headache on contraception",
+            "family_planning",
+            "A woman attending family planning clinic says she has severe new headaches and blurred vision. She wants another refill quickly because she needs to return to work.",
+            "Severe headache and blurred vision",
+            ["Using hormonal contraception", "New severe headaches", "Blurred vision"],
+            {"bp": "162/100 mmHg", "pulse": "90 bpm", "temperature": "36.7 C", "respiratory_rate": "18/min"},
+            ["Alert", "No weakness", "Anxious about time"],
+            "Danger symptoms during family planning follow-up",
+            ["Do not treat refill as routine when danger symptoms are present.", "Assess blood pressure and refer/escalate according to contraceptive safety guidance."],
+            ["Severe headache", "Visual symptoms", "Severe hypertension", "Neurologic deficit"],
+            ["uganda-clinical-guidelines-2023"],
+            "Family planning danger symptoms",
+            (80, 84, 84, 55),
+        ),
+        _compact_case(
+            "hc3-queue-deterioration-triage-001",
+            "Quiet patient deteriorates in the queue",
+            "patient_safety",
+            "A records officer says an elderly patient waiting quietly for registration is now sweating and looks faint. The queue is long and several louder patients are demanding attention.",
+            "Weakness while waiting",
+            ["Symptoms worsened while waiting", "Elderly patient", "No full history yet"],
+            {"bp": "82/50 mmHg", "pulse": "124 bpm", "respiratory_rate": "28/min", "temperature": "37.9 C"},
+            ["Sweaty", "Weak voice", "Cool peripheries"],
+            "Unstable patient requiring urgent triage escalation",
+            ["Recognize deterioration in queue as urgent.", "Escalate immediately, obtain vitals, and start ABC-style assessment rather than waiting for routine flow."],
+            ["Hypotension", "Altered mental status", "Respiratory distress", "Signs of shock"],
+            ["uganda-clinical-guidelines-2023"],
+            "Triage escalation and work organization",
+            (84, 90, 88, 57),
+        ),
+        _compact_case(
+            "hc3-poisoning-pesticide-001",
+            "Possible pesticide poisoning",
+            "emergency",
+            "A farmer is brought by neighbours after being found vomiting near pesticide containers. They are not sure what he swallowed and want him given something quickly.",
+            "Vomiting after possible pesticide exposure",
+            ["Found near pesticide containers", "Repeated vomiting", "Exposure route uncertain"],
+            {"pulse": "58 bpm", "bp": "94/60 mmHg", "respiratory_rate": "24/min", "temperature": "36.6 C"},
+            ["Sweating", "Vomiting", "Smells of chemicals"],
+            "Possible pesticide poisoning",
+            ["Protect staff and patient from contamination.", "Assess airway/breathing/circulation and arrange urgent referral while following poisoning guidance."],
+            ["Respiratory distress", "Altered mental status", "Seizure", "Shock"],
+            ["uganda-clinical-guidelines-2023"],
+            "Poisoning initial assessment and referral",
+            (80, 85, 86, 66),
+        ),
+        _compact_case(
+            "hc3-sickle-cell-pain-fever-001",
+            "Pain crisis with fever",
+            "emergency",
+            "A teenager known to have sickle cell disease arrives with severe limb pain. His mother says he also developed fever overnight.",
+            "Severe limb pain and fever",
+            ["Known sickle cell disease", "Severe limb pain", "Fever started overnight"],
+            {"temperature": "38.9 C", "pulse": "116 bpm", "bp": "108/66 mmHg", "respiratory_rate": "24/min"},
+            ["In pain", "No obvious trauma", "No respiratory distress at rest"],
+            "Sickle cell pain episode with infection concern",
+            ["Treat pain seriously and assess fever as a risk sign.", "Evaluate for infection and refer/escalate if danger signs or severe complications are present."],
+            ["Fever", "Chest pain", "Respiratory distress", "Severe pallor", "Altered mental status"],
+            ["uganda-clinical-guidelines-2023"],
+            "Sickle cell fever and pain crisis assessment",
+            (80, 84, 84, 62),
+        ),
+        _compact_case(
+            "hc3-mental-health-suicide-risk-001",
+            "Sadness with self-harm risk",
+            "mental_health",
+            "A young man comes with stomach pain, but after a quiet conversation he says he has not slept and has thought about taking poison.",
+            "Abdominal pain with disclosed self-harm thoughts",
+            ["Poor sleep", "Low mood", "Thoughts of taking poison"],
+            {"temperature": "36.8 C", "pulse": "88 bpm", "bp": "116/74 mmHg", "respiratory_rate": "18/min"},
+            ["Withdrawn", "No acute abdomen signs", "Oriented"],
+            "Possible depression with suicide risk",
+            ["Ask directly and respectfully about self-harm risk.", "Do not dismiss somatic complaints; ensure safety and urgent mental health referral/escalation when risk is present."],
+            ["Active plan", "Access to poison", "Psychosis", "Unable to ensure safety"],
+            ["uganda-clinical-guidelines-2023"],
+            "Mental health risk assessment and referral",
+            (80, 82, 88, 68),
+        ),
+    ]
+
+
+def _chapter_expansion_cases() -> list[CanonicalCase]:
+    specs = [
+        # Fever, malaria, acute illness
+        ("hc3-fever-negative-malaria-test-001", "Fever after negative malaria test", "malaria", "fever-malaria-acute-illness", "A teenager returns from school with fever, but the malaria RDT done at triage is negative. The family still expects malaria medicine because that is what usually happens.", "Fever with negative malaria test", "Febrile illness with malaria less likely after negative test", ["Avoid anchoring on malaria when test and presentation suggest alternatives.", "Safety-net and reassess for danger signs."], ["Persistent fever", "Confusion", "Respiratory distress"]),
+        ("hc3-fever-neck-stiffness-001", "Fever with neck stiffness", "emergency", "fever-malaria-acute-illness", "A young adult with fever is brought in because he cannot bend his neck comfortably and keeps shielding his eyes from light.", "Fever and neck stiffness", "Possible meningitis or severe febrile illness", ["Recognize meningitis danger signs.", "Stabilize and arrange urgent referral rather than routine outpatient treatment."], ["Neck stiffness", "Altered mental status", "Convulsions"]),
+        ("hc3-fever-after-miscarriage-001", "Fever after miscarriage", "maternal_anc", "fever-malaria-acute-illness", "A woman comes quietly with fever and lower abdominal pain after bleeding heavily at home two days ago. She is worried about being judged.", "Fever after pregnancy loss", "Possible post-abortion infection/sepsis", ["Provide nonjudgmental emergency care.", "Recognize post-pregnancy infection as potentially life-threatening."], ["High fever", "Hypotension", "Heavy bleeding"]),
+        ("hc3-typhoid-like-fever-001", "Long fever with abdominal symptoms", "guidelines_general", "fever-malaria-acute-illness", "A shopkeeper has had fever for more than a week and now has abdominal discomfort. A neighbour advised antimalarials, but the symptoms have continued.", "Prolonged fever with abdominal pain", "Prolonged febrile illness requiring structured assessment", ["Do not repeat malaria treatment blindly.", "Use duration and abdominal symptoms to broaden differential diagnosis."], ["Shock", "Confusion", "Severe dehydration"]),
+        ("hc3-fever-sickle-cell-child-001", "Fever in a child with sickle cell disease", "emergency", "fever-malaria-acute-illness", "A caregiver says her child with sickle cell disease has fever and looks weaker than usual. She asks if this can wait until morning.", "Fever in known sickle cell disease", "High-risk febrile illness in sickle cell disease", ["Treat fever in sickle cell disease as higher risk.", "Assess for severe anaemia, infection, and respiratory symptoms."], ["Severe pallor", "Respiratory distress", "Lethargy"]),
+        ("hc3-fever-returning-traveller-001", "Fever after travel to border district", "outbreak", "outbreak-ipc-ebola-vhf", "A trader returns from a border district and develops fever. The triage nurse remembers radio announcements about outbreak surveillance.", "Fever after travel", "Outbreak-aware febrile illness requiring IPC screening", ["Ask travel and contact history during outbreaks.", "Separate and notify according to outbreak protocol when risk criteria are met."], ["Bleeding", "Known Ebola contact", "Severe weakness"]),
+        ("hc3-fever-health-worker-exposure-001", "Fever in a health worker after exposure", "outbreak", "outbreak-ipc-ebola-vhf", "A health worker from another facility presents with fever after caring for a patient later reported as a suspected Ebola case.", "Fever after healthcare exposure", "Possible viral haemorrhagic fever exposure", ["Protect staff and other patients first.", "Use isolation, notification, and referral pathways."], ["Known contact", "Vomiting", "Bleeding"]),
+
+        # Child health and IMNCI
+        ("hc3-child-ear-pain-fever-001", "Child with ear pain and fever", "child_health", "child-health-imnci", "A caregiver brings a crying child who keeps pulling at one ear. The child has fever but is still drinking.", "Ear pain and fever", "Acute ear problem requiring assessment", ["Check danger signs before focusing on ear symptoms.", "Counsel caregiver on follow-up and worsening signs."], ["Mastoid swelling", "Lethargy", "Unable to drink"]),
+        ("hc3-child-fever-convulsion-001", "Child after a convulsion", "child_health", "child-health-imnci", "A mother arrives frightened after her child convulsed at home during a fever. The child is now sleepy.", "Fever with convulsion", "Febrile convulsion vs serious illness", ["Post-convulsion assessment must look for serious causes.", "Convulsion is a danger sign requiring careful escalation decisions."], ["Repeated convulsions", "Unconsciousness", "Neck stiffness"]),
+        ("hc3-child-very-low-weight-001", "Small child not gaining weight", "child_health", "child-health-imnci", "A grandmother asks for vitamins for a child who is smaller than neighbours of the same age and often has diarrhoea.", "Poor growth", "Possible undernutrition or chronic illness", ["Growth concerns need structured nutrition and illness assessment.", "Look for oedema and danger signs."], ["Bilateral oedema", "Poor appetite", "Lethargy"]),
+        ("hc3-child-eye-discharge-newborn-001", "Newborn with eye discharge", "neonatal", "child-health-imnci", "A two-week-old baby has swollen eyelids and discharge. The mother asks for drops from the dispensary.", "Newborn eye discharge", "Possible neonatal eye infection", ["Young infant problems can worsen quickly.", "Assess feeding, fever, and systemic danger signs."], ["Poor feeding", "Fever", "Swollen eyelids"]),
+        ("hc3-child-immunization-missed-001", "Missed immunization opportunity", "child_health", "child-health-imnci", "A child comes for cough, and the card shows missed vaccines. The clinic is busy and the caregiver is about to leave.", "Cough with missed immunizations", "Missed preventive care opportunity", ["Use sick visits to check immunization status.", "Balance acute care with prevention counseling."], ["Severe illness", "Respiratory distress", "Contraindication concern"]),
+        ("hc3-child-abdominal-pain-worms-001", "Child with abdominal pain and poor appetite", "child_health", "child-health-imnci", "A school-age child complains of abdominal pain and poor appetite. The caregiver wants deworming but has not noticed danger signs.", "Abdominal pain and poor appetite", "Common child abdominal complaint needing danger-sign screen", ["Do not skip danger-sign assessment in common complaints.", "Use age-appropriate prevention and follow-up counseling."], ["Severe pain", "Vomiting everything", "Bloody stool"]),
+        ("hc3-child-skin-infection-001", "Child with spreading skin sores", "child_health", "child-health-imnci", "A child has several crusted sores on the legs and now one area is warm and swollen.", "Spreading skin sores", "Skin infection with complication screen", ["Assess extent and systemic symptoms.", "Explain hygiene and return precautions."], ["Fever", "Rapid spread", "Severe pain"]),
+
+        # Maternal/midwifery
+        ("hc3-anc-reduced-fetal-movement-001", "Reduced fetal movement", "maternal_anc", "maternal-midwifery-emergencies", "A pregnant woman says the baby has moved less since yesterday. She looks calm but says she knows something feels different.", "Reduced fetal movement", "Possible fetal compromise needing assessment/referral", ["Take reduced fetal movement seriously.", "Assess gestational age and fetal status within HC III capability."], ["Absent fetal movement", "Bleeding", "Severe abdominal pain"]),
+        ("hc3-anc-vaginal-bleeding-001", "Bleeding in late pregnancy", "maternal_anc", "maternal-midwifery-emergencies", "A woman in late pregnancy arrives with fresh bleeding on her clothing. Her relatives want her moved quickly to the delivery room.", "Vaginal bleeding in pregnancy", "Antepartum bleeding emergency", ["Recognize bleeding in pregnancy as high risk.", "Avoid unsafe delays and arrange urgent referral/escalation."], ["Shock", "Heavy bleeding", "Severe abdominal pain"]),
+        ("hc3-postnatal-breast-pain-fever-001", "Breast pain and fever after delivery", "maternal_anc", "maternal-midwifery-emergencies", "A postnatal mother has breast pain and fever, and she is considering stopping breastfeeding.", "Breast pain and fever", "Possible mastitis with breastfeeding support needs", ["Support feeding while assessing infection severity.", "Look for systemic illness or abscess concern."], ["High fever", "Abscess", "Very ill appearance"]),
+        ("hc3-respectful-maternity-care-001", "Anxious labouring mother", "maternal_anc", "maternal-midwifery-emergencies", "A first-time mother is scared and crying during labour. A relative complains that staff are ignoring her.", "Fear and pain during labour", "Respectful maternity care and communication challenge", ["Respectful communication is clinical care.", "Explain assessments and preserve dignity under pressure."], ["Clinical deterioration", "Fetal distress", "Bleeding"]),
+        ("hc3-breech-recognition-001", "Possible breech presentation", "maternal_anc", "maternal-midwifery-emergencies", "During labour assessment, the presenting part does not feel like a head. The room is crowded and the mother asks if everything is normal.", "Abnormal presentation concern", "Possible breech requiring escalation", ["Recognize presentation concerns early.", "Escalate before obstructed labour develops."], ["Obstructed labour", "Fetal distress", "Cord prolapse"]),
+        ("hc3-shoulder-dystocia-warning-001", "Birth not progressing after head delivers", "maternal_anc", "maternal-midwifery-emergencies", "The baby's head has delivered but the shoulders are not coming. The mother is exhausted and the room becomes tense.", "Shoulders not delivering", "Possible shoulder dystocia emergency", ["Call for help immediately.", "Use trained emergency response and avoid harmful traction."], ["Failure of shoulders to deliver", "Fetal distress", "Maternal exhaustion"]),
+        ("hc3-postnatal-depression-screen-001", "Tearful postnatal mother", "mental_health", "mental-health-psychosocial-care", "A mother returns for baby review but quietly says she feels hopeless and cannot sleep even when the baby sleeps.", "Low mood after delivery", "Possible postnatal depression or safety concern", ["Ask about mood and safety respectfully.", "Assess self-harm or harm-to-baby risk and refer when needed."], ["Self-harm thoughts", "Psychosis", "Unable to care for baby"]),
+
+        # Neonatal/emergency
+        ("hc3-neonate-jaundice-001", "Yellow newborn", "neonatal", "neonatal-emergency-care", "A mother notices her newborn's eyes are yellow. The baby is sleepy and feeding less.", "Yellow eyes in newborn", "Neonatal jaundice with danger assessment", ["Assess feeding and activity, not just skin colour.", "Refer urgently if severe or early jaundice signs are present."], ["Poor feeding", "Lethargy", "Deep jaundice"]),
+        ("hc3-neonate-hypothermia-001", "Cold newborn after transport", "neonatal", "neonatal-emergency-care", "A newborn arrives after a long boda ride wrapped in thin cloth. The baby feels cold to touch.", "Cold newborn", "Neonatal hypothermia risk", ["Temperature protection is urgent neonatal care.", "Assess for infection and feeding difficulty."], ["Very low temperature", "Poor feeding", "Lethargy"]),
+        ("hc3-child-choking-001", "Child choking on groundnut", "emergency", "neonatal-emergency-care", "A caregiver runs in carrying a toddler who suddenly started choking while eating groundnuts.", "Choking episode", "Airway emergency", ["Recognize airway obstruction immediately.", "Use age-appropriate emergency response and referral after stabilization."], ["Unable to cry", "Cyanosis", "Unconsciousness"]),
+        ("hc3-snakebite-001", "Snakebite on the foot", "emergency", "emergency-critical-care", "A farmer is carried in after a snakebite. Someone has tied a tight cloth above the bite.", "Snakebite", "Snakebite requiring safe first aid and referral assessment", ["Remove harmful first-aid practices safely.", "Assess neurotoxic/bleeding signs and refer when indicated."], ["Bleeding", "Breathing difficulty", "Progressive swelling"]),
+        ("hc3-road-traffic-injury-001", "Boda crash with abdominal pain", "emergency", "emergency-critical-care", "A boda passenger arrives after a crash, walking but pale. He says his abdomen hurts more each minute.", "Abdominal pain after crash", "Trauma with internal injury concern", ["Do not be reassured by walking after trauma.", "Assess shock and refer urgently when internal injury is possible."], ["Hypotension", "Severe abdominal pain", "Confusion"]),
+        ("hc3-severe-dehydration-adult-001", "Adult with profuse diarrhoea", "emergency", "emergency-critical-care", "A fish trader has had profuse watery diarrhoea since dawn and is now too weak to stand.", "Profuse diarrhoea and weakness", "Severe dehydration concern", ["Assess hydration and shock quickly.", "Begin rehydration within scope and refer if unstable."], ["Shock", "Unable to drink", "Altered mental status"]),
+        ("hc3-acute-chest-pain-001", "Chest pain in older adult", "emergency", "emergency-critical-care", "An older man says an elephant is sitting on his chest. He came because the pain did not settle after resting.", "Chest pain", "Possible acute coronary syndrome or other emergency", ["Treat chest pain as potentially serious.", "Assess stability and refer for higher-level evaluation."], ["Collapse", "Severe breathlessness", "Hypotension"]),
+
+        # HIV/TB/STI continuity
+        ("hc3-tb-contact-child-001", "Child living with TB contact", "hiv_tb", "hiv-tb-sti-continuity", "A caregiver with known TB brings a child for cough. The child sleeps in the same room.", "Child cough with TB contact", "TB exposure requiring screening pathway", ["Ask household contact history.", "Follow TB contact screening and referral/prevention pathways."], ["Weight loss", "Persistent fever", "Lethargy"]),
+        ("hc3-hiv-new-positive-counsel-001", "New positive HIV test", "hiv_tb", "hiv-tb-sti-continuity", "A patient receives a positive HIV test result and becomes silent. The room is busy and privacy is limited.", "New HIV diagnosis", "Post-test counseling and linkage challenge", ["Privacy and counseling quality matter.", "Link to care and screen for TB/safety concerns."], ["Severe distress", "TB symptoms", "Pregnancy"]),
+        ("hc3-art-side-effects-001", "Nausea after starting ART", "hiv_tb", "hiv-tb-sti-continuity", "A patient started ART recently and now wants to stop because of nausea and dizziness.", "ART side effects", "Adherence support and side-effect assessment", ["Assess severity and adherence barriers.", "Support continuation or escalation according to guidance."], ["Severe rash", "Jaundice", "Severe weakness"]),
+        ("hc3-tb-treatment-interruption-001", "Missed TB treatment doses", "hiv_tb", "hiv-tb-sti-continuity", "A TB patient missed several doses after travelling for a burial and is afraid the clinic will be angry.", "Missed TB doses", "TB treatment interruption risk", ["Respond without blame.", "Assess symptoms, adherence barrier, and re-link to TB care."], ["Severe illness", "Haemoptysis", "Breathlessness"]),
+        ("hc3-pmtct-first-anc-001", "First ANC visit and HIV testing", "hiv_tb", "hiv-tb-sti-continuity", "A pregnant woman attends her first ANC visit with her partner waiting outside and is nervous about testing.", "First ANC HIV testing discussion", "PMTCT counseling and consent", ["Offer respectful testing and counseling.", "Support confidentiality and linkage to PMTCT care."], ["Partner violence risk", "Positive test distress", "Pregnancy danger signs"]),
+        ("hc3-genital-ulcer-001", "Painful genital ulcer", "hiv_tb", "hiv-tb-sti-continuity", "A patient asks for a private consultation because of a painful genital sore and fear of being recognized.", "Genital ulcer", "STI syndrome requiring privacy and HIV risk assessment", ["Protect confidentiality.", "Use syndromic assessment and offer HIV/syphilis testing where available."], ["Severe systemic illness", "Sexual violence", "Pregnancy"]),
+        ("hc3-cough-hiv-positive-001", "Cough in patient living with HIV", "hiv_tb", "hiv-tb-sti-continuity", "A patient on ART reports cough, fever, and weight loss but says they came only for refill.", "Cough in HIV-positive patient", "TB screen during ART refill", ["Every ART contact is a chance to screen TB symptoms.", "Do not make refill the only task."], ["Severe breathlessness", "Haemoptysis", "Very ill appearance"]),
+
+        # Patient safety / communication
+        ("hc3-ipc-hand-hygiene-cluster-001", "Several staff with diarrhoea", "patient_safety", "patient-safety-communication", "Two staff and several patients report diarrhoea after a busy clinic day. The in-charge asks whether this is just food poisoning.", "Possible facility-associated diarrhoea cluster", "IPC and outbreak reporting concern", ["Think beyond individual treatment when cases cluster.", "Start IPC review and notification pathway."], ["Severe dehydration", "Multiple linked cases", "Health worker illness"]),
+        ("hc3-consent-minor-procedure-001", "Wound cleaning without explanation", "patient_safety", "patient-safety-communication", "A child is crying before wound cleaning, and the caregiver says nobody explained what will happen.", "Procedure fear and consent", "Communication and consent challenge", ["Explain procedures in understandable language.", "Consent and assent support safer care."], ["Severe wound", "Safeguarding concern", "Shock"]),
+        ("hc3-medication-dose-weight-001", "Child dose without weight", "patient_safety", "patient-safety-communication", "A busy dispenser asks for the medicine dose before the child's weight has been checked.", "Prescription for child without weight", "Medication safety risk", ["Weight matters for child dosing.", "Pause unsafe workflow and obtain missing data."], ["Very low weight", "Allergy", "Severe illness"]),
+        ("hc3-lab-result-critical-value-001", "Critical lab result after patient left", "patient_safety", "patient-safety-communication", "A lab assistant finds a concerning result after the patient has gone home. Nobody is sure who should call.", "Critical result follow-up", "Communication and task ownership issue", ["Critical results need closed-loop communication.", "Assign responsibility and document action."], ["Unable to contact", "Severe abnormality", "Clinical deterioration"]),
+        ("hc3-privacy-crowded-room-001", "Sensitive disclosure in crowded room", "patient_safety", "patient-safety-communication", "A patient starts discussing sexual symptoms while other patients can hear through the curtain.", "Sensitive symptoms with privacy concern", "Confidentiality and respectful care", ["Create privacy before sensitive history.", "Respect improves clinical information quality."], ["Violence disclosure", "Adolescent safety", "Severe symptoms"]),
+        ("hc3-referral-communication-001", "Referral without clear note", "patient_safety", "patient-safety-communication", "An ambulance is leaving soon, but the referral note only says 'very sick'. The receiving facility calls asking for details.", "Urgent referral documentation", "Referral communication quality", ["Referral notes need actionable clinical data.", "Vitals, danger signs, actions taken, and reason for referral should be documented."], ["Unstable patient", "Missing vitals", "Treatment given unclear"]),
+        ("hc3-stockout-alternative-plan-001", "Medicine stockout during busy clinic", "patient_safety", "patient-safety-communication", "The first-line medicine is out of stock. A patient asks whether any available tablet will do.", "Medicine stockout", "Safe alternative and escalation decision", ["Stockouts require safe escalation, not improvisation.", "Use guideline-compatible alternatives and document constraints."], ["Severe disease", "No safe alternative", "Referral needed"]),
+
+        # Outbreak, IPC, Ebola/VHF
+        ("hc3-ebola-fever-bleeding-travel-001", "Fever, bleeding, and travel history", "outbreak", "outbreak-ipc-ebola-vhf", "During the current Ebola alert, a patient with fever reports travel from a border area and later mentions bleeding gums.", "Fever with bleeding and travel", "Suspected viral haemorrhagic fever requiring isolation/notification", ["Separate safely and use IPC immediately.", "Notify according to outbreak protocol and avoid routine waiting-room flow."], ["Bleeding", "Travel/contact history", "Vomiting", "Health worker exposure"]),
+        ("hc3-ebola-funeral-contact-001", "Fever after funeral contact", "outbreak", "outbreak-ipc-ebola-vhf", "A trader has fever and weakness after attending a burial where the deceased had an unexplained illness.", "Fever after funeral contact", "Possible Ebola exposure through funeral contact", ["Funeral exposure matters in Ebola risk assessment.", "Isolation and notification are the clinical action."], ["Known contact", "Bleeding", "Severe weakness"]),
+        ("hc3-ebola-health-worker-ppe-breach-001", "PPE breach after suspected case", "outbreak", "outbreak-ipc-ebola-vhf", "A cleaner helped move a vomiting patient before anyone suspected Ebola. She now asks whether she should keep working.", "Possible occupational Ebola exposure", "Health worker exposure requiring reporting/monitoring", ["Protect health workers through exposure reporting.", "Do not hide or punish exposure disclosure."], ["Direct fluid contact", "Fever", "PPE breach"]),
+        ("hc3-ebola-child-fever-contact-001", "Child with fever and contact history", "outbreak", "outbreak-ipc-ebola-vhf", "A child with fever arrives with an aunt who says a neighbour was taken by the outbreak team last week.", "Child fever with contact concern", "Paediatric suspected VHF triage", ["Apply outbreak screening to children too.", "Use isolation and notification while maintaining caregiver communication."], ["Known contact", "Vomiting", "Bleeding"]),
+        ("hc3-ebola-vomiting-at-triage-001", "Vomiting patient at triage", "outbreak", "outbreak-ipc-ebola-vhf", "A patient vomits near the triage bench before being registered. Other patients move closer to watch.", "Vomiting during Ebola alert", "IPC exposure control at facility entrance", ["Control the environment quickly.", "Separate, protect staff, manage contaminated area, and notify."], ["Vomiting", "Travel/contact risk", "Unprotected exposure"]),
+        ("hc3-ebola-rumour-community-fear-001", "Rumour and fear at the clinic gate", "outbreak", "outbreak-ipc-ebola-vhf", "Several people gather outside saying the clinic is hiding Ebola. A febrile patient is afraid to enter.", "Community fear during outbreak", "Risk communication and safe triage challenge", ["Clear communication supports outbreak control.", "Do not let fear disrupt safe triage and IPC."], ["Suspected case", "Crowding", "Staff panic"]),
+        ("hc3-ebola-death-at-home-report-001", "Report of unexplained death at home", "outbreak", "outbreak-ipc-ebola-vhf", "A village health worker calls about an unexplained death after fever and bleeding. The family wants to wash the body.", "Unexplained death with bleeding", "Community death requiring outbreak notification", ["Unsafe burial practices can spread Ebola.", "Notify response teams and advise against direct body handling."], ["Bleeding before death", "Multiple sick contacts", "Body handling"]),
+
+        # Chronic/NCD/mental health
+        ("hc3-hypertension-followup-poor-control-001", "High BP at refill visit", "guidelines_general", "ncd-mental-health", "A teacher comes for a refill and says he feels fine, but the BP reading is very high.", "High blood pressure at refill", "Poorly controlled hypertension requiring risk assessment", ["Asymptomatic high BP still needs action.", "Look for danger symptoms and adherence barriers."], ["Chest pain", "Severe headache", "Neurologic deficit"]),
+        ("hc3-diabetes-foot-sore-001", "Small foot sore in diabetes", "guidelines_general", "ncd-mental-health", "A patient with diabetes has a small foot wound and wants only pain tablets because market day is busy.", "Foot sore in diabetes", "Diabetic foot risk", ["Small wounds can be high risk in diabetes.", "Assess infection, sensation, perfusion, and referral need."], ["Spreading infection", "Black tissue", "Fever"]),
+        ("hc3-epilepsy-missed-medicine-001", "Seizure after missed medicine", "guidelines_general", "ncd-mental-health", "A patient with known epilepsy had a seizure after running out of medicine for a week.", "Seizure after missed medicine", "Epilepsy adherence and safety assessment", ["Assess injury and triggers.", "Support continuity and safety counseling."], ["Repeated seizures", "Head injury", "Pregnancy"]),
+        ("hc3-alcohol-withdrawal-agitation-001", "Agitation after stopping alcohol", "mental_health", "ncd-mental-health", "A man is shaking, sweating, and agitated after abruptly stopping heavy alcohol use.", "Agitation and tremor", "Possible alcohol withdrawal requiring escalation assessment", ["Substance-related presentations can be medical emergencies.", "Assess safety, hydration, and referral threshold."], ["Seizure", "Confusion", "Severe agitation"]),
+        ("hc3-psychosis-family-restraint-001", "Family brings restrained patient", "mental_health", "ncd-mental-health", "A family brings a young man tied with cloths because he has been shouting and not sleeping.", "Agitation and possible psychosis", "Acute mental health crisis with dignity/safety needs", ["Protect dignity while ensuring safety.", "Assess medical causes and urgent mental health referral need."], ["Violence risk", "Suicidal risk", "Medical instability"]),
+        ("hc3-palliative-pain-counseling-001", "Cancer pain and family distress", "mental_health", "ncd-mental-health", "A family asks why their relative with known cancer is crying at night and whether more pain medicine is allowed.", "Severe chronic pain", "Palliative symptom support and communication", ["Pain relief and communication are clinical priorities.", "Assess severity, red flags, and referral/support options."], ["Severe uncontrolled pain", "Confusion", "Respiratory distress"]),
+        ("hc3-elder-fall-confusion-001", "Older adult confused after fall", "emergency", "ncd-mental-health", "An older woman fell yesterday and is now confused. The family says she is just old.", "Confusion after fall", "Possible head injury or delirium", ["New confusion is not normal ageing.", "Assess trauma, infection, glucose, and referral need."], ["Altered mental status", "Head injury", "Hypotension"]),
+
+        # Day-in-clinic mixed practice
+        ("hc3-dayclinic-records-chief-complaint-001", "Records desk misses danger sign", "patient_safety", "day-in-clinic-mixed-practice", "At registration, a patient says 'just fever' but also says they fainted. The records queue is moving fast.", "Fever and fainting at registration", "Triage risk hidden in chief complaint", ["Front desk information can reveal danger signs.", "Escalate before routine queue placement."], ["Fainting", "Confusion", "Severe weakness"]),
+        ("hc3-dayclinic-lab-delay-001", "Lab result delay changes plan", "patient_safety", "day-in-clinic-mixed-practice", "The clinician is ready to send a patient home, but the lab result arrives late and suggests a different risk level.", "Delayed lab result", "Workflow adaptation and communication", ["Reassess when new information arrives.", "Communicate changes clearly and document."], ["Critical result", "Patient already left", "Unclear ownership"]),
+        ("hc3-dayclinic-pharmacy-question-001", "Dispenser asks about pregnancy", "patient_safety", "day-in-clinic-mixed-practice", "The dispenser notices a medicine may not be safe in pregnancy and asks the clinician to confirm.", "Pregnancy safety question", "Team-based medication safety", ["Dispenser questions can prevent harm.", "Clarify missing clinical data before dispensing."], ["Pregnancy", "Allergy", "Contraindication"]),
+        ("hc3-dayclinic-followup-phone-001", "Phone follow-up reveals worsening", "patient_safety", "day-in-clinic-mixed-practice", "A nurse calls a patient who missed review. The patient says the swelling is now spreading.", "Worsening after missed follow-up", "Remote follow-up escalation", ["Follow-up calls can identify deterioration.", "Give clear return/referral instructions."], ["Rapid spread", "Fever", "Severe pain"]),
+        ("hc3-dayclinic-multiple-urgent-001", "Two urgent patients arrive together", "emergency", "day-in-clinic-mixed-practice", "A labouring mother and a child with convulsions arrive almost at the same time. Staff must organize quickly.", "Competing emergencies", "Prioritization and team organization", ["Triage is team organization under pressure.", "Assign roles and escalate both patients safely."], ["Convulsion", "Bleeding", "Airway concern"]),
+        ("hc3-dayclinic-data-entry-error-001", "Wrong patient selected in chart", "patient_safety", "day-in-clinic-mixed-practice", "A clinician notices the age in the chart does not match the child in front of them before entering vitals.", "Possible wrong chart", "Digital patient identification safety", ["Confirm identity before documentation.", "Digital workflows need patient-safety habits."], ["Wrong patient", "Medication order", "Lab result mismatch"]),
+        ("hc3-dayclinic-referral-refusal-001", "Family refuses referral", "patient_safety", "day-in-clinic-mixed-practice", "A patient meets referral criteria, but the family says they cannot afford transport and asks for treatment at the HC III.", "Referral refusal", "Communication and risk documentation", ["Explore barriers respectfully.", "Explain risk, document discussion, and seek local support options."], ["Unstable patient", "Child danger sign", "Maternal emergency"]),
+    ]
+    specs.extend([
+        ("hc3-lab-malaria-result-discordant-001", "Positive malaria test but pneumonia signs", "child_health", "pharmacy-lab-diagnostics", "A child has a positive malaria RDT but is breathing fast with chest indrawing. The caregiver expects only malaria medicine.", "Positive malaria test with respiratory signs", "Coexisting or alternative serious illness despite positive malaria test", ["A positive test does not end assessment.", "Treat the whole patient and recognize danger signs."], ["Chest indrawing", "Respiratory distress", "Lethargy"]),
+        ("hc3-lab-urine-protein-anc-001", "Urine protein at ANC", "maternal_anc", "pharmacy-lab-diagnostics", "An ANC urine dipstick shows protein after a high BP reading. The mother says she feels fine and wants to go home.", "Proteinuria with high BP", "Pre-eclampsia risk requiring escalation", ["Combine symptoms, BP, and urine findings.", "Do not reassure based only on appearance."], ["Severe hypertension", "Headache", "Visual symptoms"]),
+        ("hc3-pharmacy-antibiotic-request-001", "Antibiotic request without assessment", "patient_safety", "pharmacy-lab-diagnostics", "A patient asks the dispenser for antibiotics for a cough because they helped last time. The clinician has not assessed them yet.", "Antibiotic request", "Antimicrobial stewardship and assessment need", ["Antibiotics should follow assessment and guideline indication.", "Pharmacy workflow can protect patient safety."], ["Respiratory distress", "Persistent fever", "Very young infant"]),
+        ("hc3-lab-hb-low-pregnancy-001", "Low haemoglobin result in pregnancy", "maternal_anc", "pharmacy-lab-diagnostics", "A pregnant woman looks tired but cheerful. Her haemoglobin result returns lower than expected.", "Low haemoglobin in pregnancy", "Anaemia severity assessment and referral decision", ["Interpret lab results in clinical context.", "Assess severity symptoms and pregnancy risk."], ["Breathlessness at rest", "Syncope", "Severe pallor"]),
+        ("hc3-pharmacy-stockout-referral-001", "Stockout affects referral plan", "patient_safety", "pharmacy-lab-diagnostics", "The medicine needed for pre-referral care is unavailable. The team must decide how to document and escalate safely.", "Pre-referral medicine stockout", "Stockout-aware emergency planning", ["Stockouts need clear communication and escalation.", "Document constraints and do not invent unsafe substitutes."], ["Maternal emergency", "Severe child illness", "Shock"]),
+        ("hc3-lab-glucose-high-001", "Very high random glucose", "guidelines_general", "pharmacy-lab-diagnostics", "A patient came for fatigue, and the random glucose is very high. The patient says they can still walk and wants tablets.", "Very high blood glucose", "Hyperglycaemia with complication screen", ["Screen for dehydration, infection, and danger symptoms.", "Escalate if unstable or complicated."], ["Vomiting", "Dehydration", "Altered mental status"]),
+        ("hc3-test-pregnancy-before-treatment-001", "Pregnancy test changes treatment choice", "guidelines_general", "pharmacy-lab-diagnostics", "A young woman with abdominal pain has a positive pregnancy test, changing what looked like a simple outpatient plan.", "Abdominal pain with positive pregnancy test", "Pregnancy-aware diagnostic reasoning", ["Pregnancy status can change risk and treatment.", "Reassess diagnosis and referral threshold."], ["Severe abdominal pain", "Bleeding", "Fainting"]),
+    ])
+    return [
+        _compact_case(
+            case_id=case_id,
+            title=title,
+            topic=topic,
+            chapter_id=chapter_id,
+            narrative=narrative,
+            chief_complaint=chief_complaint,
+            history=["Focused history is required to reveal the key risk.", "No real patient data; simulated training case."],
+            vitals={"temperature": "varies", "pulse": "varies", "bp": "varies", "respiratory_rate": "varies"},
+            exam_findings=["Focused exam findings should be requested by the learner."],
+            diagnosis=diagnosis,
+            teaching_points=teaching_points,
+            danger_signs=danger_signs,
+            guideline_ids=_guidelines_for(topic),
+            citation_topic=title,
+            scores=(84, 84, 84, 58),
+        )
+        for case_id, title, topic, chapter_id, narrative, chief_complaint, diagnosis, teaching_points, danger_signs in specs
+    ]
+
+
+def _guidelines_for(topic: str) -> list[str]:
+    if topic == "outbreak":
+        return ["who-ebola-bundibugyo-2026", "uganda-clinical-guidelines-2023"]
+    if topic in {"hiv_tb"}:
+        return ["uganda-hiv-aids-consolidated-guidelines-2023", "uganda-clinical-guidelines-2023"]
+    if topic in {"child_health", "neonatal"}:
+        return ["who-imnci-chart-booklet", "uganda-clinical-guidelines-2023"]
+    return ["uganda-clinical-guidelines-2023"]
+
+
+def _compact_case(
+    case_id: str,
+    title: str,
+    topic: str,
+    narrative: str,
+    chief_complaint: str,
+    history: list[str],
+    vitals: dict[str, str],
+    exam_findings: list[str],
+    diagnosis: str,
+    teaching_points: list[str],
+    danger_signs: list[str],
+    guideline_ids: list[str],
+    citation_topic: str,
+    scores: tuple[int, int, int, int],
+    chapter_id: str | None = None,
+) -> CanonicalCase:
+    return _case(
+        case_id=case_id,
+        title=title,
+        topic=topic,
+        narrative=narrative,
+        patient=SimulatedPatient("Simulated patient", "varies by scenario", "unknown"),
+        truth=ClinicalTruth(
+            chief_complaint=chief_complaint,
+            history=history,
+            review_of_systems=["Focused review needed based on presentation"],
+            vitals=vitals,
+            exam_findings=exam_findings,
+            available_tests=["Use available HC III tests where relevant"],
+            diagnosis=diagnosis,
+            differentials=["Alternative diagnosis depends on focused history and exam"],
+            management=[
+                "Assess danger signs and immediate stability.",
+                "Use HC III-appropriate guideline reasoning.",
+                "Document clearly and refer/escalate when threshold is met.",
+            ],
+            referral_threshold="Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+            medicines=["Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."],
+            follow_up=["Give clear safety-net advice and document the plan."],
+            danger_signs=danger_signs,
+        ),
+        teaching_points=teaching_points,
+        guideline_ids=guideline_ids,
+        citation_topic=citation_topic,
+        scores=scores,
+        chapter_id=chapter_id,
+    )
 
 
 def _case(
@@ -373,6 +889,8 @@ def _case(
     guideline_ids: list[str],
     citation_topic: str,
     scores: CaseScores | tuple[int, int, int, int],
+    narrative: str | None = None,
+    chapter_id: str | None = None,
 ) -> CanonicalCase:
     if not isinstance(scores, CaseScores):
         scores = CaseScores(*scores)
@@ -385,6 +903,8 @@ def _case(
     return CanonicalCase(
         id=case_id,
         title=title,
+        narrative=narrative or _narrative_for(title, truth.chief_complaint),
+        chapter_id=chapter_id or _chapter_for_topic(topic),
         source_type="generated_guideline",
         facility_level="HC III",
         topic=topic,
@@ -414,6 +934,29 @@ def _case(
         source_guideline_ids=guideline_ids,
         review_status="needs_review",
         guideline_crosscheck="Draft generated against registered source documents; requires clinician review before publication.",
+    )
+
+
+def _chapter_for_topic(topic: str) -> str:
+    return {
+        "malaria": "fever-malaria-acute-illness",
+        "child_health": "child-health-imnci",
+        "maternal_anc": "maternal-midwifery-emergencies",
+        "neonatal": "neonatal-emergency-care",
+        "hiv_tb": "hiv-tb-sti-continuity",
+        "family_planning": "maternal-midwifery-emergencies",
+        "emergency": "emergency-critical-care",
+        "patient_safety": "patient-safety-communication",
+        "mental_health": "mental-health-psychosocial-care",
+        "outbreak": "outbreak-ipc-ebola-vhf",
+    }.get(topic, "general-hc3-practice")
+
+
+def _narrative_for(title: str, chief_complaint: str) -> str:
+    return (
+        "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are "
+        f"balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is {chief_complaint.lower()}. "
+        f"The case is titled '{title}', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made."
     )
 
 

@@ -28,6 +28,8 @@ def validate_canonical_case(case: CanonicalCase) -> ValidationReport:
 
     _require(case.id, "id", issues)
     _require(case.title, "title", issues)
+    _require(case.narrative, "narrative", issues)
+    _require(case.chapter_id, "chapter_id", issues)
     _require(case.facility_level, "facility_level", issues)
     _require(case.topic, "topic", issues)
 

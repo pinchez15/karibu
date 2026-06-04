@@ -1,0 +1,104 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-hypoglycaemia-altered-consciousness-001-source",
+      "section": "Hypoglycaemia recognition and immediate management",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Hypoglycaemia recognition and immediate management"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Confusion and sweating",
+    "dangerSigns": [
+      "Unconsciousness",
+      "Seizure",
+      "Unable to swallow safely"
+    ],
+    "diagnosis": "Suspected hypoglycaemia",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Sweaty",
+      "Confused",
+      "No focal weakness noted"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Known diabetes",
+      "Missed meal",
+      "Became confused suddenly"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "132/80 mmHg",
+      "pulse": "110 bpm",
+      "respiratory_rate": "20/min",
+      "temperature": "36.5 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Check glucose rapidly if available.",
+      "Treat suspected hypoglycaemia promptly when clinically likely and safe."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-hypoglycaemia-altered-consciousness-001",
+  "narrative": "A market vendor known to have diabetes is brought in confused and sweating. Her daughter says she took medicine in the morning but missed lunch.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 55,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Sweating and confusion in a diabetic patient"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Check glucose rapidly if available.",
+    "Treat suspected hypoglycaemia promptly when clinically likely and safe."
+  ],
+  "title": "Sweating and confusion in a diabetic patient",
+  "topic": "emergency"
+}

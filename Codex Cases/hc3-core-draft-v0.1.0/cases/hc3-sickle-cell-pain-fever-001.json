@@ -1,0 +1,106 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-sickle-cell-pain-fever-001-source",
+      "section": "Sickle cell fever and pain crisis assessment",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Sickle cell fever and pain crisis assessment"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Severe limb pain and fever",
+    "dangerSigns": [
+      "Fever",
+      "Chest pain",
+      "Respiratory distress",
+      "Severe pallor",
+      "Altered mental status"
+    ],
+    "diagnosis": "Sickle cell pain episode with infection concern",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "In pain",
+      "No obvious trauma",
+      "No respiratory distress at rest"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Known sickle cell disease",
+      "Severe limb pain",
+      "Fever started overnight"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "108/66 mmHg",
+      "pulse": "116 bpm",
+      "respiratory_rate": "24/min",
+      "temperature": "38.9 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Treat pain seriously and assess fever as a risk sign.",
+      "Evaluate for infection and refer/escalate if danger signs or severe complications are present."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-sickle-cell-pain-fever-001",
+  "narrative": "A teenager known to have sickle cell disease arrives with severe limb pain. His mother says he also developed fever overnight.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 62,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Pain crisis with fever"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Treat pain seriously and assess fever as a risk sign.",
+    "Evaluate for infection and refer/escalate if danger signs or severe complications are present."
+  ],
+  "title": "Pain crisis with fever",
+  "topic": "emergency"
+}

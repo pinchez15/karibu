@@ -1,0 +1,105 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-prolonged-labour-partograph-001-source",
+      "section": "Monitoring labour using a partograph",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Monitoring labour using a partograph"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Labour not progressing",
+    "dangerSigns": [
+      "Fetal distress",
+      "Maternal exhaustion",
+      "Fever",
+      "Obstructed labour concern"
+    ],
+    "diagnosis": "Prolonged labour with concern for fetal/maternal risk",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Cervical progress slow on partograph",
+      "Mother tired",
+      "No obvious convulsion or shock"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Contractions began last night",
+      "Membranes ruptured several hours ago",
+      "No heavy bleeding reported"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "118/74 mmHg",
+      "fetal_heart_rate": "166 bpm",
+      "pulse": "98 bpm",
+      "temperature": "37.4 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Use the partograph to recognize abnormal progress.",
+      "Escalate early when labour crosses danger thresholds or fetal distress is suspected."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-prolonged-labour-partograph-001",
+  "narrative": "A midwife hands over a mother in active labour whose cervical dilation has not changed as expected. The family is anxious because the labour started the previous night.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 87,
+    "complexity": 70,
+    "hc3Reality": 86,
+    "learningValue": 90
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Slow labour progress on the partograph"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Use the partograph to recognize abnormal progress.",
+    "Escalate early when labour crosses danger thresholds or fetal distress is suspected."
+  ],
+  "title": "Slow labour progress on the partograph",
+  "topic": "maternal_anc"
+}

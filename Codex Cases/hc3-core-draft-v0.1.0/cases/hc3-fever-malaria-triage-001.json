@@ -1,4 +1,5 @@
 {
+  "chapterId": "fever-malaria-acute-illness",
   "citations": [
     {
       "id": "hc3-fever-malaria-triage-001-source",
@@ -77,6 +78,7 @@
   "facilityLevel": "HC III",
   "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
   "id": "hc3-fever-malaria-triage-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is fever and headache for three days. The case is titled 'Fever with malaria triage', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
   "reviewStatus": "needs_review",
   "scores": {
     "clinicalCorrectness": 90,

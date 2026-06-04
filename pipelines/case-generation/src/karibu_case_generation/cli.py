@@ -22,7 +22,7 @@ def main() -> int:
     registry_parser.add_argument("--json", action="store_true")
 
     generate_parser = subparsers.add_parser("generate-drafts")
-    generate_parser.add_argument("--count", type=int, default=10)
+    generate_parser.add_argument("--count", type=int, default=100)
     generate_parser.add_argument(
         "--output",
         type=Path,

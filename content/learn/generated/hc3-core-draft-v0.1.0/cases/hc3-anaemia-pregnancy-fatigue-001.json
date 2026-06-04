@@ -1,0 +1,106 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-anaemia-pregnancy-fatigue-001-source",
+      "section": "Anaemia in pregnancy assessment",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Anaemia in pregnancy assessment"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Fatigue and breathlessness in pregnancy",
+    "dangerSigns": [
+      "Severe pallor",
+      "Shortness of breath at rest",
+      "Syncope",
+      "Bleeding"
+    ],
+    "diagnosis": "Possible anaemia in pregnancy",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Pale conjunctiva",
+      "No active bleeding",
+      "No fever"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Pregnant in second trimester",
+      "Progressive fatigue",
+      "Breathless on exertion"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "104/66 mmHg",
+      "pulse": "112 bpm",
+      "respiratory_rate": "22/min",
+      "temperature": "36.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "Assess severity and danger signs.",
+      "Use available testing and supplementation/referral pathway according to ANC guidance."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-anaemia-pregnancy-fatigue-001",
+  "narrative": "At an ANC visit, a pregnant woman says she becomes breathless walking from the trading centre. She looks pale but says she thought this was normal pregnancy tiredness.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 82,
+    "complexity": 52,
+    "hc3Reality": 87,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Pregnant woman with severe fatigue"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-essential-medicines-list-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Assess severity and danger signs.",
+    "Use available testing and supplementation/referral pathway according to ANC guidance."
+  ],
+  "title": "Pregnant woman with severe fatigue",
+  "topic": "maternal_anc"
+}

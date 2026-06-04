@@ -1,0 +1,104 @@
+{
+  "chapterId": "patient-safety-communication",
+  "citations": [
+    {
+      "id": "hc3-needlestick-exposure-001-source",
+      "section": "Post-exposure prophylaxis and infection prevention",
+      "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+      "title": "Post-exposure prophylaxis and infection prevention"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Needle-stick injury",
+    "dangerSigns": [
+      "Delay in reporting",
+      "High-risk exposure",
+      "Unknown source status"
+    ],
+    "diagnosis": "Occupational exposure requiring post-exposure pathway",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Small puncture wound",
+      "No active bleeding",
+      "Anxious staff member"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Injury occurred minutes ago",
+      "Source patient HIV status not immediately known",
+      "Finger washed briefly"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "118/72 mmHg",
+      "pulse": "82 bpm",
+      "respiratory_rate": "16/min",
+      "temperature": "36.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Respond promptly and non-punitively.",
+      "Follow occupational exposure protocol, documentation, testing, and PEP pathway as indicated."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-needlestick-exposure-001",
+  "narrative": "A nursing assistant quietly reports that she pricked her finger while cleaning up after an injection. She is embarrassed and asks whether she should just wash it and continue working.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 56,
+    "hc3Reality": 88,
+    "learningValue": 86
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this patient safety presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Needle-stick injury after injection"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-hiv-aids-consolidated-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Respond promptly and non-punitively.",
+    "Follow occupational exposure protocol, documentation, testing, and PEP pathway as indicated."
+  ],
+  "title": "Needle-stick injury after injection",
+  "topic": "patient_safety"
+}

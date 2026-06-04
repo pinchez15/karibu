@@ -105,6 +105,8 @@ class CredentialingMetadata:
 class CanonicalCase:
     id: str
     title: str
+    narrative: str
+    chapter_id: str
     source_type: SourceType
     facility_level: str
     topic: str

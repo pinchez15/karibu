@@ -53,6 +53,7 @@ class KpackExportTest(unittest.TestCase):
             manifest = json.loads((output_dir / "manifest.json").read_text())
 
             self.assertEqual(manifest["id"], "hc3-fever-core")
+            self.assertEqual(manifest["chapters"][0]["id"], "fever-malaria-acute-illness")
             self.assertTrue((output_dir / "cases" / "malaria-triage-001.json").exists())
             self.assertTrue((output_dir / "variants" / "malaria-triage-001-level-3.json").exists())
             self.assertTrue((output_dir / "checksums.json").exists())

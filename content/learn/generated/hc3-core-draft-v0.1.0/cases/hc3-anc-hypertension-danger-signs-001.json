@@ -1,4 +1,5 @@
 {
+  "chapterId": "maternal-midwifery-emergencies",
   "citations": [
     {
       "id": "hc3-anc-hypertension-danger-signs-001-source",
@@ -77,6 +78,7 @@
   "facilityLevel": "HC III",
   "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
   "id": "hc3-anc-hypertension-danger-signs-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is headache during anc visit. The case is titled 'ANC visit with high blood pressure', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
   "reviewStatus": "needs_review",
   "scores": {
     "clinicalCorrectness": 90,

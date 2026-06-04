@@ -1,4 +1,5 @@
 {
+  "chapterId": "hiv-tb-sti-continuity",
   "citations": [
     {
       "id": "hc3-hiv-art-continuity-001-source",
@@ -79,6 +80,7 @@
   "facilityLevel": "HC III",
   "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
   "id": "hc3-hiv-art-continuity-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is missed art refill. The case is titled 'ART continuity after missed refill', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
   "reviewStatus": "needs_review",
   "scores": {
     "clinicalCorrectness": 86,

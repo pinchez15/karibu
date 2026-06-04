@@ -1,0 +1,105 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-burns-fluid-risk-001-source",
+      "section": "Burn assessment and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Burn assessment and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Hot water burn",
+    "dangerSigns": [
+      "Large surface area",
+      "Face/airway involvement",
+      "Shock",
+      "Very young child"
+    ],
+    "diagnosis": "Paediatric burn requiring severity assessment",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Partial thickness burn over anterior chest and arm",
+      "Crying",
+      "No soot around mouth"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Burn occurred one hour ago",
+      "Hot water spilled on chest and arm",
+      "No inhalation injury reported"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "pulse": "132 bpm",
+      "respiratory_rate": "30/min",
+      "temperature": "36.9 C",
+      "weight": "12 kg"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Estimate burn severity and assess airway/breathing/circulation.",
+      "Provide first aid, pain care, and referral when burn severity exceeds HC III capacity."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-burns-fluid-risk-001",
+  "narrative": "A toddler is carried in crying after pulling hot water from a charcoal stove. The mother is frightened and asks for cream for the skin.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 86,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Child with hot water burns"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Estimate burn severity and assess airway/breathing/circulation.",
+    "Provide first aid, pain care, and referral when burn severity exceeds HC III capacity."
+  ],
+  "title": "Child with hot water burns",
+  "topic": "emergency"
+}

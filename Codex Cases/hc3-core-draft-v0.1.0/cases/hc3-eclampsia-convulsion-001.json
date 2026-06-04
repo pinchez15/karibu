@@ -1,0 +1,105 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-eclampsia-convulsion-001-source",
+      "section": "Eclampsia recognition and emergency referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Eclampsia recognition and emergency referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Convulsion during pregnancy",
+    "dangerSigns": [
+      "Convulsion",
+      "Severe hypertension",
+      "Severe headache",
+      "Visual symptoms"
+    ],
+    "diagnosis": "Suspected eclampsia",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Post-ictal but breathing",
+      "No trauma seen",
+      "Pedal oedema"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Approximately 34 weeks pregnant",
+      "Severe headache earlier today",
+      "Blurred vision reported"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "170/110 mmHg",
+      "pulse": "112 bpm",
+      "respiratory_rate": "24/min",
+      "temperature": "36.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Protect airway and safety during convulsion.",
+      "Recognize eclampsia and arrange urgent referral after immediate stabilization."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-eclampsia-convulsion-001",
+  "narrative": "During an antenatal clinic morning, a pregnant woman waiting outside suddenly collapses and has a convulsion. Her sister says she complained of headache and blurred vision before leaving home.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 93,
+    "complexity": 74,
+    "hc3Reality": 88,
+    "learningValue": 93
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Convulsion in late pregnancy"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Protect airway and safety during convulsion.",
+    "Recognize eclampsia and arrange urgent referral after immediate stabilization."
+  ],
+  "title": "Convulsion in late pregnancy",
+  "topic": "maternal_anc"
+}

@@ -53,8 +53,14 @@ def export_kpack_directory(
         "title": title,
         "version": version,
         "schemaVersion": "0.1.0",
+        "chapters": _chapters_for(canonical_cases),
         "cases": [
-            {"id": case.id, "path": f"cases/{case.id}.json", "checksum": checksums[f"cases/{case.id}.json"]}
+            {
+                "id": case.id,
+                "chapterId": case.chapter_id,
+                "path": f"cases/{case.id}.json",
+                "checksum": checksums[f"cases/{case.id}.json"],
+            }
             for case in canonical_cases
         ],
         "variants": [
@@ -69,6 +75,20 @@ def export_kpack_directory(
     }
     _write_json(output_dir / "manifest.json", manifest)
     _write_json(output_dir / "checksums.json", checksums)
+
+
+def _chapters_for(cases: list[CanonicalCase]) -> list[dict[str, object]]:
+    chapters: dict[str, int] = {}
+    for case in cases:
+        chapters[case.chapter_id] = chapters.get(case.chapter_id, 0) + 1
+    return [
+        {
+            "id": chapter_id,
+            "title": chapter_id.replace("-", " ").title(),
+            "caseCount": count,
+        }
+        for chapter_id, count in sorted(chapters.items())
+    ]
 
 
 def _write_json(path: Path, value: object) -> None:

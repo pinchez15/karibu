@@ -1,0 +1,105 @@
+{
+  "chapterId": "patient-safety-communication",
+  "citations": [
+    {
+      "id": "hc3-queue-deterioration-triage-001-source",
+      "section": "Triage escalation and work organization",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Triage escalation and work organization"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Weakness while waiting",
+    "dangerSigns": [
+      "Hypotension",
+      "Altered mental status",
+      "Respiratory distress",
+      "Signs of shock"
+    ],
+    "diagnosis": "Unstable patient requiring urgent triage escalation",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Sweaty",
+      "Weak voice",
+      "Cool peripheries"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Symptoms worsened while waiting",
+      "Elderly patient",
+      "No full history yet"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "82/50 mmHg",
+      "pulse": "124 bpm",
+      "respiratory_rate": "28/min",
+      "temperature": "37.9 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize deterioration in queue as urgent.",
+      "Escalate immediately, obtain vitals, and start ABC-style assessment rather than waiting for routine flow."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-queue-deterioration-triage-001",
+  "narrative": "A records officer says an elderly patient waiting quietly for registration is now sweating and looks faint. The queue is long and several louder patients are demanding attention.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 57,
+    "hc3Reality": 90,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this patient safety presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Quiet patient deteriorates in the queue"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize deterioration in queue as urgent.",
+    "Escalate immediately, obtain vitals, and start ABC-style assessment rather than waiting for routine flow."
+  ],
+  "title": "Quiet patient deteriorates in the queue",
+  "topic": "patient_safety"
+}

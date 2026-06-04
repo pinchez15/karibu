@@ -1,0 +1,33 @@
+{
+  "canonicalCaseId": "hc3-pmtct-first-anc-001",
+  "difficultyLevel": 1,
+  "ehrTasks": [],
+  "id": "hc3-pmtct-first-anc-001-level-1",
+  "informationReveals": [],
+  "initiallyVisible": [
+    "chief_complaint",
+    "history[0]",
+    "vitals",
+    "exam_findings[0]",
+    "available_tests"
+  ],
+  "label": "Core Practice",
+  "questType": "core_practice",
+  "reviewStatus": "draft",
+  "scores": {
+    "clinicalCorrectness": 0,
+    "complexity": 24,
+    "hc3Reality": 0,
+    "learningValue": 0
+  },
+  "scoringRules": [
+    {
+      "citationIds": [
+        "hc3-pmtct-first-anc-001-source"
+      ],
+      "description": "Identifies the safest next clinical step.",
+      "id": "hc3-pmtct-first-anc-001-recognize-next-step",
+      "points": 3
+    }
+  ]
+}

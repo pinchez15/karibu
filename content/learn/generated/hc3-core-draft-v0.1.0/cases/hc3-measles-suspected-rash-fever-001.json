@@ -1,0 +1,106 @@
+{
+  "chapterId": "child-health-imnci",
+  "citations": [
+    {
+      "id": "hc3-measles-suspected-rash-fever-001-source",
+      "section": "Fever with rash and immunization assessment",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Fever with rash and immunization assessment"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Fever and rash",
+    "dangerSigns": [
+      "Respiratory distress",
+      "Dehydration",
+      "Altered mental status",
+      "Severe eye involvement"
+    ],
+    "diagnosis": "Suspected measles or other febrile rash illness",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Generalized rash",
+      "Conjunctival redness",
+      "No severe respiratory distress"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Fever began before rash",
+      "Cough and red eyes",
+      "Immunization status uncertain"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "pulse": "120 bpm",
+      "respiratory_rate": "30/min",
+      "temperature": "38.7 C",
+      "weight": "14 kg"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize possible measles and infection prevention implications.",
+      "Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-measles-suspected-rash-fever-001",
+  "narrative": "A child is brought during a busy immunization day with fever, cough, red eyes, and a spreading rash. The caregiver is unsure whether the child completed vaccines.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 60,
+    "hc3Reality": 86,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this child health presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Fever with rash in an unimmunized child"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "who-imnci-chart-booklet"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize possible measles and infection prevention implications.",
+    "Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe."
+  ],
+  "title": "Fever with rash in an unimmunized child",
+  "topic": "child_health"
+}
