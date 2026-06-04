@@ -1,0 +1,101 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-postnatal-breast-pain-fever-001-source",
+      "section": "Breast pain and fever after delivery",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Breast pain and fever after delivery"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Breast pain and fever",
+    "dangerSigns": [
+      "High fever",
+      "Abscess",
+      "Very ill appearance"
+    ],
+    "diagnosis": "Possible mastitis with breastfeeding support needs",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Focused exam findings should be requested by the learner."
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case."
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "varies",
+      "pulse": "varies",
+      "respiratory_rate": "varies",
+      "temperature": "varies"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Support feeding while assessing infection severity.",
+      "Look for systemic illness or abscess concern."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-postnatal-breast-pain-fever-001",
+  "narrative": "A postnatal mother has breast pain and fever, and she is considering stopping breastfeeding.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Breast pain and fever after delivery"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Support feeding while assessing infection severity.",
+    "Look for systemic illness or abscess concern."
+  ],
+  "title": "Breast pain and fever after delivery",
+  "topic": "maternal_anc"
+}

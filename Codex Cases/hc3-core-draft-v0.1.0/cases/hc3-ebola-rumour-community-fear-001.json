@@ -1,0 +1,102 @@
+{
+  "chapterId": "outbreak-ipc-ebola-vhf",
+  "citations": [
+    {
+      "id": "hc3-ebola-rumour-community-fear-001-source",
+      "section": "Rumour and fear at the clinic gate",
+      "sourceDocumentId": "who-ebola-bundibugyo-2026",
+      "title": "Rumour and fear at the clinic gate"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Community fear during outbreak",
+    "dangerSigns": [
+      "Suspected case",
+      "Crowding",
+      "Staff panic"
+    ],
+    "diagnosis": "Risk communication and safe triage challenge",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Focused exam findings should be requested by the learner."
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case."
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "varies",
+      "pulse": "varies",
+      "respiratory_rate": "varies",
+      "temperature": "varies"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Clear communication supports outbreak control.",
+      "Do not let fear disrupt safe triage and IPC."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-ebola-rumour-community-fear-001",
+  "narrative": "Several people gather outside saying the clinic is hiding Ebola. A febrile patient is afraid to enter.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this outbreak presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Rumour and fear at the clinic gate"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "who-ebola-bundibugyo-2026",
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Clear communication supports outbreak control.",
+    "Do not let fear disrupt safe triage and IPC."
+  ],
+  "title": "Rumour and fear at the clinic gate",
+  "topic": "outbreak"
+}

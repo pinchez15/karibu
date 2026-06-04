@@ -1,0 +1,112 @@
+{
+  "chapterId": "hiv-tb-sti-continuity",
+  "citations": [
+    {
+      "id": "hc3-adult-cough-tb-screen-001-source",
+      "section": "TB symptom screening and HIV/TB integration",
+      "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+      "title": "TB symptom screening and HIV/TB integration"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Sputum testing pathway or referral according to local TB diagnostic access",
+      "HIV testing offer according to guidance"
+    ],
+    "chiefComplaint": "Cough for three weeks",
+    "dangerSigns": [
+      "Severe respiratory distress",
+      "Haemoptysis",
+      "Very ill appearance",
+      "Unable to drink/eat"
+    ],
+    "diagnosis": "Presumptive TB requiring evaluation",
+    "differentials": [
+      "Pulmonary TB",
+      "Viral cough",
+      "Chronic bronchitis/COPD",
+      "Pneumonia"
+    ],
+    "examFindings": [
+      "Thin adult",
+      "No chest indrawing",
+      "Able to speak full sentences"
+    ],
+    "followUp": [
+      "Ensure clear instructions for sputum testing, review, or referral follow-up."
+    ],
+    "history": [
+      "Cough has lasted three weeks",
+      "Reports night sweats",
+      "Has lost weight recently",
+      "Smoking history not initially volunteered"
+    ],
+    "management": [
+      "Ask duration of cough and constitutional symptoms.",
+      "Screen for TB and HIV according to national guidance.",
+      "Arrange sputum testing/referral pathway according to local service availability."
+    ],
+    "medicines": [
+      "Do not start TB treatment without following diagnostic pathway unless directed by national protocol."
+    ],
+    "referralThreshold": "Severe respiratory distress, danger signs, or inability to complete evaluation safely require urgent referral.",
+    "reviewOfSystems": [
+      "No severe shortness of breath at rest",
+      "No haemoptysis reported"
+    ],
+    "vitals": {
+      "bp": "118/76 mmHg",
+      "pulse": "92 bpm",
+      "respiratory_rate": "22/min",
+      "temperature": "37.6 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Duration of cough changes the clinical path from viral cough to TB screening.",
+      "Smoking history may distract, but TB symptoms must not be missed."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-adult-cough-tb-screen-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is cough for three weeks. The case is titled 'Adult cough requiring TB screen', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 66,
+    "hc3Reality": 89,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this hiv tb presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Adult cough requiring TB screen"
+  },
+  "simulatedPatient": {
+    "ageLabel": "42 years",
+    "displayName": "Simulated adult patient",
+    "sex": "male"
+  },
+  "sourceGuidelineIds": [
+    "uganda-hiv-aids-consolidated-guidelines-2023",
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Duration of cough changes the clinical path from viral cough to TB screening.",
+    "Smoking history may distract, but TB symptoms must not be missed."
+  ],
+  "title": "Adult cough requiring TB screen",
+  "topic": "hiv_tb"
+}

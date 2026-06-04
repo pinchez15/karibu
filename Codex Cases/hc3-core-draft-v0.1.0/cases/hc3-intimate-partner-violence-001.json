@@ -1,0 +1,105 @@
+{
+  "chapterId": "patient-safety-communication",
+  "citations": [
+    {
+      "id": "hc3-intimate-partner-violence-001-source",
+      "section": "Respectful communication and safeguarding",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Respectful communication and safeguarding"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Arm injury after reported fall",
+    "dangerSigns": [
+      "Immediate danger",
+      "Sexual violence",
+      "Severe injury",
+      "Suicidal thoughts"
+    ],
+    "diagnosis": "Injury with intimate partner violence concern",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Bruising on upper arm",
+      "No obvious fracture deformity",
+      "Anxious affect"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Mechanism unclear",
+      "Patient later discloses repeated violence",
+      "No loss of consciousness"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "122/76 mmHg",
+      "pulse": "94 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "36.7 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Ensure privacy and immediate safety.",
+      "Treat injuries, document clearly, and link to local safeguarding/referral pathways."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-intimate-partner-violence-001",
+  "narrative": "A woman comes for treatment of a bruised arm and says she fell. When her partner steps outside to answer a call, she becomes tearful and says this has happened before.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 67,
+    "hc3Reality": 86,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this patient safety presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Injury with a hidden safety concern"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Ensure privacy and immediate safety.",
+    "Treat injuries, document clearly, and link to local safeguarding/referral pathways."
+  ],
+  "title": "Injury with a hidden safety concern",
+  "topic": "patient_safety"
+}

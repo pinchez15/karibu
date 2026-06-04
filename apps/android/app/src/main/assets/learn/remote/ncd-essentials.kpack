@@ -1,0 +1,30 @@
+{
+  "id": "ncd-essentials",
+  "title": "NCD essentials",
+  "cases": [
+    {
+      "id": "silent-pressure",
+      "ready": false,
+      "title": "High pressure, no symptoms",
+      "topic": "NCDs",
+      "difficulty": "Intermediate",
+      "mins": 11,
+      "credit": 0.25,
+      "patient": { "name": "Mukasa David", "age": "52M" },
+      "blurb": "A man comes for a BP check and feels completely well. His reading is 168/104. What now?",
+      "skills": ["Hypertension", "Lifestyle counselling", "Follow-up"]
+    },
+    {
+      "id": "diabetes-review",
+      "ready": false,
+      "title": "Diabetes review",
+      "topic": "NCDs",
+      "difficulty": "Intermediate",
+      "mins": 12,
+      "credit": 0.25,
+      "patient": { "name": "Wasswa Peter", "age": "63M" },
+      "blurb": "A scheduled review for a man on metformin. Read the numbers, adjust, and counsel.",
+      "skills": ["Diabetes", "RBS", "Medication review"]
+    }
+  ]
+}

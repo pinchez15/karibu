@@ -1,0 +1,104 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-postpartum-haemorrhage-001-source",
+      "section": "Postpartum haemorrhage emergency response",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Postpartum haemorrhage emergency response"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Heavy bleeding after delivery",
+    "dangerSigns": [
+      "Shock",
+      "Persistent heavy bleeding",
+      "Altered mental status"
+    ],
+    "diagnosis": "Suspected postpartum haemorrhage",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Pale",
+      "Ongoing vaginal bleeding",
+      "Uterus feels soft on abdominal exam"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Delivered about 45 minutes ago",
+      "Bleeding is continuing",
+      "Feels dizzy when sitting up"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "88/54 mmHg",
+      "pulse": "128 bpm",
+      "respiratory_rate": "26/min",
+      "temperature": "36.7 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize PPH as an emergency.",
+      "Call for help and start immediate HC III emergency actions while arranging escalation/referral."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-postpartum-haemorrhage-001",
+  "narrative": "A mother who delivered at the facility less than an hour ago is still bleeding heavily while the ward is busy. Her attendant says the cloths are soaking quickly and asks whether this is normal.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 92,
+    "complexity": 68,
+    "hc3Reality": 90,
+    "learningValue": 92
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Bleeding after delivery"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize PPH as an emergency.",
+    "Call for help and start immediate HC III emergency actions while arranging escalation/referral."
+  ],
+  "title": "Bleeding after delivery",
+  "topic": "maternal_anc"
+}

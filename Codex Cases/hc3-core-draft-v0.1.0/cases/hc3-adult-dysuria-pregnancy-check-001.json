@@ -1,0 +1,112 @@
+{
+  "chapterId": "general-hc3-practice",
+  "citations": [
+    {
+      "id": "hc3-adult-dysuria-pregnancy-check-001-source",
+      "section": "Urinary symptoms and medicine safety",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Urinary symptoms and medicine safety"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Urine dipstick if available",
+      "Pregnancy test if available"
+    ],
+    "chiefComplaint": "Pain passing urine",
+    "dangerSigns": [
+      "Fever",
+      "Flank pain",
+      "Vomiting",
+      "Pregnancy danger signs"
+    ],
+    "diagnosis": "Possible urinary tract infection with pregnancy status needing clarification",
+    "differentials": [
+      "Lower UTI",
+      "Pregnancy-related urinary symptoms",
+      "STI",
+      "Pyelonephritis if fever/flank pain develops"
+    ],
+    "examFindings": [
+      "Well appearing",
+      "No costovertebral angle tenderness",
+      "Mild suprapubic tenderness"
+    ],
+    "followUp": [
+      "Return if fever, flank pain, vomiting, worsening symptoms, or pregnancy danger signs occur."
+    ],
+    "history": [
+      "Dysuria for two days",
+      "No flank pain",
+      "Last menstrual period is late"
+    ],
+    "management": [
+      "Ask pregnancy status and assess for fever or flank pain.",
+      "Use urine testing if available.",
+      "Choose treatment compatible with pregnancy status and national guidance."
+    ],
+    "medicines": [
+      "Antibiotic choice should follow Uganda guidance and pregnancy safety considerations"
+    ],
+    "referralThreshold": "Fever, flank pain, systemic illness, pregnancy complications, or inability to tolerate oral treatment require escalation/referral.",
+    "reviewOfSystems": [
+      "No fever",
+      "No vomiting",
+      "No vaginal bleeding"
+    ],
+    "vitals": {
+      "bp": "106/68 mmHg",
+      "pulse": "82 bpm",
+      "respiratory_rate": "16/min",
+      "temperature": "37.1 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "Pregnancy status can change safe management choices.",
+      "Simple symptoms still require danger-sign screening."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-adult-dysuria-pregnancy-check-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is pain passing urine. The case is titled 'Dysuria with pregnancy consideration', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 44,
+    "hc3Reality": 86,
+    "learningValue": 80
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this guidelines general presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Dysuria with pregnancy consideration"
+  },
+  "simulatedPatient": {
+    "ageLabel": "22 years",
+    "displayName": "Simulated adult patient",
+    "sex": "female"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-essential-medicines-list-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Pregnancy status can change safe management choices.",
+    "Simple symptoms still require danger-sign screening."
+  ],
+  "title": "Dysuria with pregnancy consideration",
+  "topic": "guidelines_general"
+}

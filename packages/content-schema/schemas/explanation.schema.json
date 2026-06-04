@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/explanation.schema.json",
+  "title": "Explanation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary"],
+  "properties": {
+    "summary": { "type": "string", "minLength": 1 },
+    "clinicalReasoning": { "type": "string" },
+    "citationIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

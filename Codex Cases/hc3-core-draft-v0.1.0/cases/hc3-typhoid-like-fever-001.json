@@ -1,0 +1,101 @@
+{
+  "chapterId": "fever-malaria-acute-illness",
+  "citations": [
+    {
+      "id": "hc3-typhoid-like-fever-001-source",
+      "section": "Long fever with abdominal symptoms",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Long fever with abdominal symptoms"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Prolonged fever with abdominal pain",
+    "dangerSigns": [
+      "Shock",
+      "Confusion",
+      "Severe dehydration"
+    ],
+    "diagnosis": "Prolonged febrile illness requiring structured assessment",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Focused exam findings should be requested by the learner."
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case."
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "varies",
+      "pulse": "varies",
+      "respiratory_rate": "varies",
+      "temperature": "varies"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Do not repeat malaria treatment blindly.",
+      "Use duration and abdominal symptoms to broaden differential diagnosis."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-typhoid-like-fever-001",
+  "narrative": "A shopkeeper has had fever for more than a week and now has abdominal discomfort. A neighbour advised antimalarials, but the symptoms have continued.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this guidelines general presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Long fever with abdominal symptoms"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Do not repeat malaria treatment blindly.",
+    "Use duration and abdominal symptoms to broaden differential diagnosis."
+  ],
+  "title": "Long fever with abdominal symptoms",
+  "topic": "guidelines_general"
+}

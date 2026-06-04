@@ -1,0 +1,80 @@
+{
+  "canonicalCaseId": "hc3-ebola-fever-bleeding-travel-001",
+  "difficultyLevel": 3,
+  "ehrTasks": [
+    {
+      "id": "hc3-ebola-fever-bleeding-travel-001-enter-vitals",
+      "prompt": "Request and enter the patient's vitals.",
+      "required": true,
+      "scoringWeight": 2,
+      "taskType": "enter_vitals"
+    },
+    {
+      "id": "hc3-ebola-fever-bleeding-travel-001-focused-history",
+      "prompt": "Ask the most important focused history question.",
+      "required": true,
+      "scoringWeight": 2,
+      "taskType": "ask_history"
+    },
+    {
+      "id": "hc3-ebola-fever-bleeding-travel-001-decide-referral",
+      "prompt": "Decide whether this patient can be managed at HC III or needs referral.",
+      "required": true,
+      "scoringWeight": 3,
+      "taskType": "decide_referral"
+    }
+  ],
+  "id": "hc3-ebola-fever-bleeding-travel-001-level-3",
+  "informationReveals": [
+    {
+      "fieldPath": "vitals.temperature",
+      "rationale": "Higher-level variants require the learner to request and enter vitals.",
+      "trigger": "request_vitals"
+    },
+    {
+      "fieldPath": "vitals.pulse",
+      "rationale": "Higher-level variants require the learner to request and enter vitals.",
+      "trigger": "request_vitals"
+    },
+    {
+      "fieldPath": "history[0]",
+      "rationale": "The learner should ask focused history rather than receiving it up front.",
+      "trigger": "ask_history"
+    },
+    {
+      "fieldPath": "exam_findings[0]",
+      "rationale": "The learner should perform or select a focused exam.",
+      "trigger": "record_exam"
+    }
+  ],
+  "initiallyVisible": [
+    "chief_complaint"
+  ],
+  "label": "Challenge",
+  "questType": "challenge",
+  "reviewStatus": "draft",
+  "scores": {
+    "clinicalCorrectness": 0,
+    "complexity": 75,
+    "hc3Reality": 0,
+    "learningValue": 0
+  },
+  "scoringRules": [
+    {
+      "citationIds": [
+        "hc3-ebola-fever-bleeding-travel-001-source"
+      ],
+      "description": "Checks for danger signs before management.",
+      "id": "hc3-ebola-fever-bleeding-travel-001-danger-sign-check",
+      "points": 4
+    },
+    {
+      "citationIds": [
+        "hc3-ebola-fever-bleeding-travel-001-source"
+      ],
+      "description": "Chooses a guideline-consistent plan for HC III level.",
+      "id": "hc3-ebola-fever-bleeding-travel-001-guideline-plan",
+      "points": 4
+    }
+  ]
+}

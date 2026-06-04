@@ -1,0 +1,112 @@
+{
+  "chapterId": "hiv-tb-sti-continuity",
+  "citations": [
+    {
+      "id": "hc3-hiv-art-continuity-001-source",
+      "section": "ART continuity and adherence support",
+      "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+      "title": "ART continuity and adherence support"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "TB symptom screen",
+      "Pregnancy test if clinically relevant",
+      "Viral load review if available"
+    ],
+    "chiefComplaint": "Missed ART refill",
+    "dangerSigns": [
+      "Severe illness",
+      "Severe adverse drug reaction",
+      "TB danger symptoms",
+      "Pregnancy-related complications if relevant"
+    ],
+    "diagnosis": "HIV on ART with treatment interruption risk",
+    "differentials": [
+      "Treatment interruption",
+      "Undisclosed side effects",
+      "Access barrier",
+      "TB symptoms if screen positive"
+    ],
+    "examFindings": [
+      "Well appearing",
+      "No respiratory distress",
+      "No oral thrush noted"
+    ],
+    "followUp": [
+      "Arrange adherence support and follow-up according to clinic protocol."
+    ],
+    "history": [
+      "Known HIV positive",
+      "Missed refill by two weeks after travel",
+      "No current severe illness"
+    ],
+    "management": [
+      "Assess adherence barriers without blame.",
+      "Screen for TB symptoms and side effects.",
+      "Restart/continue ART according to national guidance and local clinic protocol."
+    ],
+    "medicines": [
+      "Continue appropriate ART regimen according to national HIV guidance"
+    ],
+    "referralThreshold": "Refer or escalate if severely ill, suspected treatment failure, severe adverse reaction, or complicated opportunistic infection.",
+    "reviewOfSystems": [
+      "No cough for more than two weeks",
+      "No fever",
+      "No weight loss reported"
+    ],
+    "vitals": {
+      "bp": "110/72 mmHg",
+      "pulse": "84 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "36.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "ART continuity cases require adherence support and TB symptom screening.",
+      "The clinician should avoid punitive counseling and identify barriers."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-hiv-art-continuity-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is missed art refill. The case is titled 'ART continuity after missed refill', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 45,
+    "hc3Reality": 84,
+    "learningValue": 82
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this hiv tb presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "ART continuity after missed refill"
+  },
+  "simulatedPatient": {
+    "ageLabel": "36 years",
+    "displayName": "Simulated adult patient",
+    "sex": "female"
+  },
+  "sourceGuidelineIds": [
+    "uganda-hiv-aids-consolidated-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "ART continuity cases require adherence support and TB symptom screening.",
+    "The clinician should avoid punitive counseling and identify barriers."
+  ],
+  "title": "ART continuity after missed refill",
+  "topic": "hiv_tb"
+}

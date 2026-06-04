@@ -1,0 +1,106 @@
+{
+  "chapterId": "child-health-imnci",
+  "citations": [
+    {
+      "id": "hc3-malnutrition-oedema-child-001-source",
+      "section": "Child malnutrition danger signs",
+      "sourceDocumentId": "who-imnci-chart-booklet",
+      "title": "Child malnutrition danger signs"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Swollen feet and poor appetite",
+    "dangerSigns": [
+      "Bilateral oedema",
+      "Lethargy",
+      "Poor appetite",
+      "Severe wasting"
+    ],
+    "diagnosis": "Possible severe acute malnutrition",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Bilateral pedal oedema",
+      "Thin upper arms",
+      "Quiet but rousable"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Reduced appetite",
+      "Swollen feet noticed this week",
+      "Recurrent illness"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "pulse": "112 bpm",
+      "respiratory_rate": "28/min",
+      "temperature": "37.3 C",
+      "weight": "10.5 kg"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize bilateral oedema as high-risk malnutrition sign.",
+      "Assess danger signs and refer/manage according to nutrition protocol availability."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-malnutrition-oedema-child-001",
+  "narrative": "A caregiver brings a quiet 3-year-old whose feet have become swollen. The child has been treated twice for cough recently and is no longer playing.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 88,
+    "learningValue": 86
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this child health presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Child with swollen feet"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "who-imnci-chart-booklet",
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize bilateral oedema as high-risk malnutrition sign.",
+    "Assess danger signs and refer/manage according to nutrition protocol availability."
+  ],
+  "title": "Child with swollen feet",
+  "topic": "child_health"
+}

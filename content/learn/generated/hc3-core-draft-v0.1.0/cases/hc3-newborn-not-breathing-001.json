@@ -1,0 +1,103 @@
+{
+  "chapterId": "neonatal-emergency-care",
+  "citations": [
+    {
+      "id": "hc3-newborn-not-breathing-001-source",
+      "section": "Neonatal resuscitation initial response",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Neonatal resuscitation initial response"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Newborn not crying after birth",
+    "dangerSigns": [
+      "Not breathing",
+      "Poor tone",
+      "Slow heart rate"
+    ],
+    "diagnosis": "Newborn requiring immediate resuscitation assessment",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Poor tone",
+      "No strong cry",
+      "Cord just clamped"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Term baby by dates",
+      "Long labour",
+      "No cry immediately after birth"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "breathing": "Gasps irregularly",
+      "heart_rate": "Slow by quick assessment",
+      "temperature": "Not yet measured"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize failure to breathe as an immediate emergency.",
+      "Start appropriate newborn resuscitation steps and call for help."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-newborn-not-breathing-001",
+  "narrative": "A baby is delivered at night after a long labour. The room becomes quiet when the newborn does not cry immediately, and the birth attendant looks to you for the next action.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 90,
+    "complexity": 76,
+    "hc3Reality": 87,
+    "learningValue": 94
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this neonatal presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Newborn not breathing well"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize failure to breathe as an immediate emergency.",
+    "Start appropriate newborn resuscitation steps and call for help."
+  ],
+  "title": "Newborn not breathing well",
+  "topic": "neonatal"
+}

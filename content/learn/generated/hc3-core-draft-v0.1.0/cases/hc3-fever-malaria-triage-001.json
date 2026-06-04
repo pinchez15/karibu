@@ -1,0 +1,111 @@
+{
+  "chapterId": "fever-malaria-acute-illness",
+  "citations": [
+    {
+      "id": "hc3-fever-malaria-triage-001-source",
+      "section": "Malaria assessment and treatment",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Malaria assessment and treatment"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Malaria RDT"
+    ],
+    "chiefComplaint": "Fever and headache for three days",
+    "dangerSigns": [
+      "Convulsions",
+      "Altered mental status",
+      "Unable to drink",
+      "Persistent vomiting",
+      "Respiratory distress"
+    ],
+    "diagnosis": "Suspected uncomplicated malaria pending test confirmation",
+    "differentials": [
+      "Viral febrile illness",
+      "Urinary tract infection",
+      "Typhoid-like illness"
+    ],
+    "examFindings": [
+      "Alert and able to drink",
+      "No jaundice",
+      "No respiratory distress"
+    ],
+    "followUp": [
+      "Return urgently if confusion, convulsions, inability to drink, persistent vomiting, or worsening fever develops."
+    ],
+    "history": [
+      "Fever started three days ago and has been intermittent.",
+      "No convulsions, confusion, or inability to drink reported.",
+      "No known drug allergy."
+    ],
+    "management": [
+      "Assess for danger signs before outpatient treatment.",
+      "Use available malaria testing where possible.",
+      "Treat confirmed uncomplicated malaria according to Uganda guidance and local stock availability."
+    ],
+    "medicines": [
+      "Artemisinin-based combination therapy if confirmed and clinically appropriate"
+    ],
+    "referralThreshold": "Refer urgently if severe malaria features or other danger signs are present.",
+    "reviewOfSystems": [
+      "No cough",
+      "No dysuria",
+      "No neck stiffness"
+    ],
+    "vitals": {
+      "bp": "112/70 mmHg",
+      "pulse": "104 bpm",
+      "respiratory_rate": "20/min",
+      "temperature": "38.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "Fever management starts with danger-sign screening, not automatic outpatient treatment.",
+      "Testing helps distinguish malaria from other common causes of fever."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-fever-malaria-triage-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is fever and headache for three days. The case is titled 'Fever with malaria triage', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 90,
+    "complexity": 34,
+    "hc3Reality": 88,
+    "learningValue": 82
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this malaria presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Fever with malaria triage"
+  },
+  "simulatedPatient": {
+    "ageLabel": "24 years",
+    "displayName": "Simulated adult patient",
+    "sex": "female"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-essential-medicines-list-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Fever management starts with danger-sign screening, not automatic outpatient treatment.",
+    "Testing helps distinguish malaria from other common causes of fever."
+  ],
+  "title": "Fever with malaria triage",
+  "topic": "malaria"
+}

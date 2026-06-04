@@ -1,4 +1,7 @@
 packages:
   - 'apps/web'
+  - 'packages/clinical-ui'
+  - 'packages/content-schema'
+  - 'packages/design-system'
   - 'packages/shared'
   - 'packages/supabase'

@@ -1,0 +1,110 @@
+{
+  "chapterId": "fever-malaria-acute-illness",
+  "citations": [
+    {
+      "id": "hc3-severe-malaria-referral-001-source",
+      "section": "Severe malaria danger signs and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Severe malaria danger signs and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Malaria RDT",
+      "Blood glucose if available"
+    ],
+    "chiefComplaint": "High fever with confusion",
+    "dangerSigns": [
+      "Altered mental status",
+      "Unable to drink",
+      "Hypotension",
+      "Respiratory distress"
+    ],
+    "diagnosis": "Suspected severe malaria or other severe febrile illness",
+    "differentials": [
+      "Sepsis",
+      "Meningitis",
+      "Hypoglycaemia",
+      "Severe malaria"
+    ],
+    "examFindings": [
+      "Drowsy but rousable",
+      "Dry mucous membranes",
+      "No focal injury reported"
+    ],
+    "followUp": [
+      "Document pre-referral actions and communicate danger signs to the receiving facility."
+    ],
+    "history": [
+      "Two days of fever",
+      "Family reports the patient became confused this morning",
+      "Unable to take oral fluids reliably"
+    ],
+    "management": [
+      "Recognize altered mental status as a danger sign.",
+      "Stabilize according to local protocol and arrange urgent referral.",
+      "Check glucose if available and do not delay referral for advanced diagnostics."
+    ],
+    "medicines": [
+      "Pre-referral treatment per Uganda guidance when available and appropriate"
+    ],
+    "referralThreshold": "Altered mental status, inability to drink, shock, convulsions, or respiratory distress require urgent referral.",
+    "reviewOfSystems": [
+      "No trauma reported",
+      "No known epilepsy history"
+    ],
+    "vitals": {
+      "bp": "96/60 mmHg",
+      "pulse": "122 bpm",
+      "respiratory_rate": "28/min",
+      "temperature": "39.6 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Severe malaria is a referral emergency at HC III level.",
+      "The key decision is recognizing danger signs and not treating this as routine uncomplicated fever."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-severe-malaria-referral-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is high fever with confusion. The case is titled 'Fever with altered mental status', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 92,
+    "complexity": 58,
+    "hc3Reality": 86,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this malaria presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Fever with altered mental status"
+  },
+  "simulatedPatient": {
+    "ageLabel": "31 years",
+    "displayName": "Simulated adult patient",
+    "sex": "male"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Severe malaria is a referral emergency at HC III level.",
+    "The key decision is recognizing danger signs and not treating this as routine uncomplicated fever."
+  ],
+  "title": "Fever with altered mental status",
+  "topic": "malaria"
+}

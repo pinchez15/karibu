@@ -1,0 +1,106 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-asthma-acute-wheeze-001-source",
+      "section": "Acute wheeze severity and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Acute wheeze severity and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Shortness of breath and wheeze",
+    "dangerSigns": [
+      "Unable to speak",
+      "Exhaustion",
+      "Cyanosis",
+      "Silent chest"
+    ],
+    "diagnosis": "Acute asthma/wheeze exacerbation",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Audible wheeze",
+      "Uses accessory muscles",
+      "Speaks in short phrases"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Known episodes of wheeze",
+      "Symptoms worsened today",
+      "Reliever inhaler unavailable"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "126/78 mmHg",
+      "pulse": "118 bpm",
+      "respiratory_rate": "34/min",
+      "spo2": "Not available"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Assess severity immediately.",
+      "Give available bronchodilator treatment and refer if severe or not improving."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-asthma-acute-wheeze-001",
+  "narrative": "A boda rider arrives leaning forward and speaking in short phrases. He says the dust on the road made his chest tight and his inhaler finished last week.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 60,
+    "hc3Reality": 86,
+    "learningValue": 86
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Young adult with acute wheeze"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-essential-medicines-list-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Assess severity immediately.",
+    "Give available bronchodilator treatment and refer if severe or not improving."
+  ],
+  "title": "Young adult with acute wheeze",
+  "topic": "emergency"
+}

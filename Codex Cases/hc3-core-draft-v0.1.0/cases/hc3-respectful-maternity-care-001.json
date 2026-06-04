@@ -1,0 +1,101 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-respectful-maternity-care-001-source",
+      "section": "Anxious labouring mother",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Anxious labouring mother"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Fear and pain during labour",
+    "dangerSigns": [
+      "Clinical deterioration",
+      "Fetal distress",
+      "Bleeding"
+    ],
+    "diagnosis": "Respectful maternity care and communication challenge",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Focused exam findings should be requested by the learner."
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case."
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "varies",
+      "pulse": "varies",
+      "respiratory_rate": "varies",
+      "temperature": "varies"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Respectful communication is clinical care.",
+      "Explain assessments and preserve dignity under pressure."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-respectful-maternity-care-001",
+  "narrative": "A first-time mother is scared and crying during labour. A relative complains that staff are ignoring her.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Anxious labouring mother"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Respectful communication is clinical care.",
+    "Explain assessments and preserve dignity under pressure."
+  ],
+  "title": "Anxious labouring mother",
+  "topic": "maternal_anc"
+}

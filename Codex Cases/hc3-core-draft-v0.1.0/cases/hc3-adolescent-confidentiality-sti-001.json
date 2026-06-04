@@ -1,0 +1,106 @@
+{
+  "chapterId": "hiv-tb-sti-continuity",
+  "citations": [
+    {
+      "id": "hc3-adolescent-confidentiality-sti-001-source",
+      "section": "Adolescent STI care and respectful communication",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Adolescent STI care and respectful communication"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Genital symptoms and request for privacy",
+    "dangerSigns": [
+      "Sexual violence",
+      "Pregnancy danger signs",
+      "Severe pelvic pain",
+      "Fever"
+    ],
+    "diagnosis": "Possible STI with confidentiality and safeguarding needs",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Anxious",
+      "No severe abdominal pain",
+      "No fever"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Adolescent requests confidential discussion",
+      "Dysuria and discharge",
+      "Worried family will find out"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "108/70 mmHg",
+      "pulse": "86 bpm",
+      "respiratory_rate": "16/min",
+      "temperature": "36.9 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Create a private, respectful space.",
+      "Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-adolescent-confidentiality-sti-001",
+  "narrative": "A 17-year-old waits until her aunt leaves the room and then quietly asks if she can talk privately about discharge and pain during urination.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 62,
+    "hc3Reality": 85,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this hiv tb presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Adolescent asks for private advice"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-hiv-aids-consolidated-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Create a private, respectful space.",
+    "Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care."
+  ],
+  "title": "Adolescent asks for private advice",
+  "topic": "hiv_tb"
+}

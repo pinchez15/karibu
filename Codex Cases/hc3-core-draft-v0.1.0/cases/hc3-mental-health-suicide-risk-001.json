@@ -1,0 +1,105 @@
+{
+  "chapterId": "mental-health-psychosocial-care",
+  "citations": [
+    {
+      "id": "hc3-mental-health-suicide-risk-001-source",
+      "section": "Mental health risk assessment and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Mental health risk assessment and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Abdominal pain with disclosed self-harm thoughts",
+    "dangerSigns": [
+      "Active plan",
+      "Access to poison",
+      "Psychosis",
+      "Unable to ensure safety"
+    ],
+    "diagnosis": "Possible depression with suicide risk",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Withdrawn",
+      "No acute abdomen signs",
+      "Oriented"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Poor sleep",
+      "Low mood",
+      "Thoughts of taking poison"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "116/74 mmHg",
+      "pulse": "88 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "36.8 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Ask directly and respectfully about self-harm risk.",
+      "Do not dismiss somatic complaints; ensure safety and urgent mental health referral/escalation when risk is present."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-mental-health-suicide-risk-001",
+  "narrative": "A young man comes with stomach pain, but after a quiet conversation he says he has not slept and has thought about taking poison.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 68,
+    "hc3Reality": 82,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this mental health presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Sadness with self-harm risk"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Ask directly and respectfully about self-harm risk.",
+    "Do not dismiss somatic complaints; ensure safety and urgent mental health referral/escalation when risk is present."
+  ],
+  "title": "Sadness with self-harm risk",
+  "topic": "mental_health"
+}

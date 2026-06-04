@@ -1,0 +1,110 @@
+{
+  "chapterId": "emergency-critical-care",
+  "citations": [
+    {
+      "id": "hc3-wound-tetanus-risk-001-source",
+      "section": "Wound care and tetanus prevention",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Wound care and tetanus prevention"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "None required for initial wound risk assessment"
+    ],
+    "chiefComplaint": "Cut on foot after stepping on metal",
+    "dangerSigns": [
+      "Spreading infection",
+      "Neurovascular compromise",
+      "Deep retained foreign body",
+      "Signs of tetanus"
+    ],
+    "diagnosis": "Contaminated puncture wound with tetanus risk",
+    "differentials": [
+      "Simple wound",
+      "Cellulitis if infection develops",
+      "Foreign body injury"
+    ],
+    "examFindings": [
+      "Puncture wound on sole",
+      "No active bleeding",
+      "No signs of shock"
+    ],
+    "followUp": [
+      "Return for fever, spreading redness, worsening pain, or signs of tetanus."
+    ],
+    "history": [
+      "Injury happened yesterday",
+      "Wound was contaminated with soil",
+      "Tetanus vaccination history uncertain"
+    ],
+    "management": [
+      "Clean and assess the wound.",
+      "Assess tetanus immunization status.",
+      "Provide tetanus prevention and wound care according to Uganda guidance and availability."
+    ],
+    "medicines": [
+      "Tetanus prophylaxis and antibiotics when indicated according to national guidance"
+    ],
+    "referralThreshold": "Deep foreign body, severe infection, neurovascular compromise, or inability to manage wound safely requires referral.",
+    "reviewOfSystems": [
+      "No fever",
+      "No spreading redness reported",
+      "Able to walk with pain"
+    ],
+    "vitals": {
+      "bp": "116/70 mmHg",
+      "pulse": "88 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "37.0 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "Wound care includes prevention thinking, not only dressing the wound.",
+      "Unknown tetanus status should trigger guideline-based prophylaxis assessment."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-wound-tetanus-risk-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is cut on foot after stepping on metal. The case is titled 'Contaminated wound and tetanus prevention', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 82,
+    "complexity": 48,
+    "hc3Reality": 86,
+    "learningValue": 78
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Contaminated wound and tetanus prevention"
+  },
+  "simulatedPatient": {
+    "ageLabel": "17 years",
+    "displayName": "Simulated adult patient",
+    "sex": "male"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-essential-medicines-list-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Wound care includes prevention thinking, not only dressing the wound.",
+    "Unknown tetanus status should trigger guideline-based prophylaxis assessment."
+  ],
+  "title": "Contaminated wound and tetanus prevention",
+  "topic": "emergency"
+}

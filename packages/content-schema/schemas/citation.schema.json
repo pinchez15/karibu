@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/citation.schema.json",
+  "title": "Citation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "source"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "section": { "type": "string" },
+    "url": { "type": "string" },
+    "retrievedAt": { "type": "string", "format": "date-time" }
+  }
+}

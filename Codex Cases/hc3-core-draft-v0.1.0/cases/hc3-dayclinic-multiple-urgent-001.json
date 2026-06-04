@@ -1,0 +1,101 @@
+{
+  "chapterId": "day-in-clinic-mixed-practice",
+  "citations": [
+    {
+      "id": "hc3-dayclinic-multiple-urgent-001-source",
+      "section": "Two urgent patients arrive together",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Two urgent patients arrive together"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Competing emergencies",
+    "dangerSigns": [
+      "Convulsion",
+      "Bleeding",
+      "Airway concern"
+    ],
+    "diagnosis": "Prioritization and team organization",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Focused exam findings should be requested by the learner."
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case."
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "varies",
+      "pulse": "varies",
+      "respiratory_rate": "varies",
+      "temperature": "varies"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Triage is team organization under pressure.",
+      "Assign roles and escalate both patients safely."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-dayclinic-multiple-urgent-001",
+  "narrative": "A labouring mother and a child with convulsions arrive almost at the same time. Staff must organize quickly.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 58,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this emergency presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Two urgent patients arrive together"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Triage is team organization under pressure.",
+    "Assign roles and escalate both patients safely."
+  ],
+  "title": "Two urgent patients arrive together",
+  "topic": "emergency"
+}

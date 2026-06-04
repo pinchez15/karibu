@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/learning-pack.schema.json",
+  "title": "LearningPack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "version", "schemaVersion", "jurisdiction", "language", "cases", "assets", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,}$" },
+    "title": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "jurisdiction": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "description": { "type": "string" },
+    "offline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "estimatedBytes"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "estimatedBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "checksum"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "checksum": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "mediaType", "checksum"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "mediaType": { "type": "string", "minLength": 1 },
+          "checksum": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

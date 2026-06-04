@@ -43,4 +43,13 @@ sealed interface NavRoute {
 
     /** Visits with outstanding payment — `rpc_worklist_needs_payment`. */
     @Serializable data object Billing : NavRoute
+
+    @Serializable data class ConsultChat(val visitId: String) : NavRoute
+
+    /**
+     * KaribuLearn — the free CME app. A distinct coral-skinned product that
+     * shares the EHR's bones. Launched full-screen from the Home shell's
+     * "Learn" destination; it owns its own chrome and internal navigation.
+     */
+    @Serializable data object KaribuLearn : NavRoute
 }

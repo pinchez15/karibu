@@ -8,7 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.karibuhealth.app.ui.auth.AuthScreen
 import com.karibuhealth.app.ui.home.HomeScreen
-import com.karibuhealth.app.ui.home.MainShell
+import com.karibuhealth.app.ui.clinical.ClinicalMainShell
+import com.karibuhealth.app.ui.consult.ConsultChatScreen
+import com.karibuhealth.app.ui.learn.KaribuLearnRoot
 import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
@@ -43,7 +45,7 @@ fun KaribuNavHost(
         }
 
         composable<NavRoute.Home> {
-            MainShell(
+            ClinicalMainShell(
                 onNavigateToQueue = { navController.navigate(NavRoute.Queue) },
                 onNavigateToNewVisit = { navController.navigate(NavRoute.NewVisit) },
                 onNavigateToVisitDetails = { visitId ->
@@ -54,6 +56,22 @@ fun KaribuNavHost(
                 },
                 onNavigateToWorklists = { navController.navigate(NavRoute.Worklists) },
                 onNavigateToBilling = { navController.navigate(NavRoute.Billing) },
+                onNavigateToConsultChat = { visitId ->
+                    navController.navigate(NavRoute.ConsultChat(visitId))
+                },
+                onOpenLearn = { navController.navigate(NavRoute.KaribuLearn) },
+            )
+        }
+
+        composable<NavRoute.KaribuLearn> {
+            KaribuLearnRoot(onExit = { navController.popBackStack() })
+        }
+
+        composable<NavRoute.ConsultChat> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.ConsultChat>()
+            ConsultChatScreen(
+                visitId = route.visitId,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
@@ -116,6 +134,9 @@ fun KaribuNavHost(
             VisitDetailsScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToConsult = { visitId ->
+                    navController.navigate(NavRoute.ConsultChat(visitId))
+                },
                 onNavigateToDictation = { visitId, aiMode, incorporate ->
                     navController.navigate(
                         NavRoute.Dictation(

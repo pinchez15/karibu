@@ -1,0 +1,110 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-anc-hypertension-danger-signs-001-source",
+      "section": "Hypertension in pregnancy and referral",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Hypertension in pregnancy and referral"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Urine protein if available"
+    ],
+    "chiefComplaint": "Headache during ANC visit",
+    "dangerSigns": [
+      "Severe headache",
+      "Blurred vision",
+      "High blood pressure",
+      "Convulsions",
+      "Vaginal bleeding"
+    ],
+    "diagnosis": "Hypertension in pregnancy with symptoms concerning for pre-eclampsia",
+    "differentials": [
+      "Gestational hypertension",
+      "Pre-eclampsia",
+      "Severe headache from another cause"
+    ],
+    "examFindings": [
+      "Alert",
+      "No active convulsion",
+      "Mild pedal oedema"
+    ],
+    "followUp": [
+      "Communicate BP readings, symptoms, gestational age, and actions taken to receiving facility."
+    ],
+    "history": [
+      "Pregnant at about 32 weeks by dates",
+      "Headache since morning",
+      "Reports blurred vision"
+    ],
+    "management": [
+      "Recognize headache, visual symptoms, and high blood pressure as danger signs.",
+      "Check urine protein if available but do not ignore symptoms.",
+      "Arrange urgent referral according to maternal health guidance."
+    ],
+    "medicines": [
+      "Pre-referral treatment per local maternal emergency protocol if indicated and available"
+    ],
+    "referralThreshold": "Severe hypertension, headache, visual symptoms, convulsions, or suspected pre-eclampsia require urgent referral.",
+    "reviewOfSystems": [
+      "No vaginal bleeding",
+      "No convulsions reported",
+      "No fever"
+    ],
+    "vitals": {
+      "bp": "156/102 mmHg",
+      "pulse": "96 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "36.9 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "ANC cases require active danger-sign screening, not routine reassurance.",
+      "Referral decisions should not wait for perfect diagnostics when danger signs are present."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-anc-hypertension-danger-signs-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is headache during anc visit. The case is titled 'ANC visit with high blood pressure', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 90,
+    "complexity": 62,
+    "hc3Reality": 87,
+    "learningValue": 90
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "ANC visit with high blood pressure"
+  },
+  "simulatedPatient": {
+    "ageLabel": "28 years",
+    "displayName": "Simulated pregnant patient",
+    "sex": "female"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "ANC cases require active danger-sign screening, not routine reassurance.",
+    "Referral decisions should not wait for perfect diagnostics when danger signs are present."
+  ],
+  "title": "ANC visit with high blood pressure",
+  "topic": "maternal_anc"
+}

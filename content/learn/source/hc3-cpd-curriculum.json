@@ -1,0 +1,73 @@
+{
+  "id": "hc3-cpd-curriculum",
+  "version": "0.1.0",
+  "status": "draft",
+  "audience": ["nurses", "midwives", "clinical_officers", "frontline_hc3_clinicians"],
+  "tracks": [
+    {
+      "id": "fever-malaria-acute-illness",
+      "title": "Fever, Malaria, and Acute Illness",
+      "goals": ["danger-sign recognition", "safe triage", "HC III management vs referral"]
+    },
+    {
+      "id": "child-health-imnci",
+      "title": "Child Health and IMNCI Reasoning",
+      "goals": ["structured child assessment", "dehydration classification", "caregiver counseling"]
+    },
+    {
+      "id": "maternal-midwifery-emergencies",
+      "title": "Maternal Health and Midwifery Emergencies",
+      "goals": ["pre-eclampsia recognition", "PPH response", "partograph reasoning", "respectful maternity care"]
+    },
+    {
+      "id": "neonatal-emergency-care",
+      "title": "Neonatal and Emergency Care",
+      "goals": ["resuscitation recognition", "stabilization", "urgent referral"]
+    },
+    {
+      "id": "hiv-tb-sti-continuity",
+      "title": "HIV, TB, STI, and Continuity of Care",
+      "goals": ["stigma-aware care", "screening", "adherence support", "partner management"]
+    },
+    {
+      "id": "patient-safety-communication",
+      "title": "Patient Safety, Communication, and Digital Practice",
+      "goals": ["infection prevention", "documentation", "communication", "work organization"]
+    },
+    {
+      "id": "outbreak-ipc-ebola-vhf",
+      "title": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
+      "goals": ["screening", "isolation", "notification", "health worker safety", "risk communication"]
+    },
+    {
+      "id": "emergency-critical-care",
+      "title": "Emergency and Critical Care at HC III",
+      "goals": ["ABC assessment", "shock recognition", "stabilization", "urgent referral"]
+    },
+    {
+      "id": "ncd-mental-health",
+      "title": "NCD and Mental Health Reasoning",
+      "goals": ["chronic disease danger signs", "adherence", "mental health risk", "safe referral"]
+    },
+    {
+      "id": "mental-health-psychosocial-care",
+      "title": "Mental Health and Psychosocial Care",
+      "goals": ["respectful risk assessment", "psychosocial safety", "stigma-aware communication", "referral readiness"]
+    },
+    {
+      "id": "general-hc3-practice",
+      "title": "General HC III Practice",
+      "goals": ["common presentation triage", "safe documentation", "guideline-aware initial management", "referral threshold"]
+    },
+    {
+      "id": "pharmacy-lab-diagnostics",
+      "title": "Pharmacy, Lab, and Diagnostic Reasoning",
+      "goals": ["test interpretation", "medicine safety", "stockout-aware planning", "diagnostic reassessment"]
+    },
+    {
+      "id": "day-in-clinic-mixed-practice",
+      "title": "Day in the Clinic Mixed Practice",
+      "goals": ["prioritization", "team communication", "unrelated case switching", "workflow safety"]
+    }
+  ]
+}

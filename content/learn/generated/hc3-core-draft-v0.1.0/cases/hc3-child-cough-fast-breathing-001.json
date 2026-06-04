@@ -1,0 +1,110 @@
+{
+  "chapterId": "child-health-imnci",
+  "citations": [
+    {
+      "id": "hc3-child-cough-fast-breathing-001-source",
+      "section": "IMNCI cough and difficult breathing",
+      "sourceDocumentId": "who-imnci-chart-booklet",
+      "title": "IMNCI cough and difficult breathing"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "None required for initial IMNCI classification if not available"
+    ],
+    "chiefComplaint": "Cough and fever",
+    "dangerSigns": [
+      "Unable to drink",
+      "Convulsions",
+      "Lethargic or unconscious",
+      "Chest indrawing",
+      "Stridor at rest"
+    ],
+    "diagnosis": "Possible pneumonia classification requiring guideline-based management",
+    "differentials": [
+      "Viral upper respiratory infection",
+      "Pneumonia",
+      "Malaria with cough"
+    ],
+    "examFindings": [
+      "No chest indrawing",
+      "No stridor at rest",
+      "Alert"
+    ],
+    "followUp": [
+      "Counsel caregiver on danger signs and follow-up timing."
+    ],
+    "history": [
+      "Cough for four days",
+      "Fever since yesterday",
+      "Still able to drink"
+    ],
+    "management": [
+      "Assess general danger signs.",
+      "Count respiratory rate and assess chest indrawing.",
+      "Classify using IMNCI approach and manage or refer according to severity."
+    ],
+    "medicines": [
+      "Antibiotic treatment if classified as pneumonia according to IMNCI/Uganda guidance"
+    ],
+    "referralThreshold": "General danger signs, chest indrawing, stridor at rest, severe respiratory distress, or inability to drink require referral.",
+    "reviewOfSystems": [
+      "No convulsions",
+      "No persistent vomiting"
+    ],
+    "vitals": {
+      "pulse": "118 bpm",
+      "respiratory_rate": "48/min",
+      "spo2": "Not available",
+      "temperature": "38.2 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "For children with cough, respiratory rate and danger signs drive classification.",
+      "A learner should ask age because fast-breathing thresholds are age-dependent."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-child-cough-fast-breathing-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is cough and fever. The case is titled 'Child with cough and fast breathing', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 89,
+    "complexity": 50,
+    "hc3Reality": 90,
+    "learningValue": 86
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this child health presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Child with cough and fast breathing"
+  },
+  "simulatedPatient": {
+    "ageLabel": "2 years",
+    "displayName": "Simulated child patient",
+    "sex": "female"
+  },
+  "sourceGuidelineIds": [
+    "who-imnci-chart-booklet",
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "For children with cough, respiratory rate and danger signs drive classification.",
+    "A learner should ask age because fast-breathing thresholds are age-dependent."
+  ],
+  "title": "Child with cough and fast breathing",
+  "topic": "child_health"
+}

@@ -1,0 +1,105 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-family-planning-danger-headache-001-source",
+      "section": "Family planning danger symptoms",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Family planning danger symptoms"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Severe headache and blurred vision",
+    "dangerSigns": [
+      "Severe headache",
+      "Visual symptoms",
+      "Severe hypertension",
+      "Neurologic deficit"
+    ],
+    "diagnosis": "Danger symptoms during family planning follow-up",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Alert",
+      "No weakness",
+      "Anxious about time"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Using hormonal contraception",
+      "New severe headaches",
+      "Blurred vision"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "162/100 mmHg",
+      "pulse": "90 bpm",
+      "respiratory_rate": "18/min",
+      "temperature": "36.7 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Do not treat refill as routine when danger symptoms are present.",
+      "Assess blood pressure and refer/escalate according to contraceptive safety guidance."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-family-planning-danger-headache-001",
+  "narrative": "A woman attending family planning clinic says she has severe new headaches and blurred vision. She wants another refill quickly because she needs to return to work.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 80,
+    "complexity": 55,
+    "hc3Reality": 84,
+    "learningValue": 84
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this family planning presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Severe headache on contraception"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Do not treat refill as routine when danger symptoms are present.",
+    "Assess blood pressure and refer/escalate according to contraceptive safety guidance."
+  ],
+  "title": "Severe headache on contraception",
+  "topic": "family_planning"
+}

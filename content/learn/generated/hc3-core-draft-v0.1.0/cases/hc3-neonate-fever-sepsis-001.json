@@ -1,0 +1,106 @@
+{
+  "chapterId": "neonatal-emergency-care",
+  "citations": [
+    {
+      "id": "hc3-neonate-fever-sepsis-001-source",
+      "section": "Young infant fever and possible serious bacterial infection",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Young infant fever and possible serious bacterial infection"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Newborn fever and poor feeding",
+    "dangerSigns": [
+      "Poor feeding",
+      "Fever",
+      "Fast breathing",
+      "Lethargy"
+    ],
+    "diagnosis": "Possible neonatal sepsis",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Weak suck",
+      "Sleepy but rousable",
+      "No obvious congenital abnormality"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Nine days old",
+      "Poor feeding since yesterday",
+      "Feels hot at home"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "pulse": "168 bpm",
+      "respiratory_rate": "62/min",
+      "temperature": "38.4 C",
+      "weight": "3.1 kg"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Treat fever and poor feeding in a neonate as high risk.",
+      "Stabilize and arrange urgent referral according to neonatal guidance."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-neonate-fever-sepsis-001",
+  "narrative": "A grandmother brings a 9-day-old baby wrapped tightly in a blanket. She says the baby has stopped breastfeeding well and feels hot.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 89,
+    "complexity": 64,
+    "hc3Reality": 88,
+    "learningValue": 90
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this neonatal presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Newborn with fever and poor feeding"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "who-imnci-chart-booklet"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Treat fever and poor feeding in a neonate as high risk.",
+    "Stabilize and arrange urgent referral according to neonatal guidance."
+  ],
+  "title": "Newborn with fever and poor feeding",
+  "topic": "neonatal"
+}

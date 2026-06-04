@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/canonical-case.schema.json",
+  "title": "CanonicalCase",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id", "title", "narrative", "chapterId", "sourceType", "facilityLevel", "topic", "simulatedPatient", "clinicalTruth", "citations", "scores", "sourceGuidelineIds"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "narrative": { "type": "string", "minLength": 1 },
+    "chapterId": { "type": "string", "minLength": 1 },
+    "sourceType": { "type": "string", "enum": ["generated_guideline", "reviewer_authored", "literature_adapted"] },
+    "facilityLevel": { "type": "string" },
+    "topic": { "type": "string" },
+    "simulatedPatient": {
+      "type": "object",
+      "required": ["displayName", "ageLabel", "sex"],
+      "properties": {
+        "displayName": { "type": "string" },
+        "ageLabel": { "type": "string" },
+        "sex": { "type": "string", "enum": ["female", "male", "unknown"] },
+        "context": { "type": "string" }
+      }
+    },
+    "clinicalTruth": {
+      "type": "object",
+      "required": ["chiefComplaint", "history", "vitals", "examFindings", "diagnosis", "management", "referralThreshold"],
+      "properties": {
+        "chiefComplaint": { "type": "string" },
+        "history": { "type": "array", "items": { "type": "string" } },
+        "reviewOfSystems": { "type": "array", "items": { "type": "string" } },
+        "vitals": { "type": "object", "additionalProperties": { "type": "string" } },
+        "examFindings": { "type": "array", "items": { "type": "string" } },
+        "availableTests": { "type": "array", "items": { "type": "string" } },
+        "diagnosis": { "type": "string" },
+        "differentials": { "type": "array", "items": { "type": "string" } },
+        "management": { "type": "array", "items": { "type": "string" } },
+        "referralThreshold": { "type": "string" },
+        "medicines": { "type": "array", "items": { "type": "string" } },
+        "followUp": { "type": "array", "items": { "type": "string" } },
+        "dangerSigns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "citations": { "type": "array", "items": { "$ref": "citation.schema.json" } },
+    "scores": { "$ref": "case-scores.schema.json" },
+    "sourceGuidelineIds": { "type": "array", "items": { "type": "string" } }
+  }
+}

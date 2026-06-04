@@ -1,0 +1,61 @@
+{
+  "canonicalCaseId": "hc3-pharmacy-antibiotic-request-001",
+  "difficultyLevel": 2,
+  "ehrTasks": [
+    {
+      "id": "hc3-pharmacy-antibiotic-request-001-ask-key-history",
+      "prompt": "Ask for the missing history detail that most changes risk or management.",
+      "required": true,
+      "scoringWeight": 2,
+      "taskType": "ask_history"
+    },
+    {
+      "id": "hc3-pharmacy-antibiotic-request-001-document-next-step",
+      "prompt": "Document the safest next step in the simulated chart.",
+      "required": true,
+      "scoringWeight": 2,
+      "taskType": "write_plan"
+    }
+  ],
+  "id": "hc3-pharmacy-antibiotic-request-001-level-2",
+  "informationReveals": [
+    {
+      "fieldPath": "history[0]",
+      "rationale": "Level 2 keeps vitals visible but requires the learner to ask for the key history detail.",
+      "trigger": "ask_history"
+    }
+  ],
+  "initiallyVisible": [
+    "chief_complaint",
+    "vitals",
+    "exam_findings[0]",
+    "available_tests"
+  ],
+  "label": "Guided Reasoning",
+  "questType": "guided_reasoning",
+  "reviewStatus": "draft",
+  "scores": {
+    "clinicalCorrectness": 0,
+    "complexity": 48,
+    "hc3Reality": 0,
+    "learningValue": 0
+  },
+  "scoringRules": [
+    {
+      "citationIds": [
+        "hc3-pharmacy-antibiotic-request-001-source"
+      ],
+      "description": "Requests the missing history detail before choosing management.",
+      "id": "hc3-pharmacy-antibiotic-request-001-focused-history",
+      "points": 3
+    },
+    {
+      "citationIds": [
+        "hc3-pharmacy-antibiotic-request-001-source"
+      ],
+      "description": "Documents a safe next step consistent with the case risk.",
+      "id": "hc3-pharmacy-antibiotic-request-001-safe-next-step",
+      "points": 3
+    }
+  ]
+}

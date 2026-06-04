@@ -1,0 +1,105 @@
+{
+  "chapterId": "maternal-midwifery-emergencies",
+  "citations": [
+    {
+      "id": "hc3-postpartum-fever-sepsis-001-source",
+      "section": "Postpartum infection and sepsis recognition",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "Postpartum infection and sepsis recognition"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "Use available HC III tests where relevant"
+    ],
+    "chiefComplaint": "Postpartum fever and abdominal pain",
+    "dangerSigns": [
+      "Hypotension",
+      "High fever",
+      "Altered mental status",
+      "Heavy bleeding"
+    ],
+    "diagnosis": "Possible postpartum infection/sepsis",
+    "differentials": [
+      "Alternative diagnosis depends on focused history and exam"
+    ],
+    "examFindings": [
+      "Tender lower abdomen",
+      "Foul-smelling discharge reported",
+      "Weak but alert"
+    ],
+    "followUp": [
+      "Give clear safety-net advice and document the plan."
+    ],
+    "history": [
+      "Delivered at home three days ago",
+      "Fever since yesterday",
+      "Lower abdominal pain"
+    ],
+    "management": [
+      "Assess danger signs and immediate stability.",
+      "Use HC III-appropriate guideline reasoning.",
+      "Document clearly and refer/escalate when threshold is met."
+    ],
+    "medicines": [
+      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+    ],
+    "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+    "reviewOfSystems": [
+      "Focused review needed based on presentation"
+    ],
+    "vitals": {
+      "bp": "100/62 mmHg",
+      "pulse": "118 bpm",
+      "respiratory_rate": "24/min",
+      "temperature": "39.1 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 10,
+    "learningObjectives": [
+      "Recognize postpartum fever as potentially serious.",
+      "Assess sepsis signs, start appropriate urgent management within scope, and refer/escalate."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-postpartum-fever-sepsis-001",
+  "narrative": "Three days after delivering at home, a mother arrives with fever and lower abdominal pain. Her aunt says the baby is well but the mother has been getting weaker.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 86,
+    "complexity": 64,
+    "hc3Reality": 88,
+    "learningValue": 88
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this maternal anc presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Fever after delivery"
+  },
+  "simulatedPatient": {
+    "ageLabel": "varies by scenario",
+    "displayName": "Simulated patient",
+    "sex": "unknown"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "Recognize postpartum fever as potentially serious.",
+    "Assess sepsis signs, start appropriate urgent management within scope, and refer/escalate."
+  ],
+  "title": "Fever after delivery",
+  "topic": "maternal_anc"
+}

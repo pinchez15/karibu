@@ -1,0 +1,111 @@
+{
+  "chapterId": "general-hc3-practice",
+  "citations": [
+    {
+      "id": "hc3-suspected-sti-partner-management-001-source",
+      "section": "STI syndromic management and HIV testing",
+      "sourceDocumentId": "uganda-clinical-guidelines-2023",
+      "title": "STI syndromic management and HIV testing"
+    }
+  ],
+  "clinicalTruth": {
+    "availableTests": [
+      "HIV testing offer",
+      "Syphilis testing if available",
+      "Syndromic management pathway"
+    ],
+    "chiefComplaint": "Urethral discharge",
+    "dangerSigns": [
+      "Severe systemic illness",
+      "Scrotal swelling",
+      "Complicated genital findings"
+    ],
+    "diagnosis": "Suspected sexually transmitted infection presenting with urethral discharge",
+    "differentials": [
+      "Gonococcal urethritis",
+      "Chlamydial urethritis",
+      "Other STI syndrome"
+    ],
+    "examFindings": [
+      "Well appearing",
+      "No severe lower abdominal pain",
+      "No systemic illness"
+    ],
+    "followUp": [
+      "Counsel on abstinence/condom use until treatment complete and partner management addressed."
+    ],
+    "history": [
+      "Discharge for four days",
+      "Burning on urination",
+      "New sexual partner recently"
+    ],
+    "management": [
+      "Use syndromic STI assessment and treatment according to Uganda guidance.",
+      "Offer HIV testing and risk reduction counseling.",
+      "Address partner notification/treatment according to clinic protocol."
+    ],
+    "medicines": [
+      "Syndromic treatment according to national guideline and stock availability"
+    ],
+    "referralThreshold": "Severe systemic illness, complicated genital findings, or suspected sexual violence requires escalation/referral.",
+    "reviewOfSystems": [
+      "No scrotal swelling",
+      "No fever",
+      "No genital ulcers reported"
+    ],
+    "vitals": {
+      "bp": "124/78 mmHg",
+      "pulse": "78 bpm",
+      "respiratory_rate": "16/min",
+      "temperature": "36.9 C"
+    }
+  },
+  "credentialingMetadata": {
+    "assessmentMode": "practice",
+    "certificateEligible": false,
+    "estimatedDurationMinutes": 7,
+    "learningObjectives": [
+      "STI care includes counseling, testing offer, and partner management, not only medication.",
+      "The case tests whether learners ask sensitive but clinically necessary questions."
+    ]
+  },
+  "expectedReasoningPath": [
+    "Start with danger-sign screening.",
+    "Gather focused history and vitals.",
+    "Use Uganda guideline logic for management or referral.",
+    "Document the decision clearly."
+  ],
+  "facilityLevel": "HC III",
+  "guidelineCrosscheck": "Draft generated against registered source documents; requires clinician review before publication.",
+  "id": "hc3-suspected-sti-partner-management-001",
+  "narrative": "It is a busy morning at a rural HC III. A patient is added to your queue while other staff are balancing immunizations, ANC visits, and urgent walk-ins. The presenting concern is urethral discharge. The case is titled 'Urethral discharge and partner management', but the learner should approach it as an unfolding clinical encounter, not as a diagnosis already made.",
+  "reviewStatus": "needs_review",
+  "scores": {
+    "clinicalCorrectness": 84,
+    "complexity": 52,
+    "hc3Reality": 85,
+    "learningValue": 82
+  },
+  "shareMetadata": {
+    "discussionQuestion": "Which finding most changes your next step?",
+    "prompt": "What would you do first for this guidelines general presentation?",
+    "summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+    "title": "Urethral discharge and partner management"
+  },
+  "simulatedPatient": {
+    "ageLabel": "29 years",
+    "displayName": "Simulated adult patient",
+    "sex": "male"
+  },
+  "sourceGuidelineIds": [
+    "uganda-clinical-guidelines-2023",
+    "uganda-hiv-aids-consolidated-guidelines-2023"
+  ],
+  "sourceType": "generated_guideline",
+  "teachingPoints": [
+    "STI care includes counseling, testing offer, and partner management, not only medication.",
+    "The case tests whether learners ask sensitive but clinically necessary questions."
+  ],
+  "title": "Urethral discharge and partner management",
+  "topic": "guidelines_general"
+}

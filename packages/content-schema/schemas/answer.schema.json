@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.karibu.health/learn/answer.schema.json",
+  "title": "Answer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "label", "isCorrect", "explanation"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "label": { "type": "string", "minLength": 1 },
+    "isCorrect": { "type": "boolean" },
+    "score": { "type": "number", "minimum": 0 },
+    "explanation": { "$ref": "explanation.schema.json" }
+  }
+}
