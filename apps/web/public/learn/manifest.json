@@ -1,0 +1,48 @@
+{
+  "packs": [
+    {
+      "id": "core-opd",
+      "title": "Everyday OPD",
+      "subtitle": "The cases you see on a busy morning — fever, cough, diarrhoea.",
+      "topic": "General OPD",
+      "case_count": 3,
+      "approx_size_kb": 90,
+      "bundled": true,
+      "asset_path": "learn/packs/core-opd.kpack",
+      "version": 1
+    },
+    {
+      "id": "ncd-essentials",
+      "title": "NCD essentials",
+      "subtitle": "Hypertension and diabetes — the slow emergencies.",
+      "topic": "NCDs",
+      "case_count": 2,
+      "approx_size_kb": 1850,
+      "bundled": false,
+      "download_url": "bundled-remote://learn/remote/ncd-essentials.kpack",
+      "version": 1
+    },
+    {
+      "id": "maternal-hiv",
+      "title": "Maternal & HIV",
+      "subtitle": "First ANC visit and an HIV test request, done well.",
+      "topic": "Maternal health",
+      "case_count": 2,
+      "approx_size_kb": 2100,
+      "bundled": false,
+      "download_url": "bundled-remote://learn/remote/maternal-hiv.kpack",
+      "version": 1
+    },
+    {
+      "id": "msk-clinic",
+      "title": "Aches & joints",
+      "subtitle": "Sorting inflammatory joint pain from the mechanical.",
+      "topic": "Musculoskeletal",
+      "case_count": 1,
+      "approx_size_kb": 940,
+      "bundled": false,
+      "download_url": "bundled-remote://learn/remote/msk-clinic.kpack",
+      "version": 1
+    }
+  ]
+}

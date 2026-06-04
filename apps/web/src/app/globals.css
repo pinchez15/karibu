@@ -137,3 +137,9 @@
   body { background: white; }
   .print-full-width { max-width: 100% !important; padding: 0 !important; }
 }
+
+/* KaribuLearn — amber AI-card shimmer (the only animated gradient in the system). */
+@keyframes klshim {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
