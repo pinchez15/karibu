@@ -32,8 +32,14 @@ data class PackEntry(val info: PackInfo, val status: PackStatus)
 class LearnRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val json: Json,
-    private val okHttpClient: OkHttpClient,
 ) {
+    // KaribuLearn is a free product, decoupled from KaribuEHR: it carries no
+    // clinical data and does not use the EHR's auth. Pack downloads are public,
+    // so they use a clean OkHttpClient — NOT the app's shared client (which adds
+    // the Clerk AuthInterceptor). Account/auth for KaribuLearn, when added, will
+    // be Supabase Auth, not Clerk.
+    private val httpClient: OkHttpClient by lazy { OkHttpClient() }
+
     private val packsDir: File by lazy { File(context.filesDir, "learn/packs").apply { mkdirs() } }
 
     // Published packs are immutable ".kpack" files (case-content-strategy.md).
@@ -108,7 +114,7 @@ class LearnRepository @Inject constructor(
 
     private fun readNetworkPack(url: String, approxKb: Int, onProgress: (Float) -> Unit): ByteArray {
         val request = Request.Builder().url(url).build()
-        okHttpClient.newCall(request).execute().use { response ->
+        httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("HTTP ${response.code} downloading pack")
             val body = response.body ?: error("Empty pack body")
             val total = if (body.contentLength() > 0) body.contentLength() else approxKb * 1024L
