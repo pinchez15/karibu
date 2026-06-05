@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
+import com.karibuhealth.app.ui.adaptive.karibuDialogModifier
+import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveQueue
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
@@ -53,19 +56,18 @@ fun PharmacyHomeScreen(
                     Text("No orders waiting", color = Ink.copy(alpha = 0.6f))
                 }
             } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(uiState.items, key = { it.visitId }) { item ->
-                        PharmacyQueueCard(
-                            item = item,
-                            busy = uiState.actionVisitId == item.visitId,
-                            onOpen = { onNavigateToVisit(item.visitId) },
-                            onStart = { viewModel.markInProgress(item.visitId) },
-                            onDispense = { dispenseDialogVisit = item },
-                        )
-                    }
+                KaribuAdaptiveQueue(
+                    items = uiState.items,
+                    key = { it.visitId },
+                    modifier = Modifier.fillMaxSize(),
+                ) { item ->
+                    PharmacyQueueCard(
+                        item = item,
+                        busy = uiState.actionVisitId == item.visitId,
+                        onOpen = { onNavigateToVisit(item.visitId) },
+                        onStart = { viewModel.markInProgress(item.visitId) },
+                        onDispense = { dispenseDialogVisit = item },
+                    )
                 }
             }
         }
@@ -75,6 +77,7 @@ fun PharmacyHomeScreen(
         var notes by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { dispenseDialogVisit = null },
+            modifier = karibuDialogModifier(),
             title = { Text("Dispense — ${item.patientName}") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

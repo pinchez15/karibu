@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.NeedsLabItem
+import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveQueue
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.karibuDialogModifier
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
@@ -79,19 +82,18 @@ fun LabHomeScreen(
                         Text("No pending lab work", color = Ink.copy(alpha = 0.6f))
                     }
                 } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(uiState.items, key = { it.visitId }) { item ->
-                            LabQueueCard(
-                                item = item,
-                                busy = uiState.actionVisitId == item.visitId,
-                                onOpen = { onNavigateToVisit(item.visitId) },
-                                onStart = { viewModel.startLab(item.visitId) },
-                                onRecord = { resultDialogVisit = item },
-                            )
-                        }
+                    KaribuAdaptiveQueue(
+                        items = uiState.items,
+                        key = { it.visitId },
+                        modifier = Modifier.fillMaxSize(),
+                    ) { item ->
+                        LabQueueCard(
+                            item = item,
+                            busy = uiState.actionVisitId == item.visitId,
+                            onOpen = { onNavigateToVisit(item.visitId) },
+                            onStart = { viewModel.startLab(item.visitId) },
+                            onRecord = { resultDialogVisit = item },
+                        )
                     }
                 }
             }
@@ -103,6 +105,7 @@ fun LabHomeScreen(
         var abnormal by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { resultDialogVisit = null },
+            modifier = karibuDialogModifier(),
             title = { Text("Record result — ${item.patientName}") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

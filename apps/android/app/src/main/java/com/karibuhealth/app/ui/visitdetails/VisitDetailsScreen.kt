@@ -49,6 +49,10 @@ import com.karibuhealth.app.ui.util.BottomBarScrollPadding
 import com.karibuhealth.app.ui.util.formatClinicalLine
 import com.karibuhealth.app.ui.util.formatClinicalList
 import com.karibuhealth.app.ui.util.formatPatientName
+import com.karibuhealth.app.ui.util.adaptiveBottomBarScrollPadding
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.KaribuTwoColumnRow
+import com.karibuhealth.app.ui.adaptive.supportsMultiColumn
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.AmberSoft
 import com.karibuhealth.app.ui.theme.Body
@@ -67,7 +71,8 @@ fun VisitDetailsScreen(
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToReferral: (String) -> Unit = {},
-    viewModel: VisitDetailsViewModel = hiltViewModel(),
+    embedInPane: Boolean = false,
+    viewModel: VisitDetailsViewModel = hiltViewModel(key = visitId),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -89,8 +94,10 @@ fun VisitDetailsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    if (!embedInPane) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
                 actions = {
@@ -183,8 +190,8 @@ fun VisitDetailsScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .padding(bottom = BottomBarScrollPadding.dp),
+                    .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 12.dp)
+                    .padding(bottom = adaptiveBottomBarScrollPadding().dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (uiState.syncErrors.isNotEmpty()) {
@@ -196,134 +203,207 @@ fun VisitDetailsScreen(
                     )
                 }
 
-                OutlinedButton(
-                    onClick = { onNavigateToReferral(visitId) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Refer to hospital")
-                }
-
-                uiState.activeCriticalAlerts.forEach { alert ->
-                    VisitCriticalAlertBanner(
-                        alert = alert,
-                        onConfirmData = { viewModel.respondToCriticalAlert(alert.id, "confirmed") },
-                        onDataError = { viewModel.respondToCriticalAlert(alert.id, "data_error") },
-                        onDismiss = { viewModel.respondToCriticalAlert(alert.id, "dismissed") },
-                    )
-                }
-
-                AiNotesTimeline(
-                    suggestions = uiState.timelineAiNotes,
-                    onDismiss = { viewModel.dismissAiSuggestion(it.id) },
-                    onAcknowledge = { viewModel.acknowledgeAiSuggestion(it.id) },
-                    onIncorporate = { suggestion ->
-                        val incorporate = incorporationFor(suggestion)
-                        viewModel.incorporateAiSuggestion(suggestion.id) {
-                            onNavigateToDictation(visitId, false, incorporate)
-                        }
-                    },
-                )
-
-                uiState.patient?.let { patient ->
-                    PatientCard(
-                        name = formatPatientName(
-                            patient.firstName,
-                            patient.lastName,
-                            patient.displayName,
-                        ),
-                        patientId = patient.patientNumber ?: "PT-${patient.id.take(6)}",
-                        ageBand = listOfNotNull(
-                            patient.dateOfBirth?.let(::formatAgeFromDob),
-                            patient.sex?.firstOrNull()?.uppercaseChar()?.toString(),
-                        ).joinToString(""),
-                        phone = patient.whatsappNumber,
-                        complaint = uiState.visit?.chiefComplaint?.takeIf { it.isNotBlank() },
-                        vitals = uiState.latestVitals,
-                    )
-                }
-
-                uiState.visit?.let { visit ->
-                    if (
-                        !visit.diagnosis.isNullOrBlank() ||
-                        !visit.followUpInstructions.isNullOrBlank() ||
-                        !visit.testsOrdered.isNullOrBlank() ||
-                        !visit.medications.isNullOrBlank()
-                    ) {
-                        ClinicalSummaryCard(visit = visit)
+                val contextColumn: @Composable () -> Unit = {
+                    uiState.activeCriticalAlerts.forEach { alert ->
+                        VisitCriticalAlertBanner(
+                            alert = alert,
+                            onConfirmData = { viewModel.respondToCriticalAlert(alert.id, "confirmed") },
+                            onDataError = { viewModel.respondToCriticalAlert(alert.id, "data_error") },
+                            onDismiss = { viewModel.respondToCriticalAlert(alert.id, "dismissed") },
+                        )
                     }
-                }
 
-                run {
-                    val clinicianText = uiState.patientNote?.content
-                        ?.takeIf { it.isNotBlank() }
-                        ?: uiState.providerNote?.transcript?.takeIf { it.isNotBlank() }
-                    if (clinicianText != null) {
-                        ClinicianNoteCard(content = clinicianText)
-                    }
-                }
-
-                uiState.providerNote?.let { note ->
-                    NoteLifecycleActionsCard(
-                        noteStatus = note.status.name,
-                        noteAuthorId = note.createdBy ?: note.finalizedBy,
-                        requiresCosign = note.requiresCosign,
-                        currentTranscript = note.transcript.orEmpty(),
-                        currentStaffId = uiState.currentStaff?.id,
-                        currentStaffRole = uiState.currentStaff?.role,
-                        onAddend = viewModel::addendCurrentNote,
-                        onAmend = viewModel::amendCurrentNote,
-                        onVoid = viewModel::voidCurrentNote,
-                        onCosign = viewModel::cosignCurrentNote,
+                    AiNotesTimeline(
+                        suggestions = uiState.timelineAiNotes,
+                        onDismiss = { viewModel.dismissAiSuggestion(it.id) },
+                        onAcknowledge = { viewModel.acknowledgeAiSuggestion(it.id) },
+                        onIncorporate = { suggestion ->
+                            val incorporate = incorporationFor(suggestion)
+                            viewModel.incorporateAiSuggestion(suggestion.id) {
+                                onNavigateToDictation(visitId, false, incorporate)
+                            }
+                        },
                     )
-                }
 
-                uiState.aiPatientNote?.content?.takeIf { it.isNotBlank() }?.let { summary ->
-                    AiReceiptCard(summary = summary)
-                }
+                    uiState.patient?.let { patient ->
+                        PatientCard(
+                            name = formatPatientName(
+                                patient.firstName,
+                                patient.lastName,
+                                patient.displayName,
+                            ),
+                            patientId = patient.patientNumber ?: "PT-${patient.id.take(6)}",
+                            ageBand = listOfNotNull(
+                                patient.dateOfBirth?.let(::formatAgeFromDob),
+                                patient.sex?.firstOrNull()?.uppercaseChar()?.toString(),
+                            ).joinToString(""),
+                            phone = patient.whatsappNumber,
+                            complaint = uiState.visit?.chiefComplaint?.takeIf { it.isNotBlank() },
+                            vitals = uiState.latestVitals,
+                        )
+                    }
 
-                uiState.visit?.let { visit ->
-                    val canSendPharmacy =
-                        !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
-                    if (canSendPharmacy) {
-                        OutlinedButton(
-                            onClick = { viewModel.sendToPharmacy() },
-                            enabled = !uiState.isSendingToPharmacy,
-                            modifier = Modifier.fillMaxWidth(),
+                    uiState.visit?.let { visit ->
+                        if (
+                            !visit.diagnosis.isNullOrBlank() ||
+                            !visit.followUpInstructions.isNullOrBlank() ||
+                            !visit.testsOrdered.isNullOrBlank() ||
+                            !visit.medications.isNullOrBlank()
                         ) {
-                            Text(
-                                if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
-                                else "Send to pharmacy",
-                            )
-                        }
-                        uiState.pharmacyMessage?.let { msg ->
-                            Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            ClinicalSummaryCard(visit = visit)
                         }
                     }
-                    val hasLab =
-                        !visit.testsOrdered.isNullOrBlank() || !visit.labResults.isNullOrBlank()
-                    val hasPharmacy =
-                        !visit.medications.isNullOrBlank() || visit.dispensingStatus != "not_started"
-                    if (hasLab || hasPharmacy) {
-                        CareDeliveredCard(visit = visit)
+
+                    run {
+                        val clinicianText = uiState.patientNote?.content
+                            ?.takeIf { it.isNotBlank() }
+                            ?: uiState.providerNote?.transcript?.takeIf { it.isNotBlank() }
+                        if (clinicianText != null) {
+                            ClinicianNoteCard(content = clinicianText)
+                        }
+                    }
+
+                    uiState.aiPatientNote?.content?.takeIf { it.isNotBlank() }?.let { summary ->
+                        AiReceiptCard(summary = summary)
+                    }
+
+                    uiState.visit?.let { visit ->
+                        val hasLab =
+                            !visit.testsOrdered.isNullOrBlank() || !visit.labResults.isNullOrBlank()
+                        val hasPharmacy =
+                            !visit.medications.isNullOrBlank() || visit.dispensingStatus != "not_started"
+                        if (hasLab || hasPharmacy) {
+                            CareDeliveredCard(visit = visit)
+                        }
                     }
                 }
 
-                uiState.aiReviewError?.let { err ->
-                    Text(
-                        text = err,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                val actionsColumn: @Composable () -> Unit = {
+                    OutlinedButton(
+                        onClick = { onNavigateToReferral(visitId) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Refer to hospital")
+                    }
+
+                    uiState.providerNote?.let { note ->
+                        NoteLifecycleActionsCard(
+                            noteStatus = note.status.name,
+                            noteAuthorId = note.createdBy ?: note.finalizedBy,
+                            requiresCosign = note.requiresCosign,
+                            currentTranscript = note.transcript.orEmpty(),
+                            currentStaffId = uiState.currentStaff?.id,
+                            currentStaffRole = uiState.currentStaff?.role,
+                            onAddend = viewModel::addendCurrentNote,
+                            onAmend = viewModel::amendCurrentNote,
+                            onVoid = viewModel::voidCurrentNote,
+                            onCosign = viewModel::cosignCurrentNote,
+                        )
+                    }
+
+                    uiState.visit?.let { visit ->
+                        val canSendPharmacy =
+                            !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
+                        if (canSendPharmacy) {
+                            OutlinedButton(
+                                onClick = { viewModel.sendToPharmacy() },
+                                enabled = !uiState.isSendingToPharmacy,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
+                                    else "Send to pharmacy",
+                                )
+                            }
+                            uiState.pharmacyMessage?.let { msg ->
+                                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            }
+                        }
+                    }
+
+                    uiState.aiReviewError?.let { err ->
+                        Text(
+                            text = err,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    if (uiState.hasPendingVisitSync || uiState.syncErrors.isNotEmpty()) {
+                        SyncCard(
+                            statusMessage = uiState.aiAvailabilityMessage,
+                            canSync = !uiState.isSyncing && uiState.connectionStatus.isOnline,
+                            isSyncing = uiState.isSyncing,
+                            errors = uiState.syncErrors,
+                            onTrySync = { viewModel.trySync(visitId) },
+                        )
+                    }
                 }
 
-                if (uiState.hasPendingVisitSync || uiState.syncErrors.isNotEmpty()) {
-                    SyncCard(
-                        statusMessage = uiState.aiAvailabilityMessage,
-                        canSync = !uiState.isSyncing && uiState.connectionStatus.isOnline,
-                        isSyncing = uiState.isSyncing,
-                        errors = uiState.syncErrors,
-                        onTrySync = { viewModel.trySync(visitId) },
+                if (supportsMultiColumn()) {
+                    KaribuTwoColumnRow(
+                        leftWeight = 0.58f,
+                        rightWeight = 0.42f,
+                        left = contextColumn,
+                        right = actionsColumn,
                     )
+                } else {
+                    OutlinedButton(
+                        onClick = { onNavigateToReferral(visitId) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Refer to hospital")
+                    }
+                    contextColumn()
+                    uiState.providerNote?.let { note ->
+                        NoteLifecycleActionsCard(
+                            noteStatus = note.status.name,
+                            noteAuthorId = note.createdBy ?: note.finalizedBy,
+                            requiresCosign = note.requiresCosign,
+                            currentTranscript = note.transcript.orEmpty(),
+                            currentStaffId = uiState.currentStaff?.id,
+                            currentStaffRole = uiState.currentStaff?.role,
+                            onAddend = viewModel::addendCurrentNote,
+                            onAmend = viewModel::amendCurrentNote,
+                            onVoid = viewModel::voidCurrentNote,
+                            onCosign = viewModel::cosignCurrentNote,
+                        )
+                    }
+                    uiState.visit?.let { visit ->
+                        val canSendPharmacy =
+                            !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
+                        if (canSendPharmacy) {
+                            OutlinedButton(
+                                onClick = { viewModel.sendToPharmacy() },
+                                enabled = !uiState.isSendingToPharmacy,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
+                                    else "Send to pharmacy",
+                                )
+                            }
+                            uiState.pharmacyMessage?.let { msg ->
+                                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            }
+                        }
+                    }
+                    uiState.aiReviewError?.let { err ->
+                        Text(
+                            text = err,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    if (uiState.hasPendingVisitSync || uiState.syncErrors.isNotEmpty()) {
+                        SyncCard(
+                            statusMessage = uiState.aiAvailabilityMessage,
+                            canSync = !uiState.isSyncing && uiState.connectionStatus.isOnline,
+                            isSyncing = uiState.isSyncing,
+                            errors = uiState.syncErrors,
+                            onTrySync = { viewModel.trySync(visitId) },
+                        )
+                    }
                 }
 
                 uiState.visit?.errorMessage?.let { error ->

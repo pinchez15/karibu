@@ -55,6 +55,21 @@ fun KaribuNavHost(
                 },
                 onNavigateToWorklists = { navController.navigate(NavRoute.Worklists) },
                 onNavigateToBilling = { navController.navigate(NavRoute.Billing) },
+                onAddPatientNote = { patientId ->
+                    navController.navigate(NavRoute.PatientNote(patientId, null))
+                },
+                onRecordPatientVitals = { patientId ->
+                    navController.navigate(NavRoute.PatientVitals(patientId))
+                },
+                onNavigateToReferral = { visitId ->
+                    navController.navigate(NavRoute.Referral(visitId))
+                },
+                onNavigateToDictation = { visitId, aiMode ->
+                    navController.navigate(NavRoute.Dictation(visitId, aiMode))
+                },
+                onNavigateToReview = { visitId ->
+                    navController.navigate(NavRoute.Review(visitId))
+                },
             )
         }
 
@@ -272,6 +287,21 @@ fun KaribuNavHost(
                 onNavigateToPatient = { patientId ->
                     navController.navigate(NavRoute.PatientDetail(patientId))
                 },
+                onNavigateToReferral = { visitId ->
+                    navController.navigate(NavRoute.Referral(visitId))
+                },
+                onNavigateToDictation = { visitId, aiMode ->
+                    navController.navigate(NavRoute.Dictation(visitId, aiMode))
+                },
+                onNavigateToReview = { visitId ->
+                    navController.navigate(NavRoute.Review(visitId))
+                },
+                onAddPatientNote = { patientId ->
+                    navController.navigate(NavRoute.PatientNote(patientId, null))
+                },
+                onRecordPatientVitals = { patientId ->
+                    navController.navigate(NavRoute.PatientVitals(patientId))
+                },
             )
         }
 
@@ -280,6 +310,9 @@ fun KaribuNavHost(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToVisit = { visitId ->
                     navController.navigate(NavRoute.VisitDetails(visitId))
+                },
+                onNavigateToPayment = { visitId ->
+                    navController.navigate(NavRoute.Payment(visitId))
                 },
             )
         }

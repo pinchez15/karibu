@@ -106,6 +106,50 @@ object ReferralSummaryFormatter {
         return lines.joinToString("\n")
     }
 
+    /** Live preview while the referral form is being filled (tablet split view). */
+    fun buildDraftPreview(
+        clinicName: String?,
+        patient: Patient,
+        visit: Visit?,
+        vitals: PatientVitals?,
+        toFacility: String,
+        urgency: ReferralUrgency,
+        reason: String,
+        clinicalSummary: String,
+        transportMode: String,
+        referringClinician: String?,
+    ): String {
+        val draft = Referral(
+            id = "draft",
+            clinicId = "",
+            patientId = patient.id,
+            visitId = visit?.id,
+            patientName = formatPatientName(
+                patient.firstName,
+                patient.lastName,
+                patient.displayName,
+            ),
+            fromDepartment = "opd",
+            toFacility = toFacility.ifBlank { "—" },
+            urgency = urgency,
+            reason = reason.ifBlank { "—" },
+            clinicalSummary = clinicalSummary.ifBlank { null },
+            transportMode = transportMode.ifBlank { null },
+            referredBy = null,
+            status = "draft",
+            createdAt = Instant.now().toString(),
+            isSynced = false,
+        )
+        return buildPrintableSummary(
+            clinicName = clinicName,
+            patient = patient,
+            visit = visit,
+            vitals = vitals,
+            referral = draft,
+            referringClinician = referringClinician,
+        )
+    }
+
     fun defaultClinicalSummary(
         visit: Visit?,
         providerTranscript: String?,

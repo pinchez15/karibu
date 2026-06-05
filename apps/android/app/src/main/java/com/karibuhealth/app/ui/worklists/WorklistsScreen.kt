@@ -51,7 +51,13 @@ import com.karibuhealth.app.domain.model.NeedsLabItem
 import com.karibuhealth.app.domain.model.NeedsPaymentItem
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
 import com.karibuhealth.app.domain.model.NeedsVitalsItem
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.KaribuListDetailScaffold
+import com.karibuhealth.app.ui.adaptive.ListDetailEmptyPlaceholder
+import com.karibuhealth.app.ui.adaptive.supportsListDetail
 import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.patientdetail.PatientTimelineScreen
+import com.karibuhealth.app.ui.visitdetails.VisitDetailsScreen
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
@@ -78,9 +84,168 @@ fun WorklistsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToVisit: (String) -> Unit,
     onNavigateToPatient: (String) -> Unit,
+    onNavigateToReferral: (String) -> Unit = {},
+    onNavigateToDictation: (String, Boolean) -> Unit = { _, _ -> },
+    onNavigateToReview: (String) -> Unit = {},
+    onAddPatientNote: (String) -> Unit = {},
+    onRecordPatientVitals: (String) -> Unit = {},
     viewModel: WorklistsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var selectedVisitId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPatientId by rememberSaveable { mutableStateOf<String?>(null) }
+    val listDetail = supportsListDetail()
+
+    fun openVisit(visitId: String) {
+        if (listDetail) {
+            selectedVisitId = visitId
+            selectedPatientId = null
+        } else {
+            onNavigateToVisit(visitId)
+        }
+    }
+
+    fun openPatient(patientId: String) {
+        if (listDetail) {
+            selectedPatientId = patientId
+            selectedVisitId = null
+        } else {
+            onNavigateToPatient(patientId)
+        }
+    }
+
+    val listContent: @Composable () -> Unit = {
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = 12.dp,
+                    bottom = KaribuLayout.bottomBarScrollPadding().dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (uiState.isLoading) {
+                    item { LoadingHint() }
+                } else {
+                    item {
+                        WorklistSection(
+                            title = "Needs vitals",
+                            accent = Green,
+                            count = uiState.needsVitals.size,
+                            items = uiState.needsVitals,
+                            rowKey = { it.visitId },
+                            rowContent = { item -> VitalsRowBody(item = item) },
+                            onRowClick = { openVisit(it.visitId) },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "Needs clinician",
+                            accent = Cobalt,
+                            count = uiState.needsClinician.size,
+                            items = uiState.needsClinician,
+                            rowKey = { it.visitId },
+                            rowContent = { item -> ClinicianRowBody(item = item) },
+                            onRowClick = { openVisit(it.visitId) },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "Needs lab",
+                            accent = Slate,
+                            count = uiState.needsLab.size,
+                            items = uiState.needsLab,
+                            rowKey = { it.visitId },
+                            rowContent = { item -> LabRowBody(item = item) },
+                            onRowClick = { openVisit(it.visitId) },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "Needs pharmacy",
+                            accent = Slate,
+                            count = uiState.needsPharmacy.size,
+                            items = uiState.needsPharmacy,
+                            rowKey = { it.visitId },
+                            rowContent = { item -> PharmacyRowBody(item = item) },
+                            onRowClick = { openVisit(it.visitId) },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "Needs payment",
+                            accent = Amber,
+                            count = uiState.needsPayment.size,
+                            items = uiState.needsPayment,
+                            rowKey = { it.visitId },
+                            rowContent = { item -> PaymentRowBody(item = item) },
+                            onRowClick = { openVisit(it.visitId) },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "My drafts",
+                            accent = Cobalt,
+                            count = uiState.myDrafts.size,
+                            items = uiState.myDrafts,
+                            rowKey = { it.noteId },
+                            rowContent = { item -> DraftRowBody(item = item) },
+                            onRowClick = { item ->
+                                val visitId = item.visitId
+                                if (visitId != null) openVisit(visitId) else openPatient(item.patientId)
+                            },
+                        )
+                    }
+                    item {
+                        WorklistSection(
+                            title = "Care tasks",
+                            accent = Amber,
+                            count = uiState.careTasks.size,
+                            items = uiState.careTasks,
+                            rowKey = { it.taskId },
+                            rowContent = { item -> CareTaskRowBody(item = item) },
+                            onRowClick = { openPatient(it.patientId) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    val detailContent: @Composable () -> Unit = {
+        when {
+            selectedVisitId != null -> VisitDetailsScreen(
+                visitId = selectedVisitId!!,
+                embedInPane = true,
+                onNavigateBack = {
+                    selectedVisitId = null
+                    selectedPatientId = null
+                },
+                onNavigateToReferral = onNavigateToReferral,
+                onNavigateToDictation = { visitId, aiMode, _ ->
+                    onNavigateToDictation(visitId, aiMode)
+                },
+                onNavigateToReview = onNavigateToReview,
+            )
+            selectedPatientId != null -> PatientTimelineScreen(
+                patientId = selectedPatientId!!,
+                embedInPane = true,
+                onNavigateBack = {
+                    selectedVisitId = null
+                    selectedPatientId = null
+                },
+                onNavigateToVisit = { visitId -> openVisit(visitId) },
+                onAddNote = onAddPatientNote,
+                onRecordVitals = onRecordPatientVitals,
+                onNavigateToReferral = onNavigateToReferral,
+                onNavigateToDictation = { visitId -> onNavigateToDictation(visitId, false) },
+            )
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -105,126 +270,24 @@ fun WorklistsScreen(
             )
         },
     ) { innerPadding ->
-        PullToRefreshBox(
-            isRefreshing = uiState.isRefreshing,
-            onRefresh = { viewModel.refresh() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (uiState.isLoading) {
-                    item { LoadingHint() }
-                } else {
-                    item {
-                        // needs-vitals
-                        WorklistSection(
-                            title = "Needs vitals",
-                            accent = Green,
-                            count = uiState.needsVitals.size,
-                            items = uiState.needsVitals,
-                            rowKey = { it.visitId },
-                            rowContent = { item ->
-                                VitalsRowBody(item = item)
-                            },
-                            onRowClick = { onNavigateToVisit(it.visitId) },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "Needs clinician",
-                            accent = Cobalt,
-                            count = uiState.needsClinician.size,
-                            items = uiState.needsClinician,
-                            rowKey = { it.visitId },
-                            rowContent = { item ->
-                                ClinicianRowBody(item = item)
-                            },
-                            onRowClick = { onNavigateToVisit(it.visitId) },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "Needs lab",
-                            accent = Slate,
-                            count = uiState.needsLab.size,
-                            items = uiState.needsLab,
-                            rowKey = { it.visitId },
-                            rowContent = { item ->
-                                LabRowBody(item = item)
-                            },
-                            onRowClick = { onNavigateToVisit(it.visitId) },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "Needs pharmacy",
-                            accent = Slate,
-                            count = uiState.needsPharmacy.size,
-                            items = uiState.needsPharmacy,
-                            rowKey = { it.visitId },
-                            rowContent = { item ->
-                                PharmacyRowBody(item = item)
-                            },
-                            onRowClick = { onNavigateToVisit(it.visitId) },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "Needs payment",
-                            accent = Amber,
-                            count = uiState.needsPayment.size,
-                            items = uiState.needsPayment,
-                            rowKey = { it.visitId },
-                            rowContent = { item ->
-                                PaymentRowBody(item = item)
-                            },
-                            onRowClick = { onNavigateToVisit(it.visitId) },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "My drafts",
-                            accent = Cobalt,
-                            count = uiState.myDrafts.size,
-                            items = uiState.myDrafts,
-                            rowKey = { it.noteId },
-                            rowContent = { item ->
-                                DraftRowBody(item = item)
-                            },
-                            onRowClick = { item ->
-                                // Visit-tied drafts route to the visit; standalone
-                                // drafts (no visit_id) open the patient timeline.
-                                val visitId = item.visitId
-                                if (visitId != null) {
-                                    onNavigateToVisit(visitId)
-                                } else {
-                                    onNavigateToPatient(item.patientId)
-                                }
-                            },
-                        )
-                    }
-                    item {
-                        WorklistSection(
-                            title = "Care tasks",
-                            accent = Amber,
-                            count = uiState.careTasks.size,
-                            items = uiState.careTasks,
-                            rowKey = { it.taskId },
-                            rowContent = { item ->
-                                CareTaskRowBody(item = item)
-                            },
-                            // Care tasks aren't bound to a single visit — open
-                            // the patient timeline so the clinician sees the
-                            // full context before acting.
-                            onRowClick = { onNavigateToPatient(it.patientId) },
-                        )
-                    }
-                }
+        if (listDetail) {
+            KaribuListDetailScaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                listContent = listContent,
+                showDetail = selectedVisitId != null || selectedPatientId != null,
+                emptyDetail = {
+                    ListDetailEmptyPlaceholder(
+                        title = "Select a worklist item",
+                        subtitle = "Expand a section and tap a row to open visit or patient context.",
+                    )
+                },
+                detailContent = detailContent,
+            )
+        } else {
+            Column(Modifier.padding(innerPadding)) {
+                listContent()
             }
         }
     }
@@ -253,7 +316,7 @@ private fun <T> WorklistSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
     ) {
         Row(
             modifier = Modifier
@@ -356,7 +419,7 @@ private fun CountBadge(count: Int) {
 
 @Composable
 private fun LoadingHint() {
-    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+    Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp)) {
         Text(
             text = "Loading worklists...",
             style = MaterialTheme.typography.bodyMedium,

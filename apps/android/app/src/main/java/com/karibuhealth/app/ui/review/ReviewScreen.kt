@@ -21,6 +21,8 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.AiDiagnosis
 import com.karibuhealth.app.domain.model.AiStructuredSuggestions
+import com.karibuhealth.app.ui.adaptive.KaribuTwoColumnRow
+import com.karibuhealth.app.ui.adaptive.supportsMultiColumn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +31,7 @@ fun ReviewScreen(
     onNavigateBack: () -> Unit,
     onApproved: (String) -> Unit,
     onRejected: (String) -> Unit,
+    embedInPane: Boolean = false,
     viewModel: ReviewViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -52,8 +55,10 @@ fun ReviewScreen(
             TopAppBar(
                 title = { Text("Review Notes") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    if (!embedInPane) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
             )
@@ -75,121 +80,255 @@ fun ReviewScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Provider Note
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Provider Note (SOAP)",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            uiState.providerNote?.noteContent ?: "No note available",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
+                if (supportsMultiColumn()) {
+                    KaribuTwoColumnRow(
+                        leftWeight = 0.56f,
+                        rightWeight = 0.44f,
+                        left = {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                // Provider Note
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "Provider Note (SOAP)",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            uiState.providerNote?.noteContent ?: "No note available",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
 
-                // AI suggestions — diagnoses with citations + optional learning
-                // note + optional missing-info banner. Renders only when the
-                // Inngest pipeline produced something. Never blocks approve /
-                // reject — both buttons stay live regardless.
-                uiState.suggestions?.takeUnless { it.isEmpty }?.let { suggestions ->
-                    AiSuggestionsSection(suggestions)
-                }
+                                // Transcript
+                                uiState.providerNote?.transcript?.let { transcript ->
+                                    Card(modifier = Modifier.fillMaxWidth()) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text(
+                                                "Transcript",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            Text(
+                                                transcript,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
 
-                // Transcript
-                uiState.providerNote?.transcript?.let { transcript ->
+                                // Patient Summary
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "Patient Summary",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(
+                                            uiState.patientNote?.content ?: "No summary available",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        right = {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                // AI suggestions — diagnoses with citations + optional learning
+                                // note + optional missing-info banner.
+                                uiState.suggestions?.takeUnless { it.isEmpty }?.let { suggestions ->
+                                    AiSuggestionsSection(suggestions)
+                                }
+
+                                uiState.error?.let { error ->
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                        ) {
+                                            Text(
+                                                text = error,
+                                                modifier = Modifier.weight(1f),
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                style = MaterialTheme.typography.bodySmall,
+                                            )
+                                            TextButton(onClick = { viewModel.dismissError() }) {
+                                                Text("Dismiss")
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val isBusy = uiState.isApproving || uiState.isRejecting
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Button(
+                                        onClick = { viewModel.approveNote(visitId) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = !isBusy,
+                                    ) {
+                                        if (uiState.isApproving) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                            )
+                                        } else {
+                                            Text("Approve note")
+                                        }
+                                    }
+
+                                    // Reject = AI got it wrong. Server clears the structured note +
+                                    // patient summary, keeps the original transcript so the
+                                    // clinician can edit it on the dictation screen instead of
+                                    // starting over.
+                                    OutlinedButton(
+                                        onClick = { viewModel.rejectNote(visitId) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = !isBusy,
+                                    ) {
+                                        if (uiState.isRejecting) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp,
+                                            )
+                                        } else {
+                                            Text("Re-dictate (AI got it wrong)")
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    )
+                } else {
+                    // Phone: keep the existing single-column layout.
+                    // Provider Note
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                "Transcript",
+                                "Provider Note (SOAP)",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                transcript,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                uiState.providerNote?.noteContent ?: "No note available",
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                         }
                     }
-                }
 
-                // Patient Summary
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Patient Summary",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            uiState.patientNote?.content ?: "No summary available",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                    // AI suggestions — diagnoses with citations + optional learning
+                    // note + optional missing-info banner.
+                    uiState.suggestions?.takeUnless { it.isEmpty }?.let { suggestions ->
+                        AiSuggestionsSection(suggestions)
                     }
-                }
 
-                uiState.error?.let { error ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = error,
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            TextButton(onClick = { viewModel.dismissError() }) {
-                                Text("Dismiss")
+                    // Transcript
+                    uiState.providerNote?.transcript?.let { transcript ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    "Transcript",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    transcript,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(8.dp))
-
-                val isBusy = uiState.isApproving || uiState.isRejecting
-
-                Button(
-                    onClick = { viewModel.approveNote(visitId) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isBusy,
-                ) {
-                    if (uiState.isApproving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Approve note")
+                    // Patient Summary
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                "Patient Summary",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                uiState.patientNote?.content ?: "No summary available",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     }
-                }
-                // Reject = AI got it wrong. Server clears the structured note +
-                // patient summary, keeps the original transcript so the
-                // clinician can edit it on the dictation screen instead of
-                // starting over.
-                OutlinedButton(
-                    onClick = { viewModel.rejectNote(visitId) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isBusy,
-                ) {
-                    if (uiState.isRejecting) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Text("Re-dictate (AI got it wrong)")
+
+                    uiState.error?.let { error ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = error,
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                TextButton(onClick = { viewModel.dismissError() }) {
+                                    Text("Dismiss")
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    val isBusy = uiState.isApproving || uiState.isRejecting
+
+                    Button(
+                        onClick = { viewModel.approveNote(visitId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isBusy,
+                    ) {
+                        if (uiState.isApproving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("Approve note")
+                        }
+                    }
+                    // Reject = AI got it wrong. Server clears the structured note +
+                    // patient summary, keeps the original transcript so the
+                    // clinician can edit it on the dictation screen instead of
+                    // starting over.
+                    OutlinedButton(
+                        onClick = { viewModel.rejectNote(visitId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isBusy,
+                    ) {
+                        if (uiState.isRejecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text("Re-dictate (AI got it wrong)")
+                        }
                     }
                 }
             }
