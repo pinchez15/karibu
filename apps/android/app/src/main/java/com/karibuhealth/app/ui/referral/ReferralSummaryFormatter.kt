@@ -31,7 +31,24 @@ object ReferralSummaryFormatter {
                 .format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"))
         }.getOrDefault(referral.createdAt)
 
+        val urgent = referral.urgency != ReferralUrgency.Routine
+        val urgencyTag = referral.urgency.label.uppercase()
         val lines = buildList {
+            // Urgent/emergency: on a thermal note that may tear, smear in the
+            // heat, or get crumpled on an open-air truck, the reason is the one
+            // thing that must survive — put it FIRST in caps, banner-framed, and
+            // repeat it at the foot.
+            if (urgent) {
+                add("*".repeat(48))
+                add("**  $urgencyTag REFERRAL — DO NOT DELAY  **")
+                add("*".repeat(48))
+                add("")
+                add("REASON FOR REFERRAL:")
+                add(referral.reason.uppercase())
+                add("")
+                add("*".repeat(48))
+                add("")
+            }
             add("KARIBU HEALTH — REFERRAL / TRANSFER SUMMARY")
             add("=".repeat(48))
             add("")
@@ -99,6 +116,12 @@ object ReferralSummaryFormatter {
                 add(it)
             }
             add("")
+            if (urgent) {
+                add("")
+                add("*".repeat(48))
+                add("**  $urgencyTag — REASON: ${referral.reason.uppercase()}")
+                add("*".repeat(48))
+            }
             add("—")
             add("This summary accompanies the patient to the receiving facility.")
             add("Digital transfer may be available in future releases.")
@@ -156,14 +179,18 @@ object ReferralSummaryFormatter {
         vitals: PatientVitals?,
     ): String {
         val blocks = mutableListOf<String>()
-        visit?.chiefComplaint?.takeIf { it.isNotBlank() }?.let {
-            blocks += "Chief complaint: $it"
-        }
-        providerTranscript?.takeIf { it.isNotBlank() }?.let {
-            blocks += it.take(1200)
-        }
-        visit?.diagnosis?.takeIf { it.isNotBlank() }?.let {
-            blocks += "Diagnosis: $it"
+        val transcript = providerTranscript?.takeIf { it.isNotBlank() }
+        if (transcript != null) {
+            // The structured note already contains chief complaint, diagnosis and
+            // assessment — use it as-is so those lines aren't printed twice.
+            blocks += transcript.take(1200)
+        } else {
+            visit?.chiefComplaint?.takeIf { it.isNotBlank() }?.let {
+                blocks += "Chief complaint: $it"
+            }
+            visit?.diagnosis?.takeIf { it.isNotBlank() }?.let {
+                blocks += "Diagnosis: $it"
+            }
         }
         visit?.testsOrdered?.takeIf { it.isNotBlank() }?.let {
             blocks += "Labs: $it"
