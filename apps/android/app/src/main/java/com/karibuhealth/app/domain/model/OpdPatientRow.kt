@@ -67,9 +67,10 @@ data class OpdPatientRow(
             }
         }
 
-        fun from(vwp: VisitWithPatient): OpdPatientRow {
+        /** Returns null for an orphaned visit (patient not present yet). */
+        fun from(vwp: VisitWithPatient): OpdPatientRow? {
             val v = vwp.visit
-            val p = vwp.patient
+            val p = vwp.patient ?: return null
             val name = listOfNotNull(p.firstName, p.lastName)
                 .joinToString(" ")
                 .ifBlank { p.displayName ?: p.whatsappNumber ?: "Unknown" }

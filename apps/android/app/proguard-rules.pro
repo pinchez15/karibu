@@ -14,3 +14,11 @@
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
+# `-keep @androidx.room.Entity class *` keeps @Entity classes but NOT the
+# @Embedded/@Relation POJOs (e.g. VisitWithPatient, VisitWithDetails), which are
+# plain data classes. Under R8 release optimization their constructors were
+# mangled, so the generated DAO passed a null `patient` and the app crashed on
+# launch (NullPointerException in VisitWithPatient.<init>). Keep the whole entity
+# package (entities + relation POJOs) and the generated DAO implementations.
+-keep class com.karibuhealth.app.data.local.db.entity.** { *; }
+-keep class com.karibuhealth.app.data.local.db.dao.*_Impl { *; }

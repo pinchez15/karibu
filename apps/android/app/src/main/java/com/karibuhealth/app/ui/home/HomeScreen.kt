@@ -738,7 +738,7 @@ private fun OpdPatientCard(
 @Composable
 private fun QueueCard(visit: VisitWithPatient, onClick: () -> Unit) {
     val v = visit.visit
-    val p = visit.patient
+    val p = visit.patient ?: return // orphaned visit (patient not synced) — skip
     val name = listOfNotNull(p.firstName, p.lastName)
         .joinToString(" ")
         .ifBlank { p.displayName ?: p.whatsappNumber ?: "Unknown" }
@@ -818,7 +818,7 @@ private fun StatusCard(
     onClick: () -> Unit,
 ) {
     val v = visit.visit
-    val p = visit.patient
+    val p = visit.patient ?: return // orphaned visit (patient not synced) — skip
     val name = listOfNotNull(p.firstName, p.lastName)
         .joinToString(" ")
         .ifBlank { p.displayName ?: p.whatsappNumber ?: "Unknown" }

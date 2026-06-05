@@ -50,9 +50,10 @@ class OrdersViewModel @Inject constructor(
             ) { visits, referrals ->
                 val labRows = visits
                     .filter { !it.visit.testsOrdered.isNullOrBlank() }
-                    .map { vwp ->
+                    .mapNotNull { vwp ->
                         val v = vwp.visit
-                        val name = patientName(vwp.patient.firstName, vwp.patient.lastName, vwp.patient.displayName)
+                        val p = vwp.patient ?: return@mapNotNull null
+                        val name = patientName(p.firstName, p.lastName, p.displayName)
                         OrderRow(
                             id = "lab-${v.id}",
                             visitId = v.id,
@@ -69,9 +70,10 @@ class OrdersViewModel @Inject constructor(
                         !it.visit.medications.isNullOrBlank() ||
                             it.visit.pharmacyOrderSubmittedAt != null
                     }
-                    .map { vwp ->
+                    .mapNotNull { vwp ->
                         val v = vwp.visit
-                        val name = patientName(vwp.patient.firstName, vwp.patient.lastName, vwp.patient.displayName)
+                        val p = vwp.patient ?: return@mapNotNull null
+                        val name = patientName(p.firstName, p.lastName, p.displayName)
                         val hasOrder = v.pharmacyOrderSubmittedAt != null
                         OrderRow(
                             id = "pharm-${v.id}",

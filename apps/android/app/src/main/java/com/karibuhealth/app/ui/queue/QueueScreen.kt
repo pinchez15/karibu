@@ -70,9 +70,12 @@ fun QueueScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(uiState.queueItems, key = { it.visit.id }) { item ->
+                    items(
+                        uiState.queueItems.filter { it.patient != null }, // skip orphaned visits
+                        key = { it.visit.id },
+                    ) { item ->
                         val visit = item.visit
-                        val patient = item.patient
+                        val patient = item.patient!!
 
                         Card(
                             modifier = Modifier
