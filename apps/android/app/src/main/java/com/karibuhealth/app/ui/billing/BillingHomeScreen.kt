@@ -104,17 +104,18 @@ fun BillingHomeScreen(
     }
 
     val detailContent: @Composable () -> Unit = {
-        val visitId = selectedVisitId ?: return@Composable
-        PaymentScreen(
-            visitId = visitId,
-            embedInPane = true,
-            onNavigateBack = { selectedVisitId = null },
-            onPaymentComplete = {
-                onPaymentRecorded()
-                viewModel.refresh()
-                selectedVisitId = null
-            },
-        )
+        selectedVisitId?.let { visitId ->
+            PaymentScreen(
+                visitId = visitId,
+                embedInPane = true,
+                onNavigateBack = { selectedVisitId = null },
+                onPaymentComplete = {
+                    onPaymentRecorded()
+                    viewModel.refresh()
+                    selectedVisitId = null
+                },
+            )
+        }
     }
 
     Scaffold(

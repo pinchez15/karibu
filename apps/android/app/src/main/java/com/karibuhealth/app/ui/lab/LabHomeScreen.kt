@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.NeedsLabItem
+import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveQueue
 import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import com.karibuhealth.app.ui.adaptive.karibuDialogModifier
 import com.karibuhealth.app.ui.components.KhMetaText
@@ -80,7 +81,7 @@ fun LabHomeScreen(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No pending lab work", color = Ink.copy(alpha = 0.6f))
                     }
-                }                 else {
+                } else {
                     KaribuAdaptiveQueue(
                         items = uiState.items,
                         key = { it.visitId },
