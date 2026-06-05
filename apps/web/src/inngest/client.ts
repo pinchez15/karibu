@@ -23,6 +23,13 @@ type Events = {
       phase?: 'draft'
     }
   }
+  'note.lab-ai-assist': {
+    data: {
+      visit_id: string
+      clinic_id: string
+      phase?: 'lab'
+    }
+  }
 }
 
 export const inngest = new Inngest({

@@ -134,6 +134,27 @@ class DictationApiClient @Inject constructor(
         post("request-draft-ai-assist", payload, requireSuccessField = false)
     }
 
+    suspend fun requestLabAiAssist(visitId: String) {
+        val payload = json.encodeToString(VisitIdBody.serializer(), VisitIdBody(visit_id = visitId))
+        post("request-lab-ai-assist", payload, requireSuccessField = false)
+    }
+
+    suspend fun consultChat(threadId: String, message: String): String {
+        val payload = json.encodeToString(
+            ConsultChatBody.serializer(),
+            ConsultChatBody(thread_id = threadId, message = message),
+        )
+        val raw = postRaw("consult-chat", payload)
+        val parsed = json.decodeFromString(ConsultChatResponse.serializer(), raw)
+        return parsed.assistant
+    }
+
+    @Serializable
+    private data class ConsultChatBody(val thread_id: String, val message: String)
+
+    @Serializable
+    private data class ConsultChatResponse(val assistant: String = "")
+
     @Serializable
     private data class VisitIdBody(val visit_id: String)
 
@@ -146,29 +167,33 @@ class DictationApiClient @Inject constructor(
     @Serializable
     private data class RejectDictationBody(val visit_id: String, val reason: String? = null)
 
+    private fun postRaw(endpoint: String, jsonBody: String): String {
+        val request = Request.Builder()
+            .url("${BuildConfig.SUPABASE_URL}/functions/v1/$endpoint")
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+        val response = httpClient.newCall(request).execute()
+        return response.use {
+            val raw = it.body?.string().orEmpty()
+            if (!it.isSuccessful) {
+                throw DictationException("$endpoint failed (${it.code}): ${raw.take(200)}")
+            }
+            raw
+        }
+    }
+
     private fun post(
         endpoint: String,
         jsonBody: String,
         requireSuccessField: Boolean = true,
     ) {
-        val request = Request.Builder()
-            .url("${BuildConfig.SUPABASE_URL}/functions/v1/$endpoint")
-            .post(jsonBody.toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(request).execute()
-        response.use {
-            val raw = it.body?.string().orEmpty()
-            if (!it.isSuccessful) {
-                throw DictationException("$endpoint failed (${it.code}): ${raw.take(200)}")
-            }
-            if (!requireSuccessField) return@use
-            val parsed = runCatching {
-                json.decodeFromString(SubmitDictationResponse.serializer(), raw)
-            }.getOrNull()
-            if (parsed?.success != true) {
-                throw DictationException("$endpoint failed: server did not confirm.")
-            }
+        val raw = postRaw(endpoint, jsonBody)
+        if (!requireSuccessField) return
+        val parsed = runCatching {
+            json.decodeFromString(SubmitDictationResponse.serializer(), raw)
+        }.getOrNull()
+        if (parsed?.success != true) {
+            throw DictationException("$endpoint failed: server did not confirm.")
         }
     }
 }

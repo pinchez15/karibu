@@ -6,11 +6,12 @@ import { inngest } from '../client'
  * the clinician has finished documenting (any input mode: typed, Whisper,
  * Google keyboard mic) but the AI review hasn't been kicked off yet.
  *
- * Three handlers listen to `note.dictated` in parallel:
- *   - reviewClinicianNote (asks a question if AI would disagree)
+ * Handlers on `note.dictated` (post-sign documentation):
  *   - draftPatientReceipt (plain-language summary for the thermal printer)
- *   - suggestHmisCode (ICD-10 → HMIS 105 bucket suggestion for clinician
- *     confirmation)
+ *   - suggestHmisCode (ICD-10 → HMIS 105 bucket suggestion)
+ *
+ * AI notes (draft/lab) use `note.draft-ai-assist` / `note.lab-ai-assist` only —
+ * see docs/ai-clinical-assist.md.
  *
  * Why polling instead of a Postgres trigger or Supabase webhook:
  *   - The visits_notify_trigger 3-day debug taught us not to put HTTP in

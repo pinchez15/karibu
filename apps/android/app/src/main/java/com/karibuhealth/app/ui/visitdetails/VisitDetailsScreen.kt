@@ -41,7 +41,8 @@ import com.karibuhealth.app.ui.components.SyncStatusPill
 import com.karibuhealth.app.ui.components.KhAccentPill
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhVitalChip
-import com.karibuhealth.app.ui.components.AiReviewBanner
+import com.karibuhealth.app.ui.components.AiNotesTimeline
+import com.karibuhealth.app.ui.components.VisitCriticalAlertBanner
 import com.karibuhealth.app.ui.components.incorporationFor
 import com.karibuhealth.app.ui.components.DictationIncorporate
 import com.karibuhealth.app.ui.util.BottomBarScrollPadding
@@ -66,9 +67,11 @@ fun VisitDetailsScreen(
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToPayment: (String) -> Unit,
+    onNavigateToConsult: (String) -> Unit = {},
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showConsultConfirm by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(visitId) {
         viewModel.loadVisit(visitId)
@@ -196,6 +199,40 @@ fun VisitDetailsScreen(
                     )
                 }
 
+                if (uiState.visit?.documentationComplete != true) {
+                    OutlinedButton(
+                        onClick = { showConsultConfirm = true },
+                        enabled = uiState.connectionStatus.isOnline,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Send to consult")
+                    }
+                    uiState.consultError?.let { err ->
+                        Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+
+                uiState.activeCriticalAlerts.forEach { alert ->
+                    VisitCriticalAlertBanner(
+                        alert = alert,
+                        onConfirmData = { viewModel.respondToCriticalAlert(alert.id, "confirmed") },
+                        onDataError = { viewModel.respondToCriticalAlert(alert.id, "data_error") },
+                        onDismiss = { viewModel.respondToCriticalAlert(alert.id, "dismissed") },
+                    )
+                }
+
+                AiNotesTimeline(
+                    suggestions = uiState.timelineAiNotes,
+                    onDismiss = { viewModel.dismissAiSuggestion(it.id) },
+                    onAcknowledge = { viewModel.acknowledgeAiSuggestion(it.id) },
+                    onIncorporate = { suggestion ->
+                        val incorporate = incorporationFor(suggestion)
+                        viewModel.incorporateAiSuggestion(suggestion.id) {
+                            onNavigateToDictation(visitId, false, incorporate)
+                        }
+                    },
+                )
+
                 uiState.patient?.let { patient ->
                     PatientCard(
                         name = formatPatientName(
@@ -280,19 +317,6 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                AiReviewBanner(
-                    suggestions = uiState.aiReviewSuggestions,
-                    onDismiss = { suggestion ->
-                        viewModel.dismissAiSuggestion(suggestion.id)
-                    },
-                    onIncorporate = { suggestion ->
-                        val incorporate = incorporationFor(suggestion)
-                        viewModel.incorporateAiSuggestion(suggestion.id) {
-                            onNavigateToDictation(visitId, false, incorporate)
-                        }
-                    },
-                )
-
                 uiState.aiReviewError?.let { err ->
                     Text(
                         text = err,
@@ -328,6 +352,30 @@ fun VisitDetailsScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
+    }
+
+    if (showConsultConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConsultConfirm = false },
+            title = { Text("Confirm consult request") },
+            text = {
+                Text(
+                    "A de-identified summary of this visit will be sent for a second opinion. " +
+                        "No patient name or identifiers are included.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConsultConfirm = false
+                        viewModel.startConsult { onNavigateToConsult(visitId) }
+                    },
+                ) { Text("Confirm consult request") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConsultConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

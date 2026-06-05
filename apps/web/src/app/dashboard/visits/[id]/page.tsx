@@ -1,5 +1,6 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { filterTimelineAiNotes } from '@/lib/ai-review-helpers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { VisitDetailClient } from './VisitDetailClient'
@@ -40,13 +41,23 @@ async function getVisitDetails(visitId: string, clinicId: string) {
 
   // AI review suggestions — load any unanswered questions for this visit
   // along with citation metadata so the banner can deep-link to /library.
+  const docComplete = !!(visit as { documentation_complete?: boolean }).documentation_complete
+
   const { data: suggestionRows } = await supabase
     .from('ai_review_suggestions')
     .select(
-      'id, suggestion_type, question, reasoning, citation_ids, confidence, clinician_response',
+      'id, suggestion_type, question, reasoning, citation_ids, confidence, clinician_response, phase, display_tier',
     )
     .eq('visit_id', visitId)
     .eq('clinic_id', clinicId)
+    .order('created_at', { ascending: true })
+
+  const { data: criticalAlertRows } = await supabase
+    .from('visit_critical_alerts')
+    .select('id, rule_slug, confirm_question, clinical_prompt, library_slug, clinician_response')
+    .eq('visit_id', visitId)
+    .eq('clinic_id', clinicId)
+    .is('clinician_response', null)
     .order('created_at', { ascending: true })
 
   const allCitationIds = Array.from(
@@ -81,7 +92,7 @@ async function getVisitDetails(visitId: string, clinicId: string) {
     }
   }
 
-  const ai_review_suggestions = (suggestionRows ?? []).map((s) => ({
+  const allSuggestions = (suggestionRows ?? []).map((s) => ({
     id: s.id as string,
     suggestion_type: s.suggestion_type as string,
     question: s.question as string,
@@ -98,11 +109,24 @@ async function getVisitDetails(visitId: string, clinicId: string) {
       .filter((c): c is NonNullable<typeof c> => c !== undefined),
   }))
 
+  const ai_review_suggestions = docComplete
+    ? []
+    : filterTimelineAiNotes(allSuggestions)
+
+  const critical_alerts = (criticalAlertRows ?? []).map((a) => ({
+    id: a.id as string,
+    rule_slug: a.rule_slug as string,
+    confirm_question: a.confirm_question as string,
+    clinical_prompt: a.clinical_prompt as string,
+    library_slug: (a.library_slug as string | null) ?? null,
+  }))
+
   return {
     ...visit,
     patient_notes_clinician: clinicianNote,
     patient_notes_ai: aiNote,
     ai_review_suggestions,
+    critical_alerts,
   }
 }
 

@@ -1,6 +1,7 @@
 package com.karibuhealth.app.ui.components
 
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
+import com.karibuhealth.app.ui.components.filterTimelineAiNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,6 +17,16 @@ class AiReviewHelpersTest {
     }
 
     @Test
+    fun filterTimelineAiNotes_hides_signed_and_post_sign() {
+        val suggestions = listOf(
+            dto("1", "Draft Q", phase = "draft"),
+            dto("2", "Post sign", phase = "post_sign"),
+        )
+        assertEquals(1, filterTimelineAiNotes(suggestions, documentationComplete = false).size)
+        assertTrue(filterTimelineAiNotes(suggestions, documentationComplete = true).isEmpty())
+    }
+
+    @Test
     fun dedupeAiReviewSuggestions_collapses_similar_questions() {
         val suggestions = listOf(
             dto("1", "Should we perform an ECG for cardiac abnormalities?"),
@@ -24,12 +35,13 @@ class AiReviewHelpersTest {
         assertEquals(1, dedupeAiReviewSuggestions(suggestions).size)
     }
 
-    private fun dto(id: String, question: String) = AiReviewSuggestionDto(
+    private fun dto(id: String, question: String, phase: String = "draft") = AiReviewSuggestionDto(
         id = id,
         visitId = "visit-1",
         suggestionType = "ask_lab",
         question = question,
         reasoning = "Guideline reference.",
         confidence = "high",
+        phase = phase,
     )
 }

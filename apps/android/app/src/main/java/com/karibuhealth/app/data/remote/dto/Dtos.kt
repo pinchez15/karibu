@@ -659,8 +659,61 @@ data class AiReviewSuggestionDto(
     val question: String,
     val reasoning: String,
     val confidence: String,
+    val phase: String? = "draft",
+    @SerialName("display_tier") val displayTier: String? = "timeline",
+    @SerialName("citation_ids") val citationIds: List<Long>? = null,
     @SerialName("clinician_response") val clinicianResponse: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class VisitCriticalAlertDto(
+    val id: String,
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("rule_slug") val ruleSlug: String,
+    @SerialName("confirm_question") val confirmQuestion: String,
+    @SerialName("clinical_prompt") val clinicalPrompt: String,
+    @SerialName("library_slug") val librarySlug: String? = null,
+    @SerialName("clinician_response") val clinicianResponse: String? = null,
+)
+
+@Serializable
+data class UpsertCriticalAlertRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_rule_slug") val ruleSlug: String,
+    @SerialName("p_confirm_question") val confirmQuestion: String,
+    @SerialName("p_clinical_prompt") val clinicalPrompt: String,
+    @SerialName("p_library_slug") val librarySlug: String? = null,
+)
+
+@Serializable
+data class RecordCriticalAlertResponseRequest(
+    @SerialName("p_alert_id") val alertId: String,
+    @SerialName("p_response") val response: String,
+)
+
+@Serializable
+data class CmeModuleDto(
+    val id: String,
+    val slug: String,
+    val title: String,
+    val description: String? = null,
+    @SerialName("display_order") val displayOrder: Int = 0,
+)
+
+@Serializable
+data class StartConsultRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_redacted_snapshot") val redactedSnapshot: kotlinx.serialization.json.JsonObject,
+)
+
+@Serializable
+data class ConsultThreadListItemDto(
+    @SerialName("thread_id") val threadId: String,
+    @SerialName("visit_id") val visitId: String,
+    val status: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("read_only") val readOnly: Boolean = false,
 )
 
 @Serializable

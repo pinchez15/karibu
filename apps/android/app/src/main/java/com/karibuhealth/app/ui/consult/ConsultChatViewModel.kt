@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.ConsultThreadListItemDto
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -65,13 +65,10 @@ class ConsultChatViewModel @Inject constructor(
                 val threadsBody = threadsResp.body()?.string().orEmpty()
                 if (!threadsResp.isSuccessful) error("HTTP ${threadsResp.code()}")
                 val threads = json.decodeFromString(
-                    ListSerializer(JsonObject.serializer()),
+                    ListSerializer(ConsultThreadListItemDto.serializer()),
                     threadsBody,
                 )
-                val match = threads.firstOrNull { el ->
-                    el["visit_id"]?.toString()?.trim('"') == visitId
-                }
-                val threadId = match?.get("thread_id")?.toString()?.trim('"')
+                val threadId = threads.firstOrNull { it.visitId == visitId }?.threadId
                 if (threadId == null) {
                     _uiState.update { it.copy(error = "Start consult from the visit chart first") }
                     return@runCatching
@@ -84,7 +81,8 @@ class ConsultChatViewModel @Inject constructor(
                         content = o["content"]?.jsonPrimitive?.content.orEmpty(),
                     )
                 }.orEmpty()
-                val readOnly = detail["thread"]?.jsonObject?.get("read_only")?.jsonPrimitive?.content == "true"
+                val readOnly =
+                    detail["thread"]?.jsonObject?.get("read_only")?.jsonPrimitive?.content == "true"
                 _uiState.update {
                     it.copy(threadId = threadId, messages = msgs, readOnly = readOnly, error = null)
                 }

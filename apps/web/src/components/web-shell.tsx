@@ -12,6 +12,8 @@ import {
   FlaskConical,
   Sparkles,
   ListTodo,
+  GraduationCap,
+  MessagesSquare,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
@@ -35,6 +37,8 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
   clinician: [
     { id: 'home', label: 'Today', href: '/dashboard', icon: Home },
     { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
+    { id: 'learn', label: 'Learn', href: '/dashboard/learn', icon: GraduationCap },
+    { id: 'consult', label: 'Consult', href: '/dashboard/consult', icon: MessagesSquare },
     { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
     { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
     // Read-only views of the lab + pharmacy queues the clinician requested,

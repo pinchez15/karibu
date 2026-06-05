@@ -331,15 +331,18 @@ Web can remain **admin/reports/HMIS** heavy; Android is **field resilience** for
 - `protocol_activations` — `rpc_activate_clinical_protocol` spawns care tasks from protocol steps.
 - `workflow_config.enabled_protocol_slugs` mirrors enrollments for client defaults.
 
-### 6.4 Progressive AI tiers
+### 6.4 AI clinical assist (see `docs/ai-clinical-assist.md`)
 
-| Phase | When | Storage |
-|-------|------|---------|
-| `draft` | During open note (`rpc_request_draft_ai_assist`) | `ai_review_suggestions.phase = 'draft'` — dispatched from Android autosave + web `queueDraftAiAssist` via edge function `request-draft-ai-assist` |
-| `pre_sign` | Reserved for attestation gate | same table |
-| `post_sign` | After sign / finalize (Inngest `note.dictated`) | default phase |
+**Authoritative product spec:** `docs/ai-clinical-assist.md` — read before changing AI notes, Learn, or Consult.
 
-Draft suggestions coach in-note; post-sign suggestions surface on review queue. All tiers use the same disagreement prompt — questions only, clinician retains authority.
+| Surface | When | Notes |
+|---------|------|--------|
+| **AI notes** (`draft`, `lab`) | Mid-note autosave + new lab on **unsigned** visit | Timeline header, collapsed, max **3** per visit; **no** post-sign prompts |
+| **Interruptive alerts** | Deterministic critical vitals/rules | Top of timeline; does not count toward cap |
+| **Learn** | Clinician-initiated | Supabase courses/quizzes only — **no AI** |
+| **Consult** | Double-confirmed from chart | Redacted bundle to frontier model; **one thread per visit**; offline blocked |
+
+Legacy `post_sign` / `documentation_complete` → Inngest review queue is **deprecated** for new clinician UX. Implementation may retain columns until migration completes.
 
 ### 6.5 Queue UI deprecated
 
