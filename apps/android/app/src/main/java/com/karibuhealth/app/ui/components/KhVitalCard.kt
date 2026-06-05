@@ -27,6 +27,7 @@ import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
 import com.karibuhealth.app.ui.theme.Line
+import com.karibuhealth.app.ui.theme.MonoFamily
 
 /**
  * Focus-aware vital input card.
@@ -100,7 +101,10 @@ fun KhVitalCard(
                             color = valueColor,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.SemiBold,
-                            fontFamily = MaterialTheme.typography.labelMedium.fontFamily,
+                            // Reserved mono + tabular figures: the vital value is the
+                            // most safety-relevant number, so digits must align.
+                            fontFamily = MonoFamily,
+                            fontFeatureSettings = "tnum",
                         ),
                         cursorBrush = SolidColor(Cobalt),
                         singleLine = true,

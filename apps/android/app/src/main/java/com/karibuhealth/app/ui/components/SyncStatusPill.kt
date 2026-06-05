@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.Muted
 
@@ -30,9 +29,11 @@ fun SyncStatusPill(
         pendingCount > 0 -> "$pendingCount to sync" to KhStatusKind.PendingReview
         else -> "Synced" to KhStatusKind.Signed
     }
+    // Sync state is infrastructure, not clinical urgency — never amber (amber is
+    // reserved for AI/urgency). Synced reads success-green; offline/pending read
+    // calm neutral.
     val bg = when (kind) {
         KhStatusKind.Signed, KhStatusKind.Cosigned -> Green.copy(alpha = 0.12f)
-        KhStatusKind.PendingReview, KhStatusKind.Draft -> Amber.copy(alpha = 0.14f)
         else -> Muted.copy(alpha = 0.12f)
     }
     Text(

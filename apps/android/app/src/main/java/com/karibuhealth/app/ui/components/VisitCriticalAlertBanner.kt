@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -45,10 +46,17 @@ fun VisitCriticalAlertBanner(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // The two RECORDED responses are dominant; "Dismiss" (which leaves no
+        // record) is demoted so it can't be the reflexive tap. This is a
+        // data-confirmation prompt today, so the surface stays calm cobalt — when
+        // acuity-tier alerts are added, drive the colour from the alert tier
+        // (red for a genuine clinical-critical finding).
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onConfirmData) { Text("Yes, correct") }
-            TextButton(onClick = onDataError) { Text("Data error") }
-            TextButton(onClick = onDismiss) { Text("Dismiss") }
+            Button(onClick = onConfirmData) { Text("Yes, correct") }
+            OutlinedButton(onClick = onDataError) { Text("Data error") }
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

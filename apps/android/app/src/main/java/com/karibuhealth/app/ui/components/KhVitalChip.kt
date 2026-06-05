@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.karibuhealth.app.ui.theme.MonoFamily
 
 /** Mono key/value vital chip — `T 38.4°C` style (label cool, value bold). */
 @Composable
@@ -27,9 +28,15 @@ fun KhVitalChip(
             fontWeight = FontWeight.Medium,
         )
         Spacer(Modifier.width(4.dp))
+        // The vital VALUE is the most safety-relevant figure — render it in the
+        // reserved mono with tabular figures so digits align and a transposition
+        // (38.4 vs 34.8) is easier to catch.
         Text(
             text = value,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = MonoFamily,
+                fontFeatureSettings = "tnum",
+            ),
             color = valueColor,
             fontWeight = FontWeight.SemiBold,
         )

@@ -12,13 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -28,12 +26,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
 import com.karibuhealth.app.ui.theme.Amber
-import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.Muted
 
 /**
- * AI review questions from the Inngest pipeline. Clinician is the authority.
- * Swipe left to dismiss; swipe right to incorporate into the note (opens dictation).
+ * AI review questions from the Inngest pipeline. The clinician is the authority.
+ *
+ * Incorporating a suggestion mutates the clinical note (it opens the picker /
+ * dictation), so it must be a deliberate, explicit action — never a gesture that
+ * a stray swipe on a shared device in sunlight could trigger. Both actions are
+ * explicit buttons, matching [AiNotesTimeline]. "Incorporate" carries the
+ * emphasis; "Dismiss" is a quiet, neutral action (not red — declining a
+ * suggestion is benign, and red is reserved for clinical-critical findings).
  */
 @Composable
 fun AiReviewBanner(
@@ -49,14 +52,8 @@ fun AiReviewBanner(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = "Swipe ← dismiss · incorporate →",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Medium,
-        )
         pending.forEach { suggestion ->
-            AiReviewSwipeCard(
+            AiReviewCard(
                 suggestion = suggestion,
                 onDismiss = { onDismiss(suggestion) },
                 onIncorporate = { onIncorporate(suggestion) },
@@ -65,71 +62,12 @@ fun AiReviewBanner(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AiReviewSwipeCard(
+private fun AiReviewCard(
     suggestion: AiReviewSuggestionDto,
     onDismiss: () -> Unit,
     onIncorporate: () -> Unit,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onIncorporate()
-                    true
-                }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDismiss()
-                    true
-                }
-                SwipeToDismissBoxValue.Settled -> false
-            }
-        },
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = true,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            val direction = dismissState.dismissDirection
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        when (direction) {
-                            SwipeToDismissBoxValue.StartToEnd -> Green.copy(alpha = 0.18f)
-                            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        },
-                    )
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Incorporate",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Green,
-                )
-                Text(
-                    text = "Dismiss",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        },
-    ) {
-        AiReviewCardContent(suggestion = suggestion)
-    }
-}
-
-@Composable
-private fun AiReviewCardContent(suggestion: AiReviewSuggestionDto) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,12 +100,24 @@ private fun AiReviewCardContent(suggestion: AiReviewSuggestionDto) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.size(2.dp))
         Text(
             text = suggestionTypeLabel(suggestion.suggestionType),
             style = MaterialTheme.typography.labelSmall,
             color = Muted,
         )
+        Spacer(Modifier.size(2.dp))
+        Row(
+            modifier = Modifier.align(Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            FilledTonalButton(onClick = onIncorporate) {
+                Text("Incorporate")
+            }
+        }
     }
 }
 
@@ -177,5 +127,5 @@ private fun suggestionTypeLabel(type: String): String = when (type) {
     "ask_dx" -> "Suggested diagnosis review · opens note"
     "ask_history" -> "Suggested history · opens note"
     "ask_red_flag" -> "Suggested exam review · opens note"
-    else -> "Swipe right to incorporate into your note"
+    else -> "Incorporate to add this to your note"
 }
