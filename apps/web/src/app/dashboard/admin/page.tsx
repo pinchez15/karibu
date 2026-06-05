@@ -1,4 +1,4 @@
-import { getStaff, hasProvisioningAccess, isAdmin } from '@/lib/auth'
+import { getCoordinatorScope, getStaff, hasProvisioningAccess, isAdmin } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -66,6 +66,8 @@ export default async function AdminPage() {
 
   const stats = await getClinicStats(staff.clinic_id)
   const provisioningAccess = await hasProvisioningAccess()
+  const coordinatorScope = await getCoordinatorScope()
+  const outbreakAccess = coordinatorScope === 'all' || coordinatorScope.length > 0
 
   // Generate last 7 days for chart
   const days: { date: string; label: string; count: number }[] = []
@@ -210,14 +212,24 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      {provisioningAccess && (
-        <div className="mt-6">
-          <Link
-            href="/dashboard/superadmin"
-            className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
-          >
-            Open Provisioning Workspace
-          </Link>
+      {(provisioningAccess || outbreakAccess) && (
+        <div className="mt-6 flex flex-wrap gap-3">
+          {provisioningAccess && (
+            <Link
+              href="/dashboard/superadmin"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              Open Provisioning Workspace
+            </Link>
+          )}
+          {outbreakAccess && (
+            <Link
+              href="/dashboard/outbreaks"
+              className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/5 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-500/10 transition-colors dark:text-red-300"
+            >
+              Outbreak protocols
+            </Link>
+          )}
         </div>
       )}
     </div>
