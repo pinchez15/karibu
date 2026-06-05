@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.CatalogRepository
+import com.karibuhealth.app.data.repository.RegionProtocolRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ data class CatalogUiState(
 @HiltViewModel
 class CatalogViewModel @Inject constructor(
     private val catalogRepository: CatalogRepository,
+    private val regionProtocolRepository: RegionProtocolRepository,
     private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -36,6 +38,8 @@ class CatalogViewModel @Inject constructor(
         viewModelScope.launch {
             val clinicId = authTokenStore.getClinicId() ?: return@launch
             catalogRepository.refreshCatalog(clinicId)
+            // Refresh region-outbreak protocols on the same clinic-context warmup.
+            regionProtocolRepository.refreshProtocols(clinicId)
             val labs = catalogRepository.getLabs(clinicId)
             val formulary = catalogRepository.getFormulary(clinicId)
             _state.value = CatalogUiState(
