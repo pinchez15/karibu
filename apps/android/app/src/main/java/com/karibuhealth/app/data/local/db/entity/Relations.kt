@@ -5,11 +5,14 @@ import androidx.room.Relation
 
 data class VisitWithPatient(
     @Embedded val visit: VisitEntity,
+    // Nullable on purpose: in offline-first sync a visit can exist before (or
+    // without) its patient row — an orphaned visit. Room then returns null here.
+    // Modelling it non-null crashed the app; consumers drop orphaned visits.
     @Relation(
         parentColumn = "patient_id",
         entityColumn = "id",
     )
-    val patient: PatientEntity,
+    val patient: PatientEntity?,
 )
 
 data class VisitWithDetails(

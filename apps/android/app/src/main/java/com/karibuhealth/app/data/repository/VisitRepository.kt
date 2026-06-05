@@ -105,11 +105,12 @@ class VisitRepository @Inject constructor(
         val today = LocalDate.now().toString()
         val rows = visitDao.getTodayVisitsWithPatients(clinicId, today).first()
         return rows
-            .groupBy { it.patient.id }
+            .filter { it.patient != null } // drop orphaned visits (patient not synced)
+            .groupBy { it.patient!!.id }
             .mapNotNull { (_, visits) ->
                 visits.maxByOrNull { it.visit.checkedInAt ?: "" }
             }
-            .map { OpdPatientRow.from(it) }
+            .mapNotNull { OpdPatientRow.from(it) }
             .sortedByDescending { it.checkedInAt }
     }
 
