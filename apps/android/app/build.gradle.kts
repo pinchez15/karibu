@@ -52,6 +52,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Sign the minified release with the debug key so it is installable
+            // for Firebase App Distribution test launches. This is NOT a Play
+            // upload key — swap in a dedicated upload keystore before any Play
+            // Store release.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
