@@ -51,15 +51,19 @@ class LabHomeViewModel @Inject constructor(
     fun refresh() {
         val staff = _uiState.value.staff ?: return
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true) }
             val items = worklistRepository.getNeedsLab(staff.clinicId)
             _uiState.update { it.copy(items = items, isLoading = false) }
         }
     }
 
+    fun dismissError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
     fun startLab(visitId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(actionVisitId = visitId) }
+            _uiState.update { it.copy(actionVisitId = visitId, error = null) }
             runCatching { visitRepository.startLab(visitId) }
                 .onFailure { e ->
                     _uiState.update { it.copy(error = e.message) }
@@ -72,7 +76,7 @@ class LabHomeViewModel @Inject constructor(
     fun recordResult(visitId: String, result: String, abnormal: Boolean) {
         val staffId = _uiState.value.staff?.id ?: return
         viewModelScope.launch {
-            _uiState.update { it.copy(actionVisitId = visitId) }
+            _uiState.update { it.copy(actionVisitId = visitId, error = null) }
             runCatching { visitRepository.recordLabResult(visitId, result, abnormal, staffId) }
                 .onSuccess {
                     if (networkMonitor.isOnline() && networkMonitor.currentStatus().isGoodForAi) {

@@ -48,23 +48,50 @@ fun LabHomeScreen(
             onRefresh = { viewModel.refresh() },
             modifier = Modifier.padding(padding),
         ) {
-            if (uiState.items.isEmpty() && !uiState.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No pending lab work", color = Ink.copy(alpha = 0.6f))
+            Column(modifier = Modifier.fillMaxSize()) {
+                uiState.error?.let { msg ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = msg,
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            TextButton(onClick = viewModel::dismissError) {
+                                Text("Dismiss")
+                            }
+                        }
+                    }
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(uiState.items, key = { it.visitId }) { item ->
-                        LabQueueCard(
-                            item = item,
-                            busy = uiState.actionVisitId == item.visitId,
-                            onOpen = { onNavigateToVisit(item.visitId) },
-                            onStart = { viewModel.startLab(item.visitId) },
-                            onRecord = { resultDialogVisit = item },
-                        )
+                if (uiState.items.isEmpty() && !uiState.isLoading) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No pending lab work", color = Ink.copy(alpha = 0.6f))
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(uiState.items, key = { it.visitId }) { item ->
+                            LabQueueCard(
+                                item = item,
+                                busy = uiState.actionVisitId == item.visitId,
+                                onOpen = { onNavigateToVisit(item.visitId) },
+                                onStart = { viewModel.startLab(item.visitId) },
+                                onRecord = { resultDialogVisit = item },
+                            )
+                        }
                     }
                 }
             }
@@ -106,11 +133,6 @@ fun LabHomeScreen(
         )
     }
 
-    uiState.error?.let { msg ->
-        LaunchedEffect(msg) {
-            // Surface once; ViewModel clears on next refresh.
-        }
-    }
 }
 
 @Composable
