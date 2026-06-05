@@ -31,8 +31,8 @@ android {
         applicationId = "com.karibuhealth.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "1.0.23"
+        versionCode = 25
+        versionName = "1.0.24"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -52,6 +52,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Sign the minified release with the debug key so it is installable
+            // for Firebase App Distribution test launches. This is NOT a Play
+            // upload key — swap in a dedicated upload keystore before any Play
+            // Store release.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
