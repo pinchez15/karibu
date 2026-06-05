@@ -152,6 +152,27 @@ fun ReferralScreen(
                         Spacer(Modifier.padding(horizontal = 4.dp))
                         Text("Share / print summary")
                     }
+                    // Few ambulances; patients travel in open-air trucks where a
+                    // single thermal slip can tear or wash out. Offer an instant
+                    // backup copy (two copies, with a cut line between).
+                    OutlinedButton(
+                        onClick = {
+                            val cut = "\n\n" + "-".repeat(48) +
+                                "\n        CUT HERE — SECOND COPY (BACKUP)\n" +
+                                "-".repeat(48) + "\n\n"
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "Karibu referral summary (2 copies)")
+                                putExtra(Intent.EXTRA_TEXT, printable + cut + printable)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(send, "Print 2 copies"),
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Print 2 copies (backup)")
+                    }
                     OutlinedButton(
                         onClick = onComplete,
                         modifier = Modifier.fillMaxWidth(),

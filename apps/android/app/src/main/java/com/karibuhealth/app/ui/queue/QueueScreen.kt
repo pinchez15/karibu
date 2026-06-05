@@ -159,14 +159,16 @@ fun QueueScreen(
 
 @Composable
 private fun QueueStatusChip(queueStatus: String) {
+    // `outline` is a divider colour — invisible as a label, especially in dark
+    // mode. Use readable on-surface / semantic colours for every state.
     val (label, color) = when (queueStatus) {
-        "waiting" -> "Waiting" to MaterialTheme.colorScheme.outline
+        "waiting" -> "Waiting" to MaterialTheme.colorScheme.onSurfaceVariant
         "with_nurse" -> "With Nurse" to MaterialTheme.colorScheme.tertiary
         "ready_for_doctor" -> "Ready" to MaterialTheme.colorScheme.primary
         "with_doctor" -> "With Doctor" to MaterialTheme.colorScheme.secondary
         "completed" -> "Done" to MaterialTheme.colorScheme.secondary
         "cancelled" -> "Cancelled" to MaterialTheme.colorScheme.error
-        else -> queueStatus to MaterialTheme.colorScheme.outline
+        else -> queueStatus to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     SuggestionChip(
