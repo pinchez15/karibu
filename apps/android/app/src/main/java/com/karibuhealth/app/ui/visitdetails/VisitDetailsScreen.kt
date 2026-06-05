@@ -66,12 +66,10 @@ fun VisitDetailsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
-    onNavigateToPayment: (String) -> Unit,
-    onNavigateToConsult: (String) -> Unit = {},
+    onNavigateToReferral: (String) -> Unit = {},
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showConsultConfirm by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(visitId) {
         viewModel.loadVisit(visitId)
@@ -166,7 +164,6 @@ fun VisitDetailsScreen(
                     hasLocalDraft = uiState.hasLocalDraft,
                     onNavigateToDictation = onNavigateToDictation,
                     onNavigateToReview = onNavigateToReview,
-                    onNavigateToPayment = onNavigateToPayment,
                 )
             }
         },
@@ -199,17 +196,11 @@ fun VisitDetailsScreen(
                     )
                 }
 
-                if (uiState.visit?.documentationComplete != true) {
-                    OutlinedButton(
-                        onClick = { showConsultConfirm = true },
-                        enabled = uiState.connectionStatus.isOnline,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Send to consult")
-                    }
-                    uiState.consultError?.let { err ->
-                        Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    }
+                OutlinedButton(
+                    onClick = { onNavigateToReferral(visitId) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Refer to hospital")
                 }
 
                 uiState.activeCriticalAlerts.forEach { alert ->
@@ -354,29 +345,6 @@ fun VisitDetailsScreen(
         }
     }
 
-    if (showConsultConfirm) {
-        AlertDialog(
-            onDismissRequest = { showConsultConfirm = false },
-            title = { Text("Confirm consult request") },
-            text = {
-                Text(
-                    "A de-identified summary of this visit will be sent for a second opinion. " +
-                        "No patient name or identifiers are included.",
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showConsultConfirm = false
-                        viewModel.startConsult { onNavigateToConsult(visitId) }
-                    },
-                ) { Text("Confirm consult request") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConsultConfirm = false }) { Text("Cancel") }
-            },
-        )
-    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -931,14 +899,12 @@ private fun SyncCard(
 }
 
 /**
- * Status-driven bottom actions on visit-detail. Payment is intentionally
- * NOT the dominant CTA after a save — patients often still need lab /
- * pharmacy work before payment, and clinicians want to keep editing the
- * note as new information lands. Layout per status:
+ * Status-driven bottom actions on visit-detail. Payment is handled by
+ * billing / front desk (Billing home + needs_payment worklist), not here.
  *
  *   pending + !doc complete → primary "Write note"
  *   pending +  doc complete → primary disabled "AI checking…"
- *   sent                    → primary "Edit note" + secondary "Take payment"
+ *   sent                    → primary "Edit note"
  *   review                  → primary "Review notes"
  *   error                   → primary "Edit and retry"
  *   completed               → primary "Edit note"
@@ -950,7 +916,6 @@ private fun VisitDetailsBottomAction(
     hasLocalDraft: Boolean,
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
-    onNavigateToPayment: (String) -> Unit,
 ) {
     val docComplete = visit.documentationComplete
 
@@ -983,12 +948,7 @@ private fun VisitDetailsBottomAction(
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
-            secondary = BottomActionConfig(
-                label = "Take payment",
-                onClick = { onNavigateToPayment(visitId) },
-                icon = null,
-                enabled = true,
-            )
+            secondary = null
         }
         visit.status == VisitStatus.review -> {
             primary = BottomActionConfig(

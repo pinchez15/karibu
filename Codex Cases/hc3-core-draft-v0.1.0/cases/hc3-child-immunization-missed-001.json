@@ -10,9 +10,24 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Use available HC III tests where relevant"
+      "Weight",
+      "Temperature",
+      "Malaria RDT if febrile",
+      "Blood glucose if altered or convulsing"
     ],
     "chiefComplaint": "Cough with missed immunizations",
+    "classification": "Missed preventive care opportunity",
+    "classificationRationale": [
+      "Cough with missed immunizations",
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case.",
+      "Focused exam findings should be requested by the learner."
+    ],
+    "contraindicationChecks": [
+      "Severe illness",
+      "Respiratory distress",
+      "Contraindication concern"
+    ],
     "dangerSigns": [
       "Severe illness",
       "Respiratory distress",
@@ -20,7 +35,19 @@
     ],
     "diagnosis": "Missed preventive care opportunity",
     "differentials": [
-      "Alternative diagnosis depends on focused history and exam"
+      "Malaria",
+      "Pneumonia",
+      "Sepsis or severe bacterial infection"
+    ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
     ],
     "examFindings": [
       "Focused exam findings should be requested by the learner."
@@ -28,27 +55,55 @@
     "followUp": [
       "Give clear safety-net advice and document the plan."
     ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this child health presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      },
+      {
+        "action": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      }
+    ],
     "history": [
       "Focused history is required to reveal the key risk.",
       "No real patient data; simulated training case."
     ],
     "management": [
       "Assess danger signs and immediate stability.",
-      "Use HC III-appropriate guideline reasoning.",
+      "Classify the presentation using the case action bundle before treatment.",
       "Document clearly and refer/escalate when threshold is met."
     ],
     "medicines": [
-      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+      "No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."
     ],
     "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
     "reviewOfSystems": [
-      "Focused review needed based on presentation"
+      "Ability to drink or breastfeed checked",
+      "Convulsions checked",
+      "Lethargy checked"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
-      "bp": "varies",
-      "pulse": "varies",
-      "respiratory_rate": "varies",
-      "temperature": "varies"
+      "pulse": "132 bpm",
+      "respiratory_rate": "42/min",
+      "temperature": "38.4 C",
+      "weight": "11 kg"
     }
   },
   "credentialingMetadata": {
@@ -84,8 +139,9 @@
     "title": "Missed immunization opportunity"
   },
   "simulatedPatient": {
-    "ageLabel": "varies by scenario",
-    "displayName": "Simulated patient",
+    "ageLabel": "24 months, 11 kg",
+    "context": "Caregiver present",
+    "displayName": "Simulated child",
     "sex": "unknown"
   },
   "sourceGuidelineIds": [

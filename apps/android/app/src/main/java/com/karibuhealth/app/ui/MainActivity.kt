@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
                             showSyncSheet = false
                         },
                         onMarkSynced = viewModel::markEntrySynced,
+                        onExportDebugLog = viewModel::readDebugLog,
                     )
                 }
             }

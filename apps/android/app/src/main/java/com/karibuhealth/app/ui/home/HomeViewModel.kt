@@ -3,6 +3,8 @@ package com.karibuhealth.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.local.datastore.RecentPatientEntry
+import com.karibuhealth.app.data.local.datastore.RecentPatientsStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
@@ -35,6 +37,7 @@ data class HomeUiState(
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
     val isLoading: Boolean = true,
+    val recentPatients: List<RecentPatientEntry> = emptyList(),
 ) {
     val filteredPatients: List<OpdPatientRow>
         get() = selectedFilter?.let { filter ->
@@ -46,6 +49,9 @@ data class HomeUiState(
 
     val doneTodayCount: Int
         get() = opdPatients.count { it.bucket == OpdPatientFilter.DoneToday }
+
+    fun filterCount(filter: OpdPatientFilter): Int =
+        opdPatients.count { filter.matches(it) }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -57,6 +63,7 @@ class HomeViewModel @Inject constructor(
     private val authTokenStore: AuthTokenStore,
     private val clerkAuthManager: ClerkAuthManager,
     private val syncQueueDao: SyncQueueDao,
+    private val recentPatientsStore: RecentPatientsStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -91,6 +98,17 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { it.copy(pendingSyncCount = count) }
                 }
             }
+            launch {
+                recentPatientsStore.recentPatients.collect { recent ->
+                    _uiState.update { it.copy(recentPatients = recent) }
+                }
+            }
+        }
+    }
+
+    fun recordPatientTouch(patientId: String, patientName: String, visitId: String? = null) {
+        viewModelScope.launch {
+            recentPatientsStore.recordTouch(patientId, patientName, visitId)
         }
     }
 
@@ -117,11 +135,13 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
-            val clinicId = authTokenStore.getClinicId() ?: return@launch
-            visitRepository.refreshTodayVisits(clinicId)
-            visitRepository.refreshOpdPatientsToday(clinicId)
-        }
+        viewModelScope.launch { refreshAndAwait() }
+    }
+
+    suspend fun refreshAndAwait() {
+        val clinicId = authTokenStore.getClinicId() ?: return
+        visitRepository.refreshTodayVisits(clinicId)
+        visitRepository.refreshOpdPatientsToday(clinicId)
     }
 
     fun startVisit(visitId: String) {

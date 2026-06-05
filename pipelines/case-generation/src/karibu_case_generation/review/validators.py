@@ -4,6 +4,25 @@ from dataclasses import dataclass
 
 from karibu_case_generation.models import CanonicalCase, PlayableCaseVariant
 
+GENERIC_PHRASES = (
+    "according to guidance",
+    "according to local guidance",
+    "appropriate according to",
+    "where appropriate",
+    "if clinically appropriate",
+    "if indicated and available",
+    "varies",
+    "scenario-dependent",
+    "use available tests where relevant",
+    "use hc iii-appropriate guideline reasoning",
+    "must be specified",
+    "medicine decisions must follow",
+    "depends on focused",
+    "treat per protocol",
+    "per local protocol",
+    "local stock availability",
+)
+
 
 @dataclass(frozen=True)
 class ValidationIssue:
@@ -98,6 +117,56 @@ def validate_canonical_case(case: CanonicalCase) -> ValidationReport:
     return ValidationReport(valid=not issues, issues=issues)
 
 
+def validate_case_specificity(case: CanonicalCase) -> ValidationReport:
+    issues: list[ValidationIssue] = []
+    truth = case.clinical_truth
+
+    _require(truth.classification, "clinical_truth.classification", issues)
+    if not truth.classification_rationale:
+        issues.append(ValidationIssue("clinical_truth.classification_rationale", "Case needs explicit classification rationale."))
+    if not truth.guideline_actions:
+        issues.append(ValidationIssue("clinical_truth.guideline_actions", "Case needs source-linked guideline actions."))
+    if not truth.do_not_do:
+        issues.append(ValidationIssue("clinical_truth.do_not_do", "Case needs at least one explicit do-not-do item."))
+    if not truth.documentation_requirements:
+        issues.append(ValidationIssue("clinical_truth.documentation_requirements", "Case needs documentation requirements."))
+
+    for path, value in _specificity_strings(case):
+        lowered = value.lower()
+        for phrase in GENERIC_PHRASES:
+            if phrase in lowered:
+                issues.append(ValidationIssue(path, f"Generic phrase is not allowed in review-ready cases: {phrase}"))
+
+    for key, value in truth.vitals.items():
+        if value.strip().lower() in {"varies", "not available", "not yet measured"}:
+            issues.append(ValidationIssue(f"clinical_truth.vitals.{key}", "Review-ready cases need concrete scenario vitals or an explicit reason in actions."))
+
+    for index, action in enumerate(truth.guideline_actions):
+        if not action.action.strip():
+            issues.append(ValidationIssue(f"clinical_truth.guideline_actions[{index}].action", "Guideline action cannot be blank."))
+        if not action.rationale.strip():
+            issues.append(ValidationIssue(f"clinical_truth.guideline_actions[{index}].rationale", "Guideline action needs rationale."))
+        if action.confidence == "needs_clinician_confirmation" and not truth.reviewer_questions:
+            issues.append(
+                ValidationIssue(
+                    f"clinical_truth.guideline_actions[{index}].confidence",
+                    "Clinician-confirmation actions require reviewer questions.",
+                )
+            )
+
+    if case.topic == "outbreak":
+        first_action = truth.guideline_actions[0].action.lower() if truth.guideline_actions else ""
+        if not any(word in first_action for word in ("screen", "isolate", "isolation", "ipc", "separate")):
+            issues.append(ValidationIssue("clinical_truth.guideline_actions[0]", "Outbreak cases must start with screening/isolation/IPC."))
+
+    if case.topic in {"child_health", "neonatal"}:
+        age_or_weight = " ".join([case.simulated_patient.age_label, *truth.vitals.values()]).lower()
+        if "kg" not in age_or_weight and "month" not in age_or_weight and "year" not in age_or_weight:
+            issues.append(ValidationIssue("simulated_patient.age_label", "Child cases need age/weight facts for classification or dosing."))
+
+    return ValidationReport(valid=not issues, issues=issues)
+
+
 def validate_playable_variant(case: CanonicalCase, variant: PlayableCaseVariant) -> ValidationReport:
     issues: list[ValidationIssue] = []
 
@@ -158,6 +227,29 @@ def validate_playable_variant(case: CanonicalCase, variant: PlayableCaseVariant)
 def _require(value: str, path: str, issues: list[ValidationIssue]) -> None:
     if not value or not value.strip():
         issues.append(ValidationIssue(path, "Required value is blank."))
+
+
+def _specificity_strings(case: CanonicalCase) -> list[tuple[str, str]]:
+    truth = case.clinical_truth
+    values: list[tuple[str, str]] = [
+        ("clinical_truth.classification", truth.classification),
+        ("clinical_truth.diagnosis", truth.diagnosis),
+        ("clinical_truth.referral_threshold", truth.referral_threshold),
+    ]
+    for field_name in ("management", "medicines", "follow_up", "available_tests"):
+        for index, item in enumerate(getattr(truth, field_name)):
+            values.append((f"clinical_truth.{field_name}[{index}]", item))
+    for index, item in enumerate(truth.classification_rationale):
+        values.append((f"clinical_truth.classification_rationale[{index}]", item))
+    for index, action in enumerate(truth.guideline_actions):
+        values.append((f"clinical_truth.guideline_actions[{index}].action", action.action))
+        values.append((f"clinical_truth.guideline_actions[{index}].rationale", action.rationale))
+    for field_name in ("contraindication_checks", "do_not_do", "documentation_requirements", "reviewer_questions"):
+        for index, item in enumerate(getattr(truth, field_name)):
+            values.append((f"clinical_truth.{field_name}[{index}]", item))
+    for key, value in truth.vitals.items():
+        values.append((f"clinical_truth.vitals.{key}", value))
+    return values
 
 
 def _canonical_field_paths(case: CanonicalCase) -> set[str]:

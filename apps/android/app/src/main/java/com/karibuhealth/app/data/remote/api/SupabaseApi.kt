@@ -293,16 +293,13 @@ interface SupabaseApi {
         @Body body: Map<String, String>,
     ): kotlinx.serialization.json.JsonObject
 
-    @POST("rpc/rpc_start_consult")
-    suspend fun rpcStartConsult(
-        @Body request: com.karibuhealth.app.data.remote.dto.StartConsultRequest,
-    ): kotlinx.serialization.json.JsonObject
+    @POST("rpc/rpc_create_referral")
+    suspend fun rpcCreateReferral(
+        @Body request: com.karibuhealth.app.data.remote.dto.CreateReferralRequest,
+    ): Response<ResponseBody>
 
-    @POST("rpc/rpc_list_consult_threads")
-    suspend fun rpcListConsultThreads(): Response<ResponseBody>
-
-    @POST("rpc/rpc_get_consult_thread")
-    suspend fun rpcGetConsultThread(
-        @Body body: Map<String, String>,
-    ): kotlinx.serialization.json.JsonObject
+    @POST("rpc/rpc_list_referrals_today")
+    suspend fun rpcListReferralsToday(
+        @Body request: com.karibuhealth.app.data.remote.dto.ListReferralsTodayRequest,
+    ): List<com.karibuhealth.app.data.remote.dto.ReferralTodayRowDto>
 }

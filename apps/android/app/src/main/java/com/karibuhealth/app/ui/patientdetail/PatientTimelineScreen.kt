@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ButtonDefaults
@@ -42,7 +43,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -79,6 +82,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 /**
  * Phase 3 patient timeline screen. One surface where a clinician opens a
@@ -95,9 +99,13 @@ fun PatientTimelineScreen(
     onAddNote: (String) -> Unit,
     onRecordVitals: (String) -> Unit,
     onNavigateToBilling: () -> Unit = {},
+    onNavigateToReferral: (String) -> Unit = {},
+    onNavigateToDictation: (String) -> Unit = {},
     viewModel: PatientTimelineViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(patientId) {
         viewModel.loadPatient(patientId)
@@ -234,11 +242,22 @@ fun PatientTimelineScreen(
             }
         },
     ) { innerPadding ->
-        LazyColumn(
-            state = listState,
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                scope.launch {
+                    isRefreshing = true
+                    viewModel.refreshAndAwait()
+                    isRefreshing = false
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
+        ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -254,6 +273,17 @@ fun PatientTimelineScreen(
             }
             item {
                 LatestVitalsCard(latestVitals = uiState.latestVitals)
+            }
+
+            uiState.todayVisit?.let { visit ->
+                item {
+                    TodayVisitCommandCard(
+                        visit = visit,
+                        onOpenVisit = { onNavigateToVisit(visit.id) },
+                        onRefer = { onNavigateToReferral(visit.id) },
+                        onContinueNote = { onNavigateToDictation(visit.id) },
+                    )
+                }
             }
 
             item {
@@ -300,6 +330,63 @@ fun PatientTimelineScreen(
                             color = Cobalt,
                         )
                     }
+                }
+            }
+        }
+        }
+    }
+}
+
+@Composable
+private fun TodayVisitCommandCard(
+    visit: Visit,
+    onOpenVisit: () -> Unit,
+    onRefer: () -> Unit,
+    onContinueNote: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(CobaltSoft)
+                .border(1.dp, Cobalt.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            KhMetaText(text = "TODAY'S VISIT")
+            Text(
+                text = visit.chiefComplaint?.takeIf { it.isNotBlank() } ?: "Active visit",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            TodayCarePathwayBadges(visit = visit)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = onOpenVisit,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                ) {
+                    Text("Open visit")
+                }
+                if (!visit.documentationComplete) {
+                    OutlinedButton(
+                        onClick = onContinueNote,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Note")
+                    }
+                }
+                OutlinedButton(onClick = onRefer) {
+                    Text("Refer")
                 }
             }
         }

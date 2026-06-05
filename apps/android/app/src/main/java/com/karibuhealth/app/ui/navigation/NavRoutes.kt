@@ -44,6 +44,12 @@ sealed interface NavRoute {
     /** Visits with outstanding payment — `rpc_worklist_needs_payment`. */
     @Serializable data object Billing : NavRoute
 
+    /** Today's labs, pharmacy, and referrals — clinician action queue. */
+    @Serializable data object Orders : NavRoute
+
+    /** HCIII → HCIV referral with printable transfer summary. */
+    @Serializable data class Referral(val visitId: String) : NavRoute
+
     @Serializable data class ConsultChat(val visitId: String) : NavRoute
 
     /**

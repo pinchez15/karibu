@@ -4,12 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
-import com.karibuhealth.app.consult.ConsultRedactor
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
 import com.karibuhealth.app.data.remote.dto.RecordCriticalAlertResponseRequest
-import com.karibuhealth.app.data.remote.dto.StartConsultRequest
 import com.karibuhealth.app.data.remote.dto.UpsertCriticalAlertRequest
 import com.karibuhealth.app.data.remote.dto.VisitCriticalAlertDto
 import com.karibuhealth.app.domain.CriticalAlertRules
@@ -60,8 +58,6 @@ data class VisitDetailsUiState(
     val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
     val criticalAlerts: List<VisitCriticalAlertDto> = emptyList(),
     val aiReviewError: String? = null,
-    val consultError: String? = null,
-    val consultThreadId: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
     val pendingSyncCount: Int = 0,
@@ -312,35 +308,6 @@ class VisitDetailsViewModel @Inject constructor(
                 _uiState.update { it.copy(aiReviewError = e.message) }
             }
             loadedVisitId?.let { refreshCriticalAlerts(it) }
-        }
-    }
-
-    fun startConsult(onNavigate: (String) -> Unit) {
-        val visit = _uiState.value.visit ?: return
-        val patient = _uiState.value.patient ?: return
-        if (!networkMonitor.isOnline()) {
-            _uiState.update { it.copy(consultError = "Consult requires an internet connection") }
-            return
-        }
-        viewModelScope.launch {
-            _uiState.update { it.copy(consultError = null) }
-            runCatching {
-                val snapshot = ConsultRedactor.buildSnapshot(
-                    visit = visit,
-                    patient = patient,
-                    vitals = _uiState.value.latestVitals,
-                    providerTranscript = _uiState.value.providerNote?.transcript,
-                )
-                val result = supabaseApi.rpcStartConsult(
-                    StartConsultRequest(visit.id, snapshot),
-                )
-                val threadId = result["thread_id"]?.jsonPrimitive?.content
-                    ?: error("Missing thread_id")
-                _uiState.update { it.copy(consultThreadId = threadId) }
-                onNavigate(visit.id)
-            }.onFailure { e ->
-                _uiState.update { it.copy(consultError = e.message ?: "Could not start consult") }
-            }
         }
     }
 

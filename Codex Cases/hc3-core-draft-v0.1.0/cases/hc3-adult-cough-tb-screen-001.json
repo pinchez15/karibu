@@ -10,22 +10,47 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Sputum testing pathway or referral according to local TB diagnostic access",
-      "HIV testing offer according to guidance"
+      "Sputum sample transport for district GeneXpert",
+      "HIV testing offer with consent and privacy"
     ],
     "chiefComplaint": "Cough for three weeks",
+    "classification": "Presumptive pulmonary TB requiring same-day diagnostic evaluation.",
+    "classificationRationale": [
+      "Cough has lasted three weeks.",
+      "Night sweats are present.",
+      "Recent weight loss is present.",
+      "No severe respiratory distress or haemoptysis in this scenario."
+    ],
+    "contraindicationChecks": [
+      "Haemoptysis",
+      "Severe respiratory distress",
+      "Very ill appearance",
+      "Unable to eat or drink"
+    ],
     "dangerSigns": [
       "Severe respiratory distress",
       "Haemoptysis",
       "Very ill appearance",
       "Unable to drink/eat"
     ],
-    "diagnosis": "Presumptive TB requiring evaluation",
+    "diagnosis": "Presumptive pulmonary TB requiring same-day diagnostic evaluation",
     "differentials": [
       "Pulmonary TB",
       "Viral cough",
       "Chronic bronchitis/COPD",
       "Pneumonia"
+    ],
+    "doNotDo": [
+      "Do not give only cough syrup or antibiotics and send away.",
+      "Do not start TB treatment casually without following the diagnostic pathway."
+    ],
+    "documentationRequirements": [
+      "Cough duration",
+      "Night sweats",
+      "Weight loss",
+      "Sputum sample collected or referral made",
+      "HIV test offer/status",
+      "Return date and phone contact"
     ],
     "examFindings": [
       "Thin adult",
@@ -35,6 +60,39 @@
     "followUp": [
       "Ensure clear instructions for sputum testing, review, or referral follow-up."
     ],
+    "guidelineActions": [
+      {
+        "action": "Move out of a crowded indoor queue if possible, use cough etiquette, and assess in a well-ventilated area.",
+        "category": "ipc",
+        "confidence": "source_verified",
+        "rationale": "Presumptive TB patients should be identified promptly and exposure reduced.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+        "sourceSection": "TB infection prevention and control"
+      },
+      {
+        "action": "Collect sputum today for district GeneXpert testing through sample transport.",
+        "category": "test",
+        "confidence": "source_verified",
+        "rationale": "Presumptive pulmonary TB requires bacteriologic evaluation through the local diagnostic pathway.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+        "sourceSection": "TB symptom screening and diagnosis"
+      },
+      {
+        "action": "Offer HIV testing today if status is unknown, with consent and privacy.",
+        "category": "test",
+        "confidence": "source_verified",
+        "rationale": "TB and HIV services are integrated in national guidance.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023",
+        "sourceSection": "TB/HIV integration"
+      },
+      {
+        "action": "Give a clear return date for results and record a working phone contact.",
+        "category": "follow_up",
+        "confidence": "source_verified",
+        "rationale": "Diagnostic evaluation fails if the patient cannot receive results and linkage.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      }
+    ],
     "history": [
       "Cough has lasted three weeks",
       "Reports night sweats",
@@ -43,8 +101,9 @@
     ],
     "management": [
       "Ask duration of cough and constitutional symptoms.",
-      "Screen for TB and HIV according to national guidance.",
-      "Arrange sputum testing/referral pathway according to local service availability."
+      "Move patient out of crowded indoor queue, use cough etiquette, and assess in a well-ventilated area.",
+      "Collect sputum today for district GeneXpert via sample transport.",
+      "Offer HIV testing today if status is unknown."
     ],
     "medicines": [
       "Do not start TB treatment without following diagnostic pathway unless directed by national protocol."
@@ -53,6 +112,9 @@
     "reviewOfSystems": [
       "No severe shortness of breath at rest",
       "No haemoptysis reported"
+    ],
+    "reviewerQuestions": [
+      "Confirm whether target HC III sites collect sputum onsite, refer to a hub, or use sample transport."
     ],
     "vitals": {
       "bp": "118/76 mmHg",

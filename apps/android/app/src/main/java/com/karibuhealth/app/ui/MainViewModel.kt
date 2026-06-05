@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.sync.SyncDebugLogger
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ class MainViewModel @Inject constructor(
     private val patientDao: PatientDao,
     private val visitDao: VisitDao,
     private val syncEngine: SyncEngine,
+    private val syncDebugLogger: SyncDebugLogger,
 ) : ViewModel() {
 
     val isAuthenticated: StateFlow<Boolean> = authTokenStore.observeToken()
@@ -79,4 +81,10 @@ class MainViewModel @Inject constructor(
             syncQueueDao.forceComplete(id)
         }
     }
+
+    fun clearDebugLog() {
+        syncDebugLogger.clear()
+    }
+
+    fun readDebugLog(): String = syncDebugLogger.readAll()
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Mic, Printer, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Mic, Printer, Sparkles, CheckCircle2, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
@@ -12,7 +12,6 @@ import {
   VisitCriticalAlertBanner,
   type VisitCriticalAlert,
 } from './VisitCriticalAlertBanner'
-import { StartConsultButton } from './StartConsultButton'
 import type { Visit, ProviderNote, PatientNote, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
@@ -172,9 +171,20 @@ export function VisitDetailClient({
         <AiNotesTimeline suggestions={visit.ai_review_suggestions ?? []} />
       )}
 
-      {!visit.documentation_complete && (
-        <StartConsultButton visitId={visit.id} />
-      )}
+      <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="font-medium">Refer to hospital</p>
+          <p className="text-sm text-muted-foreground">
+            Create a printable transfer summary for the receiving HCIV or hospital.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="shrink-0 gap-2">
+          <Link href={`/dashboard/referrals/new?visitId=${visit.id}`}>
+            <Send className="h-4 w-4" />
+            Refer to hospital
+          </Link>
+        </Button>
+      </div>
 
       {/* Note editor — desktop clinicians type or dictate the note here. After
           save, documentation_complete=true and the visit moves to 'sent';

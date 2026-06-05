@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Visit, VisitStatus } from '@karibu/shared'
+import { WebTopBar } from '@/components/web-shell'
 import { PatientsToolbar } from './PatientsToolbar'
 import {
   VISIT_STATUS_DISPLAY,
@@ -119,7 +120,9 @@ export default async function VisitsPage({
   }
 
   return (
-    <div className="px-6 py-5 space-y-4">
+    <>
+      <WebTopBar title="Patients" subtitle={`${total} visits`} subtitleMeta={false} />
+      <div className="flex-1 overflow-auto px-8 py-6 space-y-4">
       <PatientsToolbar />
 
       {/* Status filter chips */}
@@ -250,6 +253,7 @@ export default async function VisitsPage({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

@@ -1,8 +1,10 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Send } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
+import { createServiceClient } from '@/lib/supabase'
+import { WebTopBar } from '@/components/web-shell'
+import { patientDisplayName } from '@/lib/referral-summary'
 import {
   getPatient,
   getPatientLatestVitals,
@@ -40,21 +42,56 @@ export default async function PatientProfilePage({
     redirect('/dashboard/visits')
   }
 
-  return (
-    <div className="p-4 space-y-4">
-      <Link href="/dashboard/visits">
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Patients
-        </Button>
-      </Link>
+  const supabase = createServiceClient()
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const { data: todayVisit } = await supabase
+    .from('visits')
+    .select('id')
+    .eq('clinic_id', staff.clinic_id)
+    .eq('patient_id', patientId)
+    .gte('visit_date', todayStart.toISOString().slice(0, 10))
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-      <PatientDetailClient
-        staffRole={staff.role}
-        patient={patient}
-        latestVitals={latestVitals}
-        initialTimeline={initialTimeline}
+  const name = patientDisplayName(patient)
+  const patientNumber = patient.patient_number ?? `#${patientId.slice(0, 8)}`
+
+  return (
+    <>
+      <WebTopBar
+        title={name}
+        subtitle={patientNumber}
+        subtitleMeta={false}
+        actions={
+          <>
+            {todayVisit?.id && (
+              <Link
+                href={`/dashboard/referrals/new?visitId=${todayVisit.id}`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-background"
+              >
+                <Send className="h-4 w-4" />
+                Refer
+              </Link>
+            )}
+            <Link
+              href="/dashboard/visits"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              All patients
+            </Link>
+          </>
+        }
       />
-    </div>
+      <div className="flex-1 overflow-auto px-8 py-6 max-w-4xl">
+        <PatientDetailClient
+          staffRole={staff.role}
+          patient={patient}
+          latestVitals={latestVitals}
+          initialTimeline={initialTimeline}
+        />
+      </div>
+    </>
   )
 }

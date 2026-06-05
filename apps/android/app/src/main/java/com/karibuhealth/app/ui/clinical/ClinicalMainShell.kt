@@ -3,8 +3,7 @@ package com.karibuhealth.app.ui.clinical
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -16,10 +15,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.karibuhealth.app.ui.consult.ConsultListScreen
 import com.karibuhealth.app.ui.home.MainShell
+import com.karibuhealth.app.ui.orders.OrdersScreen
 
-enum class ClinicalTab { Patients, Learn, Consult }
+enum class ClinicalTab { Patients, Orders }
 
 @Composable
 fun ClinicalMainShell(
@@ -29,8 +28,6 @@ fun ClinicalMainShell(
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit,
-    onNavigateToConsultChat: (String) -> Unit,
-    onOpenLearn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(ClinicalTab.Patients.ordinal) }
@@ -47,26 +44,18 @@ fun ClinicalMainShell(
                     label = { Text("Patients") },
                 )
                 NavigationBarItem(
-                    // Learn launches the standalone KaribuLearn app full-screen
-                    // (its own coral chrome), so it acts as a launcher rather
-                    // than swapping content under the EHR's bottom bar.
-                    selected = false,
-                    onClick = onOpenLearn,
-                    icon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
-                    label = { Text("Learn") },
-                )
-                NavigationBarItem(
-                    selected = tab == ClinicalTab.Consult.ordinal,
-                    onClick = { tab = ClinicalTab.Consult.ordinal },
-                    icon = { Icon(Icons.Default.Psychology, contentDescription = null) },
-                    label = { Text("Consult") },
+                    selected = tab == ClinicalTab.Orders.ordinal,
+                    onClick = { tab = ClinicalTab.Orders.ordinal },
+                    icon = { Icon(Icons.Default.Assignment, contentDescription = null) },
+                    label = { Text("Orders") },
                 )
             }
         },
     ) { padding ->
         when (tab) {
-            ClinicalTab.Consult.ordinal -> ConsultListScreen(
-                onOpenVisitConsult = onNavigateToConsultChat,
+            ClinicalTab.Orders.ordinal -> OrdersScreen(
+                onOpenVisit = onNavigateToVisitDetails,
+                onOpenPatient = onNavigateToPatient,
                 modifier = Modifier.padding(padding),
             )
             else -> MainShell(

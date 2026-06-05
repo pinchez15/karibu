@@ -15,6 +15,20 @@
       "Viral load review if available"
     ],
     "chiefComplaint": "Missed ART refill",
+    "classification": "HIV on ART with treatment interruption risk",
+    "classificationRationale": [
+      "Missed ART refill",
+      "Known HIV positive",
+      "Missed refill by two weeks after travel",
+      "Well appearing",
+      "No respiratory distress"
+    ],
+    "contraindicationChecks": [
+      "Severe illness",
+      "Severe adverse drug reaction",
+      "TB danger symptoms",
+      "Pregnancy-related complications if relevant"
+    ],
     "dangerSigns": [
       "Severe illness",
       "Severe adverse drug reaction",
@@ -28,6 +42,16 @@
       "Access barrier",
       "TB symptoms if screen positive"
     ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
+    ],
     "examFindings": [
       "Well appearing",
       "No respiratory distress",
@@ -35,6 +59,29 @@
     ],
     "followUp": [
       "Arrange adherence support and follow-up according to clinic protocol."
+    ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this hiv tb presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      },
+      {
+        "action": "Refer or escalate if severely ill, suspected treatment failure, severe adverse reaction, or complicated opportunistic infection.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      }
     ],
     "history": [
       "Known HIV positive",
@@ -54,6 +101,9 @@
       "No cough for more than two weeks",
       "No fever",
       "No weight loss reported"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
       "bp": "110/72 mmHg",

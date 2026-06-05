@@ -3,6 +3,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { filterTimelineAiNotes } from '@/lib/ai-review-helpers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import { WebTopBar } from '@/components/web-shell'
+import { patientDisplayName } from '@/lib/referral-summary'
 import { VisitDetailClient } from './VisitDetailClient'
 
 async function getVisitDetails(visitId: string, clinicId: string) {
@@ -218,28 +220,36 @@ export default async function VisitDetailPage({
     })
   }
 
-  return (
-    <div>
-      <div className="px-4 pt-4">
-        <Link
-          href="/dashboard/visits"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Patients
-        </Link>
-      </div>
+  const patient = Array.isArray(visit.patient) ? visit.patient[0] : visit.patient
+  const title = patient
+    ? patientDisplayName(patient)
+    : (visit.patient as { display_name?: string } | null)?.display_name ?? 'Visit'
 
-      <VisitDetailClient
-        visit={visit}
-        staffId={staff.id}
-        staffRole={staff.role}
-        payment={payment}
-        addendums={addendums}
-        amendments={amendments}
+  return (
+    <>
+      <WebTopBar
+        title={title}
+        subtitle={`Visit · ${new Date(visit.visit_date).toLocaleDateString('en-GB')}`}
+        subtitleMeta={false}
+        actions={
+          <Link
+            href={patient?.id ? `/dashboard/patients/${patient.id}` : '/dashboard/visits'}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Patient chart
+          </Link>
+        }
       />
-    </div>
+      <div className="flex-1 overflow-auto px-8 py-6 max-w-4xl">
+        <VisitDetailClient
+          visit={visit}
+          staffId={staff.id}
+          staffRole={staff.role}
+          payment={payment}
+          addendums={addendums}
+          amendments={amendments}
+        />
+      </div>
+    </>
   )
 }

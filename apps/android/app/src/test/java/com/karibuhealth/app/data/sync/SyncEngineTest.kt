@@ -25,6 +25,7 @@ class SyncEngineTest {
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var pullReconciliationService: PullReconciliationService
+    private lateinit var syncDebugLogger: SyncDebugLogger
     private lateinit var syncEngine: SyncEngine
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -39,6 +40,7 @@ class SyncEngineTest {
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
         pullReconciliationService = mockk(relaxed = true)
+        syncDebugLogger = mockk(relaxed = true)
 
         syncEngine = SyncEngine(
             syncQueueDao = syncQueueDao,
@@ -50,6 +52,7 @@ class SyncEngineTest {
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             pullReconciliationService = pullReconciliationService,
+            syncDebugLogger = syncDebugLogger,
             json = json,
         )
     }

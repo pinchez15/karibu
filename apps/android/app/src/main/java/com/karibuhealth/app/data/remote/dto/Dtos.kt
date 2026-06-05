@@ -874,3 +874,38 @@ data class RequestDraftAiAssistRequest(
     @SerialName("p_visit_id") val visitId: String,
     @SerialName("p_sections_snapshot") val sectionsSnapshot: String? = null,
 )
+
+@Serializable
+data class CreateReferralRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_from_department") val fromDepartment: String = "opd",
+    @SerialName("p_to_facility") val toFacility: String,
+    @SerialName("p_urgency") val urgency: String,
+    @SerialName("p_reason") val reason: String,
+    @SerialName("p_clinical_summary") val clinicalSummary: String? = null,
+    @SerialName("p_transport_mode") val transportMode: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ReferralTodayRowDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("to_facility") val toFacility: String,
+    val urgency: String,
+    val reason: String,
+    @SerialName("clinical_summary") val clinicalSummary: String? = null,
+    @SerialName("transport_mode") val transportMode: String? = null,
+    val status: String,
+    @SerialName("created_at") val createdAt: String,
+)
+
+@Serializable
+data class ListReferralsTodayRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)

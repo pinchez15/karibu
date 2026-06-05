@@ -13,6 +13,18 @@
       "Malaria RDT"
     ],
     "chiefComplaint": "Fever and headache for three days",
+    "classification": "Uncomplicated malaria after positive RDT, absent danger signs, and no pregnancy concern.",
+    "classificationRationale": [
+      "Fever and headache for three days.",
+      "Malaria RDT is the required first test in this scenario.",
+      "Patient is alert, able to drink, not persistently vomiting, and has no respiratory distress.",
+      "Adult weight is above 35 kg and pregnancy is denied in the review scenario."
+    ],
+    "contraindicationChecks": [
+      "Pregnancy status",
+      "Known allergy to planned antimalarial",
+      "Severe malaria danger signs"
+    ],
     "dangerSigns": [
       "Convulsions",
       "Altered mental status",
@@ -20,11 +32,22 @@
       "Persistent vomiting",
       "Respiratory distress"
     ],
-    "diagnosis": "Suspected uncomplicated malaria pending test confirmation",
+    "diagnosis": "Uncomplicated malaria after positive malaria RDT and absent danger signs",
     "differentials": [
       "Viral febrile illness",
       "Urinary tract infection",
       "Typhoid-like illness"
+    ],
+    "doNotDo": [
+      "Do not give antimalarial treatment before danger-sign screening.",
+      "Do not treat a negative RDT as malaria without reassessing other causes."
+    ],
+    "documentationRequirements": [
+      "RDT result",
+      "Danger signs checked and absent",
+      "Pregnancy status",
+      "Medicine and dose given",
+      "Return precautions"
     ],
     "examFindings": [
       "Alert and able to drink",
@@ -34,6 +57,39 @@
     "followUp": [
       "Return urgently if confusion, convulsions, inability to drink, persistent vomiting, or worsening fever develops."
     ],
+    "guidelineActions": [
+      {
+        "action": "Screen for severe malaria danger signs before outpatient treatment.",
+        "category": "triage",
+        "confidence": "source_verified",
+        "rationale": "Danger signs change this from outpatient malaria care to urgent referral.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Malaria assessment and treatment"
+      },
+      {
+        "action": "Perform malaria RDT before giving antimalarial treatment.",
+        "category": "test",
+        "confidence": "source_verified",
+        "rationale": "Testing distinguishes malaria from other common causes of fever.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Malaria assessment and treatment"
+      },
+      {
+        "action": "If RDT is positive and artemether-lumefantrine is first-line locally, give the adult/greater-than-35-kg course: 4 tablets twice daily for 3 days.",
+        "category": "medicine",
+        "confidence": "source_verified",
+        "rationale": "The patient is an adult with no danger signs and weight above 35 kg.",
+        "sourceDocumentId": "uganda-essential-medicines-list-2023",
+        "sourceSection": "Antimalarial medicines"
+      },
+      {
+        "action": "Advise fluids, adherence to the full ACT course, food with doses if possible, and urgent return for danger signs.",
+        "category": "counseling",
+        "confidence": "source_verified",
+        "rationale": "Counseling prevents incomplete treatment and delayed escalation.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      }
+    ],
     "history": [
       "Fever started three days ago and has been intermittent.",
       "No convulsions, confusion, or inability to drink reported.",
@@ -41,17 +97,20 @@
     ],
     "management": [
       "Assess for danger signs before outpatient treatment.",
-      "Use available malaria testing where possible.",
-      "Treat confirmed uncomplicated malaria according to Uganda guidance and local stock availability."
+      "Perform malaria RDT before antimalarial treatment.",
+      "If RDT is positive, treat this adult patient with artemether-lumefantrine 4 tablets twice daily for 3 days."
     ],
     "medicines": [
-      "Artemisinin-based combination therapy if confirmed and clinically appropriate"
+      "Artemether-lumefantrine adult course: 4 tablets twice daily for 3 days after positive RDT"
     ],
     "referralThreshold": "Refer urgently if severe malaria features or other danger signs are present.",
     "reviewOfSystems": [
       "No cough",
       "No dysuria",
       "No neck stiffness"
+    ],
+    "reviewerQuestions": [
+      "Confirm the current first-line ACT and adult dose used in the target districts."
     ],
     "vitals": {
       "bp": "112/70 mmHg",

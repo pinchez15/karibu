@@ -1,6 +1,7 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
+import { WebTopBar } from '@/components/web-shell'
 import { ReviewQueueClient } from './ReviewQueueClient'
 
 interface ReviewVisit {
@@ -55,9 +56,15 @@ export default async function ReviewPage() {
   const visits = await getReviewVisits(staff.clinic_id)
 
   return (
-    <ReviewQueueClient
-      visits={visits}
-      staffId={staff.id}
-    />
+    <>
+      <WebTopBar
+        title="Review queue"
+        subtitle={`${visits.length} pending`}
+        subtitleMeta={false}
+      />
+      <div className="flex-1 overflow-auto px-8 py-6">
+        <ReviewQueueClient visits={visits} staffId={staff.id} />
+      </div>
+    </>
   )
 }

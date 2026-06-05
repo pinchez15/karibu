@@ -13,6 +13,20 @@
       "None required for initial wound risk assessment"
     ],
     "chiefComplaint": "Cut on foot after stepping on metal",
+    "classification": "Contaminated puncture wound with tetanus risk",
+    "classificationRationale": [
+      "Cut on foot after stepping on metal",
+      "Injury happened yesterday",
+      "Wound was contaminated with soil",
+      "Puncture wound on sole",
+      "No active bleeding"
+    ],
+    "contraindicationChecks": [
+      "Spreading infection",
+      "Neurovascular compromise",
+      "Deep retained foreign body",
+      "Signs of tetanus"
+    ],
     "dangerSigns": [
       "Spreading infection",
       "Neurovascular compromise",
@@ -25,6 +39,16 @@
       "Cellulitis if infection develops",
       "Foreign body injury"
     ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
+    ],
     "examFindings": [
       "Puncture wound on sole",
       "No active bleeding",
@@ -32,6 +56,29 @@
     ],
     "followUp": [
       "Return for fever, spreading redness, worsening pain, or signs of tetanus."
+    ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this emergency presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Deep foreign body, severe infection, neurovascular compromise, or inability to manage wound safely requires referral.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      }
     ],
     "history": [
       "Injury happened yesterday",
@@ -51,6 +98,9 @@
       "No fever",
       "No spreading redness reported",
       "Able to walk with pain"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
       "bp": "116/70 mmHg",

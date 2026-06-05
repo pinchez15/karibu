@@ -107,7 +107,7 @@ function PharmacyRow({ row, last }: { row: DispensingRow; last: boolean }) {
     >
       <div>
         <Link
-          href={`/dashboard/visits/${row.id}`}
+          href={`/dashboard/patients/${row.patient.id}`}
           className="font-semibold hover:underline block"
         >
           {fullName}

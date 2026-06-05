@@ -22,9 +22,11 @@ class SyncEngine @Inject constructor(
     private val paymentDao: PaymentDao,
     private val patientVitalsDao: PatientVitalsDao,
     private val providerNoteDao: ProviderNoteDao,
+    private val referralDao: ReferralDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
+    private val syncDebugLogger: SyncDebugLogger,
     private val json: Json,
 ) {
     companion object {
@@ -41,6 +43,18 @@ class SyncEngine @Inject constructor(
         val entries = syncQueueDao.getRetryable()
         if (entries.isEmpty()) return 0
 
+        // #region agent log
+        syncDebugLogger.log(
+            hypothesisId = "H-C",
+            location = "SyncEngine.kt:processQueue",
+            message = "queue_batch_start",
+            data = mapOf(
+                "retryableCount" to entries.size.toString(),
+                "operationTypes" to entries.joinToString(",") { it.operationType }.take(500),
+            ),
+        )
+        // #endregion
+
         val sorted = topologicalSort(entries)
         var processedCount = 0
         var failedCount = 0
@@ -53,17 +67,65 @@ class SyncEngine @Inject constructor(
                 val dependency = syncQueueDao.getById(entry.dependsOn)
                 if (dependency != null && dependency.status != "completed") {
                     Log.d(TAG, "Skipping ${entry.id} -- dependency ${entry.dependsOn} not completed")
+                    // #region agent log
+                    syncDebugLogger.log(
+                        hypothesisId = "H-E",
+                        location = "SyncEngine.kt:processQueue",
+                        message = "skipped_waiting_on_dependency",
+                        data = mapOf(
+                            "entryId" to entry.id,
+                            "operation" to entry.operationType,
+                            "dependsOn" to entry.dependsOn,
+                            "depStatus" to dependency.status,
+                            "depOperation" to dependency.operationType,
+                        ),
+                    )
+                    // #endregion
                     continue
                 }
             }
 
             try {
+                // #region agent log
+                syncDebugLogger.log(
+                    hypothesisId = "H-A",
+                    location = "SyncEngine.kt:processQueue",
+                    message = "processing_entry",
+                    data = mapOf(
+                        "entryId" to entry.id,
+                        "operation" to entry.operationType,
+                        "entityId" to entry.entityId,
+                        "dependsOn" to entry.dependsOn,
+                        "attempts" to entry.attempts.toString(),
+                        "payloadPreview" to entry.payload.take(200),
+                    ),
+                )
+                // #endregion
                 syncQueueDao.update(entry.copy(status = "in_progress"))
                 processEntry(entry)
                 syncQueueDao.update(entry.copy(status = "completed", serverEntityId = entry.entityId))
                 processedCount++
             } catch (e: Exception) {
                 Log.e(TAG, "Sync failed for ${entry.id}: ${e.message}")
+                // #region agent log
+                syncDebugLogger.log(
+                    hypothesisId = when (entry.operationType) {
+                        "sign_provider_note" -> "H-A"
+                        "amend_provider_note" -> "H-D"
+                        "upsert_patient_note_summary" -> "H-C"
+                        "upsert_provider_note" -> "H-B"
+                        else -> "H-E"
+                    },
+                    location = "SyncEngine.kt:processQueue",
+                    message = "sync_failed",
+                    data = mapOf(
+                        "entryId" to entry.id,
+                        "operation" to entry.operationType,
+                        "entityId" to entry.entityId,
+                        "error" to (e.message?.take(400)),
+                    ),
+                )
+                // #endregion
                 failedCount++
                 SyncMetrics.recordRpcError(entry.operationType, null, e.message)
                 val nextAttempt = entry.attempts + 1
@@ -127,6 +189,7 @@ class SyncEngine @Inject constructor(
             "rpc_record_lab_result" -> syncRecordLabResult(entry)
             "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
             "rpc_record_dispense" -> syncRecordDispense(entry)
+            "rpc_create_referral" -> syncCreateReferral(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -224,6 +287,17 @@ class SyncEngine @Inject constructor(
             if (result.code() == 409 && dto.visitId != null &&
                 body.contains("idx_provider_notes_visit_unique")
             ) {
+                // #region agent log
+                syncDebugLogger.log(
+                    hypothesisId = "H-B",
+                    location = "SyncEngine.kt:syncUpsertProviderNote",
+                    message = "409_visit_unique_reconcile_start",
+                    data = mapOf(
+                        "localNoteId" to dto.id,
+                        "visitId" to dto.visitId,
+                    ),
+                )
+                // #endregion
                 reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.id)
                 Log.d(TAG, "Provider note reconciled after visit_id conflict: ${dto.visitId}")
                 return
@@ -240,7 +314,20 @@ class SyncEngine @Inject constructor(
      */
     private suspend fun reconcileProviderNoteByVisit(visitId: String?, localNoteId: String) {
         if (visitId.isNullOrBlank()) return
-        val server = supabaseApi.getProviderNote(visitId = "eq.$visitId").firstOrNull() ?: return
+        val server = supabaseApi.getProviderNote(visitId = "eq.$visitId").firstOrNull()
+        // #region agent log
+        syncDebugLogger.log(
+            hypothesisId = "H-B",
+            location = "SyncEngine.kt:reconcileProviderNoteByVisit",
+            message = if (server == null) "reconcile_no_server_note" else "reconcile_server_note_found",
+            data = mapOf(
+                "visitId" to visitId,
+                "localNoteId" to localNoteId,
+                "serverNoteId" to server?.id,
+            ),
+        )
+        // #endregion
+        if (server == null) return
         val local = providerNoteDao.getByVisitIdOnce(visitId)
         if (local != null && local.id != server.id) {
             providerNoteDao.deleteById(local.id)
@@ -254,14 +341,42 @@ class SyncEngine @Inject constructor(
     private suspend fun propagateRemoteIdForEntity(localId: String, remoteId: String) {
         if (localId == remoteId) return
         val entries = syncQueueDao.getPending()
+        var updated = 0
         for (entry in entries) {
             if (!entry.payload.contains(localId)) continue
             syncQueueDao.update(entry.copy(payload = entry.payload.replace(localId, remoteId)))
+            updated++
         }
+        // #region agent log
+        syncDebugLogger.log(
+            hypothesisId = "H-B",
+            location = "SyncEngine.kt:propagateRemoteIdForEntity",
+            message = "note_id_propagation",
+            data = mapOf(
+                "localId" to localId,
+                "remoteId" to remoteId,
+                "pendingEntriesScanned" to entries.size.toString(),
+                "payloadsUpdated" to updated.toString(),
+            ),
+        )
+        // #endregion
     }
 
     private suspend fun syncSignProviderNote(entry: SyncQueueEntry) {
         val dto = json.decodeFromString(SignProviderNoteRequest.serializer(), entry.payload)
+        // #region agent log
+        syncDebugLogger.log(
+            hypothesisId = "H-A",
+            location = "SyncEngine.kt:syncSignProviderNote",
+            message = "sign_attempt",
+            data = mapOf(
+                "queueEntryId" to entry.id,
+                "noteId" to dto.id,
+                "entityId" to entry.entityId,
+                "dependsOn" to entry.dependsOn,
+            ),
+        )
+        // #endregion
         Log.d(TAG, "Syncing sign_provider_note: ${entry.entityId}")
         val result = supabaseApi.rpcSignProviderNote(dto)
         if (!result.isSuccessful) {
@@ -502,6 +617,18 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
         }
         visitDao.updateSyncState(entry.entityId, true)
+    }
+
+    private suspend fun syncCreateReferral(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(CreateReferralRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_create_referral: ${entry.entityId}")
+        val result = supabaseApi.rpcCreateReferral(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_create_referral HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        referralDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {

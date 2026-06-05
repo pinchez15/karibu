@@ -13,6 +13,20 @@
       "None required for initial dehydration classification"
     ],
     "chiefComplaint": "Watery diarrhoea",
+    "classification": "Diarrhoea with some dehydration.",
+    "classificationRationale": [
+      "Restless and irritable.",
+      "Sunken eyes.",
+      "Drinks eagerly.",
+      "Skin pinch returns slowly.",
+      "Not lethargic or unconscious and not unable to drink."
+    ],
+    "contraindicationChecks": [
+      "Unable to drink",
+      "Lethargy or unconsciousness",
+      "Shock",
+      "Blood in stool"
+    ],
     "dangerSigns": [
       "Lethargic or unconscious",
       "Unable to drink",
@@ -25,6 +39,17 @@
       "Dysentery if blood present",
       "Sepsis if danger signs present"
     ],
+    "doNotDo": [
+      "Do not prescribe only medicine without dehydration classification.",
+      "Do not send home before the 4-hour Plan B reassessment."
+    ],
+    "documentationRequirements": [
+      "Weight 10 kg",
+      "Dehydration signs",
+      "ORS volume planned/given",
+      "Zinc dose",
+      "4-hour reassessment result"
+    ],
     "examFindings": [
       "Restless and irritable",
       "Sunken eyes",
@@ -34,6 +59,38 @@
     "followUp": [
       "Counsel caregiver on fluids, feeding, and danger signs."
     ],
+    "guidelineActions": [
+      {
+        "action": "Give ORS Plan B at 75 ml/kg over 4 hours: 750 ml over 4 hours for this 10 kg child.",
+        "category": "treatment",
+        "confidence": "source_verified",
+        "rationale": "IMNCI Plan B applies to some dehydration.",
+        "sourceDocumentId": "who-imnci-chart-booklet",
+        "sourceSection": "IMNCI diarrhoea dehydration classification"
+      },
+      {
+        "action": "Give zinc 20 mg once daily for 10-14 days.",
+        "category": "medicine",
+        "confidence": "source_verified",
+        "rationale": "The child is 18 months old, so the over-6-month zinc dose applies.",
+        "sourceDocumentId": "who-imnci-chart-booklet",
+        "sourceSection": "IMNCI diarrhoea dehydration classification"
+      },
+      {
+        "action": "Reassess after 4 hours and reclassify hydration status.",
+        "category": "follow_up",
+        "confidence": "source_verified",
+        "rationale": "Response to rehydration determines the next plan.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      },
+      {
+        "action": "Teach caregiver ORS mixing/use, continued feeding, and immediate return signs.",
+        "category": "counseling",
+        "confidence": "source_verified",
+        "rationale": "Caregiver counseling is part of diarrhoea management.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      }
+    ],
     "history": [
       "Watery stool for two days",
       "No blood in stool",
@@ -41,16 +98,22 @@
     ],
     "management": [
       "Assess dehydration signs systematically.",
-      "Choose rehydration plan according to classification.",
+      "Classify as some dehydration.",
+      "Give ORS Plan B: 750 ml over 4 hours for this 10 kg child.",
+      "Give zinc 20 mg once daily for 10-14 days.",
       "Check for blood in stool and general danger signs."
     ],
     "medicines": [
-      "ORS and zinc according to age and classification where appropriate"
+      "ORS 750 ml over 4 hours",
+      "Zinc 20 mg once daily for 10-14 days"
     ],
     "referralThreshold": "Severe dehydration, lethargy/unconsciousness, inability to drink, or shock require urgent referral or higher-level management.",
     "reviewOfSystems": [
       "No convulsions",
       "No cough"
+    ],
+    "reviewerQuestions": [
+      "Confirm ORS Plan B volume and zinc duration used in current local practice."
     ],
     "vitals": {
       "pulse": "126 bpm",
