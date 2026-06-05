@@ -35,6 +35,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.KaribuTwoColumnRow
+import com.karibuhealth.app.ui.adaptive.supportsMultiColumn
+import com.karibuhealth.app.ui.adaptive.usesNavigationRail
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Body
@@ -129,8 +133,9 @@ private fun DictationScreenContent(
 ) {
     var showLabPicker by remember { mutableStateOf(false) }
     var signConfirmPending by remember { mutableStateOf(false) }
-    var quickNoteMode by rememberSaveable { mutableStateOf(true) }
-    var expandedSections by rememberSaveable { mutableStateOf(false) }
+    val tabletLayout = usesNavigationRail()
+    var quickNoteMode by rememberSaveable { mutableStateOf(!tabletLayout) }
+    var expandedSections by rememberSaveable { mutableStateOf(tabletLayout) }
 
     LaunchedEffect(uiState.sections, uiState.transcript, uiState.isRecording, uiState.isTranscribing) {
         signConfirmPending = false
@@ -202,11 +207,12 @@ private fun DictationScreenContent(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-                .padding(bottom = 72.dp),
+                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 12.dp)
+                .padding(bottom = KaribuLayout.bottomBarScrollPadding().dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val sections = uiState.sections
+            val multiColumn = supportsMultiColumn()
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -227,162 +233,58 @@ private fun DictationScreenContent(
                 }
             }
 
-            SectionField(
-                label = "CHIEF COMPLAINT",
-                value = sections.chiefComplaint,
-                section = NoteSection.ChiefComplaint,
-                onFocusChange = onFocusedSectionChange,
-                minLines = 1,
-                placeholder = "e.g. fever and cough x3 days",
-                onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.ChiefComplaint),
-                isRecordingTarget = uiState.recordingSection == NoteSection.ChiefComplaint && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.ChiefComplaint && uiState.isTranscribing,
-            )
-            if (!quickNoteMode || expandedSections) {
-                SectionField(
-                    label = "HISTORY OF PRESENT ILLNESS",
-                    value = sections.hpi,
-                    section = NoteSection.Hpi,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Onset, duration, severity, associated symptoms…",
-                    onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.Hpi),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.Hpi && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.Hpi && uiState.isTranscribing,
+            val clinicalFields: @Composable () -> Unit = {
+                DictationClinicalFields(
+                    uiState = uiState,
+                    sections = sections,
+                    quickNoteMode = quickNoteMode,
+                    expandedSections = expandedSections,
+                    onExpandSections = { expandedSections = true },
+                    onSectionsChange = onSectionsChange,
+                    onFocusedSectionChange = onFocusedSectionChange,
+                    onSendToPharmacy = onSendToPharmacy,
+                    onOpenLabPicker = { showLabPicker = true },
+                    onOpenRxPicker = { showRxPicker = true },
                 )
-                SectionField(
-                    label = "PHYSICAL EXAM",
-                    value = sections.physicalExam,
-                    section = NoteSection.PhysicalExam,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Vitals, general appearance, focused exam…",
-                    onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.PhysicalExam),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.PhysicalExam && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.PhysicalExam && uiState.isTranscribing,
+            }
+            val notesPane: @Composable () -> Unit = {
+                DictationNotesAndSignPane(
+                    uiState = uiState,
+                    sections = sections,
+                    multiColumn = multiColumn,
+                    onTranscriptChange = onTranscriptChange,
+                    onFocusedSectionChange = onFocusedSectionChange,
+                    signConfirmPending = signConfirmPending,
+                    onDismissError = onDismissError,
+                    onSignClick = {
+                        if (signConfirmPending) {
+                            onSubmit()
+                        } else {
+                            signConfirmPending = true
+                        }
+                    },
                 )
-                SectionField(
-                    label = "FAMILY AND SOCIAL HISTORY",
-                    value = sections.familySocialHistory,
-                    section = NoteSection.FamilySocialHistory,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Relevant family history, social context…",
-                    onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.FamilySocialHistory),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
+            }
+
+            if (multiColumn) {
+                KaribuTwoColumnRow(
+                    leftWeight = 0.58f,
+                    rightWeight = 0.42f,
+                    spacing = 20.dp,
+                    left = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            clinicalFields()
+                        }
+                    },
+                    right = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            notesPane()
+                        }
+                    },
                 )
             } else {
-                TextButton(onClick = { expandedSections = true }) {
-                    Text("More sections (HPI, exam, history)")
-                }
-            }
-            // LABS — after family history; picker is sex/age-filtered.
-            Column {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "LABS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    AddLabsChip(onClick = { showLabPicker = true })
-                }
-                Spacer(Modifier.height(4.dp))
-                SectionField(
-                    label = null,
-                    value = sections.testsOrdered,
-                    section = NoteSection.TestsOrdered,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Labs ordered or use Add labs…",
-                    onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.TestsOrdered),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.TestsOrdered && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.TestsOrdered && uiState.isTranscribing,
-                )
-            }
-            SectionField(
-                label = "DIAGNOSIS",
-                value = sections.diagnosis,
-                section = NoteSection.Diagnosis,
-                onFocusChange = onFocusedSectionChange,
-                minLines = 1,
-                placeholder = "Primary diagnosis or working impression…",
-                onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.Diagnosis),
-                isRecordingTarget = uiState.recordingSection == NoteSection.Diagnosis && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.Diagnosis && uiState.isTranscribing,
-            )
-            SectionField(
-                label = "ASSESSMENT AND PLAN",
-                value = sections.assessmentPlan,
-                section = NoteSection.AssessmentPlan,
-                onFocusChange = onFocusedSectionChange,
-                placeholder = "Clinical reasoning, plan, counseling…",
-                onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.AssessmentPlan),
-                isRecordingTarget = uiState.recordingSection == NoteSection.AssessmentPlan && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.AssessmentPlan && uiState.isTranscribing,
-            )
-            // PHARMACY — free-text persists alongside the structured picker so
-            // clinicians can drop in items like "give from clinic stock" that
-            // don't fit the formulary.
-            Column {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "PHARMACY",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    AddRxChip(onClick = { showRxPicker = true })
-                }
-                Spacer(Modifier.height(4.dp))
-                SectionField(
-                    label = null,
-                    value = sections.medications,
-                    section = NoteSection.Medications,
-                    onFocusChange = onFocusedSectionChange,
-                    placeholder = "Medications or use Add Rx…",
-                    onValueChange = { onSectionsChange(sections.copy(medications = it)) },
-                    enabled = sectionFieldEnabled(uiState, NoteSection.Medications),
-                    isRecordingTarget = uiState.recordingSection == NoteSection.Medications && uiState.isRecording,
-                    isTranscribingTarget = uiState.transcribingSection == NoteSection.Medications && uiState.isTranscribing,
-                )
-                Spacer(Modifier.height(8.dp))
-                if (uiState.pharmacyOrderSubmitted) {
-                    Text(
-                        "Sent to pharmacy",
-                        color = Green,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                } else {
-                    OutlinedButton(
-                        onClick = onSendToPharmacy,
-                        enabled = !uiState.isSubmitting &&
-                            !uiState.isSendingToPharmacy &&
-                            !uiState.isRecording &&
-                            !uiState.isTranscribing &&
-                            sections.medications.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (uiState.isSendingToPharmacy) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                        } else {
-                            Text("Send to pharmacy")
-                        }
-                    }
-                }
+                clinicalFields()
+                notesPane()
             }
 
             if (showLabPicker) {
@@ -414,89 +316,272 @@ private fun DictationScreenContent(
                     },
                 )
             }
-
-            FollowUpTaskPicker(
-                selected = sections.followUpTasks,
-                enabled = !uiState.isSubmitting && !uiState.isRecording && !uiState.isTranscribing,
-                onSelectedChange = { onSectionsChange(sections.copy(followUpTasks = it)) },
-            )
-            SectionField(
-                label = "FOLLOW-UP DETAILS",
-                value = sections.followUpInstructions,
-                section = NoteSection.FollowUpInstructions,
-                onFocusChange = onFocusedSectionChange,
-                placeholder = "Return precautions, referrals, next visit…",
-                onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.FollowUpInstructions),
-                isRecordingTarget = uiState.recordingSection == NoteSection.FollowUpInstructions && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.FollowUpInstructions && uiState.isTranscribing,
-            )
-
-            Text(
-                text = "Dictation / extra notes",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            BasicTextField(
-                value = sections.additionalNote,
-                onValueChange = onTranscriptChange,
-                textStyle = TextStyle(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 17.sp,
-                    lineHeight = 26.sp,
-                    fontWeight = FontWeight.Normal,
-                ),
-                cursorBrush = SolidColor(Cobalt),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, Line, RoundedCornerShape(12.dp))
-                    .padding(12.dp)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) onFocusedSectionChange(NoteSection.AdditionalNote)
-                    },
-                enabled = sectionFieldEnabled(uiState, NoteSection.AdditionalNote),
-                decorationBox = { inner -> inner() },
-            )
-
-            uiState.error?.let { error ->
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = error,
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        TextButton(onClick = onDismissError) {
-                            Text("Dismiss")
-                        }
-                    }
-                }
-            }
-
-            SignNoteFooter(
-                uiState = uiState,
-                signConfirmPending = signConfirmPending,
-                onSignClick = {
-                    if (signConfirmPending) {
-                        onSubmit()
-                    } else {
-                        signConfirmPending = true
-                    }
-                },
-            )
         }
     }
+}
+
+/**
+ * Structured SOAP fields — left column on tablet.
+ */
+@Composable
+private fun DictationClinicalFields(
+    uiState: DictationUiState,
+    sections: ClinicalNoteSections,
+    quickNoteMode: Boolean,
+    expandedSections: Boolean,
+    onExpandSections: () -> Unit,
+    onSectionsChange: (ClinicalNoteSections) -> Unit,
+    onFocusedSectionChange: (NoteSection?) -> Unit,
+    onSendToPharmacy: () -> Unit,
+    onOpenLabPicker: () -> Unit,
+    onOpenRxPicker: () -> Unit,
+) {
+    SectionField(
+        label = "CHIEF COMPLAINT",
+        value = sections.chiefComplaint,
+        section = NoteSection.ChiefComplaint,
+        onFocusChange = onFocusedSectionChange,
+        minLines = 1,
+        placeholder = "e.g. fever and cough x3 days",
+        onValueChange = { onSectionsChange(sections.copy(chiefComplaint = it)) },
+        enabled = sectionFieldEnabled(uiState, NoteSection.ChiefComplaint),
+        isRecordingTarget = uiState.recordingSection == NoteSection.ChiefComplaint && uiState.isRecording,
+        isTranscribingTarget = uiState.transcribingSection == NoteSection.ChiefComplaint && uiState.isTranscribing,
+    )
+    if (!quickNoteMode || expandedSections) {
+        SectionField(
+            label = "HISTORY OF PRESENT ILLNESS",
+            value = sections.hpi,
+            section = NoteSection.Hpi,
+            onFocusChange = onFocusedSectionChange,
+            placeholder = "Onset, duration, severity, associated symptoms…",
+            onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
+            enabled = sectionFieldEnabled(uiState, NoteSection.Hpi),
+            isRecordingTarget = uiState.recordingSection == NoteSection.Hpi && uiState.isRecording,
+            isTranscribingTarget = uiState.transcribingSection == NoteSection.Hpi && uiState.isTranscribing,
+        )
+        SectionField(
+            label = "PHYSICAL EXAM",
+            value = sections.physicalExam,
+            section = NoteSection.PhysicalExam,
+            onFocusChange = onFocusedSectionChange,
+            placeholder = "Vitals, general appearance, focused exam…",
+            onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
+            enabled = sectionFieldEnabled(uiState, NoteSection.PhysicalExam),
+            isRecordingTarget = uiState.recordingSection == NoteSection.PhysicalExam && uiState.isRecording,
+            isTranscribingTarget = uiState.transcribingSection == NoteSection.PhysicalExam && uiState.isTranscribing,
+        )
+        SectionField(
+            label = "FAMILY AND SOCIAL HISTORY",
+            value = sections.familySocialHistory,
+            section = NoteSection.FamilySocialHistory,
+            onFocusChange = onFocusedSectionChange,
+            placeholder = "Relevant family history, social context…",
+            onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
+            enabled = sectionFieldEnabled(uiState, NoteSection.FamilySocialHistory),
+            isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
+            isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
+        )
+    } else {
+        TextButton(onClick = onExpandSections) {
+            Text("More sections (HPI, exam, history)")
+        }
+    }
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "LABS",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            AddLabsChip(onClick = onOpenLabPicker)
+        }
+        Spacer(Modifier.height(4.dp))
+        SectionField(
+            label = null,
+            value = sections.testsOrdered,
+            section = NoteSection.TestsOrdered,
+            onFocusChange = onFocusedSectionChange,
+            placeholder = "Labs ordered or use Add labs…",
+            onValueChange = { onSectionsChange(sections.copy(testsOrdered = it)) },
+            enabled = sectionFieldEnabled(uiState, NoteSection.TestsOrdered),
+            isRecordingTarget = uiState.recordingSection == NoteSection.TestsOrdered && uiState.isRecording,
+            isTranscribingTarget = uiState.transcribingSection == NoteSection.TestsOrdered && uiState.isTranscribing,
+        )
+    }
+    SectionField(
+        label = "DIAGNOSIS",
+        value = sections.diagnosis,
+        section = NoteSection.Diagnosis,
+        onFocusChange = onFocusedSectionChange,
+        minLines = 1,
+        placeholder = "Primary diagnosis or working impression…",
+        onValueChange = { onSectionsChange(sections.copy(diagnosis = it)) },
+        enabled = sectionFieldEnabled(uiState, NoteSection.Diagnosis),
+        isRecordingTarget = uiState.recordingSection == NoteSection.Diagnosis && uiState.isRecording,
+        isTranscribingTarget = uiState.transcribingSection == NoteSection.Diagnosis && uiState.isTranscribing,
+    )
+    SectionField(
+        label = "ASSESSMENT AND PLAN",
+        value = sections.assessmentPlan,
+        section = NoteSection.AssessmentPlan,
+        onFocusChange = onFocusedSectionChange,
+        placeholder = "Clinical reasoning, plan, counseling…",
+        onValueChange = { onSectionsChange(sections.copy(assessmentPlan = it)) },
+        enabled = sectionFieldEnabled(uiState, NoteSection.AssessmentPlan),
+        isRecordingTarget = uiState.recordingSection == NoteSection.AssessmentPlan && uiState.isRecording,
+        isTranscribingTarget = uiState.transcribingSection == NoteSection.AssessmentPlan && uiState.isTranscribing,
+    )
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "PHARMACY",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            AddRxChip(onClick = onOpenRxPicker)
+        }
+        Spacer(Modifier.height(4.dp))
+        SectionField(
+            label = null,
+            value = sections.medications,
+            section = NoteSection.Medications,
+            onFocusChange = onFocusedSectionChange,
+            placeholder = "Medications or use Add Rx…",
+            onValueChange = { onSectionsChange(sections.copy(medications = it)) },
+            enabled = sectionFieldEnabled(uiState, NoteSection.Medications),
+            isRecordingTarget = uiState.recordingSection == NoteSection.Medications && uiState.isRecording,
+            isTranscribingTarget = uiState.transcribingSection == NoteSection.Medications && uiState.isTranscribing,
+        )
+        Spacer(Modifier.height(8.dp))
+        if (uiState.pharmacyOrderSubmitted) {
+            Text(
+                "Sent to pharmacy",
+                color = Green,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+        } else {
+            OutlinedButton(
+                onClick = onSendToPharmacy,
+                enabled = !uiState.isSubmitting &&
+                    !uiState.isSendingToPharmacy &&
+                    !uiState.isRecording &&
+                    !uiState.isTranscribing &&
+                    sections.medications.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (uiState.isSendingToPharmacy) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                } else {
+                    Text("Send to pharmacy")
+                }
+            }
+        }
+    }
+    FollowUpTaskPicker(
+        selected = sections.followUpTasks,
+        enabled = !uiState.isSubmitting && !uiState.isRecording && !uiState.isTranscribing,
+        onSelectedChange = { onSectionsChange(sections.copy(followUpTasks = it)) },
+    )
+    SectionField(
+        label = "FOLLOW-UP DETAILS",
+        value = sections.followUpInstructions,
+        section = NoteSection.FollowUpInstructions,
+        onFocusChange = onFocusedSectionChange,
+        placeholder = "Return precautions, referrals, next visit…",
+        onValueChange = { onSectionsChange(sections.copy(followUpInstructions = it)) },
+        enabled = sectionFieldEnabled(uiState, NoteSection.FollowUpInstructions),
+        isRecordingTarget = uiState.recordingSection == NoteSection.FollowUpInstructions && uiState.isRecording,
+        isTranscribingTarget = uiState.transcribingSection == NoteSection.FollowUpInstructions && uiState.isTranscribing,
+    )
+}
+
+@Composable
+private fun DictationNotesAndSignPane(
+    uiState: DictationUiState,
+    sections: ClinicalNoteSections,
+    multiColumn: Boolean,
+    onTranscriptChange: (String) -> Unit,
+    onFocusedSectionChange: (NoteSection?) -> Unit,
+    signConfirmPending: Boolean,
+    onDismissError: () -> Unit,
+    onSignClick: () -> Unit,
+) {
+    Text(
+        text = "Dictation / extra notes",
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(top = if (multiColumn) 0.dp else 8.dp),
+    )
+    if (multiColumn) {
+        Text(
+            text = "Tap a field on the left, then use the mic below to dictate into it. Use this area for free-form notes.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    BasicTextField(
+        value = sections.additionalNote,
+        onValueChange = onTranscriptChange,
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 17.sp,
+            lineHeight = 26.sp,
+            fontWeight = FontWeight.Normal,
+        ),
+        cursorBrush = SolidColor(Cobalt),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = if (multiColumn) 240.dp else 120.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Line, RoundedCornerShape(12.dp))
+            .padding(12.dp)
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused) onFocusedSectionChange(NoteSection.AdditionalNote)
+            },
+        enabled = sectionFieldEnabled(uiState, NoteSection.AdditionalNote),
+        decorationBox = { inner -> inner() },
+    )
+
+    uiState.error?.let { error ->
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.errorContainer,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = error,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = onDismissError) {
+                    Text("Dismiss")
+                }
+            }
+        }
+    }
+
+    SignNoteFooter(
+        uiState = uiState,
+        signConfirmPending = signConfirmPending,
+        onSignClick = onSignClick,
+    )
 }
 
 /**
@@ -736,7 +821,7 @@ private fun DictationBottomToolbar(
                 .fillMaxWidth()
                 .border(1.dp, Line, RoundedCornerShape(0.dp))
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

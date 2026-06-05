@@ -78,6 +78,8 @@ import com.karibuhealth.app.ui.theme.CobaltSoft
 import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.Line
 import com.karibuhealth.app.ui.theme.Slate
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.util.adaptiveBottomBarScrollPadding
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -101,7 +103,8 @@ fun PatientTimelineScreen(
     onNavigateToBilling: () -> Unit = {},
     onNavigateToReferral: (String) -> Unit = {},
     onNavigateToDictation: (String) -> Unit = {},
-    viewModel: PatientTimelineViewModel = hiltViewModel(),
+    embedInPane: Boolean = false,
+    viewModel: PatientTimelineViewModel = hiltViewModel(key = patientId),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -168,11 +171,13 @@ fun PatientTimelineScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                        )
+                    if (!embedInPane) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -258,14 +263,17 @@ fun PatientTimelineScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(
+                top = 12.dp,
+                bottom = adaptiveBottomBarScrollPadding().dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             uiState.protocolMessage?.let { msg ->
                 item {
                     Text(
                         text = msg,
-                        modifier = Modifier.padding(horizontal = 20.dp),
+                        modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -301,7 +309,7 @@ fun PatientTimelineScreen(
                 }
             } else {
                 items(uiState.events, key = { it.eventId }) { event ->
-                    Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal())) {
                         when (event) {
                             is PatientTimelineEvent.VisitEvent -> VisitEventCard(
                                 event = event,
@@ -347,7 +355,7 @@ private fun TodayVisitCommandCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
     ) {
         Column(
             modifier = Modifier
@@ -402,7 +410,7 @@ private fun LatestVitalsCard(latestVitals: PatientLatestVitals?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
     ) {
         Column(
             modifier = Modifier
@@ -800,7 +808,7 @@ private fun SectionHeader(title: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -814,7 +822,7 @@ private fun SectionHeader(title: String) {
 
 @Composable
 private fun EmptyHint(text: String) {
-    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+    Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp)) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,

@@ -25,6 +25,7 @@ import com.karibuhealth.app.data.sync.SyncWorker
 import com.karibuhealth.app.util.SessionMonitor
 import com.karibuhealth.app.ui.components.OfflineBanner
 import com.karibuhealth.app.ui.components.SyncDetailsSheet
+import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveProvider
 import com.karibuhealth.app.ui.navigation.KaribuNavHost
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KaribuHealthTheme {
+                KaribuAdaptiveProvider {
                 val viewModel: MainViewModel = hiltViewModel()
                 val isAuthenticated by viewModel.isAuthenticated.collectAsState()
                 val isOnline by viewModel.isOnline.collectAsState()
@@ -104,6 +106,7 @@ class MainActivity : ComponentActivity() {
                         onMarkSynced = viewModel::markEntrySynced,
                         onExportDebugLog = viewModel::readDebugLog,
                     )
+                }
                 }
             }
         }

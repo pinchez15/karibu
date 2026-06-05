@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.supportsMultiColumn
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStepIndicator
 import com.karibuhealth.app.ui.components.KhVitalCard
@@ -54,6 +58,7 @@ fun VitalsScreen(
     val bpHigh = uiState.bpSystolic.toIntOrNull()?.let { it >= 140 } == true ||
         uiState.bpDiastolic.toIntOrNull()?.let { it >= 90 } == true
     val spo2Low = uiState.spo2Pct.toIntOrNull()?.let { it < 94 } == true
+    val useVitalsGrid = supportsMultiColumn()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -91,7 +96,7 @@ fun VitalsScreen(
                     .fillMaxWidth()
                     .border(1.dp, Line, RoundedCornerShape(0.dp))
                     .navigationBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 16.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         if (!patientOnlyMode) {
@@ -135,7 +140,7 @@ fun VitalsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (!patientOnlyMode) {
@@ -171,97 +176,200 @@ fun VitalsScreen(
                 }
             }
 
-            // Row: HEIGHT + WEIGHT (dose-critical pair, top of layout per design)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KhVitalCard(
-                    label = "HEIGHT",
-                    value = uiState.heightCm,
-                    unit = "cm",
-                    decimal = true,
-                    onValueChange = viewModel::updateHeight,
-                    modifier = Modifier.weight(1f),
-                )
-                KhVitalCard(
-                    label = "WEIGHT",
-                    value = uiState.weightKg,
-                    unit = "kg",
-                    decimal = true,
-                    onValueChange = viewModel::updateWeight,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            if (useVitalsGrid) {
+                // Tablet: compact 2-column grid so more vitals fit onscreen
+                // without dense rows.
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    item {
+                        KhVitalCard(
+                            label = "HEIGHT",
+                            value = uiState.heightCm,
+                            unit = "cm",
+                            decimal = true,
+                            onValueChange = viewModel::updateHeight,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "WEIGHT",
+                            value = uiState.weightKg,
+                            unit = "kg",
+                            decimal = true,
+                            onValueChange = viewModel::updateWeight,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "BP SYS",
+                            value = uiState.bpSystolic,
+                            unit = "mmHg",
+                            onValueChange = viewModel::updateBpSystolic,
+                            modifier = Modifier.fillMaxWidth(),
+                            hot = bpHigh,
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "BP DIA",
+                            value = uiState.bpDiastolic,
+                            unit = "mmHg",
+                            onValueChange = viewModel::updateBpDiastolic,
+                            modifier = Modifier.fillMaxWidth(),
+                            hot = bpHigh,
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "PULSE",
+                            value = uiState.pulseBpm,
+                            unit = "bpm",
+                            onValueChange = viewModel::updatePulse,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "RESP",
+                            value = uiState.respRate,
+                            unit = "/min",
+                            onValueChange = viewModel::updateRespRate,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "TEMP",
+                            value = uiState.tempC,
+                            unit = "°C",
+                            decimal = true,
+                            onValueChange = viewModel::updateTemp,
+                            modifier = Modifier.fillMaxWidth(),
+                            hot = tempHot,
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "SpO₂",
+                            value = uiState.spo2Pct,
+                            unit = "%",
+                            onValueChange = viewModel::updateSpo2,
+                            modifier = Modifier.fillMaxWidth(),
+                            hot = spo2Low,
+                        )
+                    }
+                    item {
+                        KhVitalCard(
+                            label = "MUAC",
+                            value = uiState.muacCm,
+                            unit = "cm",
+                            decimal = true,
+                            onValueChange = viewModel::updateMuac,
+                            modifier = Modifier.fillMaxWidth(),
+                            imeAction = ImeAction.Next,
+                        )
+                    }
+                }
+            } else {
+                // Phone: retain the original row grouping.
+                // Row: HEIGHT + WEIGHT (dose-critical pair, top of layout per design)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KhVitalCard(
+                        label = "HEIGHT",
+                        value = uiState.heightCm,
+                        unit = "cm",
+                        decimal = true,
+                        onValueChange = viewModel::updateHeight,
+                        modifier = Modifier.weight(1f),
+                    )
+                    KhVitalCard(
+                        label = "WEIGHT",
+                        value = uiState.weightKg,
+                        unit = "kg",
+                        decimal = true,
+                        onValueChange = viewModel::updateWeight,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
 
-            // Row: BP SYS + BP DIA (paired together per design)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KhVitalCard(
-                    label = "BP SYS",
-                    value = uiState.bpSystolic,
-                    unit = "mmHg",
-                    onValueChange = viewModel::updateBpSystolic,
-                    modifier = Modifier.weight(1f),
-                    hot = bpHigh,
-                )
-                KhVitalCard(
-                    label = "BP DIA",
-                    value = uiState.bpDiastolic,
-                    unit = "mmHg",
-                    onValueChange = viewModel::updateBpDiastolic,
-                    modifier = Modifier.weight(1f),
-                    hot = bpHigh,
-                )
-            }
+                // Row: BP SYS + BP DIA (paired together per design)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KhVitalCard(
+                        label = "BP SYS",
+                        value = uiState.bpSystolic,
+                        unit = "mmHg",
+                        onValueChange = viewModel::updateBpSystolic,
+                        modifier = Modifier.weight(1f),
+                        hot = bpHigh,
+                    )
+                    KhVitalCard(
+                        label = "BP DIA",
+                        value = uiState.bpDiastolic,
+                        unit = "mmHg",
+                        onValueChange = viewModel::updateBpDiastolic,
+                        modifier = Modifier.weight(1f),
+                        hot = bpHigh,
+                    )
+                }
 
-            // Row: PULSE + RESP
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KhVitalCard(
-                    label = "PULSE",
-                    value = uiState.pulseBpm,
-                    unit = "bpm",
-                    onValueChange = viewModel::updatePulse,
-                    modifier = Modifier.weight(1f),
-                )
-                KhVitalCard(
-                    label = "RESP",
-                    value = uiState.respRate,
-                    unit = "/min",
-                    onValueChange = viewModel::updateRespRate,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                // Row: PULSE + RESP
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KhVitalCard(
+                        label = "PULSE",
+                        value = uiState.pulseBpm,
+                        unit = "bpm",
+                        onValueChange = viewModel::updatePulse,
+                        modifier = Modifier.weight(1f),
+                    )
+                    KhVitalCard(
+                        label = "RESP",
+                        value = uiState.respRate,
+                        unit = "/min",
+                        onValueChange = viewModel::updateRespRate,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
 
-            // Row: TEMP + SpO₂
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KhVitalCard(
-                    label = "TEMP",
-                    value = uiState.tempC,
-                    unit = "°C",
-                    decimal = true,
-                    onValueChange = viewModel::updateTemp,
-                    modifier = Modifier.weight(1f),
-                    hot = tempHot,
-                )
-                KhVitalCard(
-                    label = "SpO₂",
-                    value = uiState.spo2Pct,
-                    unit = "%",
-                    onValueChange = viewModel::updateSpo2,
-                    modifier = Modifier.weight(1f),
-                    hot = spo2Low,
-                )
-            }
+                // Row: TEMP + SpO₂
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KhVitalCard(
+                        label = "TEMP",
+                        value = uiState.tempC,
+                        unit = "°C",
+                        decimal = true,
+                        onValueChange = viewModel::updateTemp,
+                        modifier = Modifier.weight(1f),
+                        hot = tempHot,
+                    )
+                    KhVitalCard(
+                        label = "SpO₂",
+                        value = uiState.spo2Pct,
+                        unit = "%",
+                        onValueChange = viewModel::updateSpo2,
+                        modifier = Modifier.weight(1f),
+                        hot = spo2Low,
+                    )
+                }
 
-            // Row: MUAC alone (half width per design)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KhVitalCard(
-                    label = "MUAC",
-                    value = uiState.muacCm,
-                    unit = "cm",
-                    decimal = true,
-                    onValueChange = viewModel::updateMuac,
-                    modifier = Modifier.weight(1f),
-                    imeAction = ImeAction.Next,
-                )
-                Spacer(Modifier.weight(1f))
+                // Row: MUAC alone (half width per design)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KhVitalCard(
+                        label = "MUAC",
+                        value = uiState.muacCm,
+                        unit = "cm",
+                        decimal = true,
+                        onValueChange = viewModel::updateMuac,
+                        modifier = Modifier.weight(1f),
+                        imeAction = ImeAction.Next,
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
             }
 
             // Inline AI hint card — design's amber-tinted dose advisor.

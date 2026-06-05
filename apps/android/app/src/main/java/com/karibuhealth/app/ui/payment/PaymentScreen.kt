@@ -11,6 +11,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.PaymentMethod
+import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveWidthBox
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,7 +20,8 @@ fun PaymentScreen(
     visitId: String,
     onNavigateBack: () -> Unit,
     onPaymentComplete: (String) -> Unit,
-    viewModel: PaymentViewModel = hiltViewModel(),
+    embedInPane: Boolean = false,
+    viewModel: PaymentViewModel = hiltViewModel(key = visitId),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -28,75 +31,90 @@ fun PaymentScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Record Payment") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-            )
+            if (!embedInPane) {
+                TopAppBar(
+                    title = { Text("Record Payment") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                )
+            }
         },
     ) { innerPadding ->
-        Column(
+        KaribuAdaptiveWidthBox(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(innerPadding),
+            maxWidth = KaribuLayout.constrainedFormMaxWidth(),
         ) {
-            OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = { viewModel.updateAmount(it) },
-                label = { Text("Amount (UGX)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-
-            Text("Payment Method", style = MaterialTheme.typography.labelLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = uiState.paymentMethod == PaymentMethod.cash,
-                    onClick = { viewModel.updatePaymentMethod(PaymentMethod.cash) },
-                    label = { Text("Cash") },
-                )
-                FilterChip(
-                    selected = uiState.paymentMethod == PaymentMethod.mtn_momo,
-                    onClick = { },
-                    label = { Text("MTN MoMo") },
-                    enabled = false,
-                )
-                FilterChip(
-                    selected = uiState.paymentMethod == PaymentMethod.airtel_money,
-                    onClick = { },
-                    label = { Text("Airtel") },
-                    enabled = false,
-                )
-            }
-
-            uiState.error?.let { error ->
-                Text(error, color = MaterialTheme.colorScheme.error)
-            }
-
-            Button(
-                onClick = { viewModel.recordPayment(visitId) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.amount.isNotBlank() && !uiState.isRecording,
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(KaribuLayout.contentPadding()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                if (uiState.isRecording) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                } else {
-                    Text("Record Payment")
+                if (embedInPane) {
+                    Text(
+                        "Record Payment",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    )
                 }
-            }
+                OutlinedTextField(
+                    value = uiState.amount,
+                    onValueChange = { viewModel.updateAmount(it) },
+                    label = { Text("Amount (UGX)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
 
-            TextButton(
-                onClick = { viewModel.skipPayment(visitId) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isRecording,
-            ) {
-                Text("Skip Payment")
+                Text("Payment Method", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = uiState.paymentMethod == PaymentMethod.cash,
+                        onClick = { viewModel.updatePaymentMethod(PaymentMethod.cash) },
+                        label = { Text("Cash") },
+                    )
+                    FilterChip(
+                        selected = uiState.paymentMethod == PaymentMethod.mtn_momo,
+                        onClick = { },
+                        label = { Text("MTN MoMo") },
+                        enabled = false,
+                    )
+                    FilterChip(
+                        selected = uiState.paymentMethod == PaymentMethod.airtel_money,
+                        onClick = { },
+                        label = { Text("Airtel") },
+                        enabled = false,
+                    )
+                }
+
+                uiState.error?.let { error ->
+                    Text(error, color = MaterialTheme.colorScheme.error)
+                }
+
+                Button(
+                    onClick = { viewModel.recordPayment(visitId) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState.amount.isNotBlank() && !uiState.isRecording,
+                ) {
+                    if (uiState.isRecording) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Record Payment")
+                    }
+                }
+
+                TextButton(
+                    onClick = { viewModel.skipPayment(visitId) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isRecording,
+                ) {
+                    Text("Skip Payment")
+                }
             }
         }
     }

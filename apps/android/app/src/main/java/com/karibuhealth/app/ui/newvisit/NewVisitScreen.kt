@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.DuplicateCandidate
 import com.karibuhealth.app.ui.components.KhMetaText
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import com.karibuhealth.app.ui.components.KhStepIndicator
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.AmberInk
@@ -117,7 +118,7 @@ fun NewVisitScreen(
                     .fillMaxWidth()
                     .border(1.dp, Line, shape = RoundedCornerShape(0.dp))
                     .navigationBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 16.dp)
                 ) {
                     Button(
                         onClick = {
@@ -159,7 +160,7 @@ fun NewVisitScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             KhStepIndicator(step = 1, totalSteps = 3, label = "PATIENT")

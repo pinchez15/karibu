@@ -1,9 +1,15 @@
 package com.karibuhealth.app.ui.util
 
+import androidx.compose.runtime.Composable
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import java.util.Locale
 
 /** Shared bottom inset so scroll content clears fixed Scaffold bottom bars. */
 val BottomBarScrollPadding = 96
+
+/** Adaptive bottom inset — rail on tablet, bottom nav on phone. */
+@Composable
+fun adaptiveBottomBarScrollPadding(): Int = KaribuLayout.bottomBarScrollPadding()
 
 private val chunkCitationRegex = Regex("""\[chunk_id=\d+]""")
 

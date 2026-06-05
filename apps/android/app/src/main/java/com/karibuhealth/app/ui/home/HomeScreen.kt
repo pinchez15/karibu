@@ -50,6 +50,8 @@ import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.Ink
 import com.karibuhealth.app.ui.theme.Line
 import com.karibuhealth.app.ui.theme.Muted
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import com.karibuhealth.app.ui.adaptive.supportsListDetail
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -65,6 +67,9 @@ fun HomeScreen(
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit = {},
+    showAppBar: Boolean = true,
+    selectedPatientId: String? = null,
+    onSelectPatient: (String) -> Unit = onNavigateToPatient,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -122,23 +127,28 @@ fun HomeScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
+                contentPadding = PaddingValues(
+                    top = 12.dp,
+                    bottom = KaribuLayout.bottomBarScrollPadding().dp,
+                ),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                item {
-                    HomeAppBar(
-                        clinicName = uiState.clinic?.name,
-                        staff = uiState.staff,
-                        onAvatarClick = { profileMenuOpen = true },
-                        profileMenuOpen = profileMenuOpen,
-                        onDismissMenu = { profileMenuOpen = false },
-                        onSignOut = {
-                            profileMenuOpen = false
-                            viewModel.signOut()
-                        },
-                        onOpenWorklists = onNavigateToWorklists,
-                        onOpenBilling = onNavigateToBilling,
-                    )
+                if (showAppBar) {
+                    item {
+                        HomeAppBar(
+                            clinicName = uiState.clinic?.name,
+                            staff = uiState.staff,
+                            onAvatarClick = { profileMenuOpen = true },
+                            profileMenuOpen = profileMenuOpen,
+                            onDismissMenu = { profileMenuOpen = false },
+                            onSignOut = {
+                                profileMenuOpen = false
+                                viewModel.signOut()
+                            },
+                            onOpenWorklists = onNavigateToWorklists,
+                            onOpenBilling = onNavigateToBilling,
+                        )
+                    }
                 }
 
                 item {
@@ -152,13 +162,13 @@ fun HomeScreen(
                     item {
                         RecentPatientsStrip(
                             entries = uiState.recentPatients,
-                            onOpenPatient = { entry ->
+                                onOpenPatient = { entry ->
                                 viewModel.recordPatientTouch(
                                     entry.patientId,
                                     entry.patientName,
                                     entry.visitId,
                                 )
-                                onNavigateToPatient(entry.patientId)
+                                onSelectPatient(entry.patientId)
                             },
                         )
                     }
@@ -169,7 +179,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         OpdPatientFilter.entries.forEach { filter ->
@@ -192,7 +202,7 @@ fun HomeScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         StatTile(
@@ -218,7 +228,7 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
                     ) {
                         OutlinedTextField(
                             value = uiState.searchQuery,
@@ -262,7 +272,7 @@ fun HomeScreen(
                                 // timeline (Phase 3 patient-first UX).
                                 // "Start Visit" stays on the right for the
                                 // legacy queue-driven flow.
-                                onOpenPatient = { onNavigateToPatient(patient.id) },
+                                onOpenPatient = { onSelectPatient(patient.id) },
                                 onStartVisit = {
                                     scope.launch {
                                         viewModel.startVisitForPatient(patient.id)?.let(onNavigateToVisitDetails)
@@ -278,7 +288,7 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
+                                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
@@ -310,16 +320,17 @@ fun HomeScreen(
                         }
                     } else {
                         items(uiState.filteredPatients, key = { "opd-${it.patientId}" }) { row ->
-                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                            Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp)) {
                                 OpdPatientCard(
                                     row = row,
+                                    selected = selectedPatientId == row.patientId,
                                     onClick = {
                                         viewModel.recordPatientTouch(
                                             row.patientId,
                                             row.patientName,
                                             row.visitId,
                                         )
-                                        onNavigateToPatient(row.patientId)
+                                        onSelectPatient(row.patientId)
                                     },
                                 )
                             }
@@ -331,7 +342,7 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp)
+                                    .padding(horizontal = KaribuLayout.contentPaddingHorizontal())
                                     .padding(top = 12.dp, bottom = 16.dp)
                                     .clickable(onClick = onNavigateToQueue),
                             ) {
@@ -348,7 +359,7 @@ fun HomeScreen(
                                 text = "${uiState.doneTodayCount} completed today",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                                modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 12.dp),
                             )
                         }
                     }
@@ -372,7 +383,7 @@ private fun HomeAppBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -423,7 +434,7 @@ private fun HomeHero(
     val today = LocalDate.now()
     val datePretty = today.format(DateTimeFormatter.ofPattern("EEE d MMM"))
 
-    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+    Column(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp)) {
         Text(
             text = "Today, $datePretty",
             style = MaterialTheme.typography.bodyMedium,
@@ -554,7 +565,7 @@ private fun SectionHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -568,7 +579,7 @@ private fun SectionHeader(
 
 @Composable
 private fun EmptyHint(text: String) {
-    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+    Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp)) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
@@ -588,7 +599,7 @@ private fun SearchResultCard(
         .ifBlank { patient.displayName ?: "Unknown" }
     val age = patient.dateOfBirth?.let(::formatAgeFromDob)
 
-    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+    Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -649,7 +660,11 @@ private fun SearchResultCard(
 }
 
 @Composable
-private fun OpdPatientCard(row: OpdPatientRow, onClick: () -> Unit) {
+private fun OpdPatientCard(
+    row: OpdPatientRow,
+    onClick: () -> Unit,
+    selected: Boolean = false,
+) {
     val (kind, statusLabel) = when (row.bucket) {
         OpdPatientFilter.Waiting -> KhStatusKind.Waiting to "Waiting"
         OpdPatientFilter.NeedsVitals -> KhStatusKind.Vitals to "Needs vitals"
@@ -675,8 +690,14 @@ private fun OpdPatientCard(row: OpdPatientRow, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, Line, RoundedCornerShape(14.dp))
+            .background(
+                if (selected) CobaltSoft.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) Cobalt else Line,
+                shape = RoundedCornerShape(14.dp),
+            )
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -839,13 +860,13 @@ private fun RecentPatientsStrip(
             text = "Recent",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
         )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             entries.forEach { entry ->
