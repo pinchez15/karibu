@@ -10,9 +10,23 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Urine protein if available"
+      "Urine protein dipstick"
     ],
     "chiefComplaint": "Headache during ANC visit",
+    "classification": "Pre-eclampsia concern requiring same-day urgent referral.",
+    "classificationRationale": [
+      "Pregnant at about 32 weeks.",
+      "Repeated blood pressure around 156/102 mmHg.",
+      "Headache and blurred vision.",
+      "Urine protein testing is needed and should be documented when available."
+    ],
+    "contraindicationChecks": [
+      "Convulsions",
+      "Severe-range BP",
+      "Vaginal bleeding",
+      "Reduced fetal movement",
+      "Medicine contraindications in local protocol"
+    ],
     "dangerSigns": [
       "Severe headache",
       "Blurred vision",
@@ -20,11 +34,23 @@
       "Convulsions",
       "Vaginal bleeding"
     ],
-    "diagnosis": "Hypertension in pregnancy with symptoms concerning for pre-eclampsia",
+    "diagnosis": "Pre-eclampsia concern requiring same-day urgent referral",
     "differentials": [
       "Gestational hypertension",
       "Pre-eclampsia",
       "Severe headache from another cause"
+    ],
+    "doNotDo": [
+      "Do not reassure and send home for next ANC visit.",
+      "Do not delay referral waiting for perfect diagnostics."
+    ],
+    "documentationRequirements": [
+      "Gestational age",
+      "Repeat BP readings",
+      "Headache and visual symptoms",
+      "Urine protein result",
+      "Fetal assessment if done",
+      "Pre-referral actions"
     ],
     "examFindings": [
       "Alert",
@@ -34,6 +60,40 @@
     "followUp": [
       "Communicate BP readings, symptoms, gestational age, and actions taken to receiving facility."
     ],
+    "guidelineActions": [
+      {
+        "action": "Repeat and confirm the high blood pressure with correct cuff technique and rest.",
+        "category": "triage",
+        "confidence": "source_verified",
+        "rationale": "A confirmed elevated BP changes ANC from routine to urgent assessment.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Hypertension in pregnancy and referral"
+      },
+      {
+        "action": "Check urine protein immediately if available.",
+        "category": "test",
+        "confidence": "source_verified",
+        "rationale": "Proteinuria supports pre-eclampsia classification and referral communication.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Hypertension in pregnancy and referral"
+      },
+      {
+        "action": "Keep under observation and arrange same-day urgent referral for maternal assessment.",
+        "category": "referral",
+        "confidence": "source_verified",
+        "rationale": "Headache/visual symptoms with hypertension in pregnancy exceed routine HC III ANC follow-up.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Hypertension in pregnancy and referral"
+      },
+      {
+        "action": "Follow facility pre-referral maternal emergency protocol for magnesium sulfate and antihypertensive use.",
+        "category": "treatment",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Exact medication threshold should be confirmed by local maternal protocol.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023",
+        "sourceSection": "Hypertension in pregnancy and referral"
+      }
+    ],
     "history": [
       "Pregnant at about 32 weeks by dates",
       "Headache since morning",
@@ -41,17 +101,20 @@
     ],
     "management": [
       "Recognize headache, visual symptoms, and high blood pressure as danger signs.",
-      "Check urine protein if available but do not ignore symptoms.",
-      "Arrange urgent referral according to maternal health guidance."
+      "Repeat blood pressure after rest and check urine protein.",
+      "Keep patient under observation and arrange same-day urgent referral."
     ],
     "medicines": [
-      "Pre-referral treatment per local maternal emergency protocol if indicated and available"
+      "Magnesium sulfate and antihypertensive pre-referral threshold requires clinician confirmation for this BP/symptom pattern"
     ],
     "referralThreshold": "Severe hypertension, headache, visual symptoms, convulsions, or suspected pre-eclampsia require urgent referral.",
     "reviewOfSystems": [
       "No vaginal bleeding",
       "No convulsions reported",
       "No fever"
+    ],
+    "reviewerQuestions": [
+      "For this BP/symptom/proteinuria scenario, confirm MgSO4 and antihypertensive pre-referral threshold at HC III."
     ],
     "vitals": {
       "bp": "156/102 mmHg",

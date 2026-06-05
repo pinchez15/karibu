@@ -9,8 +9,7 @@ import androidx.navigation.toRoute
 import com.karibuhealth.app.ui.auth.AuthScreen
 import com.karibuhealth.app.ui.home.HomeScreen
 import com.karibuhealth.app.ui.clinical.ClinicalMainShell
-import com.karibuhealth.app.ui.consult.ConsultChatScreen
-import com.karibuhealth.app.ui.learn.KaribuLearnRoot
+import com.karibuhealth.app.ui.referral.ReferralScreen
 import com.karibuhealth.app.ui.queue.QueueScreen
 import com.karibuhealth.app.ui.checkin.CheckInScreen
 import com.karibuhealth.app.ui.newvisit.NewVisitScreen
@@ -56,22 +55,6 @@ fun KaribuNavHost(
                 },
                 onNavigateToWorklists = { navController.navigate(NavRoute.Worklists) },
                 onNavigateToBilling = { navController.navigate(NavRoute.Billing) },
-                onNavigateToConsultChat = { visitId ->
-                    navController.navigate(NavRoute.ConsultChat(visitId))
-                },
-                onOpenLearn = { navController.navigate(NavRoute.KaribuLearn) },
-            )
-        }
-
-        composable<NavRoute.KaribuLearn> {
-            KaribuLearnRoot(onExit = { navController.popBackStack() })
-        }
-
-        composable<NavRoute.ConsultChat> { backStackEntry ->
-            val route = backStackEntry.toRoute<NavRoute.ConsultChat>()
-            ConsultChatScreen(
-                visitId = route.visitId,
-                onNavigateBack = { navController.popBackStack() },
             )
         }
 
@@ -134,8 +117,8 @@ fun KaribuNavHost(
             VisitDetailsScreen(
                 visitId = route.visitId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToConsult = { visitId ->
-                    navController.navigate(NavRoute.ConsultChat(visitId))
+                onNavigateToReferral = { visitId ->
+                    navController.navigate(NavRoute.Referral(visitId))
                 },
                 onNavigateToDictation = { visitId, aiMode, incorporate ->
                     navController.navigate(
@@ -151,11 +134,6 @@ fun KaribuNavHost(
                 },
                 onNavigateToReview = { visitId ->
                     navController.navigate(NavRoute.Review(visitId))
-                },
-                // Direct-saved visits (status='sent', documentation_complete=true)
-                // skip the AI review screen and go straight to payment.
-                onNavigateToPayment = { visitId ->
-                    navController.navigate(NavRoute.Payment(visitId))
                 },
             )
         }
@@ -247,6 +225,12 @@ fun KaribuNavHost(
                 onNavigateToBilling = {
                     navController.navigate(NavRoute.Billing)
                 },
+                onNavigateToReferral = { visitId ->
+                    navController.navigate(NavRoute.Referral(visitId))
+                },
+                onNavigateToDictation = { visitId ->
+                    navController.navigate(NavRoute.Dictation(visitId, false))
+                },
             )
         }
 
@@ -297,6 +281,15 @@ fun KaribuNavHost(
                 onNavigateToVisit = { visitId ->
                     navController.navigate(NavRoute.VisitDetails(visitId))
                 },
+            )
+        }
+
+        composable<NavRoute.Referral> { backStackEntry ->
+            val route = backStackEntry.toRoute<NavRoute.Referral>()
+            ReferralScreen(
+                visitId = route.visitId,
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
             )
         }
     }

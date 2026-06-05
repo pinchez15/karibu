@@ -1,7 +1,10 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { filterTimelineAiNotes } from '@/lib/ai-review-helpers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import { WebTopBar } from '@/components/web-shell'
+import { patientDisplayName } from '@/lib/referral-summary'
 import { VisitDetailClient } from './VisitDetailClient'
 
 async function getVisitDetails(visitId: string, clinicId: string) {
@@ -40,13 +43,23 @@ async function getVisitDetails(visitId: string, clinicId: string) {
 
   // AI review suggestions — load any unanswered questions for this visit
   // along with citation metadata so the banner can deep-link to /library.
+  const docComplete = !!(visit as { documentation_complete?: boolean }).documentation_complete
+
   const { data: suggestionRows } = await supabase
     .from('ai_review_suggestions')
     .select(
-      'id, suggestion_type, question, reasoning, citation_ids, confidence, clinician_response',
+      'id, suggestion_type, question, reasoning, citation_ids, confidence, clinician_response, phase, display_tier',
     )
     .eq('visit_id', visitId)
     .eq('clinic_id', clinicId)
+    .order('created_at', { ascending: true })
+
+  const { data: criticalAlertRows } = await supabase
+    .from('visit_critical_alerts')
+    .select('id, rule_slug, confirm_question, clinical_prompt, library_slug, clinician_response')
+    .eq('visit_id', visitId)
+    .eq('clinic_id', clinicId)
+    .is('clinician_response', null)
     .order('created_at', { ascending: true })
 
   const allCitationIds = Array.from(
@@ -81,7 +94,7 @@ async function getVisitDetails(visitId: string, clinicId: string) {
     }
   }
 
-  const ai_review_suggestions = (suggestionRows ?? []).map((s) => ({
+  const allSuggestions = (suggestionRows ?? []).map((s) => ({
     id: s.id as string,
     suggestion_type: s.suggestion_type as string,
     question: s.question as string,
@@ -98,11 +111,24 @@ async function getVisitDetails(visitId: string, clinicId: string) {
       .filter((c): c is NonNullable<typeof c> => c !== undefined),
   }))
 
+  const ai_review_suggestions = docComplete
+    ? []
+    : filterTimelineAiNotes(allSuggestions)
+
+  const critical_alerts = (criticalAlertRows ?? []).map((a) => ({
+    id: a.id as string,
+    rule_slug: a.rule_slug as string,
+    confirm_question: a.confirm_question as string,
+    clinical_prompt: a.clinical_prompt as string,
+    library_slug: (a.library_slug as string | null) ?? null,
+  }))
+
   return {
     ...visit,
     patient_notes_clinician: clinicianNote,
     patient_notes_ai: aiNote,
     ai_review_suggestions,
+    critical_alerts,
   }
 }
 
@@ -194,28 +220,36 @@ export default async function VisitDetailPage({
     })
   }
 
-  return (
-    <div>
-      <div className="px-4 pt-4">
-        <Link
-          href="/dashboard/visits"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Patients
-        </Link>
-      </div>
+  const patient = Array.isArray(visit.patient) ? visit.patient[0] : visit.patient
+  const title = patient
+    ? patientDisplayName(patient)
+    : (visit.patient as { display_name?: string } | null)?.display_name ?? 'Visit'
 
-      <VisitDetailClient
-        visit={visit}
-        staffId={staff.id}
-        staffRole={staff.role}
-        payment={payment}
-        addendums={addendums}
-        amendments={amendments}
+  return (
+    <>
+      <WebTopBar
+        title={title}
+        subtitle={`Visit · ${new Date(visit.visit_date).toLocaleDateString('en-GB')}`}
+        subtitleMeta={false}
+        actions={
+          <Link
+            href={patient?.id ? `/dashboard/patients/${patient.id}` : '/dashboard/visits'}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Patient chart
+          </Link>
+        }
       />
-    </div>
+      <div className="flex-1 overflow-auto px-8 py-6 max-w-4xl">
+        <VisitDetailClient
+          visit={visit}
+          staffId={staff.id}
+          staffRole={staff.role}
+          payment={payment}
+          addendums={addendums}
+          amendments={amendments}
+        />
+      </div>
+    </>
   )
 }

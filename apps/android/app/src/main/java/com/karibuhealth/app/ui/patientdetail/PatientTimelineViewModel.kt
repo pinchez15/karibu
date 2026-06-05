@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.patientdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.local.datastore.RecentPatientsStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
@@ -13,8 +14,10 @@ import com.karibuhealth.app.domain.model.PatientLatestVitals
 import com.karibuhealth.app.domain.model.PatientTimelineEvent
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.karibuhealth.app.ui.util.formatPatientName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,6 +63,7 @@ class PatientTimelineViewModel @Inject constructor(
     private val authTokenStore: AuthTokenStore,
     private val syncQueueDao: SyncQueueDao,
     private val networkMonitor: NetworkMonitor,
+    private val recentPatientsStore: RecentPatientsStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatientTimelineUiState())
@@ -113,6 +117,14 @@ class PatientTimelineViewModel @Inject constructor(
         fetch(patientId, resetState = false)
     }
 
+    suspend fun refreshAndAwait() {
+        val patientId = loadedPatientId ?: return
+        fetch(patientId, resetState = false)
+        // fetch() launches async work — brief wait so pull-to-refresh doesn't
+        // snap shut before the timeline repaints.
+        delay(400)
+    }
+
     private fun fetch(patientId: String, resetState: Boolean) {
         if (resetState) {
             _uiState.update { PatientTimelineUiState(isLoading = true) }
@@ -146,19 +158,24 @@ class PatientTimelineViewModel @Inject constructor(
             val todayVisit = todayVisitDeferred.await()
             val protocolSlugs = protocolsDeferred.await()
 
+            val resolvedPatient = patient ?: _uiState.value.patient
             _uiState.update {
                 it.copy(
-                    patient = patient ?: it.patient,
+                    patient = resolvedPatient,
                     latestVitals = vitals ?: it.latestVitals,
                     todayVisit = todayVisit,
                     enabledProtocolSlugs = protocolSlugs,
                     events = events,
                     isLoading = false,
                     hasMore = events.size >= PAGE_SIZE,
-                    error = if (events.isEmpty() && vitals == null && patient == null && it.patient == null) {
+                    error = if (events.isEmpty() && vitals == null && resolvedPatient == null) {
                         "Couldn't load patient — check your connection."
                     } else null,
                 )
+            }
+            resolvedPatient?.let { p ->
+                val name = formatPatientName(p.firstName, p.lastName, p.displayName)
+                recentPatientsStore.recordTouch(p.id, name, todayVisit?.id)
             }
         }
     }

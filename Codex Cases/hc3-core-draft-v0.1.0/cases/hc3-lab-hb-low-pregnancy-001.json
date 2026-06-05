@@ -10,9 +10,23 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Use available HC III tests where relevant"
+      "Repeat blood pressure",
+      "Urine protein dipstick",
+      "Haemoglobin if available"
     ],
     "chiefComplaint": "Low haemoglobin in pregnancy",
+    "classification": "Anaemia severity assessment and referral decision",
+    "classificationRationale": [
+      "Low haemoglobin in pregnancy",
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case.",
+      "Focused exam findings should be requested by the learner."
+    ],
+    "contraindicationChecks": [
+      "Breathlessness at rest",
+      "Syncope",
+      "Severe pallor"
+    ],
     "dangerSigns": [
       "Breathlessness at rest",
       "Syncope",
@@ -20,7 +34,19 @@
     ],
     "diagnosis": "Anaemia severity assessment and referral decision",
     "differentials": [
-      "Alternative diagnosis depends on focused history and exam"
+      "Hypertensive disorder of pregnancy",
+      "Anaemia",
+      "Infection or obstetric emergency"
+    ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
     ],
     "examFindings": [
       "Focused exam findings should be requested by the learner."
@@ -28,27 +54,55 @@
     "followUp": [
       "Give clear safety-net advice and document the plan."
     ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this maternal anc presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      }
+    ],
     "history": [
       "Focused history is required to reveal the key risk.",
       "No real patient data; simulated training case."
     ],
     "management": [
       "Assess danger signs and immediate stability.",
-      "Use HC III-appropriate guideline reasoning.",
+      "Classify the presentation using the case action bundle before treatment.",
       "Document clearly and refer/escalate when threshold is met."
     ],
     "medicines": [
-      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+      "No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."
     ],
     "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
     "reviewOfSystems": [
-      "Focused review needed based on presentation"
+      "Headache and visual symptoms checked",
+      "Bleeding checked",
+      "Fetal or postnatal danger symptoms checked"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
-      "bp": "varies",
-      "pulse": "varies",
-      "respiratory_rate": "varies",
-      "temperature": "varies"
+      "bp": "148/96 mmHg",
+      "pulse": "104 bpm",
+      "respiratory_rate": "22/min",
+      "temperature": "37.4 C"
     }
   },
   "credentialingMetadata": {
@@ -84,9 +138,10 @@
     "title": "Low haemoglobin result in pregnancy"
   },
   "simulatedPatient": {
-    "ageLabel": "varies by scenario",
-    "displayName": "Simulated patient",
-    "sex": "unknown"
+    "ageLabel": "26 years",
+    "context": "Pregnancy or postnatal care visit",
+    "displayName": "Simulated mother",
+    "sex": "female"
   },
   "sourceGuidelineIds": [
     "uganda-clinical-guidelines-2023"

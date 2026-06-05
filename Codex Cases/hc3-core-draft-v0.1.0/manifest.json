@@ -2,601 +2,601 @@
   "cases": [
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "a609b289fdf8574f10496e44795591ed07861d5d47aadbbfa70c2728d75c235b",
+      "checksum": "1fe9452dc2a80ac42bd17f414835dcec17032b591c66c6be009ed2b51e933cd5",
       "id": "hc3-fever-malaria-triage-001",
       "path": "cases/hc3-fever-malaria-triage-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "72771747361a338c57aba71a118ab682e399879732efa6c20bdbce762127a300",
+      "checksum": "22421d6b40d3ab66c603bb15290bc7e04a7198e8cc1b38217c1cb5983ac9fb6f",
       "id": "hc3-severe-malaria-referral-001",
       "path": "cases/hc3-severe-malaria-referral-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "ff271c0c1382741177e46ac166dbd0526aab18c51f93b50e4867fe3e88d12133",
+      "checksum": "2094382dd3fca8885ba74adb4d8f1231f11caebe47b42eb35cff855dc426f715",
       "id": "hc3-child-cough-fast-breathing-001",
       "path": "cases/hc3-child-cough-fast-breathing-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "4ec5900c765ab7a0d47f1a778366cdebeac261382bca127a4c87947f9fcc44bd",
+      "checksum": "c193b2929fcfa6559cc06d74817656b41819c8792cf7fa7eb80929350730ffec",
       "id": "hc3-child-diarrhoea-dehydration-001",
       "path": "cases/hc3-child-diarrhoea-dehydration-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "c4b595dd809a28243db9ab06d91c744b74ab71b901fe53489de428cf62a902d6",
+      "checksum": "82c204630ab071c89108bb61fedc961f86c7433bf5a14e61cea5b665f5cb201f",
       "id": "hc3-anc-hypertension-danger-signs-001",
       "path": "cases/hc3-anc-hypertension-danger-signs-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "c6ff435bd593291c13ffaafcb3af6e0e183b2a958d51155609d3575663f51111",
+      "checksum": "3f4e769c15b5f0ffc7443034e09581f2e9bdf00efcb1783b331f9b26000f26f7",
       "id": "hc3-adult-cough-tb-screen-001",
       "path": "cases/hc3-adult-cough-tb-screen-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "d9120c9714c93268a3ceee4478674d5e84d8acd7c651544efe1a2d8c18da47c0",
+      "checksum": "5727b20ed0cd6080fd9842ab584f2f13b6aa5e62436a11e0dc3700a2eea9f9b0",
       "id": "hc3-hiv-art-continuity-001",
       "path": "cases/hc3-hiv-art-continuity-001.json"
     },
     {
       "chapterId": "general-hc3-practice",
-      "checksum": "600397d37fa1dd2bb44ce01e3048081054486f8eb5f062ed60c3e8236eb85e73",
+      "checksum": "db7c37445c19c09b755a81835ae519b95e975ba3d4c0cf82b42c1b4d3ed8ce24",
       "id": "hc3-adult-dysuria-pregnancy-check-001",
       "path": "cases/hc3-adult-dysuria-pregnancy-check-001.json"
     },
     {
       "chapterId": "general-hc3-practice",
-      "checksum": "da1e316296da14b2d0fa6892a16e4b4d91ba927a2185964d6dd7f83418810e99",
+      "checksum": "66e71289f00761a17388d00f7784bf19b5dc11e03f36cd87e48b59325aa6120b",
       "id": "hc3-suspected-sti-partner-management-001",
       "path": "cases/hc3-suspected-sti-partner-management-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "b95f0523ff7ef31b4e6cf917a6098954d918ca3d868350399e455563482848a1",
+      "checksum": "797d4b43e1b8ac8a300b1fa70849063c716c88d1c29b7fb606aa86d3cb5800f1",
       "id": "hc3-wound-tetanus-risk-001",
       "path": "cases/hc3-wound-tetanus-risk-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "f79e6fae92ad2acd3a234cba04d47c3bd192054bd14c9770c025094951e61804",
+      "checksum": "2ffb8c16335d68ee6f239710edd1913592e7413a73a9905263665f09f1a77485",
       "id": "hc3-postpartum-haemorrhage-001",
       "path": "cases/hc3-postpartum-haemorrhage-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "d3340a345562da20e7c864a090622668b742d3b0e7aa34fc8aea4d8c643b6f98",
+      "checksum": "9adeeb33e0c81dbd419f99de633c45db30429b95f8d3edd3f04efc873f26a3c1",
       "id": "hc3-eclampsia-convulsion-001",
       "path": "cases/hc3-eclampsia-convulsion-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "9a5c7cac8cd3077ce095e44c60a5a039e9cf4a51de98aab37856676ad0dde5cb",
+      "checksum": "6d37be02ba7ca702506e9697a871a5bfe58cf4d48b9ead01037a6fbf863b2ade",
       "id": "hc3-prolonged-labour-partograph-001",
       "path": "cases/hc3-prolonged-labour-partograph-001.json"
     },
     {
       "chapterId": "neonatal-emergency-care",
-      "checksum": "a8ee7ef6bcac541b83e88b5a573ce3ed22ed230685d24c72632ffdc64ad2073b",
+      "checksum": "66966e9e499f31057525ad34a2ff05c378aeff601c921baa652db55a0f73fcdb",
       "id": "hc3-newborn-not-breathing-001",
       "path": "cases/hc3-newborn-not-breathing-001.json"
     },
     {
       "chapterId": "neonatal-emergency-care",
-      "checksum": "9f655150a77d6b4a9c0e3fc23640a47a9643a021e36dd3be4a2f1624c03392f3",
+      "checksum": "7edf8c6e76c414250d873f785b0be62d98cc558ffacc65d40207fecfda7abbcc",
       "id": "hc3-neonate-fever-sepsis-001",
       "path": "cases/hc3-neonate-fever-sepsis-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "84ae676ae38cca2480ae9a4bbb68d8633129167efef2d25c08d1e26d360ad3d2",
+      "checksum": "753ff6e8cb672d4833d15b8d321ed7b36563e4c7e4afbb9d218590b0ee8393dd",
       "id": "hc3-asthma-acute-wheeze-001",
       "path": "cases/hc3-asthma-acute-wheeze-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "ac35f62beab4c78108da040e0af77c0a68cd993a3b458b1482e372947b82e64a",
+      "checksum": "71afbec3def555167930ebbd64656762b760004ae196fc85227e4b154b112f37",
       "id": "hc3-hypoglycaemia-altered-consciousness-001",
       "path": "cases/hc3-hypoglycaemia-altered-consciousness-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "d7365961fe3e639d580e56ed751151b0cb13544f06a9daa3f3b8242f0f5ed103",
+      "checksum": "8ce7eab197a820dd18c996f1e662601918117037e810ef12e87035fb0238b65d",
       "id": "hc3-burns-fluid-risk-001",
       "path": "cases/hc3-burns-fluid-risk-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "3c0c5bd08498a5e98453359848ffdcaf088077288ffae752240ba85073c05614",
+      "checksum": "0a7c95b78b428b83b7b9be76fa21ae24fa5a1991fa9d644e6f9cd7a751c06715",
       "id": "hc3-intimate-partner-violence-001",
       "path": "cases/hc3-intimate-partner-violence-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "aaa6ad8fe2ad4474a174d92ddcfbcd492c23ba5a212132c223a8d271f64d4e5c",
+      "checksum": "cd4a2bf420963ed6179a02a104be37f1f8f6032d3969e0c50caca309651f5571",
       "id": "hc3-needlestick-exposure-001",
       "path": "cases/hc3-needlestick-exposure-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "948b927753c63f55e7f1fa61f8e4ecaec7aee035e05d9ebe22694c2482091c07",
+      "checksum": "7cd21a094a5856ec25736c3957e86c488915ed2f884df55ae16e58bafe061740",
       "id": "hc3-medication-allergy-documentation-001",
       "path": "cases/hc3-medication-allergy-documentation-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "7ac5f961057c81dda0fd55bf9053af6c0574e3af445f4b4c6e1457373ea8ebcc",
+      "checksum": "38064e3a008c36b18f1d553206acb12c38f8a6e254a9e60c3388d2b3063dbe7b",
       "id": "hc3-adolescent-confidentiality-sti-001",
       "path": "cases/hc3-adolescent-confidentiality-sti-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "b69de748b8d95cbf24e6b26ad04a2e7fced8e85a7c6a0fecc8b1d9979c7e560a",
+      "checksum": "f7472e25866f734d6450ce6d342c58a5a7625177d28edd91a294a40d3829b393",
       "id": "hc3-anaemia-pregnancy-fatigue-001",
       "path": "cases/hc3-anaemia-pregnancy-fatigue-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "80969da0d27f45556b505ad9f18ecf0272d9e881e8688e9779b06796b92f660a",
+      "checksum": "af601018312940878a22396f183bd3431c8f58ac46ae35745af90e4c0ed31722",
       "id": "hc3-malnutrition-oedema-child-001",
       "path": "cases/hc3-malnutrition-oedema-child-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "559554537187ab158354b024d107843b2e2edc48192d371a2530178ea4e8d112",
+      "checksum": "02c1377a1109d1b6a58e0ddcc5a5e728e3c3e173a869dbf4eaea00558008eaa4",
       "id": "hc3-measles-suspected-rash-fever-001",
       "path": "cases/hc3-measles-suspected-rash-fever-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "853970f62833b18dea7c374ffb8c27d431b07607a1c858408e703c816a5abbc8",
+      "checksum": "079e92fa71ad4908898ef379ae2c02dedfb9c74744bdc1657ee5540beb65c8e6",
       "id": "hc3-postpartum-fever-sepsis-001",
       "path": "cases/hc3-postpartum-fever-sepsis-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "7249b3fe0d83603be1eb4f1cbe0a284f8ef1ba66594e0e7017d49fa223dc7759",
+      "checksum": "d8ac8c8785d5c3f787e1336465389bb2fe989b7a95a751062381cc9045d3d129",
       "id": "hc3-family-planning-danger-headache-001",
       "path": "cases/hc3-family-planning-danger-headache-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "8268b142545a295a2d358786cd6e56a303583477a4358acc0c68405abb15f84a",
+      "checksum": "9263fc86480f6c3a41b387caba6853a8ee0905dbc08fa875e28f17bc53dc3ea9",
       "id": "hc3-queue-deterioration-triage-001",
       "path": "cases/hc3-queue-deterioration-triage-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "ecb78681ac43f678f9e16e67dc41748259cae69aab3f432c3c30640ea86567bb",
+      "checksum": "1ec0f8f01397f7051aa98db172721f026f932fcc3c501ad7ad88d3a8b9850c7d",
       "id": "hc3-poisoning-pesticide-001",
       "path": "cases/hc3-poisoning-pesticide-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "039871bf0382395c35d047db64e5f52fa257bbf74630e509ef11fe9ec8ac6212",
+      "checksum": "1770ae2a58518c705d82aeb6874454450f41f4752aeec60dbf9590d9de589719",
       "id": "hc3-sickle-cell-pain-fever-001",
       "path": "cases/hc3-sickle-cell-pain-fever-001.json"
     },
     {
       "chapterId": "mental-health-psychosocial-care",
-      "checksum": "5368473ece13b8cb8709f59123106608b366464c398d64df5f3eef08e9223d8a",
+      "checksum": "d2554ef81cb7ba520f8cc31f01cf7ec0ea2909559e1f9a0ec6195e858e77495a",
       "id": "hc3-mental-health-suicide-risk-001",
       "path": "cases/hc3-mental-health-suicide-risk-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "576ff910f375b57154c717c875892d0e3a475f6bebfbd14ad39489e331f499c3",
+      "checksum": "95372c29fbef5e0a9afa650d904fe9418f6cd17c89a8db75b4cc96bbb431681e",
       "id": "hc3-fever-negative-malaria-test-001",
       "path": "cases/hc3-fever-negative-malaria-test-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "0278576578b9e11f63fea3437d5125107eb8a38646fad39faa895f047737dd0f",
+      "checksum": "d308beb1c59dfeee448af996b737ca49a139f3eb1ca95de2ead6b69691b3315b",
       "id": "hc3-fever-neck-stiffness-001",
       "path": "cases/hc3-fever-neck-stiffness-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "9a2bc5623cd3049e149f0718e69e4d489b3113c906a53fab03415b69674edaee",
+      "checksum": "2ed49f85d48288324129250def442daa51f091b11d51c10518d84ec913f9dced",
       "id": "hc3-fever-after-miscarriage-001",
       "path": "cases/hc3-fever-after-miscarriage-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "9b1a709a26a236da3ec30550318a85a7a92a7b0768325001f38098f9f6e27ca1",
+      "checksum": "9fd1d8bdc81602798bebca7f3a91c6ceafb2e12e94e1c62e1f3a52c4be66494f",
       "id": "hc3-typhoid-like-fever-001",
       "path": "cases/hc3-typhoid-like-fever-001.json"
     },
     {
       "chapterId": "fever-malaria-acute-illness",
-      "checksum": "abc2f76335acc8d3d4dd09352618257fb8e6cdc22cfe12796009df4ecceec86b",
+      "checksum": "04b3c19820f21430f45455dd105c643caa1d8d800ca4d8811290ebd8c63d3a03",
       "id": "hc3-fever-sickle-cell-child-001",
       "path": "cases/hc3-fever-sickle-cell-child-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "ca19b461a247938aa9f8544d9fa8a142c2be1431e11f73c935aab1542db31856",
+      "checksum": "8db7cd3fefcf2afbb4a06db4922cfece3b2e588da688259c5f7691c9e234fc78",
       "id": "hc3-fever-returning-traveller-001",
       "path": "cases/hc3-fever-returning-traveller-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "f0cc8abf89b9ca2feeb6327733d53460e90356887a5dac87b594d378c8829e14",
+      "checksum": "78faa0906edce31d8c33185439563b549ca75011cb66df9646a11e1937c94817",
       "id": "hc3-fever-health-worker-exposure-001",
       "path": "cases/hc3-fever-health-worker-exposure-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "700e3aa823e9bdcd441cd3fc9b4aadf2ce64196c4e329bbf6dbc22aed5e88941",
+      "checksum": "994065363097b6fc64d15a3db3261678a010834dff69c1b38f30071bb8215ca8",
       "id": "hc3-child-ear-pain-fever-001",
       "path": "cases/hc3-child-ear-pain-fever-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "9ed4e04bed75ecfa2d13f73964beaac0db45daf73c0645cb914ab2e527aaf5c4",
+      "checksum": "68ba440190df7b6f0bb96f5b641607a2ced2437dfb38438fe51b2842895b53e7",
       "id": "hc3-child-fever-convulsion-001",
       "path": "cases/hc3-child-fever-convulsion-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "b0c29bc6095a0324ce62830bbdc865ab1d3b597351e67e6197b9b33156962600",
+      "checksum": "8936bb12acc94c16db70be51d2845dbb268771dfe79518e580fac39af04bf98b",
       "id": "hc3-child-very-low-weight-001",
       "path": "cases/hc3-child-very-low-weight-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "6309315f0aad2987b20c212c919f64b0f16f735586f440cdafca2bb50585e8ac",
+      "checksum": "d68ea3182024312ae38e65af5552158cce696789626d4a3d67f96f04ab302164",
       "id": "hc3-child-eye-discharge-newborn-001",
       "path": "cases/hc3-child-eye-discharge-newborn-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "b65d0bb5acc467e795e4a042d45eca08667f1f8272e25fa5a9f3c0129be92894",
+      "checksum": "de0d1976847021f778fc9b4b8fafda8bb524e9e3cb490c74ae45aed29d3eea63",
       "id": "hc3-child-immunization-missed-001",
       "path": "cases/hc3-child-immunization-missed-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "27576756fa759d873028901dfea6885dc48f12d74f003cbfb061421244675990",
+      "checksum": "efa7849bae13c36c27001d173b4e090d53122b33c2aa7b63db6346dafdd87171",
       "id": "hc3-child-abdominal-pain-worms-001",
       "path": "cases/hc3-child-abdominal-pain-worms-001.json"
     },
     {
       "chapterId": "child-health-imnci",
-      "checksum": "babb1cd24117e98d6e5279995b8eb9f0bb51ae46e256781b51a597c6ef3c4e74",
+      "checksum": "d4ed48f66221ab1efed70d7c8fe32f80d1c9e84fae6153ca20244986eee9c38a",
       "id": "hc3-child-skin-infection-001",
       "path": "cases/hc3-child-skin-infection-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "e32edfff0ba2ca27d1840b32c20c45b039d5b839b9283ec1c400106776ff7ce1",
+      "checksum": "9d06a3e1be5c85ca7c23e6c068e5f6a55975d4422647f623ac22ae0b7a6acd82",
       "id": "hc3-anc-reduced-fetal-movement-001",
       "path": "cases/hc3-anc-reduced-fetal-movement-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "d69ed4fab8ae7fef5aee48b6b47b18206ad871256fefed83e24589bf5a814073",
+      "checksum": "e3c6fe7772a660fded1fec05ae75bbc6bf79be944af670b6fc026a8b418728e0",
       "id": "hc3-anc-vaginal-bleeding-001",
       "path": "cases/hc3-anc-vaginal-bleeding-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "8bb08a1c98fea66cdeb1fec01b5850add93cbbadfe1cf44c6a169d04aef5f748",
+      "checksum": "98d5824261016dee805b14e8575f0f466f30410a9caae20adab48d0ac714e2ed",
       "id": "hc3-postnatal-breast-pain-fever-001",
       "path": "cases/hc3-postnatal-breast-pain-fever-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "5b2ced898c45e8378f099b134588d84d10fd6681a8029734785c89f18c17339c",
+      "checksum": "80a823d4f555a3d48816fea7974f16229dd825b7a02fb979a74f5452a39f6322",
       "id": "hc3-respectful-maternity-care-001",
       "path": "cases/hc3-respectful-maternity-care-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "2e6e37097952137db2cd7f95208870f239fdad3527cfeb2ba8910e499f2a9315",
+      "checksum": "69ca0ce0616ddc61a2e2a7441a6604fa315f209373cbb628f690b47406ad6db7",
       "id": "hc3-breech-recognition-001",
       "path": "cases/hc3-breech-recognition-001.json"
     },
     {
       "chapterId": "maternal-midwifery-emergencies",
-      "checksum": "1b818000f6bb398f3cc0fb7f1ed02af5cd5be62ba1143eacde3c8863ce679849",
+      "checksum": "f58316841b2963c2e95d5536f74a41a1eb32a452dc2ac4512c0480b1f7b8c322",
       "id": "hc3-shoulder-dystocia-warning-001",
       "path": "cases/hc3-shoulder-dystocia-warning-001.json"
     },
     {
       "chapterId": "mental-health-psychosocial-care",
-      "checksum": "10cc8a83fd2ca9dcdae886c4ee37c075706af3f245f711e250879d3d8b5a13dd",
+      "checksum": "b36a80586bd743100ab6d729b0cb69981df0b9093d5060797e074a2550bc1b0a",
       "id": "hc3-postnatal-depression-screen-001",
       "path": "cases/hc3-postnatal-depression-screen-001.json"
     },
     {
       "chapterId": "neonatal-emergency-care",
-      "checksum": "a97280fe61382db281b562b849a9a002fb47001c5963316baab561bc75e56f76",
+      "checksum": "b1f314cb16a20d0179a250f4a8e74002a59b3ea2335756ca850cc1a2f66ae2b3",
       "id": "hc3-neonate-jaundice-001",
       "path": "cases/hc3-neonate-jaundice-001.json"
     },
     {
       "chapterId": "neonatal-emergency-care",
-      "checksum": "4c918711072ecaf7baba9ecca7eda69d38b6bba31aea5aee8113192210090cd7",
+      "checksum": "0be7b1c707ce317732f83ceca9c7a4a2a2062834cf2e93c877ffa14673b476c1",
       "id": "hc3-neonate-hypothermia-001",
       "path": "cases/hc3-neonate-hypothermia-001.json"
     },
     {
       "chapterId": "neonatal-emergency-care",
-      "checksum": "3ff89a6fbaa3daa1cfe21459527c457b54e62a1b2b2e03c090b12a95622892a7",
+      "checksum": "b34ff693013652b45aea7ff755ade8e4a95d5e117a952cccb0a09c4a9dd98a40",
       "id": "hc3-child-choking-001",
       "path": "cases/hc3-child-choking-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "53dc52a16e0831d8ed46f32642637484a9312a05eaa32bda4e645162c87de576",
+      "checksum": "4b5db0593d33252c0c7bb717fb21f01007aa0fa4a6862f51cfbef75f41fc3677",
       "id": "hc3-snakebite-001",
       "path": "cases/hc3-snakebite-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "df3013c6cbbc584b4c36f45119bb643bf42f863e40e1e63b5193a07f253dd91c",
+      "checksum": "5d8ab50ac3db8f00eff8f5a69c0976138869ab7f1fb702147314ff4cf05fa30a",
       "id": "hc3-road-traffic-injury-001",
       "path": "cases/hc3-road-traffic-injury-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "1e2fb1bbfb463d1e019aa9a83b304abbc40770a26df93ad46ae456c9f5895f4b",
+      "checksum": "5c830d74bbe7b59fa0bc98d4102feb584b7264d7acbe5962d1b9e5b83d6c6ff4",
       "id": "hc3-severe-dehydration-adult-001",
       "path": "cases/hc3-severe-dehydration-adult-001.json"
     },
     {
       "chapterId": "emergency-critical-care",
-      "checksum": "e6b60671c8e29ae29ffeb89f4aeeb483aa857e4074bac675446ef8597abb9a54",
+      "checksum": "336959aae675850ba056553d1794e84a2cbcfb7920c6769b7261d91354a8ddbd",
       "id": "hc3-acute-chest-pain-001",
       "path": "cases/hc3-acute-chest-pain-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "02fda99476d96afecbdbfef2103fd9c37f187dbcdc6f7b22b5be8e09e45db1a9",
+      "checksum": "7cf1fd85f95b48785b99d3379d2492c30cba1b77222cefd822451f3927a06143",
       "id": "hc3-tb-contact-child-001",
       "path": "cases/hc3-tb-contact-child-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "aac40b3af873b8dafaec718996dbaf12b96b052e16e98221da93f649e9392f38",
+      "checksum": "c408a445be319bf9564439560a2f9e889c329e3a0a4519b162f8ff3f0a9cf979",
       "id": "hc3-hiv-new-positive-counsel-001",
       "path": "cases/hc3-hiv-new-positive-counsel-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "8b9e831fb45931158b30c1988345ca977f85a12f26a18962fa649f9f8c8f18b6",
+      "checksum": "b304b6274f2f776b347c0525ad70255d16bfcb9c324f9aab5a91f29b80f32488",
       "id": "hc3-art-side-effects-001",
       "path": "cases/hc3-art-side-effects-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "373c99b96898e8c53406455615bb8509c0f18d501837cb8af63e4363f0af0bbd",
+      "checksum": "2c567622c648e29f11549a19377b9e035fb40a7f2a553d0063253196c343375d",
       "id": "hc3-tb-treatment-interruption-001",
       "path": "cases/hc3-tb-treatment-interruption-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "b7c9cdcb31b913734bd8ddbb6b4b3536d7aabd04c864c80d9256efe8524cc49a",
+      "checksum": "30edd01a9355d50e406160653a7f0678862c285212eaf4fd07ee086b4fbfcb2f",
       "id": "hc3-pmtct-first-anc-001",
       "path": "cases/hc3-pmtct-first-anc-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "4edb282e8c129f58e0115692d3392072dc011fe3e6cd792c9c15db18444bbae2",
+      "checksum": "368a8c3ec00179bc1d4d43afb7acaebd7dce3e873a12349de3226a994d28f52e",
       "id": "hc3-genital-ulcer-001",
       "path": "cases/hc3-genital-ulcer-001.json"
     },
     {
       "chapterId": "hiv-tb-sti-continuity",
-      "checksum": "6beca4706a81ebf9eac93bcda6ed9c828a5ef077a97177cfea02b0b97adc01c8",
+      "checksum": "be58a15277530f33b8663d0c1cbb7d4e94d3013ac6ff21a37fe9076677339f96",
       "id": "hc3-cough-hiv-positive-001",
       "path": "cases/hc3-cough-hiv-positive-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "5f6fcd54a60ecd1d0c97eeb95e25d4ae97d21a664e2f6f05882e7f2c0cf6a0fe",
+      "checksum": "e1ef69213efcbdadfe181ef0f79df53cbbf64d6c0d7efcd541abb1e75d1d22fe",
       "id": "hc3-ipc-hand-hygiene-cluster-001",
       "path": "cases/hc3-ipc-hand-hygiene-cluster-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "104e660966dcfa4a0e1d6f2b19f38f92d8263fe27eb7cc68a2d076a5fa9b0c25",
+      "checksum": "e0f229df1b1e4da91713b01cb51d5af945ca49b177c046566a770f9607175c54",
       "id": "hc3-consent-minor-procedure-001",
       "path": "cases/hc3-consent-minor-procedure-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "04d65288062acb96bd53165226be92d1c03c318016a4a16c62dc250f20f54ae6",
+      "checksum": "cfc69010bb5ade0db7a770e1a79e6b06ff55b2fc1dc9d20057d147df7e4a95c6",
       "id": "hc3-medication-dose-weight-001",
       "path": "cases/hc3-medication-dose-weight-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "352dd80eb2bc76d0304c2b9ad6b17cacea7039d1698adcb13f6bd82ee1221b5c",
+      "checksum": "bf2e0ff6e1e62e9d77f17b3cbf2efb2bf1bc9a22f64d52acee813516b0ae4d91",
       "id": "hc3-lab-result-critical-value-001",
       "path": "cases/hc3-lab-result-critical-value-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "70af4d1f4696af3cbf2772697c8be91932c82d2b41210d5ca91d33356061115e",
+      "checksum": "1704708abf380b0856f1544a658e18c8e5ee35ffdaeac0fcbff859291604573b",
       "id": "hc3-privacy-crowded-room-001",
       "path": "cases/hc3-privacy-crowded-room-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "be3895c029804b30c31c9e89831f8f45d970e165d1af30058c43aa3a2eb03614",
+      "checksum": "4910f9d3f22ab8e54f972aff7aaa13c8fcb7adeb559e46014b4a5d61742e302a",
       "id": "hc3-referral-communication-001",
       "path": "cases/hc3-referral-communication-001.json"
     },
     {
       "chapterId": "patient-safety-communication",
-      "checksum": "6f5ae83f0e635194cded2ebc850ec4b2f49a627a9d2bfd5fe9b398fd4df599d7",
+      "checksum": "bbe5bc62cbb6703a8ce80df1f9ba5ac88945f2b88325c44cbaa58b7bfd2cc553",
       "id": "hc3-stockout-alternative-plan-001",
       "path": "cases/hc3-stockout-alternative-plan-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "0d367425946cac72131f95b516c37c2ed1ea037af9139c7ad038718e39f0395c",
+      "checksum": "020b8cfc656e0bef74e8e2b991de4cc92b9140fcff6edb712d72fab6978496a8",
       "id": "hc3-ebola-fever-bleeding-travel-001",
       "path": "cases/hc3-ebola-fever-bleeding-travel-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "8d95197f79070baf151fcdb4b4e6cd619a037fcb8aa440d48bd3006918c00503",
+      "checksum": "d5c67cc154584ccc26942020929db6795a96d19b3a4349d778b471c64d61e0a5",
       "id": "hc3-ebola-funeral-contact-001",
       "path": "cases/hc3-ebola-funeral-contact-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "4c83a922f2b180097da1bfc45c994ed00b88c722e426fe73ec458ab5122c2bd9",
+      "checksum": "b8566c3140083f0e76d9c0168a80ac6c1da53d20c463c22f64ff08d64a7b3e02",
       "id": "hc3-ebola-health-worker-ppe-breach-001",
       "path": "cases/hc3-ebola-health-worker-ppe-breach-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "e5139c4e70960845264397a15ec71f1afcba4308a6c83b13758e7ca5fd53c025",
+      "checksum": "d9a4b85ae120fe0821d6fa45c72ac68e543d2b1b5d37eff183bd6060b419e51f",
       "id": "hc3-ebola-child-fever-contact-001",
       "path": "cases/hc3-ebola-child-fever-contact-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "898927e1e872f3e1d496e27e80fe580eed0a1f74634e58ef729e47723b1ec879",
+      "checksum": "c612e121df48340b16e67f3ea3df670184be066e327b8cbcdb2e08f6f20aab6d",
       "id": "hc3-ebola-vomiting-at-triage-001",
       "path": "cases/hc3-ebola-vomiting-at-triage-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "fd6a7cafe474ce7f73a7a280482b7503a86578b89244a3f566c9dda0e6bef3b5",
+      "checksum": "6246374742a35071c9dc37e7893001dd9a572b6f21d8082e6c7068133aee68d4",
       "id": "hc3-ebola-rumour-community-fear-001",
       "path": "cases/hc3-ebola-rumour-community-fear-001.json"
     },
     {
       "chapterId": "outbreak-ipc-ebola-vhf",
-      "checksum": "4abd8c541701c0787a1a885d13686ce22521d92461d39cb2b4b2756660e26ccb",
+      "checksum": "bd4369045a4299da5d27b9cbdfc3dc4253c48a21cf56f542d0ba3f510178a7ec",
       "id": "hc3-ebola-death-at-home-report-001",
       "path": "cases/hc3-ebola-death-at-home-report-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "deb4f7cdfc1b4bedb322c58b97c598c89bed15d59d9b7a44188bdf11eb93df1e",
+      "checksum": "9341e6bcc27dca8247403667b4fc8626c78924fe7e64576a3624e80b360debaf",
       "id": "hc3-hypertension-followup-poor-control-001",
       "path": "cases/hc3-hypertension-followup-poor-control-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "70d820c71b0d67fc4fd16d10654d3f823b8ecee7513fe51f91508271e88c2cbc",
+      "checksum": "f2b82db50f306f14cea097dcb17e4be85156b2b30c640b0464fc490984abe24d",
       "id": "hc3-diabetes-foot-sore-001",
       "path": "cases/hc3-diabetes-foot-sore-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "84a1976d679837f4790224b4920c14493f7185b711324479d5a84db198473d06",
+      "checksum": "3b878719683a433682f4e771d81e5f7aba659fb5bde8051f20d2114133fb4d76",
       "id": "hc3-epilepsy-missed-medicine-001",
       "path": "cases/hc3-epilepsy-missed-medicine-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "8cb3774a9b6418523bc3f614827e648180595f283082d94b6bedf622bf6c4bf8",
+      "checksum": "0d5a367a12a97822eae82dd8812cd9409ce9b063497c358ee0890c1c2c7d254e",
       "id": "hc3-alcohol-withdrawal-agitation-001",
       "path": "cases/hc3-alcohol-withdrawal-agitation-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "5112cd9500d4d96fedd19ce72169835375c7a302e2b38f88e944fcb969f540d3",
+      "checksum": "244bc27e2d09c642896d48ea9db5b6b6f9724438220ccdb5fa9b3bf983cbf31c",
       "id": "hc3-psychosis-family-restraint-001",
       "path": "cases/hc3-psychosis-family-restraint-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "3ccf8bdda74e7cb4f4a410169df2e94f4949e7c04b8036bf0952252958662a78",
+      "checksum": "cbba9c01d11e046d3fb93faa0e8e9fe7870a8f981fd7cf74b38935f49a41b08b",
       "id": "hc3-palliative-pain-counseling-001",
       "path": "cases/hc3-palliative-pain-counseling-001.json"
     },
     {
       "chapterId": "ncd-mental-health",
-      "checksum": "00a2f4eee209bf7891c50a293c7636ecbb5322dbfe1c98e00f7d520533e54e65",
+      "checksum": "1fcbb6b52d702ad6bc295d988ea1758fa5d98b7bd790e9cb70840034bcf76ea4",
       "id": "hc3-elder-fall-confusion-001",
       "path": "cases/hc3-elder-fall-confusion-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "7c15ab6ccf1a199fca0abf202d04102e9a8870eaff8b218e72b4b918f00bf1d7",
+      "checksum": "e1216c6d7f8f732792670a07753179885e80185f1906f898c215c2fa79add1e9",
       "id": "hc3-dayclinic-records-chief-complaint-001",
       "path": "cases/hc3-dayclinic-records-chief-complaint-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "ec463bffb942d9674617759df37fa9d1084a6093120a67898107822d4172f9a4",
+      "checksum": "4d101fefe99711e8a90949ad735f222a7c8de3ea59066cd7a63ca9795b6090d7",
       "id": "hc3-dayclinic-lab-delay-001",
       "path": "cases/hc3-dayclinic-lab-delay-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "3b4cf68341126af7605d849616bbab09d218f57def72ed70fcf81579a5b55d22",
+      "checksum": "cdfeadf938c0ffb40e54ec7534af18bea390e21c6960db6f232f0e776018ca76",
       "id": "hc3-dayclinic-pharmacy-question-001",
       "path": "cases/hc3-dayclinic-pharmacy-question-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "a7bd69fe4cfda56fe6bd7c68aa171203358c30e3624ed6709cb36771314f46c5",
+      "checksum": "f47e117b80acfdb90928ff0ec3a19bc21a5961bfc598e06b3e67c3c05343e3bd",
       "id": "hc3-dayclinic-followup-phone-001",
       "path": "cases/hc3-dayclinic-followup-phone-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "6ef9db55cd51ee1de81b90a569dc996460d59149aef3c2a0fef96c01d9487b47",
+      "checksum": "a6216f0accc75b506c461dd7c48b6526babd010c1dc7e34885cb2e7949e48f50",
       "id": "hc3-dayclinic-multiple-urgent-001",
       "path": "cases/hc3-dayclinic-multiple-urgent-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "56d092db7e1e0aff095bc8faff832ad5805088bc80d98c1f026469dc0c916a46",
+      "checksum": "c7f91db783c63862b09e6c98eb6a0da0d65d71103fa852a234ac8abfb2509e7e",
       "id": "hc3-dayclinic-data-entry-error-001",
       "path": "cases/hc3-dayclinic-data-entry-error-001.json"
     },
     {
       "chapterId": "day-in-clinic-mixed-practice",
-      "checksum": "74c7e3ecb54ef4dfc56cc12702c704fee9950baa9f5918db4a06dbd153ab13d8",
+      "checksum": "639b77d4ac2db035bb1f71655c1d995b3f0c8ef8ea6fea8a557bd2f613a0a911",
       "id": "hc3-dayclinic-referral-refusal-001",
       "path": "cases/hc3-dayclinic-referral-refusal-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "3d2364f0d003aa21d048517ef3e0c041dd21308764acae4710e5c3110dcdef4b",
+      "checksum": "af202b7d16aa79ec1b2d50260031fc294935996fd5a5a174dc717935d97fd863",
       "id": "hc3-lab-malaria-result-discordant-001",
       "path": "cases/hc3-lab-malaria-result-discordant-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "fce1744288b4708ea088e7d044dd176056de70624aa46bf09d9cd3292b25dff0",
+      "checksum": "6aff5a93f85ba748f524671cfd62543ca41ef35d8e3281db46867b7f25a19eec",
       "id": "hc3-lab-urine-protein-anc-001",
       "path": "cases/hc3-lab-urine-protein-anc-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "d1c9b393f782f37785044b91891d8c21ab0d826a36556cb9e50dc8131dd42b7b",
+      "checksum": "a3f663d48e188dab5a6505067f54398642add8a68173419188de4a77c79ce752",
       "id": "hc3-pharmacy-antibiotic-request-001",
       "path": "cases/hc3-pharmacy-antibiotic-request-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "0a13283d62fde230bb9dfb5a02fb022d640b01423e1de58f1a1e7503e5733a69",
+      "checksum": "f5dcd2711a3329598951ba2d7ad8061537d660ecf004c9482b9b07d64b9cd7c2",
       "id": "hc3-lab-hb-low-pregnancy-001",
       "path": "cases/hc3-lab-hb-low-pregnancy-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "f867e155fd0d41032efadbce099c11db536b219a16754d2cc6a07925a057b32f",
+      "checksum": "cee8426010b5a07a8378b3b2450cf5ab18a03b8177a9c90b2b30966d36f6e6b6",
       "id": "hc3-pharmacy-stockout-referral-001",
       "path": "cases/hc3-pharmacy-stockout-referral-001.json"
     },
     {
       "chapterId": "pharmacy-lab-diagnostics",
-      "checksum": "8156b8e3d135c65d8554ff4d6948d385d603ec0625cf34e2a5a8d16be480f833",
+      "checksum": "6bfba5d66cfc2168ee9612313226f8e4c30a033d4e0893948d2bce126c205535",
       "id": "hc3-lab-glucose-high-001",
       "path": "cases/hc3-lab-glucose-high-001.json"
     }

@@ -1,6 +1,7 @@
 package com.karibuhealth.app.ui.dictation
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.ui.components.KhMetaText
-import com.karibuhealth.app.ui.util.BottomBarScrollPadding
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Body
 import com.karibuhealth.app.ui.theme.Cobalt
@@ -86,15 +87,18 @@ fun DictationScreen(
         if (uiState.submitted) onSubmitted(visitId)
     }
 
+    val exitAfterSave = { viewModel.saveDraftAndExit(onNavigateBack) }
+
+    BackHandler(onBack = exitAfterSave)
+
     DictationScreenContent(
         uiState = uiState,
-        onNavigateBack = onNavigateBack,
+        onNavigateBack = exitAfterSave,
         onTranscriptChange = viewModel::updateTranscript,
         onSectionsChange = viewModel::updateSections,
         onFocusedSectionChange = viewModel::setFocusedSection,
         onDismissError = viewModel::dismissError,
         onSubmit = { viewModel.signNote(visitId) },
-        onSaveDraft = { viewModel.saveDraftAndExit(onNavigateBack) },
         onStructureWithAi = { viewModel.structureWithAi(visitId) },
         onToggleWhisper = {
             if (uiState.isRecording) {
@@ -119,17 +123,19 @@ private fun DictationScreenContent(
     onFocusedSectionChange: (NoteSection?) -> Unit,
     onDismissError: () -> Unit,
     onSubmit: () -> Unit,
-    onSaveDraft: () -> Unit,
     onStructureWithAi: () -> Unit,
     onToggleWhisper: () -> Unit,
     onSendToPharmacy: () -> Unit,
 ) {
-    val wordCount = uiState.transcript.trim()
-        .split(Regex("\\s+"))
-        .filter { it.isNotEmpty() }
-        .size
-
     var showLabPicker by remember { mutableStateOf(false) }
+    var signConfirmPending by remember { mutableStateOf(false) }
+    var quickNoteMode by rememberSaveable { mutableStateOf(true) }
+    var expandedSections by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.sections, uiState.transcript, uiState.isRecording, uiState.isTranscribing) {
+        signConfirmPending = false
+    }
+
     var showRxPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.openLabPickerOnLoad) {
@@ -161,6 +167,7 @@ private fun DictationScreenContent(
                     }
                 },
                 actions = {
+                    val online = uiState.isOnline
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(end = 16.dp),
@@ -169,14 +176,14 @@ private fun DictationScreenContent(
                             imageVector = Icons.Outlined.Wifi,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = Green,
+                            tint = if (online) Green else Muted,
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "ONLINE",
+                            text = uiState.connectionLabel.uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Green,
+                            color = if (online) Green else Muted,
                             fontSize = 11.sp,
                         )
                     }
@@ -187,9 +194,6 @@ private fun DictationScreenContent(
             DictationBottomToolbar(
                 uiState = uiState,
                 onToggleWhisper = onToggleWhisper,
-                onSubmit = onSubmit,
-                onSaveDraft = onSaveDraft,
-                wordCount = wordCount,
             )
         },
     ) { innerPadding ->
@@ -199,7 +203,7 @@ private fun DictationScreenContent(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 12.dp)
-                .padding(bottom = BottomBarScrollPadding.dp),
+                .padding(bottom = 72.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val sections = uiState.sections
@@ -210,12 +214,17 @@ private fun DictationScreenContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Clinical note",
+                    text = if (quickNoteMode) "Quick note" else "Clinical note",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                AutosaveStatusIndicator(status = uiState.autosaveStatus)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { quickNoteMode = !quickNoteMode }) {
+                        Text(if (quickNoteMode) "Full SOAP" else "Quick note")
+                    }
+                    AutosaveStatusIndicator(status = uiState.autosaveStatus)
+                }
             }
 
             SectionField(
@@ -230,39 +239,45 @@ private fun DictationScreenContent(
                 isRecordingTarget = uiState.recordingSection == NoteSection.ChiefComplaint && uiState.isRecording,
                 isTranscribingTarget = uiState.transcribingSection == NoteSection.ChiefComplaint && uiState.isTranscribing,
             )
-            SectionField(
-                label = "HISTORY OF PRESENT ILLNESS",
-                value = sections.hpi,
-                section = NoteSection.Hpi,
-                onFocusChange = onFocusedSectionChange,
-                placeholder = "Onset, duration, severity, associated symptoms…",
-                onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.Hpi),
-                isRecordingTarget = uiState.recordingSection == NoteSection.Hpi && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.Hpi && uiState.isTranscribing,
-            )
-            SectionField(
-                label = "PHYSICAL EXAM",
-                value = sections.physicalExam,
-                section = NoteSection.PhysicalExam,
-                onFocusChange = onFocusedSectionChange,
-                placeholder = "Vitals, general appearance, focused exam…",
-                onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.PhysicalExam),
-                isRecordingTarget = uiState.recordingSection == NoteSection.PhysicalExam && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.PhysicalExam && uiState.isTranscribing,
-            )
-            SectionField(
-                label = "FAMILY AND SOCIAL HISTORY",
-                value = sections.familySocialHistory,
-                section = NoteSection.FamilySocialHistory,
-                onFocusChange = onFocusedSectionChange,
-                placeholder = "Relevant family history, social context…",
-                onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
-                enabled = sectionFieldEnabled(uiState, NoteSection.FamilySocialHistory),
-                isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
-                isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
-            )
+            if (!quickNoteMode || expandedSections) {
+                SectionField(
+                    label = "HISTORY OF PRESENT ILLNESS",
+                    value = sections.hpi,
+                    section = NoteSection.Hpi,
+                    onFocusChange = onFocusedSectionChange,
+                    placeholder = "Onset, duration, severity, associated symptoms…",
+                    onValueChange = { onSectionsChange(sections.copy(hpi = it)) },
+                    enabled = sectionFieldEnabled(uiState, NoteSection.Hpi),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.Hpi && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.Hpi && uiState.isTranscribing,
+                )
+                SectionField(
+                    label = "PHYSICAL EXAM",
+                    value = sections.physicalExam,
+                    section = NoteSection.PhysicalExam,
+                    onFocusChange = onFocusedSectionChange,
+                    placeholder = "Vitals, general appearance, focused exam…",
+                    onValueChange = { onSectionsChange(sections.copy(physicalExam = it)) },
+                    enabled = sectionFieldEnabled(uiState, NoteSection.PhysicalExam),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.PhysicalExam && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.PhysicalExam && uiState.isTranscribing,
+                )
+                SectionField(
+                    label = "FAMILY AND SOCIAL HISTORY",
+                    value = sections.familySocialHistory,
+                    section = NoteSection.FamilySocialHistory,
+                    onFocusChange = onFocusedSectionChange,
+                    placeholder = "Relevant family history, social context…",
+                    onValueChange = { onSectionsChange(sections.copy(familySocialHistory = it)) },
+                    enabled = sectionFieldEnabled(uiState, NoteSection.FamilySocialHistory),
+                    isRecordingTarget = uiState.recordingSection == NoteSection.FamilySocialHistory && uiState.isRecording,
+                    isTranscribingTarget = uiState.transcribingSection == NoteSection.FamilySocialHistory && uiState.isTranscribing,
+                )
+            } else {
+                TextButton(onClick = { expandedSections = true }) {
+                    Text("More sections (HPI, exam, history)")
+                }
+            }
             // LABS — after family history; picker is sex/age-filtered.
             Column {
                 Row(
@@ -468,6 +483,18 @@ private fun DictationScreenContent(
                     }
                 }
             }
+
+            SignNoteFooter(
+                uiState = uiState,
+                signConfirmPending = signConfirmPending,
+                onSignClick = {
+                    if (signConfirmPending) {
+                        onSubmit()
+                    } else {
+                        signConfirmPending = true
+                    }
+                },
+            )
         }
     }
 }
@@ -639,28 +666,62 @@ private fun FollowUpTaskPicker(
 }
 
 @Composable
+private fun SignNoteFooter(
+    uiState: DictationUiState,
+    signConfirmPending: Boolean,
+    onSignClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (signConfirmPending) {
+            Text(
+                text = "Signing releases this visit from your queue. This cannot be undone from this screen.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Button(
+            onClick = onSignClick,
+            enabled = uiState.canSubmit,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (signConfirmPending) Green else Cobalt,
+                disabledContainerColor = Line,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            if (uiState.isSubmitting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White,
+                )
+            } else {
+                Text(
+                    text = if (signConfirmPending) "Confirm note complete" else "Sign & Complete",
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun DictationBottomToolbar(
     uiState: DictationUiState,
     onToggleWhisper: () -> Unit,
-    onSubmit: () -> Unit,
-    onSaveDraft: () -> Unit,
-    wordCount: Int,
 ) {
     val activeSection = uiState.recordingSection ?: uiState.transcribingSection
     val statusText = when {
-        uiState.isRecording && activeSection != null ->
-            "Recording ${activeSection.displayLabel}… tap stop when done"
-        uiState.isTranscribing && activeSection != null ->
-            "Transcribing ${activeSection.displayLabel}…"
-        uiState.savedLocally -> "Ready to sign · dictate section by section"
-        !uiState.canSubmit && wordCount == 0 -> "Tap a section, then mic — or type"
-        uiState.isRecording || uiState.isTranscribing -> "Finish this section before signing"
-        else -> "Tap a section field, then mic to dictate"
-    }
-    val submitHint = when {
-        uiState.isSubmitting -> ""
-        !uiState.canSubmit -> " · Sign when note has content"
-        else -> ""
+        uiState.isRecording && activeSection != null -> "Recording ${activeSection.displayLabel}…"
+        uiState.isTranscribing && activeSection != null -> "Transcribing ${activeSection.displayLabel}…"
+        else -> null
     }
 
     Surface(
@@ -670,102 +731,56 @@ private fun DictationBottomToolbar(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, Line, RoundedCornerShape(0.dp))
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            val buttonEnabled = uiState.isRecording ||
+                (!uiState.isSubmitting && !uiState.isTranscribing)
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(if (uiState.isRecording) Amber else Cobalt)
+                    .clickable(
+                        enabled = buttonEnabled,
+                        onClick = onToggleWhisper,
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
-                val buttonEnabled = uiState.isRecording ||
-                    (!uiState.isSubmitting && !uiState.isTranscribing)
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(if (uiState.isRecording) Amber else Cobalt)
-                        .clickable(
-                            enabled = buttonEnabled,
-                            onClick = onToggleWhisper,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    when {
-                        uiState.isRecording -> Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = "Stop",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp),
-                        )
-                        uiState.isTranscribing -> CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            strokeWidth = 2.5.dp,
-                            color = Color.White,
-                        )
-                        else -> Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "Record",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = statusText + submitHint,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                when {
+                    uiState.isRecording -> Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = "Stop",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp),
                     )
-                    KhMetaText(
-                        text = "$wordCount WORDS" + if (uiState.savedLocally) " · AUTO-SAVED" else "",
+                    uiState.isTranscribing -> CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.5.dp,
+                        color = Color.White,
+                    )
+                    else -> Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Record",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onSaveDraft,
-                    enabled = !uiState.isSubmitting && !uiState.isRecording,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                ) {
-                    Text("Save draft", fontWeight = FontWeight.SemiBold)
-                }
-
-                Button(
-                    onClick = onSubmit,
-                    enabled = uiState.canSubmit,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Cobalt,
-                        disabledContainerColor = Line,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                ) {
-                    if (uiState.isSubmitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White,
-                        )
-                    } else {
-                        Text("Sign & Complete", fontWeight = FontWeight.SemiBold)
-                    }
-                }
+            if (statusText != null) {
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (uiState.isRecording) Amber else Cobalt,
+                )
             }
         }
     }
@@ -786,7 +801,6 @@ private fun DictationScreenPreview() {
             onFocusedSectionChange = {},
             onDismissError = {},
             onSubmit = {},
-            onSaveDraft = {},
             onStructureWithAi = {},
             onToggleWhisper = {},
             onSendToPharmacy = {},

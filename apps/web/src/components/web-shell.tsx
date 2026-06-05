@@ -31,18 +31,19 @@ interface NavItem {
   amber?: boolean
 }
 
+/** Admin-only shortcuts to role-specific workstation queues. */
+const ADMIN_WORKSTATIONS: NavItem[] = [
+  { id: 'pharmacy-desk', label: 'Pharmacy desk', href: '/dashboard/pharmacy', icon: Pill },
+  { id: 'lab-desk', label: 'Lab desk', href: '/dashboard/lab', icon: FlaskConical },
+]
+
 const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
   clinician: [
     { id: 'home', label: 'Today', href: '/dashboard', icon: Home },
     { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
+    { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
     { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
     { id: 'review', label: 'Review queue', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
-    // Read-only views of the lab + pharmacy queues the clinician requested,
-    // so they can answer "did Sarah's CBC come back?" without leaving the
-    // sidebar. Lab/pharmacy dispenser actions still live under those roles.
-    { id: 'my-labs', label: 'Lab status', href: '/dashboard/my-labs', icon: FlaskConical },
-    { id: 'my-pharmacy', label: 'Pharmacy status', href: '/dashboard/my-pharmacy', icon: Pill },
-    { id: 'stock-overview', label: 'Clinic stock', href: '/dashboard/stock-overview', icon: BarChart3 },
     { id: 'reports', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
   ],
   pharmacy: [
@@ -57,7 +58,6 @@ const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
   ],
   analyst: [
     { id: 'overview', label: 'Overview', href: '/dashboard/admin/reports', icon: Home },
-    { id: 'workbench', label: 'Workbench', href: '/dashboard/admin/reports/coming-soon/workbench', icon: BarChart3 },
     { id: 'hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
     { id: 'quality', label: 'Data quality', href: '/dashboard/admin/reports/data-quality', icon: Sparkles, amber: true },
   ],
@@ -116,12 +116,9 @@ export function WebShell({
         {/* Lockup + clinic switcher */}
         <div className="p-5 border-b border-line-soft">
           <KaribuLockup size={32} />
-          <div className="mt-3 flex items-center justify-between bg-background rounded-md px-2.5 py-2">
-            <div className="min-w-0">
-              <div className="kh-meta">CLINIC</div>
-              <div className="text-[13px] font-semibold text-ink truncate">{clinicName}</div>
-            </div>
-            <span className="text-muted-foreground text-[11px]">▾</span>
+          <div className="mt-3 bg-background rounded-md px-2.5 py-2">
+            <div className="kh-meta">CLINIC</div>
+            <div className="text-[13px] font-semibold text-ink truncate">{clinicName}</div>
           </div>
         </div>
 
@@ -168,6 +165,35 @@ export function WebShell({
               </Link>
             )
           })}
+          {role === 'clinician' && staffRole === 'admin' && (
+            <>
+              <div className="kh-meta px-2 pt-4 pb-2">WORKSTATIONS</div>
+              {ADMIN_WORKSTATIONS.map((item) => {
+                const active = isActive(pathname, item.href)
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] mb-0.5 transition-colors',
+                      active
+                        ? 'bg-cobalt-soft text-cobalt font-semibold'
+                        : 'text-body hover:bg-background font-medium',
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        'h-[18px] w-[18px] shrink-0',
+                        active ? 'text-cobalt' : 'text-muted-foreground',
+                      )}
+                    />
+                    <span className="flex-1 truncate">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </>
+          )}
         </nav>
 
         {/* Account */}

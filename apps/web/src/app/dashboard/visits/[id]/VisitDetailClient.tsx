@@ -2,11 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Mic, Printer, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Mic, Printer, Sparkles, CheckCircle2, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
-import { ReviewQuestionBanner, type ReviewSuggestion } from './ReviewQuestionBanner'
+import type { ReviewSuggestion } from './ReviewQuestionBanner'
+import { AiNotesTimeline } from './AiNotesTimeline'
+import {
+  VisitCriticalAlertBanner,
+  type VisitCriticalAlert,
+} from './VisitCriticalAlertBanner'
 import type { Visit, ProviderNote, PatientNote, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
@@ -51,6 +56,7 @@ interface VisitWithRelations extends Visit {
   patient_notes_clinician: PatientNote | null
   patient_notes_ai: PatientNote | null
   ai_review_suggestions?: ReviewSuggestion[] | null
+  critical_alerts?: VisitCriticalAlert[] | null
 }
 
 interface PaymentData {
@@ -155,6 +161,29 @@ export function VisitDetailClient({
             <p className="font-medium capitalize">{visit.queue_status?.replace('_', ' ') || '-'}</p>
           </div>
         </div>
+      </div>
+
+      {(visit.critical_alerts ?? []).map((alert) => (
+        <VisitCriticalAlertBanner key={alert.id} alert={alert} />
+      ))}
+
+      {!visit.documentation_complete && (visit.ai_review_suggestions?.length ?? 0) > 0 && (
+        <AiNotesTimeline suggestions={visit.ai_review_suggestions ?? []} />
+      )}
+
+      <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="font-medium">Refer to hospital</p>
+          <p className="text-sm text-muted-foreground">
+            Create a printable transfer summary for the receiving HCIV or hospital.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="shrink-0 gap-2">
+          <Link href={`/dashboard/referrals/new?visitId=${visit.id}`}>
+            <Send className="h-4 w-4" />
+            Refer to hospital
+          </Link>
+        </Button>
       </div>
 
       {/* Note editor — desktop clinicians type or dictate the note here. After
@@ -267,15 +296,6 @@ export function VisitDetailClient({
           amendments={amendments}
         />
       )}
-
-      {/* AI review questions — surface only when AI would disagree with the
-          clinician. Most visits show nothing here. Each question links to
-          the exact corpus chunk in /library that grounds it. */}
-      {(visit.ai_review_suggestions ?? [])
-        .filter((s) => !s.clinician_response)
-        .map((s) => (
-          <ReviewQuestionBanner key={s.id} suggestion={s} />
-        ))}
 
       {/* Raw transcript — surfaced only when the clinician's `patient_notes`
           row hasn't been written yet (mid-sync), or when the clinician used

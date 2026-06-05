@@ -23,7 +23,7 @@ import { retrieveRelevantChunks, formatChunksForPrompt, type RetrievedChunk } fr
  *                      set ai_review_no_concerns=true if zero suggestions)
  */
 
-const SYSTEM_PROMPT = `You are a senior physician reviewing a colleague's clinical note at a Health Centre III in Uganda. Your colleague is the authority on this patient — only flag concerns when something significant appears to have been missed or mistaken. Do NOT restructure the note. Do NOT comment on style.
+const SYSTEM_PROMPT = `You are a quiet senior colleague at a Health Centre III in Uganda — a tap on the shoulder, not a lecture. The clinician is almost always on the right track; they may simply not have documented the next step yet. Only ask a short question when something might change management if overlooked. Do NOT restructure the note. Do NOT comment on style.
 
 You are given:
 - The clinician's note, vitals, chief complaint
@@ -143,15 +143,43 @@ export const reviewClinicianNote = inngest.createFunction(
       }
     },
   },
-  [{ event: 'note.dictated' }, { event: 'note.draft-ai-assist' }],
+  [{ event: 'note.draft-ai-assist' }, { event: 'note.lab-ai-assist' }],
   async ({ event, step, logger }) => {
     const { visit_id, clinic_id, phase: eventPhase } = event.data
-    const reviewPhase =
-      event.name === 'note.draft-ai-assist' || eventPhase === 'draft'
-        ? 'draft'
-        : eventPhase === 'pre_sign'
-          ? 'pre_sign'
-          : 'post_sign'
+    const reviewPhase = event.name === 'note.lab-ai-assist' || eventPhase === 'lab' ? 'lab' : 'draft'
+
+    // AI notes only while the visit is still open (patient often gone after sign).
+    const gate = await step.run('gate-unsigned-visit', async () => {
+      const supabase = createServiceClient()
+      const { data: visit, error } = await supabase
+        .from('visits')
+        .select('documentation_complete')
+        .eq('id', visit_id)
+        .eq('clinic_id', clinic_id)
+        .maybeSingle()
+      if (error) throw new NonRetriableError(`gate visit: ${error.message}`)
+      if (!visit) throw new NonRetriableError(`Visit ${visit_id} not found`)
+      if (visit.documentation_complete) {
+        return { skip: true as const, reason: 'signed' }
+      }
+      const { count, error: cErr } = await supabase
+        .from('ai_review_suggestions')
+        .select('id', { count: 'exact', head: true })
+        .eq('visit_id', visit_id)
+        .is('clinician_response', null)
+        .eq('display_tier', 'timeline')
+      if (cErr) throw new Error(`count suggestions: ${cErr.message}`)
+      if ((count ?? 0) >= 3) {
+        return { skip: true as const, reason: 'cap' }
+      }
+      return { skip: false as const, slots: 3 - (count ?? 0) }
+    })
+
+    if (gate.skip) {
+      logger.info('reviewClinicianNote skipped', { visit_id, reason: gate.reason })
+      return { visit_id, skipped: true, reason: gate.reason }
+    }
+    const maxSuggestions = gate.slots
 
     // ---------------------------------------------------------- mark running
     await step.run('mark-running', async () => {
@@ -295,18 +323,11 @@ export const reviewClinicianNote = inngest.createFunction(
           ai_review_completed_at: new Date().toISOString(),
           ai_review_no_concerns: true,
         }
-        if (reviewPhase === 'post_sign') {
-          patch.status = 'review'
-        }
-        let query = supabase
+        await supabase
           .from('visits')
           .update(patch)
           .eq('id', visit_id)
           .eq('clinic_id', clinic_id)
-        if (reviewPhase === 'post_sign') {
-          query = query.eq('status', 'pending')
-        }
-        await query
       })
       return { visit_id, ai_review_status: 'completed' as const, suggestions: 0 }
     }
@@ -413,7 +434,7 @@ export const reviewClinicianNote = inngest.createFunction(
           })
         }
 
-        return dedupeSuggestions(validated)
+        return dedupeSuggestions(validated).slice(0, maxSuggestions)
       },
     )
 
@@ -431,6 +452,7 @@ export const reviewClinicianNote = inngest.createFunction(
           citation_ids: s.citation_ids,
           confidence: s.confidence,
           phase: reviewPhase,
+          display_tier: 'timeline',
         }))
         const { error: insertErr } = await supabase.from('ai_review_suggestions').insert(rows)
         if (insertErr) {
@@ -443,21 +465,12 @@ export const reviewClinicianNote = inngest.createFunction(
         ai_review_completed_at: new Date().toISOString(),
         ai_review_no_concerns: suggestions.length === 0,
       }
-      if (reviewPhase === 'post_sign') {
-        visitPatch.status = 'review'
-      }
 
-      let statusQuery = supabase
+      const { error: updateErr } = await supabase
         .from('visits')
         .update(visitPatch)
         .eq('id', visit_id)
         .eq('clinic_id', clinic_id)
-
-      if (reviewPhase === 'post_sign') {
-        statusQuery = statusQuery.eq('status', 'pending')
-      }
-
-      const { error: updateErr } = await statusQuery
       if (updateErr) {
         throw new Error(`persist status: ${updateErr.message}`)
       }

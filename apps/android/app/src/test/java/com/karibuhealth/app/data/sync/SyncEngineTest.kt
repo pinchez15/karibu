@@ -22,9 +22,11 @@ class SyncEngineTest {
     private lateinit var paymentDao: PaymentDao
     private lateinit var patientVitalsDao: PatientVitalsDao
     private lateinit var providerNoteDao: ProviderNoteDao
+    private lateinit var referralDao: ReferralDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var pullReconciliationService: PullReconciliationService
+    private lateinit var syncDebugLogger: SyncDebugLogger
     private lateinit var syncEngine: SyncEngine
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -36,9 +38,11 @@ class SyncEngineTest {
         paymentDao = mockk(relaxed = true)
         patientVitalsDao = mockk(relaxed = true)
         providerNoteDao = mockk(relaxed = true)
+        referralDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
         pullReconciliationService = mockk(relaxed = true)
+        syncDebugLogger = mockk(relaxed = true)
 
         syncEngine = SyncEngine(
             syncQueueDao = syncQueueDao,
@@ -47,9 +51,11 @@ class SyncEngineTest {
             paymentDao = paymentDao,
             patientVitalsDao = patientVitalsDao,
             providerNoteDao = providerNoteDao,
+            referralDao = referralDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             pullReconciliationService = pullReconciliationService,
+            syncDebugLogger = syncDebugLogger,
             json = json,
         )
     }

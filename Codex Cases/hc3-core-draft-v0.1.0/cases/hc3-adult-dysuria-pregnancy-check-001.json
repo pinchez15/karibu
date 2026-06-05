@@ -14,6 +14,20 @@
       "Pregnancy test if available"
     ],
     "chiefComplaint": "Pain passing urine",
+    "classification": "Possible urinary tract infection with pregnancy status needing clarification",
+    "classificationRationale": [
+      "Pain passing urine",
+      "Dysuria for two days",
+      "No flank pain",
+      "Well appearing",
+      "No costovertebral angle tenderness"
+    ],
+    "contraindicationChecks": [
+      "Fever",
+      "Flank pain",
+      "Vomiting",
+      "Pregnancy danger signs"
+    ],
     "dangerSigns": [
       "Fever",
       "Flank pain",
@@ -27,6 +41,16 @@
       "STI",
       "Pyelonephritis if fever/flank pain develops"
     ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
+    ],
     "examFindings": [
       "Well appearing",
       "No costovertebral angle tenderness",
@@ -34,6 +58,29 @@
     ],
     "followUp": [
       "Return if fever, flank pain, vomiting, worsening symptoms, or pregnancy danger signs occur."
+    ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this guidelines general presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Fever, flank pain, systemic illness, pregnancy complications, or inability to tolerate oral treatment require escalation/referral.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      }
     ],
     "history": [
       "Dysuria for two days",
@@ -53,6 +100,9 @@
       "No fever",
       "No vomiting",
       "No vaginal bleeding"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
       "bp": "106/68 mmHg",

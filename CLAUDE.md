@@ -4,6 +4,9 @@ The clinic queue model is being replaced with a **patient-centered EHR** (pre-la
 Before implementing sync, Android role homes, lab/pharmacy, pharmacy order timing, or schema
 changes for this effort, read **`docs/ehr-pivot-implementation.md`** end-to-end.
 
+Before implementing or changing **AI notes, Learn (CME), or Consult**, read
+**`docs/ai-clinical-assist.md`** end-to-end.
+
 That doc supersedes older planning docs when they conflict. Key locked decisions:
 
 - Pharmacy queues on **order submitted**, not note finalization

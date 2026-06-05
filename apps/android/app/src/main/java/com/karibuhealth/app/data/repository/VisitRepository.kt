@@ -548,8 +548,8 @@ class VisitRepository @Inject constructor(
 
     /**
      * Mark a visit as documentation-complete (clinician tapped Save).
-     * The server-side RPC also advances status pending → sent atomically,
-     * making the visit reachable for payment without going through AI review.
+     * The server-side RPC also advances status pending → sent and releases
+     * the clinician queue slot; payment is handled separately by billing staff.
      * `predecessorSyncId` linearizes against the patient-note summary (or
      * provider-note) queue entry if those are still pending.
      */
@@ -560,6 +560,7 @@ class VisitRepository @Inject constructor(
         val now = Instant.now().toString()
         // Optimistic local update so UI reflects "done" immediately.
         visitDao.updateDocumentationComplete(visitId, true, now)
+        releaseClinicianQueueAfterDocumentation(visitId, now)
 
         val rpcBody = MarkDocumentationCompleteDto(visitId = visitId)
 
@@ -621,5 +622,22 @@ class VisitRepository @Inject constructor(
                 }
             } catch (_: Exception) {}
         }
+    }
+
+    private suspend fun releaseClinicianQueueAfterDocumentation(visitId: String, now: String) {
+        val visit = visitDao.getByIdOnce(visitId) ?: return
+        val status = if (visit.status == "pending") "sent" else visit.status
+        val queueStatus = if (visit.queueStatus in listOf("with_doctor", "ready_for_doctor")) {
+            "completed"
+        } else {
+            visit.queueStatus
+        }
+        visitDao.updateStatusAndQueueStatus(
+            id = visitId,
+            status = status,
+            queueStatus = queueStatus,
+            finalizedAt = visit.finalizedAt,
+            updatedAt = now,
+        )
     }
 }

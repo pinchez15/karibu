@@ -220,7 +220,7 @@ interface SupabaseApi {
     @GET("ai_review_suggestions")
     suspend fun getAiReviewSuggestions(
         @Query("visit_id") visitId: String,
-        @Query("select") select: String = "id,visit_id,suggestion_type,question,reasoning,confidence,clinician_response,created_at",
+        @Query("select") select: String = "id,visit_id,suggestion_type,question,reasoning,confidence,phase,display_tier,citation_ids,clinician_response,created_at",
         @Query("order") order: String = "created_at.asc",
     ): List<AiReviewSuggestionDto>
 
@@ -267,4 +267,39 @@ interface SupabaseApi {
 
     @POST("rpc/rpc_request_draft_ai_assist")
     suspend fun rpcRequestDraftAiAssist(@Body request: RequestDraftAiAssistRequest): kotlinx.serialization.json.JsonObject
+
+    @GET("visit_critical_alerts")
+    suspend fun getVisitCriticalAlerts(
+        @Query("visit_id") visitId: String,
+        @Query("clinician_response") clinicianResponse: String = "is.null",
+        @Query("select") select: String = "*",
+    ): List<com.karibuhealth.app.data.remote.dto.VisitCriticalAlertDto>
+
+    @POST("rpc/rpc_upsert_critical_alert")
+    suspend fun rpcUpsertCriticalAlert(
+        @Body request: com.karibuhealth.app.data.remote.dto.UpsertCriticalAlertRequest,
+    ): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_critical_alert_response")
+    suspend fun rpcRecordCriticalAlertResponse(
+        @Body request: com.karibuhealth.app.data.remote.dto.RecordCriticalAlertResponseRequest,
+    ): Response<ResponseBody>
+
+    @POST("rpc/rpc_get_cme_modules")
+    suspend fun rpcGetCmeModules(): Response<ResponseBody>
+
+    @POST("rpc/rpc_get_cme_module_detail")
+    suspend fun rpcGetCmeModuleDetail(
+        @Body body: Map<String, String>,
+    ): kotlinx.serialization.json.JsonObject
+
+    @POST("rpc/rpc_create_referral")
+    suspend fun rpcCreateReferral(
+        @Body request: com.karibuhealth.app.data.remote.dto.CreateReferralRequest,
+    ): Response<ResponseBody>
+
+    @POST("rpc/rpc_list_referrals_today")
+    suspend fun rpcListReferralsToday(
+        @Body request: com.karibuhealth.app.data.remote.dto.ListReferralsTodayRequest,
+    ): List<com.karibuhealth.app.data.remote.dto.ReferralTodayRowDto>
 }

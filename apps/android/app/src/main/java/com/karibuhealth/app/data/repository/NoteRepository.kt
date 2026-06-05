@@ -567,6 +567,7 @@ class NoteRepository @Inject constructor(
             updatedAt = now,
         )
         visitDao.updateDocumentationComplete(visitId, true, now)
+        releaseClinicianQueueAfterDocumentation(visitId, now)
 
         val syncEntryId = UUID.randomUUID().toString()
         val rpcBody = FinalizeClinicalEncounterRequest(
@@ -743,6 +744,27 @@ class NoteRepository @Inject constructor(
                 patientNoteDao.upsertAll(patientNotes.map { it.toEntity() })
             }
         } catch (_: Exception) {}
+    }
+
+    /**
+     * After documentation is complete, drop the visit from the legacy physical
+     * queue ("With me" / My queue). Payment is handled separately by billing staff.
+     */
+    private suspend fun releaseClinicianQueueAfterDocumentation(visitId: String, now: String) {
+        val visit = visitDao.getByIdOnce(visitId) ?: return
+        val status = if (visit.status == "pending") "sent" else visit.status
+        val queueStatus = if (visit.queueStatus in listOf("with_doctor", "ready_for_doctor")) {
+            "completed"
+        } else {
+            visit.queueStatus
+        }
+        visitDao.updateStatusAndQueueStatus(
+            id = visitId,
+            status = status,
+            queueStatus = queueStatus,
+            finalizedAt = visit.finalizedAt,
+            updatedAt = now,
+        )
     }
 
     /** Align local note id with the server row for this visit (one note per visit). */

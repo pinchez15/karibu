@@ -4,8 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
+import com.karibuhealth.app.data.remote.dto.RecordCriticalAlertResponseRequest
+import com.karibuhealth.app.data.remote.dto.UpsertCriticalAlertRequest
+import com.karibuhealth.app.data.remote.dto.VisitCriticalAlertDto
+import com.karibuhealth.app.domain.CriticalAlertRules
+import com.karibuhealth.app.ui.components.filterTimelineAiNotes
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
@@ -21,6 +27,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 import javax.inject.Inject
 
@@ -49,6 +56,7 @@ data class VisitDetailsUiState(
      * on the visit screen; responses go through rpc_record_review_response.
      */
     val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
+    val criticalAlerts: List<VisitCriticalAlertDto> = emptyList(),
     val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
@@ -83,6 +91,15 @@ val VisitDetailsUiState.aiAvailabilityMessage: String
 val VisitDetailsUiState.pendingAiReviewCount: Int
     get() = aiReviewSuggestions.count { it.clinicianResponse == null }
 
+val VisitDetailsUiState.timelineAiNotes: List<AiReviewSuggestionDto>
+    get() = filterTimelineAiNotes(
+        aiReviewSuggestions,
+        visit?.documentationComplete == true,
+    ).take(3)
+
+val VisitDetailsUiState.activeCriticalAlerts: List<VisitCriticalAlertDto>
+    get() = criticalAlerts.filter { it.clinicianResponse == null }
+
 @HiltViewModel
 class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
@@ -94,13 +111,17 @@ class VisitDetailsViewModel @Inject constructor(
     private val syncQueueDao: SyncQueueDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
+    private val dictationApiClient: DictationApiClient,
     private val json: Json,
 ) : ViewModel() {
+
+    private var loadedVisitId: String? = null
 
     private val _uiState = MutableStateFlow(VisitDetailsUiState())
     val uiState: StateFlow<VisitDetailsUiState> = _uiState.asStateFlow()
 
     fun loadVisit(visitId: String) {
+        loadedVisitId = visitId
         viewModelScope.launch {
             val me = staffRepository.getCurrentStaff()
             _uiState.update { it.copy(currentStaff = me) }
@@ -157,7 +178,13 @@ class VisitDetailsViewModel @Inject constructor(
         // designed visit-details screen.
         viewModelScope.launch {
             vitalsRepository.getByVisit(visitId).collect { list ->
-                _uiState.update { it.copy(latestVitals = list.firstOrNull()) }
+                val vitals = list.firstOrNull()
+                _uiState.update { it.copy(latestVitals = vitals) }
+                val patient = _uiState.value.patient
+                val visit = _uiState.value.visit
+                if (patient != null && vitals != null && visit?.documentationComplete != true) {
+                    syncCriticalAlerts(visitId, patient, vitals)
+                }
             }
         }
 
@@ -172,11 +199,38 @@ class VisitDetailsViewModel @Inject constructor(
         // and the rest of the screen is unaffected.
         viewModelScope.launch {
             try {
-                val suggestions = supabaseApi.getAiReviewSuggestions(visitId = "eq.$visitId")
-                _uiState.update { it.copy(aiReviewSuggestions = suggestions) }
+                refreshAiSuggestions(visitId)
+                refreshCriticalAlerts(visitId)
             } catch (e: Exception) {
                 android.util.Log.w("VisitDetailsVM", "AI review fetch failed: ${e.message}")
             }
+        }
+    }
+
+    private suspend fun syncCriticalAlerts(visitId: String, patient: Patient, vitals: PatientVitals) {
+        if (!networkMonitor.isOnline()) return
+        val candidates = CriticalAlertRules.evaluate(patient, vitals)
+        for (c in candidates) {
+            runCatching {
+                supabaseApi.rpcUpsertCriticalAlert(
+                    UpsertCriticalAlertRequest(
+                        visitId = visitId,
+                        ruleSlug = c.ruleSlug,
+                        confirmQuestion = c.confirmQuestion,
+                        clinicalPrompt = c.clinicalPrompt,
+                        librarySlug = c.librarySlug,
+                    ),
+                )
+            }
+        }
+        refreshCriticalAlerts(visitId)
+    }
+
+    private suspend fun refreshCriticalAlerts(visitId: String) {
+        runCatching {
+            supabaseApi.getVisitCriticalAlerts(visitId = "eq.$visitId")
+        }.onSuccess { alerts ->
+            _uiState.update { it.copy(criticalAlerts = alerts) }
         }
     }
 
@@ -231,8 +285,30 @@ class VisitDetailsViewModel @Inject constructor(
         recordAiReviewResponse(suggestionId, "dismissed")
     }
 
+    fun acknowledgeAiSuggestion(suggestionId: String) {
+        recordAiReviewResponse(suggestionId, "considered_proceeded")
+    }
+
     fun incorporateAiSuggestion(suggestionId: String, onNavigate: () -> Unit) {
         recordAiReviewResponse(suggestionId, "reopened_note", onSuccess = onNavigate)
+    }
+
+    fun respondToCriticalAlert(alertId: String, response: String) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(criticalAlerts = it.criticalAlerts.filter { a -> a.id != alertId })
+            }
+            runCatching {
+                if (networkMonitor.isOnline()) {
+                    supabaseApi.rpcRecordCriticalAlertResponse(
+                        RecordCriticalAlertResponseRequest(alertId, response),
+                    )
+                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(aiReviewError = e.message) }
+            }
+            loadedVisitId?.let { refreshCriticalAlerts(it) }
+        }
     }
 
     private fun recordAiReviewResponse(

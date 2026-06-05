@@ -39,7 +39,31 @@
         "referralThreshold": { "type": "string" },
         "medicines": { "type": "array", "items": { "type": "string" } },
         "followUp": { "type": "array", "items": { "type": "string" } },
-        "dangerSigns": { "type": "array", "items": { "type": "string" } }
+        "dangerSigns": { "type": "array", "items": { "type": "string" } },
+        "classification": { "type": "string" },
+        "classificationRationale": { "type": "array", "items": { "type": "string" } },
+        "guidelineActions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "action", "rationale", "sourceDocumentId", "confidence"],
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": ["triage", "ipc", "test", "treatment", "medicine", "dose", "referral", "counseling", "follow_up", "documentation"]
+              },
+              "action": { "type": "string" },
+              "rationale": { "type": "string" },
+              "sourceDocumentId": { "type": "string" },
+              "confidence": { "type": "string", "enum": ["source_verified", "needs_clinician_confirmation"] },
+              "sourceSection": { "type": "string" }
+            }
+          }
+        },
+        "contraindicationChecks": { "type": "array", "items": { "type": "string" } },
+        "doNotDo": { "type": "array", "items": { "type": "string" } },
+        "documentationRequirements": { "type": "array", "items": { "type": "string" } },
+        "reviewerQuestions": { "type": "array", "items": { "type": "string" } }
       }
     },
     "citations": { "type": "array", "items": { "$ref": "citation.schema.json" } },

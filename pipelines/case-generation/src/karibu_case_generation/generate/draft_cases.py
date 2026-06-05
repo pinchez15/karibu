@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from karibu_case_generation.clinical_actions import enrich_case_truth
 from karibu_case_generation.export.kpack import export_kpack_directory
 from karibu_case_generation.generate.variants import VariantPlan, build_playable_variant
 from karibu_case_generation.models import (
@@ -52,15 +53,15 @@ def _draft_cases() -> list[CanonicalCase]:
                 vitals={"temperature": "38.8 C", "pulse": "104 bpm", "bp": "112/70 mmHg", "respiratory_rate": "20/min"},
                 exam_findings=["Alert and able to drink", "No jaundice", "No respiratory distress"],
                 available_tests=["Malaria RDT"],
-                diagnosis="Suspected uncomplicated malaria pending test confirmation",
+                diagnosis="Uncomplicated malaria after positive malaria RDT and absent danger signs",
                 differentials=["Viral febrile illness", "Urinary tract infection", "Typhoid-like illness"],
                 management=[
                     "Assess for danger signs before outpatient treatment.",
-                    "Use available malaria testing where possible.",
-                    "Treat confirmed uncomplicated malaria according to Uganda guidance and local stock availability.",
+                    "Perform malaria RDT before antimalarial treatment.",
+                    "If RDT is positive, treat this adult patient with artemether-lumefantrine 4 tablets twice daily for 3 days.",
                 ],
                 referral_threshold="Refer urgently if severe malaria features or other danger signs are present.",
-                medicines=["Artemisinin-based combination therapy if confirmed and clinically appropriate"],
+                medicines=["Artemether-lumefantrine adult course: 4 tablets twice daily for 3 days after positive RDT"],
                 follow_up=["Return urgently if confusion, convulsions, inability to drink, persistent vomiting, or worsening fever develops."],
                 danger_signs=["Convulsions", "Altered mental status", "Unable to drink", "Persistent vomiting", "Respiratory distress"],
             ),
@@ -152,11 +153,13 @@ def _draft_cases() -> list[CanonicalCase]:
                 differentials=["Acute watery diarrhoea", "Dysentery if blood present", "Sepsis if danger signs present"],
                 management=[
                     "Assess dehydration signs systematically.",
-                    "Choose rehydration plan according to classification.",
+                    "Classify as some dehydration.",
+                    "Give ORS Plan B: 750 ml over 4 hours for this 10 kg child.",
+                    "Give zinc 20 mg once daily for 10-14 days.",
                     "Check for blood in stool and general danger signs.",
                 ],
                 referral_threshold="Severe dehydration, lethargy/unconsciousness, inability to drink, or shock require urgent referral or higher-level management.",
-                medicines=["ORS and zinc according to age and classification where appropriate"],
+                medicines=["ORS 750 ml over 4 hours", "Zinc 20 mg once daily for 10-14 days"],
                 follow_up=["Counsel caregiver on fluids, feeding, and danger signs."],
                 danger_signs=["Lethargic or unconscious", "Unable to drink", "Severe dehydration", "Blood in stool"],
             ),
@@ -179,16 +182,16 @@ def _draft_cases() -> list[CanonicalCase]:
                 review_of_systems=["No vaginal bleeding", "No convulsions reported", "No fever"],
                 vitals={"bp": "156/102 mmHg", "pulse": "96 bpm", "temperature": "36.9 C", "respiratory_rate": "18/min"},
                 exam_findings=["Alert", "No active convulsion", "Mild pedal oedema"],
-                available_tests=["Urine protein if available"],
-                diagnosis="Hypertension in pregnancy with symptoms concerning for pre-eclampsia",
+                available_tests=["Urine protein dipstick"],
+                diagnosis="Pre-eclampsia concern requiring same-day urgent referral",
                 differentials=["Gestational hypertension", "Pre-eclampsia", "Severe headache from another cause"],
                 management=[
                     "Recognize headache, visual symptoms, and high blood pressure as danger signs.",
-                    "Check urine protein if available but do not ignore symptoms.",
-                    "Arrange urgent referral according to maternal health guidance.",
+                    "Repeat blood pressure after rest and check urine protein.",
+                    "Keep patient under observation and arrange same-day urgent referral.",
                 ],
                 referral_threshold="Severe hypertension, headache, visual symptoms, convulsions, or suspected pre-eclampsia require urgent referral.",
-                medicines=["Pre-referral treatment per local maternal emergency protocol if indicated and available"],
+                medicines=["Magnesium sulfate and antihypertensive pre-referral threshold requires clinician confirmation for this BP/symptom pattern"],
                 follow_up=["Communicate BP readings, symptoms, gestational age, and actions taken to receiving facility."],
                 danger_signs=["Severe headache", "Blurred vision", "High blood pressure", "Convulsions", "Vaginal bleeding"],
             ),
@@ -211,13 +214,14 @@ def _draft_cases() -> list[CanonicalCase]:
                 review_of_systems=["No severe shortness of breath at rest", "No haemoptysis reported"],
                 vitals={"temperature": "37.6 C", "pulse": "92 bpm", "bp": "118/76 mmHg", "respiratory_rate": "22/min"},
                 exam_findings=["Thin adult", "No chest indrawing", "Able to speak full sentences"],
-                available_tests=["Sputum testing pathway or referral according to local TB diagnostic access", "HIV testing offer according to guidance"],
-                diagnosis="Presumptive TB requiring evaluation",
+                available_tests=["Sputum sample transport for district GeneXpert", "HIV testing offer with consent and privacy"],
+                diagnosis="Presumptive pulmonary TB requiring same-day diagnostic evaluation",
                 differentials=["Pulmonary TB", "Viral cough", "Chronic bronchitis/COPD", "Pneumonia"],
                 management=[
                     "Ask duration of cough and constitutional symptoms.",
-                    "Screen for TB and HIV according to national guidance.",
-                    "Arrange sputum testing/referral pathway according to local service availability.",
+                    "Move patient out of crowded indoor queue, use cough etiquette, and assess in a well-ventilated area.",
+                    "Collect sputum today for district GeneXpert via sample transport.",
+                    "Offer HIV testing today if status is unknown.",
                 ],
                 referral_threshold="Severe respiratory distress, danger signs, or inability to complete evaluation safely require urgent referral.",
                 medicines=["Do not start TB treatment without following diagnostic pathway unless directed by national protocol."],
@@ -851,23 +855,23 @@ def _compact_case(
         title=title,
         topic=topic,
         narrative=narrative,
-        patient=SimulatedPatient("Simulated patient", "varies by scenario", "unknown"),
+        patient=_compact_patient(topic),
         truth=ClinicalTruth(
             chief_complaint=chief_complaint,
             history=history,
-            review_of_systems=["Focused review needed based on presentation"],
-            vitals=vitals,
+            review_of_systems=_compact_review_of_systems(topic),
+            vitals=_concrete_vitals(topic, vitals),
             exam_findings=exam_findings,
-            available_tests=["Use available HC III tests where relevant"],
+            available_tests=_compact_available_tests(topic),
             diagnosis=diagnosis,
-            differentials=["Alternative diagnosis depends on focused history and exam"],
+            differentials=_compact_differentials(topic),
             management=[
                 "Assess danger signs and immediate stability.",
-                "Use HC III-appropriate guideline reasoning.",
+                "Classify the presentation using the case action bundle before treatment.",
                 "Document clearly and refer/escalate when threshold is met.",
             ],
             referral_threshold="Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
-            medicines=["Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."],
+            medicines=["No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."],
             follow_up=["Give clear safety-net advice and document the plan."],
             danger_signs=danger_signs,
         ),
@@ -877,6 +881,89 @@ def _compact_case(
         scores=scores,
         chapter_id=chapter_id,
     )
+
+
+def _compact_patient(topic: str) -> SimulatedPatient:
+    if topic in {"child_health"}:
+        return SimulatedPatient("Simulated child", "24 months, 11 kg", "unknown", "Caregiver present")
+    if topic == "neonatal":
+        return SimulatedPatient("Simulated neonate", "6 days old, 3.1 kg", "unknown", "Mother present")
+    if topic in {"maternal_anc", "maternal_delivery", "postnatal"}:
+        return SimulatedPatient("Simulated mother", "26 years", "female", "Pregnancy or postnatal care visit")
+    return SimulatedPatient("Simulated patient", "34 years", "unknown")
+
+
+def _concrete_vitals(topic: str, vitals: dict[str, str]) -> dict[str, str]:
+    if not vitals or any(value.strip().lower() == "varies" for value in vitals.values()):
+        if topic == "child_health":
+            return {
+                "temperature": "38.4 C",
+                "pulse": "132 bpm",
+                "respiratory_rate": "42/min",
+                "weight": "11 kg",
+            }
+        if topic == "neonatal":
+            return {
+                "temperature": "35.8 C",
+                "pulse": "158 bpm",
+                "respiratory_rate": "56/min",
+                "weight": "3.1 kg",
+            }
+        if topic in {"maternal_anc", "maternal_delivery", "postnatal"}:
+            return {
+                "temperature": "37.4 C",
+                "pulse": "104 bpm",
+                "bp": "148/96 mmHg",
+                "respiratory_rate": "22/min",
+            }
+        if topic == "outbreak":
+            return {
+                "temperature": "38.9 C",
+                "pulse": "112 bpm",
+                "bp": "102/66 mmHg",
+                "respiratory_rate": "24/min",
+            }
+        return {
+            "temperature": "37.8 C",
+            "pulse": "96 bpm",
+            "bp": "128/82 mmHg",
+            "respiratory_rate": "20/min",
+        }
+    return vitals
+
+
+def _compact_review_of_systems(topic: str) -> list[str]:
+    if topic == "outbreak":
+        return ["Bleeding symptoms checked", "Travel and contact exposure checked", "Vomiting or diarrhoea checked"]
+    if topic in {"child_health", "neonatal"}:
+        return ["Ability to drink or breastfeed checked", "Convulsions checked", "Lethargy checked"]
+    if topic in {"maternal_anc", "maternal_delivery", "postnatal"}:
+        return ["Headache and visual symptoms checked", "Bleeding checked", "Fetal or postnatal danger symptoms checked"]
+    return ["Pain, breathing, hydration, and mental status reviewed"]
+
+
+def _compact_available_tests(topic: str) -> list[str]:
+    if topic == "outbreak":
+        return ["Outbreak screening checklist", "District notification pathway"]
+    if topic == "hiv_tb":
+        return ["Sputum sample transport or referral pathway", "HIV test with consent", "Malaria RDT if febrile"]
+    if topic in {"child_health", "neonatal"}:
+        return ["Weight", "Temperature", "Malaria RDT if febrile", "Blood glucose if altered or convulsing"]
+    if topic in {"maternal_anc", "maternal_delivery", "postnatal"}:
+        return ["Repeat blood pressure", "Urine protein dipstick", "Haemoglobin if available"]
+    return ["Malaria RDT if febrile", "Urine dipstick when urinary or ANC concern", "Random blood glucose when altered or very ill"]
+
+
+def _compact_differentials(topic: str) -> list[str]:
+    if topic == "outbreak":
+        return ["Malaria", "Sepsis", "Viral haemorrhagic fever"]
+    if topic == "hiv_tb":
+        return ["Pulmonary TB", "Bacterial pneumonia", "HIV-related opportunistic infection"]
+    if topic in {"child_health", "neonatal"}:
+        return ["Malaria", "Pneumonia", "Sepsis or severe bacterial infection"]
+    if topic in {"maternal_anc", "maternal_delivery", "postnatal"}:
+        return ["Hypertensive disorder of pregnancy", "Anaemia", "Infection or obstetric emergency"]
+    return ["Common outpatient condition", "Emergency presentation", "Referral-level condition"]
 
 
 def _case(
@@ -894,6 +981,7 @@ def _case(
 ) -> CanonicalCase:
     if not isinstance(scores, CaseScores):
         scores = CaseScores(*scores)
+    truth = enrich_case_truth(case_id, topic, truth, guideline_ids)
     citation = Citation(
         id=f"{case_id}-source",
         source_document_id=guideline_ids[0],

@@ -15,9 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.karibuhealth.app.ui.theme.Amber as KaribuWarning
 
 @Composable
 fun OfflineBanner(
@@ -37,10 +35,20 @@ fun OfflineBanner(
         // (no pending items) leaves the banner non-interactive so we don't
         // open an empty details sheet.
         val tappable = pendingSyncCount > 0 && onClick != null
+        // Offline is the NORMAL state on intermittent 3G — it is status, not a
+        // warning. Amber is reserved for AI/urgency, so offline uses calm neutral
+        // chrome (surfaceVariant); the pending-sync state keeps the soft-cobalt
+        // primaryContainer. Neither shouts.
+        val containerColor =
+            if (!isOnline) MaterialTheme.colorScheme.surfaceVariant
+            else MaterialTheme.colorScheme.primaryContainer
+        val contentColor =
+            if (!isOnline) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.onPrimaryContainer
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (!isOnline) KaribuWarning else MaterialTheme.colorScheme.primaryContainer)
+                .background(containerColor)
                 .then(if (tappable) Modifier.clickable(onClick = onClick!!) else Modifier)
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -51,7 +59,7 @@ fun OfflineBanner(
                 imageVector = if (!isOnline) Icons.Default.CloudOff else Icons.Default.Sync,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = if (!isOnline) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = contentColor,
             )
             Spacer(Modifier.width(8.dp))
             Text(
@@ -66,7 +74,7 @@ fun OfflineBanner(
                     else -> "Syncing…"
                 },
                 style = MaterialTheme.typography.labelMedium,
-                color = if (!isOnline) Color.White else MaterialTheme.colorScheme.onPrimaryContainer,
+                color = contentColor,
             )
         }
     }

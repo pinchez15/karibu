@@ -8,12 +8,17 @@ from karibu_case_generation.models import (
     ClinicalTruth,
     CredentialingMetadata,
     EhrLikeTask,
+    GuidelineAction,
     ScoringRule,
     ShareMetadata,
     SimulatedPatient,
     to_dict,
 )
-from karibu_case_generation.review.validators import validate_canonical_case, validate_playable_variant
+from karibu_case_generation.review.validators import (
+    validate_canonical_case,
+    validate_case_specificity,
+    validate_playable_variant,
+)
 
 
 def make_valid_canonical_case() -> CanonicalCase:
@@ -45,11 +50,25 @@ def make_valid_canonical_case() -> CanonicalCase:
             available_tests=["Malaria RDT"],
             diagnosis="Suspected uncomplicated malaria",
             differentials=["Viral illness", "Urinary tract infection"],
-            management=["Test with malaria RDT", "Treat according to guideline if positive"],
+            management=["Test with malaria RDT", "Treat confirmed uncomplicated malaria with adult ACT dosing"],
             referral_threshold="Refer if danger signs are present.",
-            medicines=["Artemether-lumefantrine if confirmed and appropriate"],
+            medicines=["Artemether-lumefantrine adult course if RDT positive and no contraindication"],
             follow_up=["Return if worsening or danger signs develop"],
             danger_signs=["Altered mental status", "Unable to drink"],
+            classification="Suspected uncomplicated malaria pending RDT",
+            classification_rationale=["Fever without danger signs", "Adult patient with malaria test available"],
+            guideline_actions=[
+                GuidelineAction(
+                    category="test",
+                    action="Perform malaria RDT before antimalarial treatment.",
+                    rationale="The case has fever and malaria testing is available at HC III.",
+                    source_document_id="uganda-clinical-guidelines-2023",
+                    confidence="source_verified",
+                )
+            ],
+            contraindication_checks=["Pregnancy", "Drug allergy", "Severe malaria danger signs"],
+            do_not_do=["Do not give antimalarial treatment before danger-sign screening."],
+            documentation_requirements=["RDT result", "Danger signs checked", "Medicine and dose"],
         ),
         expected_reasoning_path=["Assess danger signs", "Confirm malaria where possible"],
         teaching_points=["Danger signs change management and referral threshold."],
@@ -82,6 +101,16 @@ class CaseModelTest(unittest.TestCase):
         report = validate_canonical_case(case)
 
         self.assertTrue(report.valid, report.issues)
+
+    def test_specificity_validation_rejects_generic_language(self) -> None:
+        case = make_valid_canonical_case()
+        truth = case.clinical_truth
+        truth.management[1] = "Treat according to local guidance if appropriate"
+
+        report = validate_case_specificity(case)
+
+        self.assertFalse(report.valid)
+        self.assertTrue(any("Generic phrase" in issue.message for issue in report.issues))
 
     def test_variant_level_three_requires_reveals_and_tasks(self) -> None:
         case = make_valid_canonical_case()

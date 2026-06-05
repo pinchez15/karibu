@@ -34,6 +34,7 @@ import androidx.compose.foundation.rememberScrollState
 import com.karibuhealth.app.domain.model.OpdPatientFilter
 import com.karibuhealth.app.domain.model.OpdPatientRow
 import com.karibuhealth.app.domain.model.Patient
+import com.karibuhealth.app.data.local.datastore.RecentPatientEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.domain.model.Staff
 import com.karibuhealth.app.domain.model.StaffRole
@@ -108,9 +109,11 @@ fun HomeScreen(
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {
-                isRefreshing = true
-                viewModel.refresh()
-                isRefreshing = false
+                scope.launch {
+                    isRefreshing = true
+                    viewModel.refreshAndAwait()
+                    isRefreshing = false
+                }
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -145,6 +148,22 @@ fun HomeScreen(
                     )
                 }
 
+                if (uiState.searchQuery.isBlank() && uiState.recentPatients.isNotEmpty()) {
+                    item {
+                        RecentPatientsStrip(
+                            entries = uiState.recentPatients,
+                            onOpenPatient = { entry ->
+                                viewModel.recordPatientTouch(
+                                    entry.patientId,
+                                    entry.patientName,
+                                    entry.visitId,
+                                )
+                                onNavigateToPatient(entry.patientId)
+                            },
+                        )
+                    }
+                }
+
                 item {
                     Row(
                         modifier = Modifier
@@ -155,10 +174,15 @@ fun HomeScreen(
                     ) {
                         OpdPatientFilter.entries.forEach { filter ->
                             val selected = uiState.selectedFilter == filter
+                            val count = uiState.filterCount(filter)
                             FilterChip(
                                 selected = selected,
                                 onClick = { viewModel.selectFilter(filter) },
-                                label = { Text(filter.label) },
+                                label = {
+                                    Text(
+                                        if (count > 0) "${filter.label} ($count)" else filter.label,
+                                    )
+                                },
                             )
                         }
                     }
@@ -289,7 +313,14 @@ fun HomeScreen(
                             Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
                                 OpdPatientCard(
                                     row = row,
-                                    onClick = { onNavigateToPatient(row.patientId) },
+                                    onClick = {
+                                        viewModel.recordPatientTouch(
+                                            row.patientId,
+                                            row.patientName,
+                                            row.visitId,
+                                        )
+                                        onNavigateToPatient(row.patientId)
+                                    },
                                 )
                             }
                         }
@@ -795,6 +826,36 @@ private fun StatusCard(
             )
         }
         KhStatusPill(kind = kind, label = statusLabel)
+    }
+}
+
+@Composable
+private fun RecentPatientsStrip(
+    entries: List<RecentPatientEntry>,
+    onOpenPatient: (RecentPatientEntry) -> Unit,
+) {
+    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Text(
+            text = "Recent",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            entries.forEach { entry ->
+                FilterChip(
+                    selected = false,
+                    onClick = { onOpenPatient(entry) },
+                    label = { Text(entry.patientName) },
+                )
+            }
+        }
     }
 }
 

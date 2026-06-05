@@ -12,8 +12,21 @@ data class DictationIncorporate(
     val openRxPicker: Boolean = false,
 )
 
+/** Active AI notes for an unsigned visit (draft + lab, timeline tier only). */
+fun filterTimelineAiNotes(
+    suggestions: List<AiReviewSuggestionDto>,
+    documentationComplete: Boolean,
+): List<AiReviewSuggestionDto> {
+    if (documentationComplete) return emptyList()
+    return suggestions.filter {
+        it.clinicianResponse == null &&
+            (it.displayTier ?: "timeline") == "timeline" &&
+            (it.phase == "draft" || it.phase == "lab")
+    }
+}
+
 fun dedupeAiReviewSuggestions(suggestions: List<AiReviewSuggestionDto>): List<AiReviewSuggestionDto> {
-    val pending = suggestions.filter { it.clinicianResponse == null }
+    val pending = suggestions
     if (pending.size <= 1) return pending
 
     val kept = mutableListOf<AiReviewSuggestionDto>()

@@ -157,6 +157,8 @@ data class DictationUiState(
     val isSendingToPharmacy: Boolean = false,
     val openLabPickerOnLoad: Boolean = false,
     val openRxPickerOnLoad: Boolean = false,
+    val isOnline: Boolean = true,
+    val connectionLabel: String = "Online",
 ) {
     val canSubmit: Boolean
         get() = (transcript.trim().length >= 10 || sections.hasClinicalContent()) &&
@@ -189,6 +191,20 @@ class DictationViewModel @Inject constructor(
     // in-flight job so the final autosave landed before flipping to signed.
     private var autosaveJob: Job? = null
     private var draftAiQueuedForVisit: String? = null
+
+    init {
+        viewModelScope.launch {
+            networkMonitor.connectionStatusFlow.collect { status ->
+                val label = when {
+                    !status.isOnline -> "Offline"
+                    else -> status.transportLabel
+                }
+                _uiState.update {
+                    it.copy(isOnline = status.isOnline, connectionLabel = label)
+                }
+            }
+        }
+    }
 
     private companion object {
         // Idle delay before the autosave fires. 1.5s matches the prompt's
@@ -509,10 +525,8 @@ class DictationViewModel @Inject constructor(
 
     /**
      * Flush the pending autosave window synchronously, then invoke [onDone] so
-     * the caller can navigate away. Used by the "Save draft" toolbar button —
-     * the clinician dictates a few sections, taps Save, and the back-nav fires
-     * only after Room has the latest transcript. Without this they'd lose the
-     * last 1.5 s of typing on a quick exit.
+     * the caller can navigate away (back arrow, system back / swipe). Without
+     * this they'd lose the last debounce window of typing on a quick exit.
      */
     fun saveDraftAndExit(onDone: () -> Unit) {
         val patientId = _uiState.value.patientId
@@ -544,8 +558,8 @@ class DictationViewModel @Inject constructor(
      *   2. patient_notes.content (clinician fallback for the receipt; copies
      *      the transcript verbatim so print/pharmacy works without AI)
      *   3. visits.diagnosis/medications/etc. via rpc_upsert_visit_clinical_summary
-     *   4. visits.documentation_complete = true (and status pending -> sent
-     *      atomically server-side, making the visit reachable for payment)
+     *   4. visits.documentation_complete = true, status pending -> sent, and
+     *      queue_status released from with_doctor (billing is separate)
      */
     fun signNote(visitId: String) {
         val sections = _uiState.value.sections

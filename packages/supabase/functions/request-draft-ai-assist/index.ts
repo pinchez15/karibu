@@ -70,7 +70,7 @@ serve(async (req) => {
 
     await requireStaffForClinic(supabase, authCtx, visit.clinic_id)
 
-    const { error: rpcError } = await supabase.rpc('rpc_request_draft_ai_assist', {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('rpc_request_draft_ai_assist', {
       p_visit_id: visit_id,
       p_sections_snapshot: sections_snapshot ?? null,
     })
@@ -78,14 +78,17 @@ serve(async (req) => {
       throw new Error(`rpc_request_draft_ai_assist failed: ${rpcError.message}`)
     }
 
-    await sendInngestEvent('note.draft-ai-assist', {
-      visit_id,
-      clinic_id: visit.clinic_id,
-      phase: 'draft',
-    })
+    const queued = (rpcData as { queued?: boolean })?.queued === true
+    if (queued) {
+      await sendInngestEvent('note.draft-ai-assist', {
+        visit_id,
+        clinic_id: visit.clinic_id,
+        phase: 'draft',
+      })
+    }
 
-    logger.info('draft AI assist queued', { visit_id })
-    return new Response(JSON.stringify({ ok: true, visit_id }), {
+    logger.info('draft AI assist', { visit_id, queued })
+    return new Response(JSON.stringify({ ok: true, visit_id, queued, rpc: rpcData }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

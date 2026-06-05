@@ -1,5 +1,6 @@
 package com.karibuhealth.app.ui.components
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
@@ -55,8 +57,10 @@ fun SyncDetailsSheet(
     onDismiss: () -> Unit,
     onRetryAll: () -> Unit,
     onMarkSynced: (String) -> Unit,
+    onExportDebugLog: (() -> String)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -124,6 +128,27 @@ fun SyncDetailsSheet(
                     shape = RoundedCornerShape(10.dp),
                 ) {
                     Text("Close")
+                }
+            }
+
+            onExportDebugLog?.let { export ->
+                OutlinedButton(
+                    onClick = {
+                        val logText = export()
+                        if (logText.isBlank()) return@OutlinedButton
+                        val share = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Karibu sync debug log")
+                            putExtra(Intent.EXTRA_TEXT, logText)
+                        }
+                        context.startActivity(Intent.createChooser(share, "Share debug log"))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Text("Share debug log")
                 }
             }
         }

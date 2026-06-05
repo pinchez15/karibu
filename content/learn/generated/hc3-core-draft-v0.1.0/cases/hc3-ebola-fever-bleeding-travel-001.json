@@ -10,9 +10,23 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Use available HC III tests where relevant"
+      "Outbreak screening checklist",
+      "District notification pathway"
     ],
     "chiefComplaint": "Fever with bleeding and travel",
+    "classification": "Suspected Ebola or viral haemorrhagic fever at screening.",
+    "classificationRationale": [
+      "Fever during known Ebola alert.",
+      "Unexplained bleeding from gums.",
+      "Vomiting and severe weakness.",
+      "Recent travel/contact exposure through burial attendance in an affected district."
+    ],
+    "contraindicationChecks": [
+      "Unprotected direct contact",
+      "Routine lab queue",
+      "Crowded waiting area",
+      "Nonessential physical exam"
+    ],
     "dangerSigns": [
       "Bleeding",
       "Travel/contact history",
@@ -21,7 +35,21 @@
     ],
     "diagnosis": "Suspected viral haemorrhagic fever requiring isolation/notification",
     "differentials": [
-      "Alternative diagnosis depends on focused history and exam"
+      "Malaria",
+      "Sepsis",
+      "Viral haemorrhagic fever"
+    ],
+    "doNotDo": [
+      "Do not sit with the patient for a normal consultation.",
+      "Do not send the patient through routine outpatient lab flow.",
+      "Do not perform unnecessary physical examination before IPC is in place."
+    ],
+    "documentationRequirements": [
+      "Screening symptoms",
+      "Travel/contact exposure",
+      "Isolation time/location",
+      "Notification pathway used",
+      "Close contacts already exposed"
     ],
     "examFindings": [
       "Focused exam findings should be requested by the learner."
@@ -29,27 +57,65 @@
     "followUp": [
       "Give clear safety-net advice and document the plan."
     ],
+    "guidelineActions": [
+      {
+        "action": "Identify as suspected Ebola/VHF at screening before registration or routine consultation.",
+        "category": "ipc",
+        "confidence": "source_verified",
+        "rationale": "Outbreak screening should occur before normal waiting-room flow.",
+        "sourceDocumentId": "who-ebola-bundibugyo-2026",
+        "sourceSection": "VHF screening and IPC"
+      },
+      {
+        "action": "Keep distance, avoid direct contact, give mask if tolerated, and move by safest route to designated isolation/holding area.",
+        "category": "ipc",
+        "confidence": "source_verified",
+        "rationale": "Immediate isolation reduces exposure to staff and other patients.",
+        "sourceDocumentId": "who-ebola-bundibugyo-2026",
+        "sourceSection": "VHF screening and IPC"
+      },
+      {
+        "action": "Notify the district/outbreak response pathway immediately.",
+        "category": "referral",
+        "confidence": "source_verified",
+        "rationale": "Suspected VHF requires public health notification and coordinated transfer/testing.",
+        "sourceDocumentId": "who-ebola-bundibugyo-2026",
+        "sourceSection": "VHF notification"
+      },
+      {
+        "action": "Record staff/attendants with close contact without public disclosure or panic.",
+        "category": "documentation",
+        "confidence": "source_verified",
+        "rationale": "Contact documentation supports outbreak response while protecting confidentiality.",
+        "sourceDocumentId": "who-ebola-bundibugyo-2026"
+      }
+    ],
     "history": [
       "Focused history is required to reveal the key risk.",
       "No real patient data; simulated training case."
     ],
     "management": [
       "Assess danger signs and immediate stability.",
-      "Use HC III-appropriate guideline reasoning.",
+      "Classify the presentation using the case action bundle before treatment.",
       "Document clearly and refer/escalate when threshold is met."
     ],
     "medicines": [
-      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+      "No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."
     ],
     "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
     "reviewOfSystems": [
-      "Focused review needed based on presentation"
+      "Bleeding symptoms checked",
+      "Travel and contact exposure checked",
+      "Vomiting or diarrhoea checked"
+    ],
+    "reviewerQuestions": [
+      "Confirm current Ministry of Health screening wording, PPE process, isolation setup, notification pathway, and safe transport language."
     ],
     "vitals": {
-      "bp": "varies",
-      "pulse": "varies",
-      "respiratory_rate": "varies",
-      "temperature": "varies"
+      "bp": "102/66 mmHg",
+      "pulse": "112 bpm",
+      "respiratory_rate": "24/min",
+      "temperature": "38.9 C"
     }
   },
   "credentialingMetadata": {
@@ -85,7 +151,7 @@
     "title": "Fever, bleeding, and travel history"
   },
   "simulatedPatient": {
-    "ageLabel": "varies by scenario",
+    "ageLabel": "34 years",
     "displayName": "Simulated patient",
     "sex": "unknown"
   },

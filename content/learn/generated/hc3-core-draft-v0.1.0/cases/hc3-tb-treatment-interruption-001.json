@@ -10,9 +10,23 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Use available HC III tests where relevant"
+      "Sputum sample transport or referral pathway",
+      "HIV test with consent",
+      "Malaria RDT if febrile"
     ],
     "chiefComplaint": "Missed TB doses",
+    "classification": "TB treatment interruption risk",
+    "classificationRationale": [
+      "Missed TB doses",
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case.",
+      "Focused exam findings should be requested by the learner."
+    ],
+    "contraindicationChecks": [
+      "Severe illness",
+      "Haemoptysis",
+      "Breathlessness"
+    ],
     "dangerSigns": [
       "Severe illness",
       "Haemoptysis",
@@ -20,7 +34,19 @@
     ],
     "diagnosis": "TB treatment interruption risk",
     "differentials": [
-      "Alternative diagnosis depends on focused history and exam"
+      "Pulmonary TB",
+      "Bacterial pneumonia",
+      "HIV-related opportunistic infection"
+    ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
     ],
     "examFindings": [
       "Focused exam findings should be requested by the learner."
@@ -28,27 +54,53 @@
     "followUp": [
       "Give clear safety-net advice and document the plan."
     ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this hiv tb presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      },
+      {
+        "action": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-hiv-aids-consolidated-guidelines-2023"
+      }
+    ],
     "history": [
       "Focused history is required to reveal the key risk.",
       "No real patient data; simulated training case."
     ],
     "management": [
       "Assess danger signs and immediate stability.",
-      "Use HC III-appropriate guideline reasoning.",
+      "Classify the presentation using the case action bundle before treatment.",
       "Document clearly and refer/escalate when threshold is met."
     ],
     "medicines": [
-      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+      "No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."
     ],
     "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
     "reviewOfSystems": [
-      "Focused review needed based on presentation"
+      "Pain, breathing, hydration, and mental status reviewed"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
-      "bp": "varies",
-      "pulse": "varies",
-      "respiratory_rate": "varies",
-      "temperature": "varies"
+      "bp": "128/82 mmHg",
+      "pulse": "96 bpm",
+      "respiratory_rate": "20/min",
+      "temperature": "37.8 C"
     }
   },
   "credentialingMetadata": {
@@ -84,7 +136,7 @@
     "title": "Missed TB treatment doses"
   },
   "simulatedPatient": {
-    "ageLabel": "varies by scenario",
+    "ageLabel": "34 years",
     "displayName": "Simulated patient",
     "sex": "unknown"
   },

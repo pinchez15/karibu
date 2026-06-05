@@ -10,9 +10,24 @@
   ],
   "clinicalTruth": {
     "availableTests": [
-      "Use available HC III tests where relevant"
+      "Weight",
+      "Temperature",
+      "Malaria RDT if febrile",
+      "Blood glucose if altered or convulsing"
     ],
     "chiefComplaint": "Yellow eyes in newborn",
+    "classification": "Neonatal jaundice with danger assessment",
+    "classificationRationale": [
+      "Yellow eyes in newborn",
+      "Focused history is required to reveal the key risk.",
+      "No real patient data; simulated training case.",
+      "Focused exam findings should be requested by the learner."
+    ],
+    "contraindicationChecks": [
+      "Poor feeding",
+      "Lethargy",
+      "Deep jaundice"
+    ],
     "dangerSigns": [
       "Poor feeding",
       "Lethargy",
@@ -20,7 +35,19 @@
     ],
     "diagnosis": "Neonatal jaundice with danger assessment",
     "differentials": [
-      "Alternative diagnosis depends on focused history and exam"
+      "Malaria",
+      "Pneumonia",
+      "Sepsis or severe bacterial infection"
+    ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
     ],
     "examFindings": [
       "Focused exam findings should be requested by the learner."
@@ -28,27 +55,55 @@
     "followUp": [
       "Give clear safety-net advice and document the plan."
     ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this neonatal presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      },
+      {
+        "action": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "who-imnci-chart-booklet"
+      }
+    ],
     "history": [
       "Focused history is required to reveal the key risk.",
       "No real patient data; simulated training case."
     ],
     "management": [
       "Assess danger signs and immediate stability.",
-      "Use HC III-appropriate guideline reasoning.",
+      "Classify the presentation using the case action bundle before treatment.",
       "Document clearly and refer/escalate when threshold is met."
     ],
     "medicines": [
-      "Medicine decisions must follow Uganda guidance, availability, contraindications, and scope."
+      "No medicine is selected until indication, contraindication checks, and dose are documented in the action bundle."
     ],
     "referralThreshold": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity.",
     "reviewOfSystems": [
-      "Focused review needed based on presentation"
+      "Ability to drink or breastfeed checked",
+      "Convulsions checked",
+      "Lethargy checked"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
-      "bp": "varies",
-      "pulse": "varies",
-      "respiratory_rate": "varies",
-      "temperature": "varies"
+      "pulse": "158 bpm",
+      "respiratory_rate": "56/min",
+      "temperature": "35.8 C",
+      "weight": "3.1 kg"
     }
   },
   "credentialingMetadata": {
@@ -84,8 +139,9 @@
     "title": "Yellow newborn"
   },
   "simulatedPatient": {
-    "ageLabel": "varies by scenario",
-    "displayName": "Simulated patient",
+    "ageLabel": "6 days old, 3.1 kg",
+    "context": "Mother present",
+    "displayName": "Simulated neonate",
     "sex": "unknown"
   },
   "sourceGuidelineIds": [

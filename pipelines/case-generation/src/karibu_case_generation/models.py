@@ -5,6 +5,19 @@ from typing import Any, Literal
 
 SourceType = Literal["generated_guideline", "reviewer_authored", "literature_adapted"]
 ReviewStatus = Literal["draft", "needs_review", "approved", "rejected"]
+GuidelineActionCategory = Literal[
+    "triage",
+    "ipc",
+    "test",
+    "treatment",
+    "medicine",
+    "dose",
+    "referral",
+    "counseling",
+    "follow_up",
+    "documentation",
+]
+GuidelineActionConfidence = Literal["source_verified", "needs_clinician_confirmation"]
 RevealTrigger = Literal[
     "initial",
     "request_vitals",
@@ -61,6 +74,16 @@ class SimulatedPatient:
 
 
 @dataclass(frozen=True)
+class GuidelineAction:
+    category: GuidelineActionCategory
+    action: str
+    rationale: str
+    source_document_id: str
+    confidence: GuidelineActionConfidence
+    source_section: str | None = None
+
+
+@dataclass(frozen=True)
 class ClinicalTruth:
     chief_complaint: str
     history: list[str]
@@ -75,6 +98,13 @@ class ClinicalTruth:
     medicines: list[str]
     follow_up: list[str]
     danger_signs: list[str] = field(default_factory=list)
+    classification: str = ""
+    classification_rationale: list[str] = field(default_factory=list)
+    guideline_actions: list[GuidelineAction] = field(default_factory=list)
+    contraindication_checks: list[str] = field(default_factory=list)
+    do_not_do: list[str] = field(default_factory=list)
+    documentation_requirements: list[str] = field(default_factory=list)
+    reviewer_questions: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

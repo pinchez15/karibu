@@ -41,7 +41,8 @@ import com.karibuhealth.app.ui.components.SyncStatusPill
 import com.karibuhealth.app.ui.components.KhAccentPill
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhVitalChip
-import com.karibuhealth.app.ui.components.AiReviewBanner
+import com.karibuhealth.app.ui.components.AiNotesTimeline
+import com.karibuhealth.app.ui.components.VisitCriticalAlertBanner
 import com.karibuhealth.app.ui.components.incorporationFor
 import com.karibuhealth.app.ui.components.DictationIncorporate
 import com.karibuhealth.app.ui.util.BottomBarScrollPadding
@@ -65,7 +66,7 @@ fun VisitDetailsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
-    onNavigateToPayment: (String) -> Unit,
+    onNavigateToReferral: (String) -> Unit = {},
     viewModel: VisitDetailsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -163,7 +164,6 @@ fun VisitDetailsScreen(
                     hasLocalDraft = uiState.hasLocalDraft,
                     onNavigateToDictation = onNavigateToDictation,
                     onNavigateToReview = onNavigateToReview,
-                    onNavigateToPayment = onNavigateToPayment,
                 )
             }
         },
@@ -195,6 +195,34 @@ fun VisitDetailsScreen(
                         onRetry = { viewModel.trySync(visitId) },
                     )
                 }
+
+                OutlinedButton(
+                    onClick = { onNavigateToReferral(visitId) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Refer to hospital")
+                }
+
+                uiState.activeCriticalAlerts.forEach { alert ->
+                    VisitCriticalAlertBanner(
+                        alert = alert,
+                        onConfirmData = { viewModel.respondToCriticalAlert(alert.id, "confirmed") },
+                        onDataError = { viewModel.respondToCriticalAlert(alert.id, "data_error") },
+                        onDismiss = { viewModel.respondToCriticalAlert(alert.id, "dismissed") },
+                    )
+                }
+
+                AiNotesTimeline(
+                    suggestions = uiState.timelineAiNotes,
+                    onDismiss = { viewModel.dismissAiSuggestion(it.id) },
+                    onAcknowledge = { viewModel.acknowledgeAiSuggestion(it.id) },
+                    onIncorporate = { suggestion ->
+                        val incorporate = incorporationFor(suggestion)
+                        viewModel.incorporateAiSuggestion(suggestion.id) {
+                            onNavigateToDictation(visitId, false, incorporate)
+                        }
+                    },
+                )
 
                 uiState.patient?.let { patient ->
                     PatientCard(
@@ -280,19 +308,6 @@ fun VisitDetailsScreen(
                     }
                 }
 
-                AiReviewBanner(
-                    suggestions = uiState.aiReviewSuggestions,
-                    onDismiss = { suggestion ->
-                        viewModel.dismissAiSuggestion(suggestion.id)
-                    },
-                    onIncorporate = { suggestion ->
-                        val incorporate = incorporationFor(suggestion)
-                        viewModel.incorporateAiSuggestion(suggestion.id) {
-                            onNavigateToDictation(visitId, false, incorporate)
-                        }
-                    },
-                )
-
                 uiState.aiReviewError?.let { err ->
                     Text(
                         text = err,
@@ -329,6 +344,7 @@ fun VisitDetailsScreen(
             }
         }
     }
+
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -883,14 +899,12 @@ private fun SyncCard(
 }
 
 /**
- * Status-driven bottom actions on visit-detail. Payment is intentionally
- * NOT the dominant CTA after a save — patients often still need lab /
- * pharmacy work before payment, and clinicians want to keep editing the
- * note as new information lands. Layout per status:
+ * Status-driven bottom actions on visit-detail. Payment is handled by
+ * billing / front desk (Billing home + needs_payment worklist), not here.
  *
  *   pending + !doc complete → primary "Write note"
  *   pending +  doc complete → primary disabled "AI checking…"
- *   sent                    → primary "Edit note" + secondary "Take payment"
+ *   sent                    → primary "Edit note"
  *   review                  → primary "Review notes"
  *   error                   → primary "Edit and retry"
  *   completed               → primary "Edit note"
@@ -902,7 +916,6 @@ private fun VisitDetailsBottomAction(
     hasLocalDraft: Boolean,
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
-    onNavigateToPayment: (String) -> Unit,
 ) {
     val docComplete = visit.documentationComplete
 
@@ -935,12 +948,7 @@ private fun VisitDetailsBottomAction(
                 icon = Icons.Default.Mic,
                 enabled = true,
             )
-            secondary = BottomActionConfig(
-                label = "Take payment",
-                onClick = { onNavigateToPayment(visitId) },
-                icon = null,
-                enabled = true,
-            )
+            secondary = null
         }
         visit.status == VisitStatus.review -> {
             primary = BottomActionConfig(

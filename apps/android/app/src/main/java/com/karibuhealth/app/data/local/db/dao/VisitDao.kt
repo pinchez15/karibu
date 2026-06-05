@@ -32,6 +32,7 @@ interface VisitDao {
         WHERE clinic_id = :clinicId
           AND visit_date = :date
           AND queue_status IN ('waiting', 'with_nurse', 'ready_for_doctor', 'with_doctor')
+          AND documentation_complete = 0
           AND (doctor_id IS NULL OR doctor_id = :clinicianId)
         ORDER BY
           CASE priority
@@ -250,6 +251,7 @@ interface VisitDao {
         WHERE clinic_id = :clinicId
           AND visit_date = :date
           AND queue_status IN ('waiting', 'with_nurse', 'ready_for_doctor', 'with_doctor')
+          AND documentation_complete = 0
         ORDER BY checked_in_at DESC
     """)
     fun getOpenEncountersToday(clinicId: String, date: String): Flow<List<VisitWithPatient>>

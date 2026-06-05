@@ -14,6 +14,20 @@
       "Blood glucose if available"
     ],
     "chiefComplaint": "High fever with confusion",
+    "classification": "Suspected severe malaria or other severe febrile illness",
+    "classificationRationale": [
+      "High fever with confusion",
+      "Two days of fever",
+      "Family reports the patient became confused this morning",
+      "Drowsy but rousable",
+      "Dry mucous membranes"
+    ],
+    "contraindicationChecks": [
+      "Altered mental status",
+      "Unable to drink",
+      "Hypotension",
+      "Respiratory distress"
+    ],
     "dangerSigns": [
       "Altered mental status",
       "Unable to drink",
@@ -27,6 +41,16 @@
       "Hypoglycaemia",
       "Severe malaria"
     ],
+    "doNotDo": [
+      "Do not treat this as a routine case until danger signs and referral threshold are checked."
+    ],
+    "documentationRequirements": [
+      "Chief complaint",
+      "Focused history",
+      "Vitals",
+      "Exam findings",
+      "Decision and follow-up plan"
+    ],
     "examFindings": [
       "Drowsy but rousable",
       "Dry mucous membranes",
@@ -34,6 +58,29 @@
     ],
     "followUp": [
       "Document pre-referral actions and communicate danger signs to the receiving facility."
+    ],
+    "guidelineActions": [
+      {
+        "action": "Assess immediate stability and danger signs for this malaria presentation.",
+        "category": "triage",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The case must establish whether HC III outpatient care is safe before treatment.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Altered mental status, inability to drink, shock, convulsions, or respiratory distress require urgent referral.",
+        "category": "referral",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "The referral threshold is part of the case truth and must be confirmed by a clinician reviewer.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      },
+      {
+        "action": "Document the key positive findings, absent danger signs, decision, counseling, and referral or follow-up plan.",
+        "category": "documentation",
+        "confidence": "needs_clinician_confirmation",
+        "rationale": "Documentation is required for safe simulated chart practice.",
+        "sourceDocumentId": "uganda-clinical-guidelines-2023"
+      }
     ],
     "history": [
       "Two days of fever",
@@ -52,6 +99,9 @@
     "reviewOfSystems": [
       "No trauma reported",
       "No known epilepsy history"
+    ],
+    "reviewerQuestions": [
+      "Replace this generated action bundle with topic-specific Ministry of Health guidance before publication."
     ],
     "vitals": {
       "bp": "96/60 mmHg",

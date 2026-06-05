@@ -659,8 +659,61 @@ data class AiReviewSuggestionDto(
     val question: String,
     val reasoning: String,
     val confidence: String,
+    val phase: String? = "draft",
+    @SerialName("display_tier") val displayTier: String? = "timeline",
+    @SerialName("citation_ids") val citationIds: List<Long>? = null,
     @SerialName("clinician_response") val clinicianResponse: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class VisitCriticalAlertDto(
+    val id: String,
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("rule_slug") val ruleSlug: String,
+    @SerialName("confirm_question") val confirmQuestion: String,
+    @SerialName("clinical_prompt") val clinicalPrompt: String,
+    @SerialName("library_slug") val librarySlug: String? = null,
+    @SerialName("clinician_response") val clinicianResponse: String? = null,
+)
+
+@Serializable
+data class UpsertCriticalAlertRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_rule_slug") val ruleSlug: String,
+    @SerialName("p_confirm_question") val confirmQuestion: String,
+    @SerialName("p_clinical_prompt") val clinicalPrompt: String,
+    @SerialName("p_library_slug") val librarySlug: String? = null,
+)
+
+@Serializable
+data class RecordCriticalAlertResponseRequest(
+    @SerialName("p_alert_id") val alertId: String,
+    @SerialName("p_response") val response: String,
+)
+
+@Serializable
+data class CmeModuleDto(
+    val id: String,
+    val slug: String,
+    val title: String,
+    val description: String? = null,
+    @SerialName("display_order") val displayOrder: Int = 0,
+)
+
+@Serializable
+data class StartConsultRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_redacted_snapshot") val redactedSnapshot: kotlinx.serialization.json.JsonObject,
+)
+
+@Serializable
+data class ConsultThreadListItemDto(
+    @SerialName("thread_id") val threadId: String,
+    @SerialName("visit_id") val visitId: String,
+    val status: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("read_only") val readOnly: Boolean = false,
 )
 
 @Serializable
@@ -820,4 +873,39 @@ data class ActivateClinicalProtocolRequest(
 data class RequestDraftAiAssistRequest(
     @SerialName("p_visit_id") val visitId: String,
     @SerialName("p_sections_snapshot") val sectionsSnapshot: String? = null,
+)
+
+@Serializable
+data class CreateReferralRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_from_department") val fromDepartment: String = "opd",
+    @SerialName("p_to_facility") val toFacility: String,
+    @SerialName("p_urgency") val urgency: String,
+    @SerialName("p_reason") val reason: String,
+    @SerialName("p_clinical_summary") val clinicalSummary: String? = null,
+    @SerialName("p_transport_mode") val transportMode: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ReferralTodayRowDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("to_facility") val toFacility: String,
+    val urgency: String,
+    val reason: String,
+    @SerialName("clinical_summary") val clinicalSummary: String? = null,
+    @SerialName("transport_mode") val transportMode: String? = null,
+    val status: String,
+    @SerialName("created_at") val createdAt: String,
+)
+
+@Serializable
+data class ListReferralsTodayRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
 )

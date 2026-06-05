@@ -107,7 +107,7 @@ function LabRowItem({ row, last }: { row: LabRow; last: boolean }) {
       )}
     >
       <div>
-        <Link href={`/dashboard/visits/${row.id}`} className="font-semibold hover:underline block">
+        <Link href={`/dashboard/patients/${row.patient.id}`} className="font-semibold hover:underline block">
           {fullName}
         </Link>
         <div className="text-[11px] text-muted-foreground font-mono">{meta}</div>
