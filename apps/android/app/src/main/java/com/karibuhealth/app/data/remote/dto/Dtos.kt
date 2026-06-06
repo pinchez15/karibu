@@ -996,3 +996,21 @@ data class AdmissionObservationDto(
     @SerialName("imci_lethargic_unconscious") val imciLethargicUnconscious: Boolean = false,
     val note: String? = null,
 )
+
+// ── Region outbreak protocols (migration 052) ──────────────────────────────
+// The clinic reads its active region-scoped protocols (e.g. ebola) on refresh
+// and gates outbreak clinical-decision-support on them.
+
+@Serializable
+data class ActiveProtocolsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+@Serializable
+data class ActiveProtocolDto(
+    @SerialName("protocol") val protocol: String,
+    @SerialName("scope_type") val scopeType: String,
+    @SerialName("scope_value") val scopeValue: String,
+    @SerialName("note") val note: String? = null,
+    @SerialName("activated_at") val activatedAt: String? = null,
+)

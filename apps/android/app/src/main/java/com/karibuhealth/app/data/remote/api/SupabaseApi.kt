@@ -282,6 +282,11 @@ interface SupabaseApi {
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 
+    // Region outbreak protocols (migration 052) — active protocols for this
+    // clinic, matched on its district/diocese. Read on refresh to gate CDS.
+    @POST("rpc/rpc_active_protocols_for_clinic")
+    suspend fun rpcActiveProtocolsForClinic(@Body request: ActiveProtocolsRequest): List<ActiveProtocolDto>
+
     @POST("rpc/rpc_request_draft_ai_assist")
     suspend fun rpcRequestDraftAiAssist(@Body request: RequestDraftAiAssistRequest): kotlinx.serialization.json.JsonObject
 
