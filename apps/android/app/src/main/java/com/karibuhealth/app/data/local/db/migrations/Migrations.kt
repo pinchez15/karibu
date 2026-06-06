@@ -3,6 +3,58 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v16 -> v17: inpatient treatment chart (migration 054 mirror). Two new local
+// tables for medication orders and the append-only administration record.
+// Additive; column set + index names match the @Entity declarations exactly.
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS medication_orders (
+                id TEXT NOT NULL PRIMARY KEY,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                drug_name TEXT NOT NULL,
+                dose TEXT,
+                route TEXT,
+                frequency TEXT,
+                instructions TEXT,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_medication_orders_admission_id_active " +
+                "ON medication_orders(admission_id, active)",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS medication_administrations (
+                id TEXT NOT NULL PRIMARY KEY,
+                order_id TEXT NOT NULL,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                not_given_reason TEXT,
+                administered_at TEXT NOT NULL,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_medication_administrations_order_id_administered_at " +
+                "ON medication_administrations(order_id, administered_at)",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_medication_administrations_admission_id_administered_at " +
+                "ON medication_administrations(admission_id, administered_at)",
+        )
+    }
+}
+
 // v15 -> v16: inpatient ward spine (migration 053 mirror). Two new local tables
 // so admissions and rounds observations cache offline — the ward census and the
 // 2am no-signal admission both need to work without a connection. Strictly

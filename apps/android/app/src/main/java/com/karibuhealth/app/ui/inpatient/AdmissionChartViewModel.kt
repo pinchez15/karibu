@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
+import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
+import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.repository.InpatientRepository
 import com.karibuhealth.app.domain.InpatientDangerSigns
 import com.karibuhealth.app.domain.ObservationRangeCheck
@@ -30,6 +32,9 @@ data class AdmissionChartUiState(
     val savedTick: Int = 0,
     // Danger signs tripped by the most recent observation (on-device, no AI).
     val dangerFindings: List<InpatientDangerSigns.Finding> = emptyList(),
+    // Treatment chart (migration 054).
+    val medicationOrders: List<MedicationOrderEntity> = emptyList(),
+    val medicationAdmins: List<MedicationAdministrationEntity> = emptyList(),
     val error: String? = null,
 )
 
@@ -77,6 +82,63 @@ class AdmissionChartViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { inpatientRepository.refreshObservations(admissionId) }
+        viewModelScope.launch {
+            inpatientRepository.observeMedicationOrders(admissionId).collect { orders ->
+                _state.update { it.copy(medicationOrders = orders) }
+            }
+        }
+        viewModelScope.launch {
+            inpatientRepository.observeMedicationAdmins(admissionId).collect { admins ->
+                _state.update { it.copy(medicationAdmins = admins) }
+            }
+        }
+        viewModelScope.launch { inpatientRepository.refreshMedications(admissionId) }
+    }
+
+    fun addMedicationOrder(
+        drugName: String,
+        dose: String?,
+        route: String?,
+        frequency: String?,
+        instructions: String?,
+    ) {
+        val admission = _state.value.admission ?: return
+        if (drugName.isBlank()) return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.addMedicationOrder(
+                    clinicId = clinicId,
+                    admissionId = admissionId,
+                    patientId = admission.patientId,
+                    drugName = drugName,
+                    dose = dose,
+                    route = route,
+                    frequency = frequency,
+                    instructions = instructions,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun stopMedicationOrder(orderId: String) {
+        viewModelScope.launch { runCatching { inpatientRepository.stopMedicationOrder(orderId) } }
+    }
+
+    fun recordDose(orderId: String, given: Boolean, notGivenReason: String? = null) {
+        val admission = _state.value.admission ?: return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.recordMedicationAdmin(
+                    clinicId = clinicId,
+                    admissionId = admissionId,
+                    orderId = orderId,
+                    given = given,
+                    notGivenReason = notGivenReason,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
     }
 
     /** Re-evaluate danger signs from the most recent observation + patient age. */

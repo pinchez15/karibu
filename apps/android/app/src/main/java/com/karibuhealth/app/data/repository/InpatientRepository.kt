@@ -3,14 +3,22 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.AdmissionCensusRow
 import com.karibuhealth.app.data.local.db.dao.AdmissionDao
 import com.karibuhealth.app.data.local.db.dao.AdmissionObservationDao
+import com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
+import com.karibuhealth.app.data.local.db.dao.MedicationOrderDao
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
+import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
+import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
+import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
+import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionObservationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
+import com.karibuhealth.app.data.remote.dto.RecordMedicationAdminRequest
+import com.karibuhealth.app.data.remote.dto.StopMedicationOrderRequest
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +40,8 @@ import javax.inject.Singleton
 class InpatientRepository @Inject constructor(
     private val admissionDao: AdmissionDao,
     private val admissionObservationDao: AdmissionObservationDao,
+    private val medicationOrderDao: MedicationOrderDao,
+    private val medicationAdministrationDao: MedicationAdministrationDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -267,6 +277,141 @@ class InpatientRepository @Inject constructor(
             )
         }
         obsId
+    }
+
+    // ── Treatment chart (migration 054) ────────────────────────────────────
+
+    fun observeMedicationOrders(admissionId: String): Flow<List<MedicationOrderEntity>> =
+        medicationOrderDao.observeForAdmission(admissionId)
+
+    fun observeMedicationAdmins(admissionId: String): Flow<List<MedicationAdministrationEntity>> =
+        medicationAdministrationDao.observeForAdmission(admissionId)
+
+    suspend fun refreshMedications(admissionId: String) {
+        if (!networkMonitor.isOnline()) return
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val orders = supabaseApi.rpcAdmissionMedicationOrders(AdmissionMedicationsRequest(admissionId))
+                medicationOrderDao.upsertAll(
+                    orders.map {
+                        MedicationOrderEntity(
+                            id = it.id, admissionId = it.admissionId, clinicId = it.clinicId,
+                            patientId = it.patientId, drugName = it.drugName, dose = it.dose,
+                            route = it.route, frequency = it.frequency, instructions = it.instructions,
+                            active = it.active, createdAt = it.createdAt, isSynced = true,
+                        )
+                    },
+                )
+            }
+            runCatching {
+                val admins = supabaseApi.rpcAdmissionMedicationAdmins(AdmissionMedicationsRequest(admissionId))
+                medicationAdministrationDao.upsertAll(
+                    admins.map {
+                        MedicationAdministrationEntity(
+                            id = it.id, orderId = it.orderId, admissionId = it.admissionId,
+                            clinicId = it.clinicId, status = it.status, notGivenReason = it.notGivenReason,
+                            administeredAt = it.administeredAt, isSynced = true,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    suspend fun addMedicationOrder(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+        drugName: String,
+        dose: String?,
+        route: String?,
+        frequency: String?,
+        instructions: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val orderId = UUID.randomUUID().toString()
+        val entity = MedicationOrderEntity(
+            id = orderId, admissionId = admissionId, clinicId = clinicId, patientId = patientId,
+            drugName = drugName.trim(), dose = dose?.takeIf { it.isNotBlank() },
+            route = route?.takeIf { it.isNotBlank() }, frequency = frequency?.takeIf { it.isNotBlank() },
+            instructions = instructions?.takeIf { it.isNotBlank() }, active = true,
+            createdAt = Instant.now().toString(), isSynced = false,
+        )
+        val request = AddMedicationOrderRequest(
+            id = orderId, admissionId = admissionId, drugName = entity.drugName,
+            dose = entity.dose, route = entity.route, frequency = entity.frequency,
+            instructions = entity.instructions,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_add_medication_order",
+            entityType = "medication_order",
+            entityId = orderId,
+            payload = json.encodeToString(AddMedicationOrderRequest.serializer(), request.copy(clientOpId = orderId)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        medicationOrderDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcAddMedicationOrder(request.copy(clientOpId = orderId))
+            if (resp.isSuccessful) medicationOrderDao.markSynced(orderId)
+            else throw IllegalStateException("rpc_add_medication_order HTTP ${resp.code()}")
+        }
+        orderId
+    }
+
+    suspend fun stopMedicationOrder(orderId: String) = withContext(Dispatchers.IO) {
+        medicationOrderDao.deactivateLocal(orderId)
+        val request = StopMedicationOrderRequest(orderId = orderId)
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_stop_medication_order",
+            entityType = "medication_order",
+            entityId = orderId,
+            payload = json.encodeToString(StopMedicationOrderRequest.serializer(), request.copy(clientOpId = orderId)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcStopMedicationOrder(request.copy(clientOpId = orderId))
+            if (resp.isSuccessful) medicationOrderDao.markSynced(orderId)
+            else throw IllegalStateException("rpc_stop_medication_order HTTP ${resp.code()}")
+        }
+        Unit
+    }
+
+    /** Record a drug-round entry: Given, or Not-given with an honest reason. */
+    suspend fun recordMedicationAdmin(
+        clinicId: String,
+        admissionId: String,
+        orderId: String,
+        given: Boolean,
+        notGivenReason: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val adminId = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val status = if (given) "given" else "not_given"
+        val entity = MedicationAdministrationEntity(
+            id = adminId, orderId = orderId, admissionId = admissionId, clinicId = clinicId,
+            status = status, notGivenReason = if (given) null else notGivenReason?.takeIf { it.isNotBlank() },
+            administeredAt = now, isSynced = false,
+        )
+        val request = RecordMedicationAdminRequest(
+            id = adminId, orderId = orderId, status = status,
+            notGivenReason = entity.notGivenReason, administeredAt = now,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_record_medication_admin",
+            entityType = "medication_administration",
+            entityId = adminId,
+            payload = json.encodeToString(RecordMedicationAdminRequest.serializer(), request.copy(clientOpId = adminId)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        medicationAdministrationDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcRecordMedicationAdmin(request.copy(clientOpId = adminId))
+            if (resp.isSuccessful) medicationAdministrationDao.markSynced(adminId)
+            else throw IllegalStateException("rpc_record_medication_admin HTTP ${resp.code()}")
+        }
+        adminId
     }
 
     /** Try the RPC immediately when online; otherwise (or on failure) enqueue the outbox row. */

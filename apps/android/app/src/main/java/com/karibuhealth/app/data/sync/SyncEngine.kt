@@ -25,6 +25,8 @@ class SyncEngine @Inject constructor(
     private val referralDao: ReferralDao,
     private val admissionDao: AdmissionDao,
     private val admissionObservationDao: AdmissionObservationDao,
+    private val medicationOrderDao: MedicationOrderDao,
+    private val medicationAdministrationDao: MedicationAdministrationDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
@@ -194,6 +196,9 @@ class SyncEngine @Inject constructor(
             "rpc_create_referral" -> syncCreateReferral(entry)
             "rpc_admit_patient_v2" -> syncAdmitPatientV2(entry)
             "rpc_record_admission_observation" -> syncRecordAdmissionObservation(entry)
+            "rpc_add_medication_order" -> syncAddMedicationOrder(entry)
+            "rpc_stop_medication_order" -> syncStopMedicationOrder(entry)
+            "rpc_record_medication_admin" -> syncRecordMedicationAdmin(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -659,6 +664,39 @@ class SyncEngine @Inject constructor(
             )
         }
         admissionObservationDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncAddMedicationOrder(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(AddMedicationOrderRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcAddMedicationOrder(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_add_medication_order HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        medicationOrderDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncStopMedicationOrder(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StopMedicationOrderRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcStopMedicationOrder(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_stop_medication_order HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        medicationOrderDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordMedicationAdmin(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordMedicationAdminRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordMedicationAdmin(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_medication_admin HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        medicationAdministrationDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {

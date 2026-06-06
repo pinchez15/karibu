@@ -1014,3 +1014,64 @@ data class ActiveProtocolDto(
     @SerialName("note") val note: String? = null,
     @SerialName("activated_at") val activatedAt: String? = null,
 )
+
+// ── Inpatient treatment chart (migration 054) ──────────────────────────────
+
+@Serializable
+data class AddMedicationOrderRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_drug_name") val drugName: String,
+    @SerialName("p_dose") val dose: String? = null,
+    @SerialName("p_route") val route: String? = null,
+    @SerialName("p_frequency") val frequency: String? = null,
+    @SerialName("p_instructions") val instructions: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class StopMedicationOrderRequest(
+    @SerialName("p_order_id") val orderId: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordMedicationAdminRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_order_id") val orderId: String,
+    @SerialName("p_status") val status: String,
+    @SerialName("p_not_given_reason") val notGivenReason: String? = null,
+    @SerialName("p_administered_at") val administeredAt: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class AdmissionMedicationsRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class MedicationOrderDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("drug_name") val drugName: String,
+    val dose: String? = null,
+    val route: String? = null,
+    val frequency: String? = null,
+    val instructions: String? = null,
+    val active: Boolean = true,
+    @SerialName("created_at") val createdAt: String,
+)
+
+@Serializable
+data class MedicationAdministrationDto(
+    val id: String,
+    @SerialName("order_id") val orderId: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    val status: String,
+    @SerialName("not_given_reason") val notGivenReason: String? = null,
+    @SerialName("administered_at") val administeredAt: String,
+)

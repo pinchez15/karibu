@@ -56,6 +56,8 @@ fun AdmissionChartScreen(
 ) {
     val s by viewModel.state.collectAsState()
     var showSheet by remember { mutableStateOf(false) }
+    var showAddMed by remember { mutableStateOf(false) }
+    var notGivenForOrder by remember { mutableStateOf<String?>(null) }
 
     // Close the record sheet only once a round actually saves.
     androidx.compose.runtime.LaunchedEffect(s.savedTick) {
@@ -74,58 +76,111 @@ fun AdmissionChartScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        val activeOrders = s.medicationOrders.filter { it.active }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             s.admission?.let { a ->
-                OutlinedCard(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        val meta = listOfNotNull(
-                            if (a.ward == "maternity") "Maternity" else "General",
-                            a.bedLabel?.let { "Bed $it" },
-                            a.weightKg?.let { "${it} kg" },
-                        ).joinToString(" · ")
-                        Text(meta, fontWeight = FontWeight.Medium)
-                        a.chiefComplaint?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                        if (!a.isSynced) {
-                            Text(
-                                "Saved on device — will sync when online.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                item(key = "header") {
+                    OutlinedCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            val meta = listOfNotNull(
+                                if (a.ward == "maternity") "Maternity" else "General",
+                                a.bedLabel?.let { "Bed $it" },
+                                a.weightKg?.let { "${it} kg" },
+                            ).joinToString(" · ")
+                            Text(meta, fontWeight = FontWeight.Medium)
+                            a.chiefComplaint?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                            if (!a.isSynced) {
+                                Text(
+                                    "Saved on device — will sync when online.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
             }
 
             if (s.dangerFindings.isNotEmpty()) {
-                DangerSignBanner(findings = s.dangerFindings)
+                item(key = "danger") { DangerSignBanner(findings = s.dangerFindings) }
             }
 
-            Button(
-                onClick = { showSheet = true },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            ) { Text("Record observation") }
-
-            Text(
-                "Rounds",
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-            )
-            if (s.observations.isEmpty()) {
-                Text(
-                    "No observations yet.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp),
-                )
-            } else {
-                LazyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+            // ── Treatment ───────────────────────────────────────────────────
+            item(key = "tx-header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 ) {
-                    items(s.observations, key = { it.id }) { obs -> ObservationRow(obs) }
+                    Text("Treatment", style = MaterialTheme.typography.labelLarge)
+                    TextButton(onClick = { showAddMed = true }) { Text("Add medication") }
                 }
             }
+            if (activeOrders.isEmpty()) {
+                item(key = "tx-empty") {
+                    Text(
+                        "No active medications.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items(activeOrders, key = { "order-${it.id}" }) { order ->
+                    MedicationOrderCard(
+                        order = order,
+                        lastAdmin = s.medicationAdmins.firstOrNull { it.orderId == order.id },
+                        onGive = { viewModel.recordDose(order.id, given = true) },
+                        onNotGiven = { notGivenForOrder = order.id },
+                        onStop = { viewModel.stopMedicationOrder(order.id) },
+                    )
+                }
+            }
+
+            item(key = "record-obs") {
+                Button(onClick = { showSheet = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Record observation")
+                }
+            }
+            item(key = "rounds-header") {
+                Text("Rounds", style = MaterialTheme.typography.labelLarge)
+            }
+            if (s.observations.isEmpty()) {
+                item(key = "rounds-empty") {
+                    Text(
+                        "No observations yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items(s.observations, key = { "obs-${it.id}" }) { obs -> ObservationRow(obs) }
+            }
         }
+    }
+
+    if (showAddMed) {
+        AddMedicationSheet(
+            onDismiss = { showAddMed = false },
+            onAdd = { drug, dose, route, freq, instr ->
+                viewModel.addMedicationOrder(drug, dose, route, freq, instr)
+                showAddMed = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        )
+    }
+
+    notGivenForOrder?.let { orderId ->
+        NotGivenReasonDialog(
+            onDismiss = { notGivenForOrder = null },
+            onPick = { reason ->
+                viewModel.recordDose(orderId, given = false, notGivenReason = reason)
+                notGivenForOrder = null
+            },
+        )
     }
 
     if (showSheet) {
@@ -161,9 +216,129 @@ fun AdmissionChartScreen(
 }
 
 @Composable
+private fun MedicationOrderCard(
+    order: com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity,
+    lastAdmin: com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity?,
+    onGive: () -> Unit,
+    onNotGiven: () -> Unit,
+    onStop: () -> Unit,
+) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val detail = listOfNotNull(order.dose, order.route, order.frequency)
+                .filter { it.isNotBlank() }.joinToString(" · ")
+            Text(order.drugName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            if (detail.isNotBlank()) {
+                Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            order.instructions?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            // Last round outcome — "not given (stockout)" is shown as honestly as "given".
+            lastAdmin?.let { a ->
+                val label = if (a.status == "given") {
+                    "Last: given ${timeAgo(a.administeredAt)}"
+                } else {
+                    "Last: not given (${a.notGivenReason ?: "—"}) ${timeAgo(a.administeredAt)}"
+                }
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (a.status == "given") MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.error,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Button(onClick = onGive) { Text("Give") }
+                androidx.compose.material3.OutlinedButton(onClick = onNotGiven) { Text("Not given") }
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                TextButton(onClick = onStop) { Text("Stop") }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddMedicationSheet(
+    onDismiss: () -> Unit,
+    onAdd: (String, String?, String?, String?, String?) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    var drug by remember { mutableStateOf("") }
+    var dose by remember { mutableStateOf("") }
+    var route by remember { mutableStateOf("") }
+    var freq by remember { mutableStateOf("") }
+    var instr by remember { mutableStateOf("") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Add medication", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            OutlinedTextField(
+                value = drug, onValueChange = { drug = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Drug") }, singleLine = true,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = dose, onValueChange = { dose = it },
+                    modifier = Modifier.weight(1f), label = { Text("Dose") }, singleLine = true,
+                )
+                OutlinedTextField(
+                    value = route, onValueChange = { route = it },
+                    modifier = Modifier.weight(1f), label = { Text("Route") }, singleLine = true,
+                )
+                OutlinedTextField(
+                    value = freq, onValueChange = { freq = it },
+                    modifier = Modifier.weight(1f), label = { Text("Freq") }, singleLine = true,
+                )
+            }
+            OutlinedTextField(
+                value = instr, onValueChange = { instr = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Instructions (optional)") },
+            )
+            Button(
+                onClick = { onAdd(drug, dose.ifBlank { null }, route.ifBlank { null }, freq.ifBlank { null }, instr.ifBlank { null }) },
+                enabled = drug.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Add to chart") }
+        }
+    }
+}
+
+@Composable
+private fun NotGivenReasonDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    val reasons = listOf("Out of stock", "Refused", "Nil by mouth", "Patient absent", "Other")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Why not given?") },
+        text = {
+            Column {
+                reasons.forEach { r ->
+                    TextButton(
+                        onClick = { onPick(r) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(r, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
 private fun DangerSignBanner(findings: List<InpatientDangerSigns.Finding>) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
