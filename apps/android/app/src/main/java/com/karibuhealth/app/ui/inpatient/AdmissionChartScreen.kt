@@ -1,6 +1,8 @@
 package com.karibuhealth.app.ui.inpatient
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -61,6 +63,7 @@ fun AdmissionChartScreen(
     var notGivenForOrder by remember { mutableStateOf<String?>(null) }
     var showDischarge by remember { mutableStateOf(false) }
     var showRefer by remember { mutableStateOf(false) }
+    var showDelivery by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
 
     // Close the record sheet only once a round actually saves.
@@ -133,6 +136,21 @@ fun AdmissionChartScreen(
 
             if (s.dangerFindings.isNotEmpty()) {
                 item(key = "danger") { DangerSignBanner(findings = s.dangerFindings) }
+            }
+
+            // ── Maternal danger alerts (with first-response checklists) ──────
+            items(s.maternalAlerts, key = { "maternal-${it.slug}" }) { alert ->
+                MaternalAlertBanner(alert)
+            }
+
+            // ── Maternity: delivery record ──────────────────────────────────
+            if (s.admission?.ward == "maternity") {
+                item(key = "delivery") {
+                    DeliverySummaryCard(
+                        delivery = s.delivery,
+                        onRecord = { showDelivery = true },
+                    )
+                }
             }
 
             // ── Treatment ───────────────────────────────────────────────────
@@ -226,6 +244,20 @@ fun AdmissionChartScreen(
             onRefer = { facility, urgency, reason, transport ->
                 viewModel.refer(facility, urgency, reason, transport)
                 showRefer = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        )
+    }
+
+    if (showDelivery) {
+        DeliverySheet(
+            existing = s.delivery,
+            onDismiss = { showDelivery = false },
+            onSave = { mode, outcome, sex, weight, ap1, ap5, oxy, loss, placenta, resus, vitK, bf, notes ->
+                viewModel.recordDelivery(
+                    mode, outcome, sex, weight, ap1, ap5, oxy, loss, placenta, resus, vitK, bf, notes,
+                )
+                showDelivery = false
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         )
@@ -471,6 +503,170 @@ private fun ReferOutSheet(
                 enabled = facility.isNotBlank() && reason.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Create referral") }
+        }
+    }
+}
+
+@Composable
+private fun MaternalAlertBanner(alert: com.karibuhealth.app.domain.MaternalDangerSigns.Alert) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                alert.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error,
+            )
+            alert.steps.forEachIndexed { i, step ->
+                Text(
+                    "${i + 1}. $step",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeliverySummaryCard(
+    delivery: com.karibuhealth.app.data.local.db.entity.DeliveryEntity?,
+    onRecord: () -> Unit,
+) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Text("Delivery", style = MaterialTheme.typography.labelLarge)
+                TextButton(onClick = onRecord) { Text(if (delivery == null) "Record" else "Edit") }
+            }
+            if (delivery == null) {
+                Text(
+                    "No delivery recorded.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val line = listOfNotNull(
+                    delivery.mode,
+                    delivery.outcome,
+                    delivery.babySex,
+                    delivery.birthWeightG?.let { "${it} g" },
+                    if (delivery.apgar1 != null || delivery.apgar5 != null) "APGAR ${delivery.apgar1 ?: "—"}/${delivery.apgar5 ?: "—"}" else null,
+                    delivery.bloodLossMl?.let { "EBL ${it} ml" },
+                ).joinToString(" · ")
+                if (line.isNotBlank()) Text(line, style = MaterialTheme.typography.bodyMedium)
+                val flags = listOfNotNull(
+                    if (delivery.oxytocinGiven) "oxytocin" else null,
+                    if (delivery.resuscitationDone) "resuscitated" else null,
+                    if (delivery.vitaminKGiven) "vit K" else null,
+                    if (delivery.earlyBreastfeeding) "early BF" else null,
+                ).joinToString(", ")
+                if (flags.isNotBlank()) {
+                    Text(flags, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun DeliverySheet(
+    existing: com.karibuhealth.app.data.local.db.entity.DeliveryEntity?,
+    onDismiss: () -> Unit,
+    onSave: (String?, String?, String?, Int?, Int?, Int?, Boolean, Int?, Boolean?, Boolean, Boolean, Boolean, String?) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    var mode by remember { mutableStateOf(existing?.mode) }
+    var outcome by remember { mutableStateOf(existing?.outcome) }
+    var sex by remember { mutableStateOf(existing?.babySex) }
+    var weight by remember { mutableStateOf(existing?.birthWeightG?.toString() ?: "") }
+    var ap1 by remember { mutableStateOf(existing?.apgar1?.toString() ?: "") }
+    var ap5 by remember { mutableStateOf(existing?.apgar5?.toString() ?: "") }
+    var loss by remember { mutableStateOf(existing?.bloodLossMl?.toString() ?: "") }
+    var oxytocin by remember { mutableStateOf(existing?.oxytocinGiven ?: false) }
+    var placenta by remember { mutableStateOf(existing?.placentaComplete ?: false) }
+    var resus by remember { mutableStateOf(existing?.resuscitationDone ?: false) }
+    var vitK by remember { mutableStateOf(existing?.vitaminKGiven ?: false) }
+    var breastfeeding by remember { mutableStateOf(existing?.earlyBreastfeeding ?: false) }
+    var notes by remember { mutableStateOf(existing?.notes ?: "") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .padding(bottom = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Delivery record", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+
+            Text("Mode", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("svd" to "SVD", "assisted" to "Assisted", "breech" to "Breech", "referred_for_cs" to "Referred (CS)").forEach { (v, l) ->
+                    FilterChip(selected = mode == v, onClick = { mode = v }, label = { Text(l) })
+                }
+            }
+            Text("Outcome", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("live" to "Live birth", "stillbirth" to "Stillbirth").forEach { (v, l) ->
+                    FilterChip(selected = outcome == v, onClick = { outcome = v }, label = { Text(l) })
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Female" to "F", "Male" to "M").forEach { (v, l) ->
+                    FilterChip(selected = sex == v, onClick = { sex = v }, label = { Text("Baby $l") })
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(weight, { weight = it }, "Birth wt (g)", Modifier.weight(1f))
+                NumField(ap1, { ap1 = it }, "APGAR 1", Modifier.weight(1f))
+                NumField(ap5, { ap5 = it }, "APGAR 5", Modifier.weight(1f))
+            }
+
+            CheckRow("Oxytocin given (3rd stage)", oxytocin) { oxytocin = it }
+            NumField(loss, { loss = it }, "Blood loss (ml)", Modifier.fillMaxWidth())
+            CheckRow("Placenta complete", placenta) { placenta = it }
+            CheckRow("Newborn needed resuscitation", resus) { resus = it }
+
+            if (resus) {
+                // Helping Babies Breathe — the golden-minute prompt.
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            com.karibuhealth.app.domain.MaternalDangerSigns.HELPING_BABIES_BREATHE.title,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        com.karibuhealth.app.domain.MaternalDangerSigns.HELPING_BABIES_BREATHE.steps.forEachIndexed { i, step ->
+                            Text("${i + 1}. $step", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                    }
+                }
+            }
+
+            CheckRow("Vitamin K given", vitK) { vitK = it }
+            CheckRow("Early breastfeeding", breastfeeding) { breastfeeding = it }
+            OutlinedTextField(value = notes, onValueChange = { notes = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Notes (optional)") })
+
+            Button(
+                onClick = {
+                    onSave(
+                        mode, outcome, sex, weight.toIntOrNull(), ap1.toIntOrNull(), ap5.toIntOrNull(),
+                        oxytocin, loss.toIntOrNull(), placenta, resus, vitK, breastfeeding, notes.ifBlank { null },
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Save delivery") }
         }
     }
 }

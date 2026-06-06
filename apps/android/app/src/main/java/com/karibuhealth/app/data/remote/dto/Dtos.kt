@@ -1085,3 +1085,52 @@ data class DischargeAdmissionRequest(
     @SerialName("p_notes") val notes: String? = null,
     @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
+
+// ── Maternity delivery (migration 056) ─────────────────────────────────────
+@Serializable
+data class RecordDeliveryRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_mode") val mode: String? = null,
+    @SerialName("p_delivered_at") val deliveredAt: String? = null,
+    @SerialName("p_oxytocin_given") val oxytocinGiven: Boolean = false,
+    @SerialName("p_blood_loss_ml") val bloodLossMl: Int? = null,
+    @SerialName("p_placenta_complete") val placentaComplete: Boolean? = null,
+    @SerialName("p_outcome") val outcome: String? = null,
+    @SerialName("p_baby_sex") val babySex: String? = null,
+    @SerialName("p_birth_weight_g") val birthWeightG: Int? = null,
+    @SerialName("p_apgar_1") val apgar1: Int? = null,
+    @SerialName("p_apgar_5") val apgar5: Int? = null,
+    @SerialName("p_resuscitation_done") val resuscitationDone: Boolean = false,
+    @SerialName("p_vitamin_k_given") val vitaminKGiven: Boolean = false,
+    @SerialName("p_early_breastfeeding") val earlyBreastfeeding: Boolean = false,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class AdmissionDeliveryRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class DeliveryDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("delivered_at") val deliveredAt: String,
+    val mode: String? = null,
+    @SerialName("oxytocin_given") val oxytocinGiven: Boolean = false,
+    @SerialName("blood_loss_ml") val bloodLossMl: Int? = null,
+    @SerialName("placenta_complete") val placentaComplete: Boolean? = null,
+    val outcome: String? = null,
+    @SerialName("baby_sex") val babySex: String? = null,
+    @SerialName("birth_weight_g") val birthWeightG: Int? = null,
+    @SerialName("apgar_1") val apgar1: Int? = null,
+    @SerialName("apgar_5") val apgar5: Int? = null,
+    @SerialName("resuscitation_done") val resuscitationDone: Boolean = false,
+    @SerialName("vitamin_k_given") val vitaminKGiven: Boolean = false,
+    @SerialName("early_breastfeeding") val earlyBreastfeeding: Boolean = false,
+    val notes: String? = null,
+)

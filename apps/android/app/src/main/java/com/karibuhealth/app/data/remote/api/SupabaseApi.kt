@@ -303,6 +303,13 @@ interface SupabaseApi {
     @POST("rpc/rpc_discharge_admission")
     suspend fun rpcDischargeAdmission(@Body request: DischargeAdmissionRequest): Response<ResponseBody>
 
+    // Maternity delivery (migration 056).
+    @POST("rpc/rpc_record_delivery")
+    suspend fun rpcRecordDelivery(@Body request: RecordDeliveryRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_delivery")
+    suspend fun rpcAdmissionDelivery(@Body request: AdmissionDeliveryRequest): List<DeliveryDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

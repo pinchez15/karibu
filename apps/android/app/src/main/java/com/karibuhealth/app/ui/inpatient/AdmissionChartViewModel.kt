@@ -6,12 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
+import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.repository.InpatientRepository
 import com.karibuhealth.app.data.repository.ReferralRepository
 import com.karibuhealth.app.domain.model.ReferralUrgency
 import com.karibuhealth.app.domain.InpatientDangerSigns
+import com.karibuhealth.app.domain.MaternalDangerSigns
 import com.karibuhealth.app.domain.ObservationRangeCheck
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +39,9 @@ data class AdmissionChartUiState(
     // Treatment chart (migration 054).
     val medicationOrders: List<MedicationOrderEntity> = emptyList(),
     val medicationAdmins: List<MedicationAdministrationEntity> = emptyList(),
+    // Maternity (migration 056).
+    val delivery: DeliveryEntity? = null,
+    val maternalAlerts: List<MaternalDangerSigns.Alert> = emptyList(),
     // Set once the admission is discharged/transferred, so the UI navigates back.
     val closed: Boolean = false,
     val error: String? = null,
@@ -98,6 +103,46 @@ class AdmissionChartViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { inpatientRepository.refreshMedications(admissionId) }
+        viewModelScope.launch {
+            inpatientRepository.observeDelivery(admissionId).collect { delivery ->
+                _state.update { it.copy(delivery = delivery) }
+                recomputeDanger()
+            }
+        }
+        viewModelScope.launch { inpatientRepository.refreshDelivery(admissionId) }
+    }
+
+    fun recordDelivery(
+        mode: String?,
+        outcome: String?,
+        babySex: String?,
+        birthWeightG: Int?,
+        apgar1: Int?,
+        apgar5: Int?,
+        oxytocinGiven: Boolean,
+        bloodLossMl: Int?,
+        placentaComplete: Boolean?,
+        resuscitationDone: Boolean,
+        vitaminKGiven: Boolean,
+        earlyBreastfeeding: Boolean,
+        notes: String?,
+    ) {
+        val admission = _state.value.admission ?: return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.recordDelivery(
+                    clinicId = clinicId,
+                    admissionId = admissionId,
+                    patientId = admission.patientId,
+                    existingId = _state.value.delivery?.id,
+                    mode = mode, outcome = outcome, babySex = babySex, birthWeightG = birthWeightG,
+                    apgar1 = apgar1, apgar5 = apgar5, oxytocinGiven = oxytocinGiven, bloodLossMl = bloodLossMl,
+                    placentaComplete = placentaComplete, resuscitationDone = resuscitationDone,
+                    vitaminKGiven = vitaminKGiven, earlyBreastfeeding = earlyBreastfeeding, notes = notes,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
     }
 
     fun addMedicationOrder(
@@ -231,7 +276,26 @@ class AdmissionChartViewModel @Inject constructor(
                 ageYears = ageYears(st.admission?.dateOfBirth),
             )
         }
-        _state.update { it.copy(dangerFindings = findings) }
+
+        // Maternity: automatic maternal danger-sign evaluation from the latest
+        // obs (BP/pulse/AVPU) + the delivery's blood loss. Symptom-driven signs
+        // (eclampsia convulsions, headache/visual) are captured explicitly elsewhere.
+        val maternal = if (st.admission?.ward == "maternity") {
+            MaternalDangerSigns.evaluate(
+                MaternalDangerSigns.Input(
+                    bpSystolic = latest?.bpSystolic,
+                    bpDiastolic = latest?.bpDiastolic,
+                    pulseBpm = latest?.pulseBpm,
+                    convulsions = latest?.imciConvulsions == true,
+                    bloodLossMl = st.delivery?.bloodLossMl,
+                    postDelivery = st.delivery != null,
+                ),
+            )
+        } else {
+            emptyList()
+        }
+
+        _state.update { it.copy(dangerFindings = findings, maternalAlerts = maternal) }
     }
 
     private fun ageYears(dob: String?): Int? {
