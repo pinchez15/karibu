@@ -14,6 +14,7 @@ import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
 import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
+import com.karibuhealth.app.data.remote.dto.DischargeAdmissionRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionObservationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
@@ -412,6 +413,40 @@ class InpatientRepository @Inject constructor(
             else throw IllegalStateException("rpc_record_medication_admin HTTP ${resp.code()}")
         }
         adminId
+    }
+
+    // ── Discharge (migration 055) ──────────────────────────────────────────
+
+    /** Discharge an admission offline-first. It leaves the active census immediately. */
+    suspend fun dischargeAdmission(
+        admissionId: String,
+        outcome: String,
+        disposition: String?,
+        notes: String?,
+    ) = withContext(Dispatchers.IO) {
+        val status = if (disposition == "referred") "transferred" else "discharged"
+        admissionDao.dischargeLocal(
+            id = admissionId, status = status, outcome = outcome,
+            disposition = disposition, notes = notes?.takeIf { it.isNotBlank() },
+        )
+        val request = DischargeAdmissionRequest(
+            admissionId = admissionId, outcome = outcome,
+            disposition = disposition, notes = notes?.takeIf { it.isNotBlank() },
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_discharge_admission",
+            entityType = "admission",
+            entityId = admissionId,
+            payload = json.encodeToString(DischargeAdmissionRequest.serializer(), request.copy(clientOpId = admissionId)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcDischargeAdmission(request.copy(clientOpId = admissionId))
+            if (resp.isSuccessful) admissionDao.markSynced(admissionId)
+            else throw IllegalStateException("rpc_discharge_admission HTTP ${resp.code()}")
+        }
+        Unit
     }
 
     /** Try the RPC immediately when online; otherwise (or on failure) enqueue the outbox row. */

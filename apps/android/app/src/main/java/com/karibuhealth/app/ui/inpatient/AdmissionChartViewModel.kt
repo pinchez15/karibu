@@ -9,6 +9,8 @@ import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.repository.InpatientRepository
+import com.karibuhealth.app.data.repository.ReferralRepository
+import com.karibuhealth.app.domain.model.ReferralUrgency
 import com.karibuhealth.app.domain.InpatientDangerSigns
 import com.karibuhealth.app.domain.ObservationRangeCheck
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +37,8 @@ data class AdmissionChartUiState(
     // Treatment chart (migration 054).
     val medicationOrders: List<MedicationOrderEntity> = emptyList(),
     val medicationAdmins: List<MedicationAdministrationEntity> = emptyList(),
+    // Set once the admission is discharged/transferred, so the UI navigates back.
+    val closed: Boolean = false,
     val error: String? = null,
 )
 
@@ -57,6 +61,7 @@ data class ObservationInput(
 @HiltViewModel
 class AdmissionChartViewModel @Inject constructor(
     private val inpatientRepository: InpatientRepository,
+    private val referralRepository: ReferralRepository,
     private val authTokenStore: AuthTokenStore,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -139,6 +144,67 @@ class AdmissionChartViewModel @Inject constructor(
                 )
             }.onFailure { e -> _state.update { it.copy(error = e.message) } }
         }
+    }
+
+    /** Close the admission with an outcome; it leaves the census and we navigate back. */
+    fun discharge(outcome: String, disposition: String?, notes: String?) {
+        viewModelScope.launch {
+            runCatching {
+                inpatientRepository.dischargeAdmission(admissionId, outcome, disposition, notes)
+            }.onSuccess { _state.update { it.copy(closed = true) } }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    /** Refer the admitted patient out, reusing the existing (visit-less) referral flow. */
+    fun refer(toFacility: String, urgency: ReferralUrgency, reason: String, transportMode: String?) {
+        val admission = _state.value.admission ?: return
+        if (toFacility.isBlank()) return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                referralRepository.createReferral(
+                    clinicId = clinicId,
+                    patientId = admission.patientId,
+                    visitId = null,
+                    patientName = admission.patientName,
+                    fromDepartment = "inpatient",
+                    toFacility = toFacility,
+                    urgency = urgency,
+                    reason = reason,
+                    clinicalSummary = buildReferralSummary(),
+                    transportMode = transportMode,
+                    referredBy = null,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    /** Assemble an inpatient handover summary from the chart for the referral pack. */
+    private fun buildReferralSummary(): String {
+        val st = _state.value
+        val a = st.admission
+        val parts = mutableListOf<String>()
+        a?.let {
+            parts += "Admitted ${it.admittedAt.take(10)} to ${if (it.ward == "maternity") "maternity" else "general"} ward."
+            it.chiefComplaint?.takeIf { c -> c.isNotBlank() }?.let { c -> parts += "Reason: $c." }
+            it.weightKg?.let { w -> parts += "Weight ${w} kg." }
+        }
+        st.observations.firstOrNull()?.let { o ->
+            val vitals = listOfNotNull(
+                o.tempC?.let { "T ${it}°C" },
+                o.pulseBpm?.let { "HR $it" },
+                o.respRate?.let { "RR $it" },
+                if (o.bpSystolic != null && o.bpDiastolic != null) "BP ${o.bpSystolic}/${o.bpDiastolic}" else null,
+                o.spo2Pct?.let { "SpO₂ $it%" },
+                o.avpu?.let { "AVPU $it" },
+            ).joinToString(", ")
+            if (vitals.isNotBlank()) parts += "Last obs: $vitals."
+        }
+        val meds = st.medicationOrders.filter { it.active }
+            .joinToString(", ") { listOfNotNull(it.drugName, it.dose, it.frequency).joinToString(" ") }
+        if (meds.isNotBlank()) parts += "On: $meds."
+        return parts.joinToString("\n")
     }
 
     /** Re-evaluate danger signs from the most recent observation + patient age. */

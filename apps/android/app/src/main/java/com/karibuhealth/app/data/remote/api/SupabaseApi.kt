@@ -299,6 +299,10 @@ interface SupabaseApi {
         @Body request: AdmissionMedicationsRequest,
     ): List<MedicationAdministrationDto>
 
+    // Inpatient discharge (migration 055).
+    @POST("rpc/rpc_discharge_admission")
+    suspend fun rpcDischargeAdmission(@Body request: DischargeAdmissionRequest): Response<ResponseBody>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

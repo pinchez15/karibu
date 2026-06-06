@@ -1075,3 +1075,13 @@ data class MedicationAdministrationDto(
     @SerialName("not_given_reason") val notGivenReason: String? = null,
     @SerialName("administered_at") val administeredAt: String,
 )
+
+// ── Inpatient discharge (migration 055) ────────────────────────────────────
+@Serializable
+data class DischargeAdmissionRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_outcome") val outcome: String,
+    @SerialName("p_disposition") val disposition: String? = null,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
