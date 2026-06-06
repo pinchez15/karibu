@@ -3,6 +3,43 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v19 -> v20: postnatal observations (migration 057 mirror). One new local
+// table for mother/newborn postnatal rounds; column set + index name match the
+// @Entity exactly.
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS postnatal_observations (
+                id TEXT NOT NULL PRIMARY KEY,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                observed_at TEXT NOT NULL,
+                temp_c REAL,
+                pulse_bpm INTEGER,
+                resp_rate INTEGER,
+                bp_systolic INTEGER,
+                bp_diastolic INTEGER,
+                bleeding TEXT,
+                fundus_firm INTEGER,
+                feeding_well INTEGER,
+                not_feeding INTEGER NOT NULL DEFAULT 0,
+                convulsions INTEGER NOT NULL DEFAULT 0,
+                jaundice INTEGER NOT NULL DEFAULT 0,
+                note TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_postnatal_observations_admission_id_observed_at " +
+                "ON postnatal_observations(admission_id, observed_at)",
+        )
+    }
+}
+
 // v18 -> v19: maternity delivery record (migration 056 mirror). One new local
 // table; column set + the unique admission_id index match the @Entity exactly.
 val MIGRATION_18_19 = object : Migration(18, 19) {

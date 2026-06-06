@@ -6,23 +6,27 @@ import com.karibuhealth.app.data.local.db.dao.AdmissionObservationDao
 import com.karibuhealth.app.data.local.db.dao.DeliveryDao
 import com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
 import com.karibuhealth.app.data.local.db.dao.MedicationOrderDao
+import com.karibuhealth.app.data.local.db.dao.PostnatalObservationDao
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
 import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
+import com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
 import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
+import com.karibuhealth.app.data.remote.dto.AdmissionPostnatalRequest
 import com.karibuhealth.app.data.remote.dto.DischargeAdmissionRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionObservationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
 import com.karibuhealth.app.data.remote.dto.RecordDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.RecordMedicationAdminRequest
+import com.karibuhealth.app.data.remote.dto.RecordPostnatalObsRequest
 import com.karibuhealth.app.data.remote.dto.StopMedicationOrderRequest
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
@@ -48,6 +52,7 @@ class InpatientRepository @Inject constructor(
     private val medicationOrderDao: MedicationOrderDao,
     private val medicationAdministrationDao: MedicationAdministrationDao,
     private val deliveryDao: DeliveryDao,
+    private val postnatalObservationDao: PostnatalObservationDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -529,6 +534,83 @@ class InpatientRepository @Inject constructor(
             val resp = supabaseApi.rpcRecordDelivery(request.copy(clientOpId = id))
             if (resp.isSuccessful) deliveryDao.markSynced(id)
             else throw IllegalStateException("rpc_record_delivery HTTP ${resp.code()}")
+        }
+        id
+    }
+
+    // ── Postnatal observations (migration 057) ─────────────────────────────
+
+    fun observePostnatal(admissionId: String): Flow<List<PostnatalObservationEntity>> =
+        postnatalObservationDao.observeForAdmission(admissionId)
+
+    suspend fun refreshPostnatal(admissionId: String) {
+        if (!networkMonitor.isOnline()) return
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val rows = supabaseApi.rpcAdmissionPostnatalObs(AdmissionPostnatalRequest(admissionId))
+                postnatalObservationDao.upsertAll(
+                    rows.map {
+                        PostnatalObservationEntity(
+                            id = it.id, admissionId = it.admissionId, clinicId = it.clinicId,
+                            patientId = it.patientId, subject = it.subject, observedAt = it.observedAt,
+                            tempC = it.tempC, pulseBpm = it.pulseBpm, respRate = it.respRate,
+                            bpSystolic = it.bpSystolic, bpDiastolic = it.bpDiastolic, bleeding = it.bleeding,
+                            fundusFirm = it.fundusFirm, feedingWell = it.feedingWell, notFeeding = it.notFeeding,
+                            convulsions = it.convulsions, jaundice = it.jaundice, note = it.note, isSynced = true,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    suspend fun recordPostnatalObs(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+        subject: String,
+        tempC: Double?,
+        pulseBpm: Int?,
+        respRate: Int?,
+        bpSystolic: Int?,
+        bpDiastolic: Int?,
+        bleeding: String?,
+        fundusFirm: Boolean?,
+        feedingWell: Boolean?,
+        notFeeding: Boolean,
+        convulsions: Boolean,
+        jaundice: Boolean,
+        note: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val id = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val entity = PostnatalObservationEntity(
+            id = id, admissionId = admissionId, clinicId = clinicId, patientId = patientId,
+            subject = subject, observedAt = now, tempC = tempC, pulseBpm = pulseBpm, respRate = respRate,
+            bpSystolic = bpSystolic, bpDiastolic = bpDiastolic, bleeding = bleeding?.takeIf { it.isNotBlank() },
+            fundusFirm = fundusFirm, feedingWell = feedingWell, notFeeding = notFeeding,
+            convulsions = convulsions, jaundice = jaundice, note = note?.takeIf { it.isNotBlank() }, isSynced = false,
+        )
+        val request = RecordPostnatalObsRequest(
+            id = id, admissionId = admissionId, subject = subject, observedAt = now,
+            tempC = tempC, pulseBpm = pulseBpm, respRate = respRate, bpSystolic = bpSystolic,
+            bpDiastolic = bpDiastolic, bleeding = entity.bleeding, fundusFirm = fundusFirm,
+            feedingWell = feedingWell, notFeeding = notFeeding, convulsions = convulsions,
+            jaundice = jaundice, note = entity.note,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_record_postnatal_obs",
+            entityType = "postnatal_observation",
+            entityId = id,
+            payload = json.encodeToString(RecordPostnatalObsRequest.serializer(), request.copy(clientOpId = id)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        postnatalObservationDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcRecordPostnatalObs(request.copy(clientOpId = id))
+            if (resp.isSuccessful) postnatalObservationDao.markSynced(id)
+            else throw IllegalStateException("rpc_record_postnatal_obs HTTP ${resp.code()}")
         }
         id
     }

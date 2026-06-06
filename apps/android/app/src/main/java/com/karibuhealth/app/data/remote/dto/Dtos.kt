@@ -1134,3 +1134,52 @@ data class DeliveryDto(
     @SerialName("early_breastfeeding") val earlyBreastfeeding: Boolean = false,
     val notes: String? = null,
 )
+
+// ── Postnatal observations (migration 057) ─────────────────────────────────
+@Serializable
+data class RecordPostnatalObsRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_subject") val subject: String,
+    @SerialName("p_observed_at") val observedAt: String? = null,
+    @SerialName("p_temp_c") val tempC: Double? = null,
+    @SerialName("p_pulse_bpm") val pulseBpm: Int? = null,
+    @SerialName("p_resp_rate") val respRate: Int? = null,
+    @SerialName("p_bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("p_bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("p_bleeding") val bleeding: String? = null,
+    @SerialName("p_fundus_firm") val fundusFirm: Boolean? = null,
+    @SerialName("p_feeding_well") val feedingWell: Boolean? = null,
+    @SerialName("p_not_feeding") val notFeeding: Boolean = false,
+    @SerialName("p_convulsions") val convulsions: Boolean = false,
+    @SerialName("p_jaundice") val jaundice: Boolean = false,
+    @SerialName("p_note") val note: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class AdmissionPostnatalRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class PostnatalObservationDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    val subject: String,
+    @SerialName("observed_at") val observedAt: String,
+    @SerialName("temp_c") val tempC: Double? = null,
+    @SerialName("pulse_bpm") val pulseBpm: Int? = null,
+    @SerialName("resp_rate") val respRate: Int? = null,
+    @SerialName("bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("bp_diastolic") val bpDiastolic: Int? = null,
+    val bleeding: String? = null,
+    @SerialName("fundus_firm") val fundusFirm: Boolean? = null,
+    @SerialName("feeding_well") val feedingWell: Boolean? = null,
+    @SerialName("not_feeding") val notFeeding: Boolean = false,
+    val convulsions: Boolean = false,
+    val jaundice: Boolean = false,
+    val note: String? = null,
+)

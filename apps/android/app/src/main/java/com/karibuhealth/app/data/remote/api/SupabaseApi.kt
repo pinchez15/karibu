@@ -310,6 +310,15 @@ interface SupabaseApi {
     @POST("rpc/rpc_admission_delivery")
     suspend fun rpcAdmissionDelivery(@Body request: AdmissionDeliveryRequest): List<DeliveryDto>
 
+    // Postnatal observations (migration 057).
+    @POST("rpc/rpc_record_postnatal_obs")
+    suspend fun rpcRecordPostnatalObs(@Body request: RecordPostnatalObsRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_postnatal_obs")
+    suspend fun rpcAdmissionPostnatalObs(
+        @Body request: AdmissionPostnatalRequest,
+    ): List<PostnatalObservationDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

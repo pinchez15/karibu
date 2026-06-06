@@ -64,6 +64,7 @@ fun AdmissionChartScreen(
     var showDischarge by remember { mutableStateOf(false) }
     var showRefer by remember { mutableStateOf(false) }
     var showDelivery by remember { mutableStateOf(false) }
+    var postnatalSubject by remember { mutableStateOf<String?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
 
     // Close the record sheet only once a round actually saves.
@@ -143,12 +144,24 @@ fun AdmissionChartScreen(
                 MaternalAlertBanner(alert)
             }
 
-            // ── Maternity: delivery record ──────────────────────────────────
+            // ── Newborn danger signs (care bundle) ──────────────────────────
+            if (s.newbornFindings.isNotEmpty()) {
+                item(key = "newborn-danger") { NewbornDangerBanner(s.newbornFindings) }
+            }
+
+            // ── Maternity: delivery + postnatal ─────────────────────────────
             if (s.admission?.ward == "maternity") {
                 item(key = "delivery") {
                     DeliverySummaryCard(
                         delivery = s.delivery,
                         onRecord = { showDelivery = true },
+                    )
+                }
+                item(key = "postnatal") {
+                    PostnatalCard(
+                        rounds = s.postnatalObs,
+                        onRecordMother = { postnatalSubject = "mother" },
+                        onRecordNewborn = { postnatalSubject = "newborn" },
                     )
                 }
             }
@@ -244,6 +257,20 @@ fun AdmissionChartScreen(
             onRefer = { facility, urgency, reason, transport ->
                 viewModel.refer(facility, urgency, reason, transport)
                 showRefer = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        )
+    }
+
+    postnatalSubject?.let { subject ->
+        PostnatalSheet(
+            subject = subject,
+            onDismiss = { postnatalSubject = null },
+            onSave = { temp, pulse, rr, sys, dia, bleeding, fundus, feedingWell, notFeeding, convulsions, jaundice, note ->
+                viewModel.recordPostnatalObs(
+                    subject, temp, pulse, rr, sys, dia, bleeding, fundus, feedingWell, notFeeding, convulsions, jaundice, note,
+                )
+                postnatalSubject = null
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         )
@@ -503,6 +530,127 @@ private fun ReferOutSheet(
                 enabled = facility.isNotBlank() && reason.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Create referral") }
+        }
+    }
+}
+
+@Composable
+private fun NewbornDangerBanner(findings: List<com.karibuhealth.app.domain.NewbornDangerSigns.Finding>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "NEWBORN DANGER SIGN",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error,
+            )
+            findings.forEach {
+                Text("• ${it.label}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+            com.karibuhealth.app.domain.NewbornDangerSigns.CARE_BUNDLE.forEach {
+                Text("→ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostnatalCard(
+    rounds: List<com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity>,
+    onRecordMother: () -> Unit,
+    onRecordNewborn: () -> Unit,
+) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Postnatal", style = MaterialTheme.typography.labelLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.OutlinedButton(onClick = onRecordMother, modifier = Modifier.weight(1f)) { Text("Mother check") }
+                androidx.compose.material3.OutlinedButton(onClick = onRecordNewborn, modifier = Modifier.weight(1f)) { Text("Newborn check") }
+            }
+            rounds.take(4).forEach { o ->
+                val who = if (o.subject == "newborn") "Newborn" else "Mother"
+                val vitals = listOfNotNull(
+                    o.tempC?.let { "T ${it}°C" },
+                    o.pulseBpm?.let { "HR $it" },
+                    o.respRate?.let { "RR $it" },
+                    if (o.bpSystolic != null && o.bpDiastolic != null) "BP ${o.bpSystolic}/${o.bpDiastolic}" else null,
+                    o.bleeding?.let { "bleeding: $it" },
+                ).joinToString(" · ")
+                Text("$who · ${timeAgo(o.observedAt)}${if (vitals.isNotBlank()) " — $vitals" else ""}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun PostnatalSheet(
+    subject: String,
+    onDismiss: () -> Unit,
+    onSave: (Double?, Int?, Int?, Int?, Int?, String?, Boolean?, Boolean?, Boolean, Boolean, Boolean, String?) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    val isNewborn = subject == "newborn"
+    var temp by remember { mutableStateOf("") }
+    var pulse by remember { mutableStateOf("") }
+    var rr by remember { mutableStateOf("") }
+    var sys by remember { mutableStateOf("") }
+    var dia by remember { mutableStateOf("") }
+    var bleeding by remember { mutableStateOf<String?>(null) }
+    var fundusFirm by remember { mutableStateOf(false) }
+    var feedingWell by remember { mutableStateOf(false) }
+    var notFeeding by remember { mutableStateOf(false) }
+    var convulsions by remember { mutableStateOf(false) }
+    var jaundice by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf("") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(if (isNewborn) "Newborn check" else "Mother postnatal check", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumField(temp, { temp = it }, "Temp °C", Modifier.weight(1f), decimal = true)
+                if (isNewborn) NumField(rr, { rr = it }, "Resp", Modifier.weight(1f))
+                else NumField(pulse, { pulse = it }, "Pulse", Modifier.weight(1f))
+            }
+            if (!isNewborn) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NumField(sys, { sys = it }, "BP sys", Modifier.weight(1f))
+                    NumField(dia, { dia = it }, "BP dia", Modifier.weight(1f))
+                }
+                Text("Lochia / bleeding", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("normal" to "Normal", "heavy" to "Heavy").forEach { (v, l) ->
+                        FilterChip(selected = bleeding == v, onClick = { bleeding = v }, label = { Text(l) })
+                    }
+                }
+                CheckRow("Uterus / fundus firm", fundusFirm) { fundusFirm = it }
+            } else {
+                CheckRow("Feeding well", feedingWell) { feedingWell = it }
+                CheckRow("Not feeding", notFeeding) { notFeeding = it }
+                CheckRow("Convulsions", convulsions) { convulsions = it }
+                CheckRow("Jaundice", jaundice) { jaundice = it }
+            }
+            OutlinedTextField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Note (optional)") })
+            Button(
+                onClick = {
+                    onSave(
+                        temp.toDoubleOrNull(),
+                        if (isNewborn) null else pulse.toIntOrNull(),
+                        if (isNewborn) rr.toIntOrNull() else null,
+                        sys.toIntOrNull(), dia.toIntOrNull(),
+                        bleeding, if (isNewborn) null else fundusFirm,
+                        if (isNewborn) feedingWell else null,
+                        notFeeding, convulsions, jaundice, note.ifBlank { null },
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Save") }
         }
     }
 }
