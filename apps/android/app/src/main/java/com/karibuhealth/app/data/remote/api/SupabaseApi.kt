@@ -279,6 +279,26 @@ interface SupabaseApi {
         @Body request: AdmissionObservationsRequest,
     ): List<AdmissionObservationDto>
 
+    // Inpatient treatment chart (migration 054).
+    @POST("rpc/rpc_add_medication_order")
+    suspend fun rpcAddMedicationOrder(@Body request: AddMedicationOrderRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_stop_medication_order")
+    suspend fun rpcStopMedicationOrder(@Body request: StopMedicationOrderRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_medication_admin")
+    suspend fun rpcRecordMedicationAdmin(@Body request: RecordMedicationAdminRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_medication_orders")
+    suspend fun rpcAdmissionMedicationOrders(
+        @Body request: AdmissionMedicationsRequest,
+    ): List<MedicationOrderDto>
+
+    @POST("rpc/rpc_admission_medication_admins")
+    suspend fun rpcAdmissionMedicationAdmins(
+        @Body request: AdmissionMedicationsRequest,
+    ): List<MedicationAdministrationDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 
