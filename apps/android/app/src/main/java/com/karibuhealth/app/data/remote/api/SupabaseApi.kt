@@ -262,6 +262,23 @@ interface SupabaseApi {
     @POST("rpc/rpc_admit_patient")
     suspend fun rpcAdmitPatient(@Body request: AdmitPatientRequest): String
 
+    // Inpatient ward spine (migration 053).
+    @POST("rpc/rpc_admit_patient_v2")
+    suspend fun rpcAdmitPatientV2(@Body request: AdmitPatientV2Request): Response<ResponseBody>
+
+    @POST("rpc/rpc_active_admissions")
+    suspend fun rpcActiveAdmissions(@Body request: ActiveAdmissionsRequest): List<ActiveAdmissionDto>
+
+    @POST("rpc/rpc_record_admission_observation")
+    suspend fun rpcRecordAdmissionObservation(
+        @Body request: RecordAdmissionObservationRequest,
+    ): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_observations")
+    suspend fun rpcAdmissionObservations(
+        @Body request: AdmissionObservationsRequest,
+    ): List<AdmissionObservationDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

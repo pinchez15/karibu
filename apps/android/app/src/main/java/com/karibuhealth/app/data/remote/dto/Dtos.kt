@@ -909,3 +909,90 @@ data class ReferralTodayRowDto(
 data class ListReferralsTodayRequest(
     @SerialName("p_clinic_id") val clinicId: String,
 )
+
+// ── Inpatient ward spine (migration 053) ───────────────────────────────────
+
+@Serializable
+data class AdmitPatientV2Request(
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_ward") val ward: String = "general",
+    @SerialName("p_bed_label") val bedLabel: String? = null,
+    @SerialName("p_chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("p_admission_type") val admissionType: String? = null,
+    @SerialName("p_weight_kg") val weightKg: Double? = null,
+    @SerialName("p_provisional_dx") val provisionalDx: String? = null,
+    @SerialName("p_gravida") val gravida: Int? = null,
+    @SerialName("p_para") val para: Int? = null,
+    @SerialName("p_edd") val edd: String? = null,
+    @SerialName("p_gestation_weeks") val gestationWeeks: Int? = null,
+    @SerialName("p_hiv_status") val hivStatus: String? = null,
+    @SerialName("p_presenting_status") val presentingStatus: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ActiveAdmissionsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+@Serializable
+data class ActiveAdmissionDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("date_of_birth") val dateOfBirth: String? = null,
+    val sex: String? = null,
+    val ward: String = "general",
+    @SerialName("bed_label") val bedLabel: String? = null,
+    @SerialName("admission_type") val admissionType: String? = null,
+    @SerialName("chief_complaint") val chiefComplaint: String? = null,
+    @SerialName("weight_kg") val weightKg: Double? = null,
+    @SerialName("admitted_at") val admittedAt: String,
+    @SerialName("last_observed_at") val lastObservedAt: String? = null,
+)
+
+@Serializable
+data class RecordAdmissionObservationRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_observed_at") val observedAt: String? = null,
+    @SerialName("p_temp_c") val tempC: Double? = null,
+    @SerialName("p_pulse_bpm") val pulseBpm: Int? = null,
+    @SerialName("p_resp_rate") val respRate: Int? = null,
+    @SerialName("p_bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("p_bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("p_spo2_pct") val spo2Pct: Int? = null,
+    @SerialName("p_avpu") val avpu: String? = null,
+    @SerialName("p_imci_not_feeding") val imciNotFeeding: Boolean = false,
+    @SerialName("p_imci_vomiting_everything") val imciVomitingEverything: Boolean = false,
+    @SerialName("p_imci_convulsions") val imciConvulsions: Boolean = false,
+    @SerialName("p_imci_lethargic_unconscious") val imciLethargicUnconscious: Boolean = false,
+    @SerialName("p_note") val note: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class AdmissionObservationsRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class AdmissionObservationDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("observed_at") val observedAt: String,
+    @SerialName("temp_c") val tempC: Double? = null,
+    @SerialName("pulse_bpm") val pulseBpm: Int? = null,
+    @SerialName("resp_rate") val respRate: Int? = null,
+    @SerialName("bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("spo2_pct") val spo2Pct: Int? = null,
+    val avpu: String? = null,
+    @SerialName("imci_not_feeding") val imciNotFeeding: Boolean = false,
+    @SerialName("imci_vomiting_everything") val imciVomitingEverything: Boolean = false,
+    @SerialName("imci_convulsions") val imciConvulsions: Boolean = false,
+    @SerialName("imci_lethargic_unconscious") val imciLethargicUnconscious: Boolean = false,
+    val note: String? = null,
+)

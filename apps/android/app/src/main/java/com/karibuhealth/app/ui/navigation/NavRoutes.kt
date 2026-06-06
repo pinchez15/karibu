@@ -52,6 +52,13 @@ sealed interface NavRoute {
 
     @Serializable data class ConsultChat(val visitId: String) : NavRoute
 
+    // Inpatient ward spine (migration 053). Inpatient = the ward census home;
+    // AdmitPatient = the offline admission form; AdmissionChart = one admitted
+    // patient's rounds observations chart.
+    @Serializable data object Inpatient : NavRoute
+    @Serializable data object AdmitPatient : NavRoute
+    @Serializable data class AdmissionChart(val admissionId: String) : NavRoute
+
     /**
      * KaribuLearn — the free CME app. A distinct coral-skinned product that
      * shares the EHR's bones. Launched full-screen from the Home shell's

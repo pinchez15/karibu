@@ -23,6 +23,8 @@ class SyncEngine @Inject constructor(
     private val patientVitalsDao: PatientVitalsDao,
     private val providerNoteDao: ProviderNoteDao,
     private val referralDao: ReferralDao,
+    private val admissionDao: AdmissionDao,
+    private val admissionObservationDao: AdmissionObservationDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
@@ -190,6 +192,8 @@ class SyncEngine @Inject constructor(
             "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
             "rpc_record_dispense" -> syncRecordDispense(entry)
             "rpc_create_referral" -> syncCreateReferral(entry)
+            "rpc_admit_patient_v2" -> syncAdmitPatientV2(entry)
+            "rpc_record_admission_observation" -> syncRecordAdmissionObservation(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -629,6 +633,32 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_create_referral HTTP ${result.code()} ${body.take(300)}".trim())
         }
         referralDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncAdmitPatientV2(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(AdmitPatientV2Request.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        Log.d(TAG, "Syncing rpc_admit_patient_v2: ${entry.entityId}")
+        val result = supabaseApi.rpcAdmitPatientV2(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_admit_patient_v2 HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        admissionDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordAdmissionObservation(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordAdmissionObservationRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        Log.d(TAG, "Syncing rpc_record_admission_observation: ${entry.entityId}")
+        val result = supabaseApi.rpcRecordAdmissionObservation(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException(
+                "rpc_record_admission_observation HTTP ${result.code()} ${body.take(300)}".trim(),
+            )
+        }
+        admissionObservationDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {

@@ -25,6 +25,9 @@ import com.karibuhealth.app.ui.payment.PaymentScreen
 import com.karibuhealth.app.ui.success.SuccessScreen
 import com.karibuhealth.app.ui.billing.BillingHomeScreen
 import com.karibuhealth.app.ui.worklists.WorklistsScreen
+import com.karibuhealth.app.ui.inpatient.WardCensusScreen
+import com.karibuhealth.app.ui.inpatient.AdmitPatientScreen
+import com.karibuhealth.app.ui.inpatient.AdmissionChartScreen
 
 @Composable
 fun KaribuNavHost(
@@ -69,6 +72,7 @@ fun KaribuNavHost(
                     },
                     onNavigateToWorklists = { navigator.go(NavRoute.Worklists) },
                     onNavigateToBilling = { navigator.go(NavRoute.Billing) },
+                    onNavigateToInpatient = { navigator.go(NavRoute.Inpatient) },
                     onAddPatientNote = { patientId ->
                         navigator.go(NavRoute.PatientNote(patientId, null))
                     },
@@ -321,6 +325,33 @@ fun KaribuNavHost(
                     visitId = route.visitId,
                     onNavigateBack = { navigator.back() },
                     onComplete = { navigator.back() },
+                )
+            }
+
+            // Inpatient ward spine (migration 053).
+            composable<NavRoute.Inpatient> {
+                WardCensusScreen(
+                    onNavigateBack = { navigator.back() },
+                    onAdmit = { navigator.go(NavRoute.AdmitPatient) },
+                    onOpenAdmission = { admissionId ->
+                        navigator.go(NavRoute.AdmissionChart(admissionId))
+                    },
+                )
+            }
+
+            composable<NavRoute.AdmitPatient> {
+                AdmitPatientScreen(
+                    onNavigateBack = { navigator.back() },
+                    onAdmitted = { admissionId ->
+                        // Replace the admit form with the chart so Back returns to the census.
+                        navigator.goReset(NavRoute.AdmissionChart(admissionId), NavRoute.Inpatient)
+                    },
+                )
+            }
+
+            composable<NavRoute.AdmissionChart> {
+                AdmissionChartScreen(
+                    onNavigateBack = { navigator.back() },
                 )
             }
         }
