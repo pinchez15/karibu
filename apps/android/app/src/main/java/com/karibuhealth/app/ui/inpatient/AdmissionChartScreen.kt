@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -58,10 +59,17 @@ fun AdmissionChartScreen(
     var showSheet by remember { mutableStateOf(false) }
     var showAddMed by remember { mutableStateOf(false) }
     var notGivenForOrder by remember { mutableStateOf<String?>(null) }
+    var showDischarge by remember { mutableStateOf(false) }
+    var showRefer by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
 
     // Close the record sheet only once a round actually saves.
     androidx.compose.runtime.LaunchedEffect(s.savedTick) {
         if (s.savedTick > 0) showSheet = false
+    }
+    // Leave the chart once the admission is discharged/transferred.
+    androidx.compose.runtime.LaunchedEffect(s.closed) {
+        if (s.closed) onNavigateBack()
     }
 
     Scaffold(
@@ -71,6 +79,24 @@ fun AdmissionChartScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    }
+                    androidx.compose.material3.DropdownMenu(
+                        expanded = menuOpen,
+                        onDismissRequest = { menuOpen = false },
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("Refer out") },
+                            onClick = { menuOpen = false; showRefer = true },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("Discharge") },
+                            onClick = { menuOpen = false; showDischarge = true },
+                        )
                     }
                 },
             )
@@ -180,6 +206,28 @@ fun AdmissionChartScreen(
                 viewModel.recordDose(orderId, given = false, notGivenReason = reason)
                 notGivenForOrder = null
             },
+        )
+    }
+
+    if (showDischarge) {
+        DischargeSheet(
+            onDismiss = { showDischarge = false },
+            onDischarge = { outcome, disposition, notes ->
+                viewModel.discharge(outcome, disposition, notes)
+                showDischarge = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        )
+    }
+
+    if (showRefer) {
+        ReferOutSheet(
+            onDismiss = { showRefer = false },
+            onRefer = { facility, urgency, reason, transport ->
+                viewModel.refer(facility, urgency, reason, transport)
+                showRefer = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         )
     }
 
@@ -333,6 +381,98 @@ private fun NotGivenReasonDialog(onDismiss: () -> Unit, onPick: (String) -> Unit
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun DischargeSheet(
+    onDismiss: () -> Unit,
+    onDischarge: (String, String?, String?) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    val outcomes = listOf("recovered", "improved", "unchanged", "absconded", "died")
+    var outcome by remember { mutableStateOf<String?>(null) }
+    var notes by remember { mutableStateOf("") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Discharge", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Outcome", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                outcomes.forEach { o ->
+                    FilterChip(
+                        selected = outcome == o,
+                        onClick = { outcome = o },
+                        label = { Text(o.replaceFirstChar { it.uppercase() }) },
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = notes, onValueChange = { notes = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Notes (optional)") },
+            )
+            Button(
+                onClick = { outcome?.let { onDischarge(it, "home", notes.ifBlank { null }) } },
+                enabled = outcome != null,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Confirm discharge") }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReferOutSheet(
+    onDismiss: () -> Unit,
+    onRefer: (String, com.karibuhealth.app.domain.model.ReferralUrgency, String, String?) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    var facility by remember { mutableStateOf("") }
+    var reason by remember { mutableStateOf("") }
+    var transport by remember { mutableStateOf("") }
+    var urgency by remember {
+        mutableStateOf(com.karibuhealth.app.domain.model.ReferralUrgency.Urgent)
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Refer out", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            OutlinedTextField(
+                value = facility, onValueChange = { facility = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Refer to (facility)") }, singleLine = true,
+            )
+            Text("Urgency", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.karibuhealth.app.domain.model.ReferralUrgency.entries.forEach { u ->
+                    FilterChip(selected = urgency == u, onClick = { urgency = u }, label = { Text(u.label) })
+                }
+            }
+            OutlinedTextField(
+                value = reason, onValueChange = { reason = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Reason for referral") }, minLines = 2,
+            )
+            OutlinedTextField(
+                value = transport, onValueChange = { transport = it },
+                modifier = Modifier.fillMaxWidth(), label = { Text("Transport (optional)") }, singleLine = true,
+            )
+            Text(
+                "The inpatient summary (last obs, medications) is attached automatically.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = { onRefer(facility, urgency, reason, transport.ifBlank { null }) },
+                enabled = facility.isNotBlank() && reason.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Create referral") }
+        }
+    }
 }
 
 @Composable

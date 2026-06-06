@@ -64,4 +64,21 @@ interface AdmissionDao {
 
     @Query("DELETE FROM admissions WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    /** Local optimistic discharge — leaves the active census; syncs via outbox. */
+    @Query(
+        """
+        UPDATE admissions
+        SET status = :status, outcome = :outcome, disposition = :disposition,
+            discharge_notes = :notes, is_synced = 0
+        WHERE id = :id
+        """,
+    )
+    suspend fun dischargeLocal(
+        id: String,
+        status: String,
+        outcome: String?,
+        disposition: String?,
+        notes: String?,
+    )
 }

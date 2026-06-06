@@ -3,6 +3,16 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v17 -> v18: inpatient discharge (migration 055 mirror). Additive nullable
+// outcome columns on admissions.
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE admissions ADD COLUMN outcome TEXT")
+        db.execSQL("ALTER TABLE admissions ADD COLUMN disposition TEXT")
+        db.execSQL("ALTER TABLE admissions ADD COLUMN discharge_notes TEXT")
+    }
+}
+
 // v16 -> v17: inpatient treatment chart (migration 054 mirror). Two new local
 // tables for medication orders and the append-only administration record.
 // Additive; column set + index names match the @Entity declarations exactly.

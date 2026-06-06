@@ -44,5 +44,9 @@ data class AdmissionEntity(
     @ColumnInfo(name = "presenting_status") val presentingStatus: String? = null,
     @ColumnInfo(name = "admitted_at") val admittedAt: String,
     val status: String = "active",
+    // Discharge / outcome (migration 055). Null until the admission is closed.
+    val outcome: String? = null,
+    val disposition: String? = null,
+    @ColumnInfo(name = "discharge_notes") val dischargeNotes: String? = null,
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )
