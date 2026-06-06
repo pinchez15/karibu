@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import com.karibuhealth.app.ui.adaptive.KaribuListDetailScaffold
 import com.karibuhealth.app.ui.adaptive.ListDetailEmptyPlaceholder
 import com.karibuhealth.app.ui.adaptive.supportsListDetail
-import com.karibuhealth.app.ui.inpatient.InpatientHomeScreen
 import com.karibuhealth.app.ui.patientdetail.PatientTimelineScreen
 
 enum class ClinicianHomeTab { OPD, Inpatient }
@@ -34,6 +33,7 @@ fun MainShell(
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit,
+    onNavigateToInpatient: () -> Unit = {},
     onAddPatientNote: (String) -> Unit = {},
     onRecordPatientVitals: (String) -> Unit = {},
     onNavigateToReferral: (String) -> Unit = {},
@@ -56,8 +56,10 @@ fun MainShell(
                 text = { Text("OPD", fontWeight = FontWeight.SemiBold) },
             )
             Tab(
-                selected = selectedTab == ClinicianHomeTab.Inpatient.ordinal,
-                onClick = { selectedTab = ClinicianHomeTab.Inpatient.ordinal },
+                // Inpatient opens the full-screen ward census (admit / chart are
+                // their own destinations), rather than rendering inline here.
+                selected = false,
+                onClick = onNavigateToInpatient,
                 text = { Text("Inpatient", fontWeight = FontWeight.SemiBold) },
             )
         }
@@ -115,10 +117,8 @@ fun MainShell(
                     homeScreen(Modifier.fillMaxSize())
                 }
             }
-            else -> InpatientHomeScreen(
-                onNavigateToPatient = onNavigateToPatient,
-                modifier = Modifier.fillMaxSize(),
-            )
+            // Inpatient is a navigate-out tab, so OPD is the only inline content.
+            else -> Unit
         }
     }
 }

@@ -128,3 +128,59 @@ export async function requireProvisioningAccess(): Promise<{ userId: string; ema
     displayName,
   }
 }
+
+/**
+ * Region-outbreak control surface.
+ *
+ * Returns `'all'` for platform superadmins, otherwise the list of dioceses the
+ * current user coordinates (active rows in `diocese_coordinators`). An empty
+ * array means the user has no outbreak-control access.
+ */
+export async function getCoordinatorScope(): Promise<'all' | string[]> {
+  if (await isSuperadmin()) {
+    return 'all'
+  }
+
+  const { userId } = await auth()
+  if (!userId) return []
+
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('diocese_coordinators')
+    .select('diocese')
+    .eq('clerk_user_id', userId)
+    .eq('is_active', true)
+
+  return (data ?? []).map((row) => row.diocese as string)
+}
+
+export function scopeCoversDiocese(scope: 'all' | string[], diocese: string | null): boolean {
+  if (scope === 'all') return true
+  if (!diocese) return false
+  return scope.includes(diocese)
+}
+
+export async function requireOutbreakAccess(): Promise<{
+  userId: string
+  email: string | null
+  displayName: string | null
+  scope: 'all' | string[]
+}> {
+  const { userId } = await auth()
+  if (!userId) {
+    throw new Error('Unauthorized')
+  }
+
+  const scope = await getCoordinatorScope()
+  if (scope !== 'all' && scope.length === 0) {
+    throw new Error('Not authorized to manage region protocols')
+  }
+
+  const user = await currentUser()
+  const email = user?.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress
+    ?? user?.emailAddresses[0]?.emailAddress
+    ?? null
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username || null
+
+  return { userId, email, displayName, scope }
+}

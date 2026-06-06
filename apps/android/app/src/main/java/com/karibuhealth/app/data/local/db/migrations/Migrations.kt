@@ -3,6 +3,78 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v15 -> v16: inpatient ward spine (migration 053 mirror). Two new local tables
+// so admissions and rounds observations cache offline — the ward census and the
+// 2am no-signal admission both need to work without a connection. Strictly
+// additive; column set + index names match the @Entity declarations exactly so
+// Room's open-time schema check passes.
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS admissions (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                patient_name TEXT,
+                date_of_birth TEXT,
+                sex TEXT,
+                ward TEXT NOT NULL DEFAULT 'general',
+                bed_label TEXT,
+                admission_type TEXT,
+                chief_complaint TEXT,
+                weight_kg REAL,
+                provisional_dx TEXT,
+                gravida INTEGER,
+                para INTEGER,
+                edd TEXT,
+                gestation_weeks INTEGER,
+                hiv_status TEXT,
+                presenting_status TEXT,
+                admitted_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_admissions_clinic_id ON admissions(clinic_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_admissions_patient_id ON admissions(patient_id)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_admissions_clinic_id_status_admitted_at " +
+                "ON admissions(clinic_id, status, admitted_at)",
+        )
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS admission_observations (
+                id TEXT NOT NULL PRIMARY KEY,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                observed_at TEXT NOT NULL,
+                temp_c REAL,
+                pulse_bpm INTEGER,
+                resp_rate INTEGER,
+                bp_systolic INTEGER,
+                bp_diastolic INTEGER,
+                spo2_pct INTEGER,
+                avpu TEXT,
+                imci_not_feeding INTEGER NOT NULL DEFAULT 0,
+                imci_vomiting_everything INTEGER NOT NULL DEFAULT 0,
+                imci_convulsions INTEGER NOT NULL DEFAULT 0,
+                imci_lethargic_unconscious INTEGER NOT NULL DEFAULT 0,
+                note TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_admission_observations_admission_id_observed_at " +
+                "ON admission_observations(admission_id, observed_at)",
+        )
+    }
+}
+
 // v10 -> v11: EHR pivot pharmacy order submitted columns on visits.
 val MIGRATION_10_11 = object : Migration(10, 11) {
     override fun migrate(db: SupportSQLiteDatabase) {

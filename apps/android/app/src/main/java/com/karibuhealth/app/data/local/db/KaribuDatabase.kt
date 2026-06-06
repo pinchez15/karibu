@@ -20,8 +20,10 @@ import com.karibuhealth.app.data.local.db.entity.*
         ClinicLabCatalogEntity::class,
         ClinicFormularyCatalogEntity::class,
         ReferralEntity::class,
+        AdmissionEntity::class,
+        AdmissionObservationEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {
@@ -37,4 +39,6 @@ abstract class KaribuDatabase : RoomDatabase() {
     abstract fun pharmacyStockDao(): PharmacyStockDao
     abstract fun clinicCatalogDao(): ClinicCatalogDao
     abstract fun referralDao(): ReferralDao
+    abstract fun admissionDao(): AdmissionDao
+    abstract fun admissionObservationDao(): AdmissionObservationDao
 }

@@ -262,8 +262,30 @@ interface SupabaseApi {
     @POST("rpc/rpc_admit_patient")
     suspend fun rpcAdmitPatient(@Body request: AdmitPatientRequest): String
 
+    // Inpatient ward spine (migration 053).
+    @POST("rpc/rpc_admit_patient_v2")
+    suspend fun rpcAdmitPatientV2(@Body request: AdmitPatientV2Request): Response<ResponseBody>
+
+    @POST("rpc/rpc_active_admissions")
+    suspend fun rpcActiveAdmissions(@Body request: ActiveAdmissionsRequest): List<ActiveAdmissionDto>
+
+    @POST("rpc/rpc_record_admission_observation")
+    suspend fun rpcRecordAdmissionObservation(
+        @Body request: RecordAdmissionObservationRequest,
+    ): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_observations")
+    suspend fun rpcAdmissionObservations(
+        @Body request: AdmissionObservationsRequest,
+    ): List<AdmissionObservationDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
+
+    // Region outbreak protocols (migration 052) — active protocols for this
+    // clinic, matched on its district/diocese. Read on refresh to gate CDS.
+    @POST("rpc/rpc_active_protocols_for_clinic")
+    suspend fun rpcActiveProtocolsForClinic(@Body request: ActiveProtocolsRequest): List<ActiveProtocolDto>
 
     @POST("rpc/rpc_request_draft_ai_assist")
     suspend fun rpcRequestDraftAiAssist(@Body request: RequestDraftAiAssistRequest): kotlinx.serialization.json.JsonObject
