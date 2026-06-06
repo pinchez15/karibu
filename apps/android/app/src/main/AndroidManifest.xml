@@ -9,6 +9,9 @@
          foreground service needed because dictation is in-foreground only
          (clinician is looking at the phone the whole time). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Obs-overdue escalation posts a local notification when an admitted
+         patient is overdue for observation. Runtime-requested on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".KaribuApplication"

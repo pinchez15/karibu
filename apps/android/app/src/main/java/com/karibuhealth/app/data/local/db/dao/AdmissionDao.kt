@@ -38,6 +38,20 @@ interface AdmissionDao {
     )
     fun observeCensus(clinicId: String): Flow<List<AdmissionCensusRow>>
 
+    /** One-shot census for the obs-overdue worker (no Flow). */
+    @Query(
+        """
+        SELECT a.*, (
+            SELECT MAX(o.observed_at) FROM admission_observations o
+            WHERE o.admission_id = a.id
+        ) AS last_observed_at
+        FROM admissions a
+        WHERE a.clinic_id = :clinicId AND a.status = 'active'
+        ORDER BY a.admitted_at DESC
+        """,
+    )
+    suspend fun activeCensusOnce(clinicId: String): List<AdmissionCensusRow>
+
     @Query("SELECT * FROM admissions WHERE id = :id LIMIT 1")
     fun observeById(id: String): Flow<AdmissionEntity?>
 

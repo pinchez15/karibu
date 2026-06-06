@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
+import com.karibuhealth.app.domain.InpatientDangerSigns
 import java.time.Duration
 import java.time.Instant
 
@@ -91,6 +94,10 @@ fun AdmissionChartScreen(
                         }
                     }
                 }
+            }
+
+            if (s.dangerFindings.isNotEmpty()) {
+                DangerSignBanner(findings = s.dangerFindings)
             }
 
             Button(
@@ -150,6 +157,36 @@ fun AdmissionChartScreen(
                 TextButton(onClick = viewModel::dismissWarnings) { Text("Go back") }
             },
         )
+    }
+}
+
+@Composable
+private fun DangerSignBanner(findings: List<InpatientDangerSigns.Finding>) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "DANGER SIGN",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error,
+            )
+            findings.forEach { f ->
+                Text(
+                    "• ${f.label}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+            Text(
+                text = InpatientDangerSigns.ACTION,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
     }
 }
 
