@@ -3,21 +3,25 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.AdmissionCensusRow
 import com.karibuhealth.app.data.local.db.dao.AdmissionDao
 import com.karibuhealth.app.data.local.db.dao.AdmissionObservationDao
+import com.karibuhealth.app.data.local.db.dao.DeliveryDao
 import com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
 import com.karibuhealth.app.data.local.db.dao.MedicationOrderDao
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
+import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
 import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
+import com.karibuhealth.app.data.remote.dto.AdmissionDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
 import com.karibuhealth.app.data.remote.dto.DischargeAdmissionRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionObservationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
+import com.karibuhealth.app.data.remote.dto.RecordDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.RecordMedicationAdminRequest
 import com.karibuhealth.app.data.remote.dto.StopMedicationOrderRequest
 import com.karibuhealth.app.data.sync.SyncQueueHelper
@@ -43,6 +47,7 @@ class InpatientRepository @Inject constructor(
     private val admissionObservationDao: AdmissionObservationDao,
     private val medicationOrderDao: MedicationOrderDao,
     private val medicationAdministrationDao: MedicationAdministrationDao,
+    private val deliveryDao: DeliveryDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -447,6 +452,85 @@ class InpatientRepository @Inject constructor(
             else throw IllegalStateException("rpc_discharge_admission HTTP ${resp.code()}")
         }
         Unit
+    }
+
+    // ── Maternity delivery (migration 056) ─────────────────────────────────
+
+    fun observeDelivery(admissionId: String): Flow<DeliveryEntity?> =
+        deliveryDao.observeForAdmission(admissionId)
+
+    suspend fun refreshDelivery(admissionId: String) {
+        if (!networkMonitor.isOnline()) return
+        withContext(Dispatchers.IO) {
+            runCatching {
+                supabaseApi.rpcAdmissionDelivery(AdmissionDeliveryRequest(admissionId)).firstOrNull()?.let { d ->
+                    deliveryDao.upsert(
+                        DeliveryEntity(
+                            id = d.id, admissionId = d.admissionId, clinicId = d.clinicId,
+                            patientId = d.patientId, deliveredAt = d.deliveredAt, mode = d.mode,
+                            oxytocinGiven = d.oxytocinGiven, bloodLossMl = d.bloodLossMl,
+                            placentaComplete = d.placentaComplete, outcome = d.outcome, babySex = d.babySex,
+                            birthWeightG = d.birthWeightG, apgar1 = d.apgar1, apgar5 = d.apgar5,
+                            resuscitationDone = d.resuscitationDone, vitaminKGiven = d.vitaminKGiven,
+                            earlyBreastfeeding = d.earlyBreastfeeding, notes = d.notes, isSynced = true,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    suspend fun recordDelivery(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+        existingId: String?,
+        mode: String?,
+        outcome: String?,
+        babySex: String?,
+        birthWeightG: Int?,
+        apgar1: Int?,
+        apgar5: Int?,
+        oxytocinGiven: Boolean,
+        bloodLossMl: Int?,
+        placentaComplete: Boolean?,
+        resuscitationDone: Boolean,
+        vitaminKGiven: Boolean,
+        earlyBreastfeeding: Boolean,
+        notes: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val id = existingId ?: UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val entity = DeliveryEntity(
+            id = id, admissionId = admissionId, clinicId = clinicId, patientId = patientId,
+            deliveredAt = now, mode = mode, oxytocinGiven = oxytocinGiven, bloodLossMl = bloodLossMl,
+            placentaComplete = placentaComplete, outcome = outcome, babySex = babySex,
+            birthWeightG = birthWeightG, apgar1 = apgar1, apgar5 = apgar5,
+            resuscitationDone = resuscitationDone, vitaminKGiven = vitaminKGiven,
+            earlyBreastfeeding = earlyBreastfeeding, notes = notes?.takeIf { it.isNotBlank() }, isSynced = false,
+        )
+        val request = RecordDeliveryRequest(
+            id = id, admissionId = admissionId, mode = mode, deliveredAt = now,
+            oxytocinGiven = oxytocinGiven, bloodLossMl = bloodLossMl, placentaComplete = placentaComplete,
+            outcome = outcome, babySex = babySex, birthWeightG = birthWeightG, apgar1 = apgar1, apgar5 = apgar5,
+            resuscitationDone = resuscitationDone, vitaminKGiven = vitaminKGiven,
+            earlyBreastfeeding = earlyBreastfeeding, notes = entity.notes,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_record_delivery",
+            entityType = "delivery",
+            entityId = id,
+            payload = json.encodeToString(RecordDeliveryRequest.serializer(), request.copy(clientOpId = id)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        deliveryDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcRecordDelivery(request.copy(clientOpId = id))
+            if (resp.isSuccessful) deliveryDao.markSynced(id)
+            else throw IllegalStateException("rpc_record_delivery HTTP ${resp.code()}")
+        }
+        id
     }
 
     /** Try the RPC immediately when online; otherwise (or on failure) enqueue the outbox row. */
