@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,13 +30,9 @@ import com.karibuhealth.app.ui.theme.Muted
 
 /**
  * AI review questions from the Inngest pipeline. The clinician is the authority.
- *
- * Incorporating a suggestion mutates the clinical note (it opens the picker /
- * dictation), so it must be a deliberate, explicit action — never a gesture that
- * a stray swipe on a shared device in sunlight could trigger. Both actions are
- * explicit buttons, matching [AiNotesTimeline]. "Incorporate" carries the
- * emphasis; "Dismiss" is a quiet, neutral action (not red — declining a
- * suggestion is benign, and red is reserved for clinical-critical findings).
+ * Each suggestion has two explicit buttons: **Dismiss** on the left, **Incorporate**
+ * on the right (incorporating opens dictation). Replaces the earlier swipe gesture,
+ * which now belongs to navigation.
  */
 @Composable
 fun AiReviewBanner(
@@ -52,8 +48,14 @@ fun AiReviewBanner(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Text(
+            text = "AI review · your call",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+        )
         pending.forEach { suggestion ->
-            AiReviewCard(
+            AiReviewActionCard(
                 suggestion = suggestion,
                 onDismiss = { onDismiss(suggestion) },
                 onIncorporate = { onIncorporate(suggestion) },
@@ -63,7 +65,7 @@ fun AiReviewBanner(
 }
 
 @Composable
-private fun AiReviewCard(
+private fun AiReviewActionCard(
     suggestion: AiReviewSuggestionDto,
     onDismiss: () -> Unit,
     onIncorporate: () -> Unit,
@@ -75,7 +77,7 @@ private fun AiReviewCard(
             .background(Amber.copy(alpha = 0.12f))
             .border(1.dp, Amber.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
             .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.Top,
@@ -106,17 +108,14 @@ private fun AiReviewCard(
             color = Muted,
         )
         Spacer(Modifier.size(2.dp))
+        // Left: Dismiss. Right: Incorporate.
         Row(
-            modifier = Modifier.align(Alignment.End),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onDismiss) {
-                Text("Dismiss", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            FilledTonalButton(onClick = onIncorporate) {
-                Text("Incorporate")
-            }
+            TextButton(onClick = onDismiss) { Text("Dismiss") }
+            OutlinedButton(onClick = onIncorporate) { Text("Incorporate") }
         }
     }
 }

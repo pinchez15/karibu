@@ -130,17 +130,24 @@ private fun AiNoteCollapsedCard(
                         color = Muted,
                     )
                 }
+                // Left: Dismiss. Right: Acknowledge + Incorporate (Incorporate rightmost).
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     TextButton(onClick = onDismiss) { Text("Dismiss") }
-                    TextButton(onClick = onAcknowledge) { Text("Acknowledge") }
-                    if (suggestion.suggestionType in listOf(
-                            "ask_lab", "ask_med", "ask_dx", "ask_history", "ask_red_flag",
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        OutlinedButton(onClick = onIncorporate) { Text("Incorporate") }
+                        TextButton(onClick = onAcknowledge) { Text("Acknowledge") }
+                        if (suggestion.suggestionType in listOf(
+                                "ask_lab", "ask_med", "ask_dx", "ask_history", "ask_red_flag",
+                            )
+                        ) {
+                            OutlinedButton(onClick = onIncorporate) { Text("Incorporate") }
+                        }
                     }
                 }
             }
