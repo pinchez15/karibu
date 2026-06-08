@@ -41,6 +41,7 @@ fun ClinicalMainShell(
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit,
     onNavigateToInpatient: () -> Unit = {},
+    onNavigateToAnc: () -> Unit = {},
     onAddPatientNote: (String) -> Unit = {},
     onRecordPatientVitals: (String) -> Unit = {},
     onNavigateToReferral: (String) -> Unit = {},
@@ -68,6 +69,7 @@ fun ClinicalMainShell(
                         homeViewModel.signOut()
                     },
                     onOpenWorklists = onNavigateToWorklists,
+                    onOpenAnc = onNavigateToAnc,
                 )
             }
             when (tab) {
@@ -89,6 +91,7 @@ fun ClinicalMainShell(
                     onNavigateToWorklists = onNavigateToWorklists,
                     onNavigateToBilling = onNavigateToBilling,
                     onNavigateToInpatient = onNavigateToInpatient,
+                    onNavigateToAnc = onNavigateToAnc,
                     onAddPatientNote = onAddPatientNote,
                     onRecordPatientVitals = onRecordPatientVitals,
                     onNavigateToReferral = onNavigateToReferral,

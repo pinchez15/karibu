@@ -46,6 +46,7 @@ fun ClinicalShellAppBar(
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
     onOpenWorklists: () -> Unit,
+    onOpenAnc: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -69,6 +70,10 @@ fun ClinicalShellAppBar(
         }
 
         // Billing moved to the pharmacy — patients pay at drug collection.
+
+        androidx.compose.material3.TextButton(onClick = onOpenAnc) {
+            Text("ANC", color = Cobalt, fontWeight = FontWeight.SemiBold)
+        }
 
         IconButton(onClick = onOpenWorklists) {
             Icon(

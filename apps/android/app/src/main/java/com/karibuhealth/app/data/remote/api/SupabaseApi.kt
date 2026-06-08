@@ -326,6 +326,19 @@ interface SupabaseApi {
     @POST("rpc/rpc_admission_notes")
     suspend fun rpcAdmissionNotes(@Body request: AdmissionNotesRequest): List<AdmissionNoteDto>
 
+    // ANC registry (migration 059).
+    @POST("rpc/rpc_start_pregnancy")
+    suspend fun rpcStartPregnancy(@Body request: StartPregnancyRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_anc_contact")
+    suspend fun rpcRecordAncContact(@Body request: RecordAncContactRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_active_pregnancies")
+    suspend fun rpcActivePregnancies(@Body request: ActivePregnanciesRequest): List<ActivePregnancyDto>
+
+    @POST("rpc/rpc_pregnancy_contacts")
+    suspend fun rpcPregnancyContacts(@Body request: PregnancyContactsRequest): List<AncContactDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

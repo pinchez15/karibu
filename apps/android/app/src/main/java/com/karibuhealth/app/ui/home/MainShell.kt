@@ -34,6 +34,7 @@ fun MainShell(
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit,
     onNavigateToInpatient: () -> Unit = {},
+    onNavigateToAnc: () -> Unit = {},
     onAddPatientNote: (String) -> Unit = {},
     onRecordPatientVitals: (String) -> Unit = {},
     onNavigateToReferral: (String) -> Unit = {},
@@ -74,6 +75,7 @@ fun MainShell(
                         onNavigateToPatient = onNavigateToPatient,
                         onNavigateToWorklists = onNavigateToWorklists,
                         onNavigateToBilling = onNavigateToBilling,
+                        onNavigateToAnc = onNavigateToAnc,
                         showAppBar = showShellAppBar,
                         selectedPatientId = if (listDetail) selectedPatientId else null,
                         onSelectPatient = { patientId ->

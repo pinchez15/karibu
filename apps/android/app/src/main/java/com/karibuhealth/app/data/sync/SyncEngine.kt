@@ -30,6 +30,8 @@ class SyncEngine @Inject constructor(
     private val deliveryDao: DeliveryDao,
     private val postnatalObservationDao: PostnatalObservationDao,
     private val admissionNoteDao: AdmissionNoteDao,
+    private val pregnancyDao: PregnancyDao,
+    private val ancContactDao: AncContactDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
@@ -206,6 +208,8 @@ class SyncEngine @Inject constructor(
             "rpc_record_delivery" -> syncRecordDelivery(entry)
             "rpc_record_postnatal_obs" -> syncRecordPostnatalObs(entry)
             "rpc_record_admission_note" -> syncRecordAdmissionNote(entry)
+            "rpc_start_pregnancy" -> syncStartPregnancy(entry)
+            "rpc_record_anc_contact" -> syncRecordAncContact(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -748,6 +752,28 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_admission_note HTTP ${result.code()} ${body.take(300)}".trim())
         }
         admissionNoteDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncStartPregnancy(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StartPregnancyRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcStartPregnancy(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_start_pregnancy HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        pregnancyDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordAncContact(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordAncContactRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordAncContact(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_anc_contact HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        ancContactDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {

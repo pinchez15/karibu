@@ -156,6 +156,31 @@ ask and the biggest population-level lever), linked to the delivery records we
 already built; with **risk-flagging → referral plan** close behind. Partograph,
 PNC tracker, and MPDSR notification follow.
 
+## Uganda Catholic Medical Bureau (UCMB) alignment
+
+Karibu's clinics are Catholic diocesan facilities under the **Uganda Catholic
+Medical Bureau** — the health office of the Uganda Episcopal Conference (33
+hospitals + 264 lower-level units). What this means for the maternal/ANC build:
+
+- **Clinical protocols = national MOH.** UCMB facilities provide services "in line
+  with the national health policy," so the ANC8 schedule, IPTp-SP, Td, IFAS,
+  EmONC/MgSO₄/AMTSL, HBB and KMC above are exactly what UCMB expects. Building to
+  MOH *is* building to UCMB — the clinical content needs no divergence.
+- **Family planning = Fertility Awareness Methods / Natural Family Planning only.**
+  This is the one place UCMB diverges from the generic MOH package: Catholic
+  facilities counsel/provide **FAM/NFP** (UCMB ran the Georgetown IRH "Master FAM"
+  project), **not artificial contraception**. **Build rule:** anywhere the EHR
+  touches family planning — PNC "FP counselling", any future FP feature — it must
+  offer **FAM/NFP** (Standard Days, lactational amenorrhoea, fertility awareness)
+  and must **not** surface artificial-contraception options. The ANC registry
+  built here has no FP field, so it is already compliant; this rule binds the PNC
+  and FP work that follows.
+- **Reporting structure.** UCMB facilities report **diocesan health office → UCMB →
+  MOH HMIS** — matching the diocese-coordinator role already in the platform
+  (migration 052) and the HMIS 105 reporting already in Karibu.
+- **Ethos.** Values-based, whole-person care; respectful maternity care and
+  dignity in childbirth are first-order, not add-ons.
+
 ## Sources
 
 - Uganda MOH — Essential Maternal & Newborn Clinical Care Guidelines for Uganda (2022, v3): https://library.health.go.ug/sexual-and-reproductive-health/essential-maternal-and-newborn-clinical-care-guidelines-uganda-may
@@ -165,3 +190,5 @@ PNC tracker, and MPDSR notification follow.
 - UNICEF Uganda — ANC and Newborn Care key practices: https://www.unicef.org/uganda/key-practice-antenatal-care
 - KMC implementation in Uganda (Pan African Medical Journal): https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4314138/
 - Helping Babies Breathe in Uganda (skills retention studies): https://pmc.ncbi.nlm.nih.gov/articles/PMC7480409/
+- Uganda Catholic Medical Bureau (UCMB): https://www.ucmb.co.ug/
+- UCMB Master FAM (Fertility Awareness Methods) project, Georgetown IRH: https://www.ccih.org/resource_index/uganda-catholic-medical-bureau-ucmb-master-fam-project-2014-2018/

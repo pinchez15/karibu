@@ -3,6 +3,70 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v21 -> v22: ANC registry (migration 059 mirror). Pregnancies + anc_contacts;
+// column sets + index names match the @Entity declarations exactly.
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS pregnancies (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                patient_name TEXT,
+                lmp TEXT,
+                edd TEXT,
+                gravida INTEGER,
+                para INTEGER,
+                blood_group TEXT,
+                hiv_status TEXT,
+                syphilis_status TEXT,
+                hepb_status TEXT,
+                risk_notes TEXT,
+                status TEXT NOT NULL DEFAULT 'active',
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_pregnancies_patient_id ON pregnancies(patient_id)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_pregnancies_clinic_id_status_edd " +
+                "ON pregnancies(clinic_id, status, edd)",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS anc_contacts (
+                id TEXT NOT NULL PRIMARY KEY,
+                pregnancy_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                contact_number INTEGER,
+                contact_date TEXT NOT NULL,
+                gestation_weeks INTEGER,
+                bp_systolic INTEGER,
+                bp_diastolic INTEGER,
+                weight_kg REAL,
+                fundal_height_cm INTEGER,
+                fetal_heart_rate INTEGER,
+                urine_protein TEXT,
+                hb REAL,
+                iptp_given INTEGER NOT NULL DEFAULT 0,
+                ifas_given INTEGER NOT NULL DEFAULT 0,
+                td_given INTEGER NOT NULL DEFAULT 0,
+                dewormed INTEGER NOT NULL DEFAULT 0,
+                itn_given INTEGER NOT NULL DEFAULT 0,
+                notes TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_anc_contacts_pregnancy_id_contact_date " +
+                "ON anc_contacts(pregnancy_id, contact_date)",
+        )
+    }
+}
+
 // v20 -> v21: inpatient progress notes (migration 058 mirror). One new local
 // table; column set + index name match the @Entity exactly.
 val MIGRATION_20_21 = object : Migration(20, 21) {

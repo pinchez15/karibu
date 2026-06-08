@@ -60,6 +60,11 @@ sealed interface NavRoute {
     @Serializable data object WardHandover : NavRoute
     @Serializable data class AdmissionChart(val admissionId: String) : NavRoute
 
+    // ANC registry (migration 059) — maternal-fetal medicine front half.
+    @Serializable data object AncRegistry : NavRoute
+    @Serializable data object StartPregnancy : NavRoute
+    @Serializable data class PregnancyDetail(val pregnancyId: String) : NavRoute
+
     /**
      * KaribuLearn — the free CME app. A distinct coral-skinned product that
      * shares the EHR's bones. Launched full-screen from the Home shell's

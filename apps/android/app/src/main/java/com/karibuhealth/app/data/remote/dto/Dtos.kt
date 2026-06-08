@@ -1207,3 +1207,97 @@ data class AdmissionNoteDto(
     @SerialName("author_name") val authorName: String? = null,
     @SerialName("created_at") val createdAt: String,
 )
+
+// ── ANC registry (migration 059) ───────────────────────────────────────────
+@Serializable
+data class StartPregnancyRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_lmp") val lmp: String? = null,
+    @SerialName("p_edd") val edd: String? = null,
+    @SerialName("p_gravida") val gravida: Int? = null,
+    @SerialName("p_para") val para: Int? = null,
+    @SerialName("p_blood_group") val bloodGroup: String? = null,
+    @SerialName("p_hiv_status") val hivStatus: String? = null,
+    @SerialName("p_syphilis_status") val syphilisStatus: String? = null,
+    @SerialName("p_hepb_status") val hepbStatus: String? = null,
+    @SerialName("p_risk_notes") val riskNotes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordAncContactRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_pregnancy_id") val pregnancyId: String,
+    @SerialName("p_contact_number") val contactNumber: Int? = null,
+    @SerialName("p_contact_date") val contactDate: String? = null,
+    @SerialName("p_gestation_weeks") val gestationWeeks: Int? = null,
+    @SerialName("p_bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("p_bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("p_weight_kg") val weightKg: Double? = null,
+    @SerialName("p_fundal_height_cm") val fundalHeightCm: Int? = null,
+    @SerialName("p_fetal_heart_rate") val fetalHeartRate: Int? = null,
+    @SerialName("p_urine_protein") val urineProtein: String? = null,
+    @SerialName("p_hb") val hb: Double? = null,
+    @SerialName("p_iptp_given") val iptpGiven: Boolean = false,
+    @SerialName("p_ifas_given") val ifasGiven: Boolean = false,
+    @SerialName("p_td_given") val tdGiven: Boolean = false,
+    @SerialName("p_dewormed") val dewormed: Boolean = false,
+    @SerialName("p_itn_given") val itnGiven: Boolean = false,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ActivePregnanciesRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+@Serializable
+data class ActivePregnancyDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val lmp: String? = null,
+    val edd: String? = null,
+    val gravida: Int? = null,
+    val para: Int? = null,
+    @SerialName("blood_group") val bloodGroup: String? = null,
+    @SerialName("hiv_status") val hivStatus: String? = null,
+    @SerialName("syphilis_status") val syphilisStatus: String? = null,
+    @SerialName("hepb_status") val hepbStatus: String? = null,
+    @SerialName("risk_notes") val riskNotes: String? = null,
+    @SerialName("contact_count") val contactCount: Int = 0,
+    @SerialName("iptp_count") val iptpCount: Int = 0,
+    @SerialName("td_count") val tdCount: Int = 0,
+    @SerialName("last_contact_at") val lastContactAt: String? = null,
+)
+
+@Serializable
+data class PregnancyContactsRequest(
+    @SerialName("p_pregnancy_id") val pregnancyId: String,
+)
+
+@Serializable
+data class AncContactDto(
+    val id: String,
+    @SerialName("pregnancy_id") val pregnancyId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("contact_number") val contactNumber: Int? = null,
+    @SerialName("contact_date") val contactDate: String,
+    @SerialName("gestation_weeks") val gestationWeeks: Int? = null,
+    @SerialName("bp_systolic") val bpSystolic: Int? = null,
+    @SerialName("bp_diastolic") val bpDiastolic: Int? = null,
+    @SerialName("weight_kg") val weightKg: Double? = null,
+    @SerialName("fundal_height_cm") val fundalHeightCm: Int? = null,
+    @SerialName("fetal_heart_rate") val fetalHeartRate: Int? = null,
+    @SerialName("urine_protein") val urineProtein: String? = null,
+    val hb: Double? = null,
+    @SerialName("iptp_given") val iptpGiven: Boolean = false,
+    @SerialName("ifas_given") val ifasGiven: Boolean = false,
+    @SerialName("td_given") val tdGiven: Boolean = false,
+    val dewormed: Boolean = false,
+    @SerialName("itn_given") val itnGiven: Boolean = false,
+    val notes: String? = null,
+)

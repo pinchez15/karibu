@@ -66,6 +66,7 @@ fun HomeScreen(
     onNavigateToPatient: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit = {},
+    onNavigateToAnc: () -> Unit = {},
     showAppBar: Boolean = true,
     selectedPatientId: String? = null,
     onSelectPatient: (String) -> Unit = onNavigateToPatient,
@@ -146,6 +147,7 @@ fun HomeScreen(
                                 viewModel.signOut()
                             },
                             onOpenWorklists = onNavigateToWorklists,
+                            onOpenAnc = onNavigateToAnc,
                         )
                     }
                 }
@@ -377,6 +379,7 @@ private fun HomeAppBar(
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
     onOpenWorklists: () -> Unit,
+    onOpenAnc: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -397,6 +400,10 @@ private fun HomeAppBar(
 
         // Billing moved to the pharmacy — patients pay when they collect drugs,
         // not with the clinician at the visit.
+
+        TextButton(onClick = onOpenAnc) {
+            Text("ANC", color = Cobalt, fontWeight = FontWeight.SemiBold)
+        }
 
         IconButton(onClick = onOpenWorklists) {
             Icon(

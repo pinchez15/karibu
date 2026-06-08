@@ -26,6 +26,9 @@ import com.karibuhealth.app.ui.success.SuccessScreen
 import com.karibuhealth.app.ui.billing.BillingHomeScreen
 import com.karibuhealth.app.ui.worklists.WorklistsScreen
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
+import com.karibuhealth.app.ui.anc.AncRegistryScreen
+import com.karibuhealth.app.ui.anc.StartPregnancyScreen
+import com.karibuhealth.app.ui.anc.PregnancyDetailScreen
 import com.karibuhealth.app.ui.inpatient.WardHandoverScreen
 import com.karibuhealth.app.ui.inpatient.AdmitPatientScreen
 import com.karibuhealth.app.ui.inpatient.AdmissionChartScreen
@@ -74,6 +77,7 @@ fun KaribuNavHost(
                     onNavigateToWorklists = { navigator.go(NavRoute.Worklists) },
                     onNavigateToBilling = { navigator.go(NavRoute.Billing) },
                     onNavigateToInpatient = { navigator.go(NavRoute.Inpatient) },
+                    onNavigateToAnc = { navigator.go(NavRoute.AncRegistry) },
                     onAddPatientNote = { patientId ->
                         navigator.go(NavRoute.PatientNote(patientId, null))
                     },
@@ -362,6 +366,31 @@ fun KaribuNavHost(
 
             composable<NavRoute.AdmissionChart> {
                 AdmissionChartScreen(
+                    onNavigateBack = { navigator.back() },
+                )
+            }
+
+            // ANC registry (migration 059).
+            composable<NavRoute.AncRegistry> {
+                AncRegistryScreen(
+                    onNavigateBack = { navigator.back() },
+                    onRegister = { navigator.go(NavRoute.StartPregnancy) },
+                    onOpenPregnancy = { id -> navigator.go(NavRoute.PregnancyDetail(id)) },
+                )
+            }
+
+            composable<NavRoute.StartPregnancy> {
+                StartPregnancyScreen(
+                    onNavigateBack = { navigator.back() },
+                    onStarted = { id ->
+                        // Replace the form with the detail so Back returns to the registry.
+                        navigator.goReset(NavRoute.PregnancyDetail(id), NavRoute.AncRegistry)
+                    },
+                )
+            }
+
+            composable<NavRoute.PregnancyDetail> {
+                PregnancyDetailScreen(
                     onNavigateBack = { navigator.back() },
                 )
             }
