@@ -3,6 +3,35 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v22 -> v23: Ebola/VHF screening record (migration 060 mirror). One new local
+// table; column set + index name match the @Entity exactly.
+val MIGRATION_22_23 = object : Migration(22, 23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ebola_screenings (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                visit_id TEXT,
+                temp_c REAL,
+                epi_contact INTEGER NOT NULL DEFAULT 0,
+                unexplained_bleeding INTEGER NOT NULL DEFAULT 0,
+                symptoms TEXT,
+                is_suspect INTEGER NOT NULL DEFAULT 0,
+                action_taken TEXT,
+                created_at TEXT NOT NULL,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_ebola_screenings_visit_id_created_at " +
+                "ON ebola_screenings(visit_id, created_at)",
+        )
+    }
+}
+
 // v21 -> v22: ANC registry (migration 059 mirror). Pregnancies + anc_contacts;
 // column sets + index names match the @Entity declarations exactly.
 val MIGRATION_21_22 = object : Migration(21, 22) {

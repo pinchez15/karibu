@@ -32,6 +32,7 @@ class SyncEngine @Inject constructor(
     private val admissionNoteDao: AdmissionNoteDao,
     private val pregnancyDao: PregnancyDao,
     private val ancContactDao: AncContactDao,
+    private val ebolaScreeningDao: EbolaScreeningDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
@@ -210,6 +211,7 @@ class SyncEngine @Inject constructor(
             "rpc_record_admission_note" -> syncRecordAdmissionNote(entry)
             "rpc_start_pregnancy" -> syncStartPregnancy(entry)
             "rpc_record_anc_contact" -> syncRecordAncContact(entry)
+            "rpc_record_ebola_screening" -> syncRecordEbolaScreening(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -774,6 +776,17 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_anc_contact HTTP ${result.code()} ${body.take(300)}".trim())
         }
         ancContactDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordEbolaScreening(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordEbolaScreeningRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordEbolaScreening(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_ebola_screening HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        ebolaScreeningDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {

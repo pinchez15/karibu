@@ -1301,3 +1301,38 @@ data class AncContactDto(
     @SerialName("itn_given") val itnGiven: Boolean = false,
     val notes: String? = null,
 )
+
+// ── Ebola / VHF screening (migration 060) ──────────────────────────────────
+@Serializable
+data class RecordEbolaScreeningRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_temp_c") val tempC: Double? = null,
+    @SerialName("p_epi_contact") val epiContact: Boolean = false,
+    @SerialName("p_unexplained_bleeding") val unexplainedBleeding: Boolean = false,
+    @SerialName("p_symptoms") val symptoms: String? = null,
+    @SerialName("p_is_suspect") val isSuspect: Boolean = false,
+    @SerialName("p_action_taken") val actionTaken: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class VisitEbolaScreeningRequest(
+    @SerialName("p_visit_id") val visitId: String,
+)
+
+@Serializable
+data class EbolaScreeningDto(
+    val id: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
+    @SerialName("temp_c") val tempC: Double? = null,
+    @SerialName("epi_contact") val epiContact: Boolean = false,
+    @SerialName("unexplained_bleeding") val unexplainedBleeding: Boolean = false,
+    val symptoms: String? = null,
+    @SerialName("is_suspect") val isSuspect: Boolean = false,
+    @SerialName("action_taken") val actionTaken: String? = null,
+    @SerialName("created_at") val createdAt: String,
+)

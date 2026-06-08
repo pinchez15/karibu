@@ -75,9 +75,21 @@ fun VisitDetailsScreen(
     viewModel: VisitDetailsViewModel = hiltViewModel(key = visitId),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showEbolaScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     LaunchedEffect(visitId) {
         viewModel.loadVisit(visitId)
+    }
+
+    if (showEbolaScreen) {
+        EbolaScreeningSheet(
+            tempC = uiState.latestVitals?.tempC,
+            onDismiss = { showEbolaScreen = false },
+            onSubmit = { contact, bleeding, symptoms ->
+                viewModel.recordEbolaScreening(contact, bleeding, symptoms)
+                showEbolaScreen = false
+            },
+        )
     }
 
     Scaffold(
@@ -204,6 +216,16 @@ fun VisitDetailsScreen(
                 }
 
                 val contextColumn: @Composable () -> Unit = {
+                    // Outbreak-gated Ebola/VHF screening — rendered FIRST so it
+                    // supersedes other CDS (e.g. malaria) when a region is on protocol.
+                    if (uiState.ebolaProtocolActive) {
+                        EbolaScreeningSection(
+                            screening = uiState.ebolaScreening,
+                            febrile = (uiState.latestVitals?.tempC ?: 0.0) >= 38.0,
+                            onScreen = { showEbolaScreen = true },
+                        )
+                    }
+
                     uiState.activeCriticalAlerts.forEach { alert ->
                         VisitCriticalAlertBanner(
                             alert = alert,
@@ -1142,5 +1164,124 @@ private fun formatAgeFromDob(isoDate: String): String? {
         }
     } catch (_: Exception) {
         null
+    }
+}
+
+// ── Ebola / VHF screening UI (migration 060) ───────────────────────────────
+
+@Composable
+private fun EbolaScreeningSection(
+    screening: com.karibuhealth.app.data.local.db.entity.EbolaScreeningEntity?,
+    febrile: Boolean,
+    onScreen: () -> Unit,
+) {
+    when {
+        screening?.isSuspect == true -> {
+            // Interruptive suspect-case banner — containment first.
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "⚠ SUSPECT VIRAL HAEMORRHAGIC FEVER (EBOLA)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    val summary = listOfNotNull(
+                        screening.tempC?.let { "Fever ${it}°C" },
+                        if (screening.epiContact) "epidemiological contact" else null,
+                        if (screening.unexplainedBleeding) "unexplained bleeding" else null,
+                        screening.symptoms?.takeIf { it.isNotBlank() }?.let { "${it.split(",").size} symptoms" },
+                    ).joinToString(" · ")
+                    if (summary.isNotBlank()) {
+                        Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                    com.karibuhealth.app.domain.OutbreakScreeningRules.SUSPECT_ACTIONS.forEachIndexed { i, step ->
+                        Text("${i + 1}. $step", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                    TextButton(onClick = onScreen) { Text("Re-screen") }
+                }
+            }
+        }
+        screening == null -> {
+            // Protocol active, not yet screened — prompt (emphasised if febrile).
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (febrile) MaterialTheme.colorScheme.errorContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                ),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (febrile) "Ebola protocol active — screen this febrile patient" else "Ebola protocol active — VHF screen",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(onClick = onScreen) { Text("Screen") }
+                }
+            }
+        }
+        else -> {
+            Text(
+                "Ebola screen: not a suspect case",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun EbolaScreeningSheet(
+    tempC: Double?,
+    onDismiss: () -> Unit,
+    onSubmit: (Boolean, Boolean, Set<com.karibuhealth.app.domain.OutbreakScreeningRules.VhfSymptom>) -> Unit,
+) {
+    var contact by remember { mutableStateOf(false) }
+    var bleeding by remember { mutableStateOf(false) }
+    val symptoms = remember { mutableStateListOf<com.karibuhealth.app.domain.OutbreakScreeningRules.VhfSymptom>() }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Ebola / VHF screen", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Fever: " + (tempC?.let { "${it}°C" } ?: "not recorded") + " (record vitals first if missing)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            CheckRowE("Epidemiological contact (case / funeral / sick animal)", contact) { contact = it }
+            CheckRowE("Any unexplained bleeding", bleeding) { bleeding = it }
+            Text("Symptoms", style = MaterialTheme.typography.labelLarge)
+            com.karibuhealth.app.domain.OutbreakScreeningRules.VhfSymptom.entries.forEach { sym ->
+                CheckRowE(sym.display, symptoms.contains(sym)) { checked ->
+                    if (checked) symptoms.add(sym) else symptoms.remove(sym)
+                }
+            }
+            Button(
+                onClick = { onSubmit(contact, bleeding, symptoms.toSet()) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Record screen") }
+        }
+    }
+}
+
+@Composable
+private fun CheckRowE(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onChange)
+        Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }

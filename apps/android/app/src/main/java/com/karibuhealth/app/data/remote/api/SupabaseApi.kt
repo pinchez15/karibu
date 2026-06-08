@@ -339,6 +339,13 @@ interface SupabaseApi {
     @POST("rpc/rpc_pregnancy_contacts")
     suspend fun rpcPregnancyContacts(@Body request: PregnancyContactsRequest): List<AncContactDto>
 
+    // Ebola / VHF screening (migration 060).
+    @POST("rpc/rpc_record_ebola_screening")
+    suspend fun rpcRecordEbolaScreening(@Body request: RecordEbolaScreeningRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_visit_ebola_screening")
+    suspend fun rpcVisitEbolaScreening(@Body request: VisitEbolaScreeningRequest): List<EbolaScreeningDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

@@ -36,6 +36,20 @@ object OutbreakScreeningRules {
     /** How many constitutional symptoms (without a contact/bleeding) suffice. */
     const val MIN_SYMPTOMS: Int = 3
 
+    /**
+     * First response for a SUSPECT VHF case (clinically signed off). Containment
+     * first — the priority is to stop transmission and move the patient safely,
+     * not to investigate on site.
+     */
+    val SUSPECT_ACTIONS: List<String> = listOf(
+        "Isolate now — move to a separate room/area, one attendant only.",
+        "Barrier precautions: gloves, gown, mask, eye protection before any contact.",
+        "Do NOT take blood or do non-essential procedures.",
+        "Notify the district surveillance focal person / DHO immediately.",
+        "Arrange safe referral to the designated VHF/treatment unit.",
+        "Safely handle and disinfect any body fluids; list contacts.",
+    )
+
     /** Constitutional symptoms in the VHF suspect-case definition. */
     enum class VhfSymptom(val display: String) {
         Headache("Headache"),

@@ -57,6 +57,10 @@ data class VisitDetailsUiState(
      */
     val aiReviewSuggestions: List<AiReviewSuggestionDto> = emptyList(),
     val criticalAlerts: List<VisitCriticalAlertDto> = emptyList(),
+    // Outbreak (migration 052/060): true when this clinic's region is on the
+    // ebola protocol; the screening record gates the interruptive VHF banner.
+    val ebolaProtocolActive: Boolean = false,
+    val ebolaScreening: com.karibuhealth.app.data.local.db.entity.EbolaScreeningEntity? = null,
     val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
@@ -106,6 +110,8 @@ class VisitDetailsViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val vitalsRepository: VitalsRepository,
     private val staffRepository: StaffRepository,
+    private val regionProtocolRepository: com.karibuhealth.app.data.repository.RegionProtocolRepository,
+    private val authTokenStore: com.karibuhealth.app.data.local.datastore.AuthTokenStore,
     private val networkMonitor: NetworkMonitor,
     private val syncEngine: SyncEngine,
     private val syncQueueDao: SyncQueueDao,
@@ -174,6 +180,21 @@ class VisitDetailsViewModel @Inject constructor(
             }
         }
 
+        // Outbreak gating: is this clinic's region on the ebola protocol, and is
+        // there a screening on this visit? Drives the interruptive VHF banner.
+        viewModelScope.launch {
+            regionProtocolRepository.observeIsOnProtocol(com.karibuhealth.app.domain.OutbreakScreeningRules.EBOLA)
+                .collect { active -> _uiState.update { it.copy(ebolaProtocolActive = active) } }
+        }
+        viewModelScope.launch {
+            regionProtocolRepository.observeVisitScreening(visitId)
+                .collect { s -> _uiState.update { it.copy(ebolaScreening = s) } }
+        }
+        viewModelScope.launch {
+            authTokenStore.getClinicId()?.let { regionProtocolRepository.refreshProtocols(it) }
+            regionProtocolRepository.refreshVisitScreening(visitId)
+        }
+
         // Latest vitals for this visit — surfaced as inline chips on the
         // designed visit-details screen.
         viewModelScope.launch {
@@ -204,6 +225,45 @@ class VisitDetailsViewModel @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.w("VisitDetailsVM", "AI review fetch failed: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Run the VHF suspect-case screen for this visit and record it. Fever comes
+     * from the latest vitals; the rest from the screening checklist. Records the
+     * result (suspect or not) so it is auditable and the banner persists.
+     */
+    fun recordEbolaScreening(
+        epiContact: Boolean,
+        unexplainedBleeding: Boolean,
+        symptoms: Set<com.karibuhealth.app.domain.OutbreakScreeningRules.VhfSymptom>,
+    ) {
+        val s = _uiState.value
+        val patient = s.patient ?: return
+        val visit = s.visit ?: return
+        val result = com.karibuhealth.app.domain.OutbreakScreeningRules.screenEbola(
+            com.karibuhealth.app.domain.OutbreakScreeningRules.Input(
+                tempC = s.latestVitals?.tempC,
+                epidemiologicalContact = epiContact,
+                unexplainedBleeding = unexplainedBleeding,
+                symptoms = symptoms,
+            ),
+        )
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                regionProtocolRepository.recordScreening(
+                    clinicId = clinicId,
+                    patientId = patient.id,
+                    visitId = visit.id,
+                    tempC = s.latestVitals?.tempC,
+                    epiContact = epiContact,
+                    unexplainedBleeding = unexplainedBleeding,
+                    symptoms = symptoms.joinToString(",") { it.name },
+                    isSuspect = result.isSuspect,
+                    actionTaken = if (result.isSuspect) "isolation_initiated" else null,
+                )
+            }.onFailure { e -> _uiState.update { it.copy(aiReviewError = e.message) } }
         }
     }
 
