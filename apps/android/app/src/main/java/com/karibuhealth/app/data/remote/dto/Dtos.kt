@@ -1183,3 +1183,27 @@ data class PostnatalObservationDto(
     val jaundice: Boolean = false,
     val note: String? = null,
 )
+
+// ── Inpatient progress notes (migration 058) ───────────────────────────────
+@Serializable
+data class RecordAdmissionNoteRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_note") val note: String,
+    @SerialName("p_created_at") val createdAt: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class AdmissionNotesRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class AdmissionNoteDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    val note: String,
+    @SerialName("author_name") val authorName: String? = null,
+    @SerialName("created_at") val createdAt: String,
+)

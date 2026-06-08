@@ -41,13 +41,21 @@ fun WardCensusScreen(
     onNavigateBack: () -> Unit,
     onAdmit: () -> Unit,
     onOpenAdmission: (String) -> Unit,
+    onHandover: () -> Unit = {},
     viewModel: WardCensusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val rows = state.rows.filter { state.ward == null || it.admission.ward == state.ward }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Ward") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Ward") },
+                actions = {
+                    androidx.compose.material3.TextButton(onClick = onHandover) { Text("Handover") }
+                },
+            )
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAdmit,

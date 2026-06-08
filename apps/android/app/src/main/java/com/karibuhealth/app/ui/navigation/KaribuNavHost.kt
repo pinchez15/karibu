@@ -26,6 +26,7 @@ import com.karibuhealth.app.ui.success.SuccessScreen
 import com.karibuhealth.app.ui.billing.BillingHomeScreen
 import com.karibuhealth.app.ui.worklists.WorklistsScreen
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
+import com.karibuhealth.app.ui.inpatient.WardHandoverScreen
 import com.karibuhealth.app.ui.inpatient.AdmitPatientScreen
 import com.karibuhealth.app.ui.inpatient.AdmissionChartScreen
 
@@ -333,6 +334,16 @@ fun KaribuNavHost(
                 WardCensusScreen(
                     onNavigateBack = { navigator.back() },
                     onAdmit = { navigator.go(NavRoute.AdmitPatient) },
+                    onOpenAdmission = { admissionId ->
+                        navigator.go(NavRoute.AdmissionChart(admissionId))
+                    },
+                    onHandover = { navigator.go(NavRoute.WardHandover) },
+                )
+            }
+
+            composable<NavRoute.WardHandover> {
+                WardHandoverScreen(
+                    onNavigateBack = { navigator.back() },
                     onOpenAdmission = { admissionId ->
                         navigator.go(NavRoute.AdmissionChart(admissionId))
                     },

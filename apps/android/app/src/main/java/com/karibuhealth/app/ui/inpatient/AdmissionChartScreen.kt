@@ -64,6 +64,7 @@ fun AdmissionChartScreen(
     var showDischarge by remember { mutableStateOf(false) }
     var showRefer by remember { mutableStateOf(false) }
     var showDelivery by remember { mutableStateOf(false) }
+    var showAddNote by remember { mutableStateOf(false) }
     var postnatalSubject by remember { mutableStateOf<String?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
 
@@ -216,6 +217,29 @@ fun AdmissionChartScreen(
             } else {
                 items(s.observations, key = { "obs-${it.id}" }) { obs -> ObservationRow(obs) }
             }
+
+            // ── Progress notes ──────────────────────────────────────────────
+            item(key = "notes-header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text("Progress notes", style = MaterialTheme.typography.labelLarge)
+                    TextButton(onClick = { showAddNote = true }) { Text("Add note") }
+                }
+            }
+            if (s.notes.isEmpty()) {
+                item(key = "notes-empty") {
+                    Text(
+                        "No progress notes yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items(s.notes, key = { "note-${it.id}" }) { note -> ProgressNoteRow(note) }
+            }
         }
     }
 
@@ -272,6 +296,14 @@ fun AdmissionChartScreen(
                 )
                 postnatalSubject = null
             },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        )
+    }
+
+    if (showAddNote) {
+        AddNoteSheet(
+            onDismiss = { showAddNote = false },
+            onSave = { text -> viewModel.addNote(text); showAddNote = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         )
     }
@@ -815,6 +847,59 @@ private fun DeliverySheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Save delivery") }
+        }
+    }
+}
+
+@Composable
+private fun ProgressNoteRow(note: com.karibuhealth.app.data.local.db.entity.AdmissionNoteEntity) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val by = note.authorName?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""
+            Text(
+                timeAgo(note.createdAt) + by,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(note.note, style = MaterialTheme.typography.bodyMedium)
+            if (!note.isSynced) {
+                Text(
+                    "Saved on device",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddNoteSheet(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    sheetState: androidx.compose.material3.SheetState,
+) {
+    var text by remember { mutableStateOf("") }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Progress note", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Note") },
+                minLines = 3,
+            )
+            Button(
+                onClick = { onSave(text) },
+                enabled = text.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Save note") }
         }
     }
 }

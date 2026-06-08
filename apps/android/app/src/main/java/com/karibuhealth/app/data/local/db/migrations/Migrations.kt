@@ -3,6 +3,31 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v20 -> v21: inpatient progress notes (migration 058 mirror). One new local
+// table; column set + index name match the @Entity exactly.
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS admission_notes (
+                id TEXT NOT NULL PRIMARY KEY,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                note TEXT NOT NULL,
+                author_name TEXT,
+                created_at TEXT NOT NULL,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_admission_notes_admission_id_created_at " +
+                "ON admission_notes(admission_id, created_at)",
+        )
+    }
+}
+
 // v19 -> v20: postnatal observations (migration 057 mirror). One new local
 // table for mother/newborn postnatal rounds; column set + index name match the
 // @Entity exactly.

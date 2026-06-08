@@ -7,7 +7,9 @@ import com.karibuhealth.app.data.local.db.dao.DeliveryDao
 import com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
 import com.karibuhealth.app.data.local.db.dao.MedicationOrderDao
 import com.karibuhealth.app.data.local.db.dao.PostnatalObservationDao
+import com.karibuhealth.app.data.local.db.dao.AdmissionNoteDao
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
+import com.karibuhealth.app.data.local.db.entity.AdmissionNoteEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
 import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
@@ -20,6 +22,8 @@ import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionPostnatalRequest
+import com.karibuhealth.app.data.remote.dto.AdmissionNotesRequest
+import com.karibuhealth.app.data.remote.dto.RecordAdmissionNoteRequest
 import com.karibuhealth.app.data.remote.dto.DischargeAdmissionRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionObservationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
@@ -53,6 +57,7 @@ class InpatientRepository @Inject constructor(
     private val medicationAdministrationDao: MedicationAdministrationDao,
     private val deliveryDao: DeliveryDao,
     private val postnatalObservationDao: PostnatalObservationDao,
+    private val admissionNoteDao: AdmissionNoteDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -611,6 +616,58 @@ class InpatientRepository @Inject constructor(
             val resp = supabaseApi.rpcRecordPostnatalObs(request.copy(clientOpId = id))
             if (resp.isSuccessful) postnatalObservationDao.markSynced(id)
             else throw IllegalStateException("rpc_record_postnatal_obs HTTP ${resp.code()}")
+        }
+        id
+    }
+
+    // ── Progress notes (migration 058) ─────────────────────────────────────
+
+    fun observeNotes(admissionId: String): Flow<List<AdmissionNoteEntity>> =
+        admissionNoteDao.observeForAdmission(admissionId)
+
+    suspend fun refreshNotes(admissionId: String) {
+        if (!networkMonitor.isOnline()) return
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val rows = supabaseApi.rpcAdmissionNotes(AdmissionNotesRequest(admissionId))
+                admissionNoteDao.upsertAll(
+                    rows.map {
+                        AdmissionNoteEntity(
+                            id = it.id, admissionId = it.admissionId, clinicId = "", patientId = "",
+                            note = it.note, authorName = it.authorName, createdAt = it.createdAt, isSynced = true,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    suspend fun recordNote(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+        note: String,
+    ): String = withContext(Dispatchers.IO) {
+        val id = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val entity = AdmissionNoteEntity(
+            id = id, admissionId = admissionId, clinicId = clinicId, patientId = patientId,
+            note = note.trim(), authorName = null, createdAt = now, isSynced = false,
+        )
+        val request = RecordAdmissionNoteRequest(id = id, admissionId = admissionId, note = note.trim(), createdAt = now)
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_record_admission_note",
+            entityType = "admission_note",
+            entityId = id,
+            payload = json.encodeToString(RecordAdmissionNoteRequest.serializer(), request.copy(clientOpId = id)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        admissionNoteDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcRecordAdmissionNote(request.copy(clientOpId = id))
+            if (resp.isSuccessful) admissionNoteDao.markSynced(id)
+            else throw IllegalStateException("rpc_record_admission_note HTTP ${resp.code()}")
         }
         id
     }

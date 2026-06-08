@@ -319,6 +319,13 @@ interface SupabaseApi {
         @Body request: AdmissionPostnatalRequest,
     ): List<PostnatalObservationDto>
 
+    // Inpatient progress notes (migration 058).
+    @POST("rpc/rpc_record_admission_note")
+    suspend fun rpcRecordAdmissionNote(@Body request: RecordAdmissionNoteRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_notes")
+    suspend fun rpcAdmissionNotes(@Body request: AdmissionNotesRequest): List<AdmissionNoteDto>
+
     @POST("rpc/rpc_activate_clinical_protocol")
     suspend fun rpcActivateClinicalProtocol(@Body request: ActivateClinicalProtocolRequest): String
 

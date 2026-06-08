@@ -57,6 +57,7 @@ sealed interface NavRoute {
     // patient's rounds observations chart.
     @Serializable data object Inpatient : NavRoute
     @Serializable data object AdmitPatient : NavRoute
+    @Serializable data object WardHandover : NavRoute
     @Serializable data class AdmissionChart(val admissionId: String) : NavRoute
 
     /**

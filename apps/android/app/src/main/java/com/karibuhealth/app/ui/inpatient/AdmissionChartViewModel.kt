@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
+import com.karibuhealth.app.data.local.db.entity.AdmissionNoteEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
 import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
@@ -47,6 +48,8 @@ data class AdmissionChartUiState(
     // Postnatal (migration 057).
     val postnatalObs: List<PostnatalObservationEntity> = emptyList(),
     val newbornFindings: List<NewbornDangerSigns.Finding> = emptyList(),
+    // Progress notes (migration 058).
+    val notes: List<AdmissionNoteEntity> = emptyList(),
     // Set once the admission is discharged/transferred, so the UI navigates back.
     val closed: Boolean = false,
     val error: String? = null,
@@ -122,6 +125,23 @@ class AdmissionChartViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { inpatientRepository.refreshPostnatal(admissionId) }
+        viewModelScope.launch {
+            inpatientRepository.observeNotes(admissionId).collect { notes ->
+                _state.update { it.copy(notes = notes) }
+            }
+        }
+        viewModelScope.launch { inpatientRepository.refreshNotes(admissionId) }
+    }
+
+    fun addNote(text: String) {
+        val admission = _state.value.admission ?: return
+        if (text.isBlank()) return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.recordNote(clinicId, admissionId, admission.patientId, text)
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
     }
 
     fun recordPostnatalObs(

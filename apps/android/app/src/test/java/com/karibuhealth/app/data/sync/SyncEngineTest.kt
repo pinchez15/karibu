@@ -29,6 +29,7 @@ class SyncEngineTest {
     private lateinit var medicationAdministrationDao: com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
     private lateinit var deliveryDao: com.karibuhealth.app.data.local.db.dao.DeliveryDao
     private lateinit var postnatalObservationDao: com.karibuhealth.app.data.local.db.dao.PostnatalObservationDao
+    private lateinit var admissionNoteDao: com.karibuhealth.app.data.local.db.dao.AdmissionNoteDao
     private lateinit var supabaseApi: SupabaseApi
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var pullReconciliationService: PullReconciliationService
@@ -51,6 +52,7 @@ class SyncEngineTest {
         medicationAdministrationDao = mockk(relaxed = true)
         deliveryDao = mockk(relaxed = true)
         postnatalObservationDao = mockk(relaxed = true)
+        admissionNoteDao = mockk(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
         pullReconciliationService = mockk(relaxed = true)
@@ -70,6 +72,7 @@ class SyncEngineTest {
             medicationAdministrationDao = medicationAdministrationDao,
             deliveryDao = deliveryDao,
             postnatalObservationDao = postnatalObservationDao,
+            admissionNoteDao = admissionNoteDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             pullReconciliationService = pullReconciliationService,

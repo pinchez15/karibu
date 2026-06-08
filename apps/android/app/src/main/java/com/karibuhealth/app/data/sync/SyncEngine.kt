@@ -29,6 +29,7 @@ class SyncEngine @Inject constructor(
     private val medicationAdministrationDao: MedicationAdministrationDao,
     private val deliveryDao: DeliveryDao,
     private val postnatalObservationDao: PostnatalObservationDao,
+    private val admissionNoteDao: AdmissionNoteDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
@@ -204,6 +205,7 @@ class SyncEngine @Inject constructor(
             "rpc_discharge_admission" -> syncDischargeAdmission(entry)
             "rpc_record_delivery" -> syncRecordDelivery(entry)
             "rpc_record_postnatal_obs" -> syncRecordPostnatalObs(entry)
+            "rpc_record_admission_note" -> syncRecordAdmissionNote(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
         }
@@ -735,6 +737,17 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_postnatal_obs HTTP ${result.code()} ${body.take(300)}".trim())
         }
         postnatalObservationDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordAdmissionNote(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordAdmissionNoteRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordAdmissionNote(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_admission_note HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        admissionNoteDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordReviewResponse(entry: SyncQueueEntry) {
