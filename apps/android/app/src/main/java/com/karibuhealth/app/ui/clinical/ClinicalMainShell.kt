@@ -68,7 +68,6 @@ fun ClinicalMainShell(
                         homeViewModel.signOut()
                     },
                     onOpenWorklists = onNavigateToWorklists,
-                    onOpenBilling = onNavigateToBilling,
                 )
             }
             when (tab) {

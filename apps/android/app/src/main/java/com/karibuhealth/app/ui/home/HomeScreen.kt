@@ -13,7 +13,6 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -87,6 +86,7 @@ fun HomeScreen(
             PharmacyHomeScreen(
                 onNavigateToVisit = onNavigateToVisitDetails,
                 onNavigateToWorklists = onNavigateToWorklists,
+                onNavigateToBilling = onNavigateToBilling,
             )
             return
         }
@@ -146,7 +146,6 @@ fun HomeScreen(
                                 viewModel.signOut()
                             },
                             onOpenWorklists = onNavigateToWorklists,
-                            onOpenBilling = onNavigateToBilling,
                         )
                     }
                 }
@@ -378,7 +377,6 @@ private fun HomeAppBar(
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
     onOpenWorklists: () -> Unit,
-    onOpenBilling: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -397,13 +395,8 @@ private fun HomeAppBar(
             )
         }
 
-        IconButton(onClick = onOpenBilling) {
-            Icon(
-                imageVector = Icons.Default.Payments,
-                contentDescription = "Billing",
-                tint = Cobalt,
-            )
-        }
+        // Billing moved to the pharmacy — patients pay when they collect drugs,
+        // not with the clinician at the visit.
 
         IconButton(onClick = onOpenWorklists) {
             Icon(

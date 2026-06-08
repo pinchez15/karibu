@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -29,6 +30,7 @@ import com.karibuhealth.app.ui.theme.Ink
 fun PharmacyHomeScreen(
     onNavigateToVisit: (String) -> Unit,
     onNavigateToWorklists: () -> Unit,
+    onNavigateToBilling: () -> Unit = {},
     viewModel: PharmacyHomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -39,6 +41,10 @@ fun PharmacyHomeScreen(
             TopAppBar(
                 title = { Text("Pharmacy queue") },
                 actions = {
+                    // Patients pay at the pharmacy when they collect their drugs.
+                    IconButton(onClick = onNavigateToBilling) {
+                        Icon(Icons.Default.Payments, contentDescription = "Billing")
+                    }
                     IconButton(onClick = onNavigateToWorklists) {
                         Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Worklists")
                     }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -47,7 +46,6 @@ fun ClinicalShellAppBar(
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
     onOpenWorklists: () -> Unit,
-    onOpenBilling: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -70,13 +68,7 @@ fun ClinicalShellAppBar(
             )
         }
 
-        IconButton(onClick = onOpenBilling) {
-            Icon(
-                imageVector = Icons.Default.Payments,
-                contentDescription = "Billing",
-                tint = Cobalt,
-            )
-        }
+        // Billing moved to the pharmacy — patients pay at drug collection.
 
         IconButton(onClick = onOpenWorklists) {
             Icon(
