@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from karibu_case_generation.export.app_kpack import export_app_kpack_file
 from karibu_case_generation.export.review_narratives import load_cases_from_pack, render_review_narratives
 from karibu_case_generation.generate.draft_cases import generate_hc3_draft_pack
 from karibu_case_generation.ingest.source_registry import validate_source_registry
@@ -52,6 +53,30 @@ def main() -> int:
         default=Path("content/learn/review_packets/hc3-core-draft-v0.1.0.md"),
     )
     review_parser.add_argument("--limit", type=int)
+
+    export_parser = subparsers.add_parser(
+        "export-app-kpack",
+        help="Convert a directory kpack into a single app .kpack file.",
+    )
+    export_parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("content/learn/generated/hc3-core-draft-v0.1.0"),
+    )
+    export_parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("content/learn/published/hc3-core-draft-v0.1.0.kpack"),
+    )
+    export_parser.add_argument("--pack-id", default="hc3-core-draft")
+    export_parser.add_argument("--title", default="HC III Core Draft")
+    export_parser.add_argument("--level", type=int, default=1)
+    export_parser.add_argument("--limit", type=int)
+    export_parser.add_argument(
+        "--stubs-only",
+        action="store_true",
+        help="Export catalog stubs (ready=false) without auto-compiled steps.",
+    )
 
     args = parser.parse_args()
 
@@ -105,6 +130,23 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(render_review_narratives(cases))
         print(f"Wrote clinician review narratives to {args.output}")
+        return 0
+
+    if args.command == "export-app-kpack":
+        stats = export_app_kpack_file(
+            input_dir=args.input,
+            output_path=args.output,
+            pack_id=args.pack_id,
+            title=args.title,
+            difficulty_level=args.level,
+            compile_walkable=not args.stubs_only,
+            ready=False if args.stubs_only else None,
+            limit=args.limit,
+        )
+        print(
+            f"Exported {stats['cases']} cases ({stats['walkable']} walkable, {stats['stubs']} stubs) "
+            f"to {args.output}"
+        )
         return 0
 
     parser.error(f"Unknown command: {args.command}")

@@ -4,8 +4,14 @@ The clinic queue model is being replaced with a **patient-centered EHR** (pre-la
 Before implementing sync, Android role homes, lab/pharmacy, pharmacy order timing, or schema
 changes for this effort, read **`docs/ehr-pivot-implementation.md`** end-to-end.
 
-Before implementing or changing **AI notes, Learn (CME), or Consult**, read
+Before implementing or changing **AI notes or Consult** in Karibu EHR, read
 **`docs/ai-clinical-assist.md`** end-to-end.
+
+Before implementing **Karibu Learn** (standalone CME app, not EHR), read
+**`docs/karibu-learn/product-boundary.md`** and **`docs/karibu-learn/vision.md`**
+end-to-end. Learn and EHR are separate apps: different auth, different databases,
+not reachable from each other. They share this monorepo only so Learn can mirror
+EHR chart UX for pre-onboarding.
 
 That doc supersedes older planning docs when they conflict. Key locked decisions:
 

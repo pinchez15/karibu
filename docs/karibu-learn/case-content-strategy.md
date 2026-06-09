@@ -4,7 +4,9 @@ Status: strategic direction for Karibu Learn case content and the Python generat
 
 Karibu Learn should provide valuable, realistic, important clinical reasoning practice for healthcare workers in Sub-Saharan Africa. It should augment existing CPD habits such as hospital seminars, Ministry of Health guideline learning, peer discussion, and WhatsApp-based case sharing.
 
-Karibu Learn inherits design DNA and clinical workflow feel from Karibu EHR, but it is not an EHR product. It uses simulated cases only and does not share PHI, EHR clinical data, EHR Room storage, EHR sync code, or the EHR Supabase backend.
+Karibu Learn and Karibu EHR are **separate apps** (different auth and user databases; neither reachable from the other). They share this monorepo so Learn can mirror EHR chart UX for pre-onboarding. See [`product-boundary.md`](product-boundary.md).
+
+Learn inherits design DNA and clinical workflow feel from Karibu EHR, but it is not an EHR product. It uses simulated cases only and does not share PHI, EHR clinical data, EHR Room storage, EHR sync code, or the EHR Supabase backend.
 
 ## Product Positioning
 

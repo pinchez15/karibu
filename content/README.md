@@ -1,6 +1,8 @@
 # Karibu Content
 
-This folder separates source medical material from generated and published Karibu Learn content.
+This folder separates source medical material from generated and published **Karibu Learn** content.
+
+Karibu Learn is a standalone app (not Karibu EHR). Content here feeds Learn only — no PHI, no EHR patient linkage. Product boundary: [`docs/karibu-learn/product-boundary.md`](../docs/karibu-learn/product-boundary.md).
 
 ## Folders
 

@@ -1,16 +1,22 @@
 # KaribuLearn case-pack schema
 
-KaribuLearn is the free CME app: a coral learning shell wrapped around a
-faithful cobalt KaribuEHR simulation. Clinicians work pre-written cases —
-**all patient data is generated, never real PHI** — making graded decisions the
-way they would in a live visit.
+Karibu Learn is the free CME **standalone app** (`apps/learn-android`): a coral
+learning shell around a faithful cobalt Karibu EHR **simulation**. Clinicians
+work pre-written cases — **all patient data is generated, never real PHI**.
+
+Karibu Learn and Karibu EHR are separate applications (different auth and user
+databases; neither reachable from the other). They share this monorepo so Learn
+can mirror EHR chart UX. See **`docs/karibu-learn/product-boundary.md`**.
 
 This document is the contract the **case-authoring pipeline** writes to. The
-Android app (`apps/android/.../ui/learn`) renders whatever the pipeline emits;
-no app change is needed to add cases — only valid JSON. For the wider product
-direction (canonical→variant model, source types, scoring gates, sharing, CPD
-readiness) see **`docs/karibu-learn/case-content-strategy.md`**; this file is the
-concrete on-device schema that strategy serialises to.
+Learn Android app renders whatever the pipeline emits in this shape; no app
+change is needed to add cases — only valid JSON. Pack assets ship under
+`apps/learn-android` (target); transitional copies may exist under
+`apps/android/app/src/main/assets/learn/` until the port completes.
+
+For the wider product direction (canonical→variant model, source types, scoring
+gates, sharing, CPD readiness) see **`docs/karibu-learn/case-content-strategy.md`**;
+this file is the concrete on-device schema that strategy serialises to.
 
 ## Packs are the unit of download
 

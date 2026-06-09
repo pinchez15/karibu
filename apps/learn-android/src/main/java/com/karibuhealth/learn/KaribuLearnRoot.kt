@@ -1,4 +1,4 @@
-package com.karibuhealth.app.ui.learn
+package com.karibuhealth.learn
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -14,18 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.collectAsState
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.karibuhealth.app.ui.learn.model.LearnCase
-import com.karibuhealth.app.ui.learn.walkthrough.WalkthroughScreen
+import com.karibuhealth.learn.model.LearnCase
+import com.karibuhealth.learn.walkthrough.WalkthroughScreen
 
-/**
- * Karibu Learn — standalone CME app UI (coral product; mirrors EHR chart UX).
- *
- * **Transitional location:** this composable lives under the EHR Gradle project
- * while porting to `apps/learn-android`. It must not be registered in EHR
- * navigation. Learn and EHR are separate apps (different auth/DB; not reachable
- * from each other). See `docs/karibu-learn/product-boundary.md`.
- */
+/** Karibu Learn root navigation — standalone app (`apps/learn-android`). */
 private sealed interface LearnNav {
     data object Welcome : LearnNav
     data class Tabs(val tab: LearnTab) : LearnNav
@@ -38,7 +30,7 @@ private sealed interface LearnNav {
 fun KaribuLearnRoot(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LearnViewModel = hiltViewModel(),
+    viewModel: LearnViewModel,
     palette: KlPalette = CoralPalette,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -96,8 +88,8 @@ private fun TabsScaffold(
     state: LearnUiState,
     onSelectTab: (LearnTab) -> Unit,
     onOpenCase: (LearnCase) -> Unit,
-    onDownload: (com.karibuhealth.app.ui.learn.model.PackInfo) -> Unit,
-    onRemove: (com.karibuhealth.app.ui.learn.model.PackInfo) -> Unit,
+    onDownload: (com.karibuhealth.learn.model.PackInfo) -> Unit,
+    onRemove: (com.karibuhealth.learn.model.PackInfo) -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         when (tab) {

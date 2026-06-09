@@ -66,9 +66,9 @@ sealed interface NavRoute {
     @Serializable data class PregnancyDetail(val pregnancyId: String) : NavRoute
 
     /**
-     * KaribuLearn — the free CME app. A distinct coral-skinned product that
-     * shares the EHR's bones. Launched full-screen from the Home shell's
-     * "Learn" destination; it owns its own chrome and internal navigation.
+     * Legacy route type — **do not wire into EHR NavHost**. Karibu Learn is a
+     * separate app (`apps/learn-android`), not reachable from Karibu EHR.
+     * See `docs/karibu-learn/product-boundary.md`. Remove when no references remain.
      */
     @Serializable data object KaribuLearn : NavRoute
 }

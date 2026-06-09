@@ -1,20 +1,23 @@
 # AI clinical assist — product spec (locked)
 
-**Status:** Authoritative for AI notes, Learn (CME), and Consult.  
+**Status:** Authoritative for **Karibu EHR** AI notes and Consult.  
 **Supersedes:** Post-sign AI review as a clinician-facing surface (see §2).  
 **Related:** `docs/ehr-pivot-implementation.md` §6.4, `ai_review_suggestions`, evidence library (`/library`).
 
+**Karibu Learn (CME) is not in scope here.** Karibu Learn is a **separate Android app** with its own Supabase Auth and user database; it is not reachable from EHR. See [`docs/karibu-learn/product-boundary.md`](karibu-learn/product-boundary.md). Do not add a Learn tab or in-EHR CME module for the Karibu Learn product.
+
 ---
 
-## 1. Three surfaces, one app
+## 1. EHR surfaces (AI notes + Consult)
 
 | Surface | User label | AI? | Patient chart? |
 |---------|------------|-----|----------------|
 | In-visit prompts | **AI notes** | Yes (RAG + rules; Uganda MOH corpus when available) | Yes — active unsigned visit only |
-| Continuing education | **Learn** | **No** | No |
 | Second opinion | **Consult** | Yes (frontier model, redacted bundle only) | Entry from chart; thread is de-identified in UI |
 
-Clinical roles (CO, doctor, nurse, midwife, nursing assistant, admin) see **Patients**, **Learn**, and **Consult** in primary navigation. Non-clinical roles (records, lab, pharmacy) do not see Consult or Learn unless explicitly granted later.
+Clinical roles (CO, doctor, nurse, midwife, nursing assistant, admin) see **Patients** and **Consult** in primary EHR navigation. Non-clinical roles (records, lab, pharmacy) do not see Consult unless explicitly granted later.
+
+Continuing education is **Karibu Learn** (`apps/learn-android`) — a separate install, not an EHR destination.
 
 ---
 
@@ -86,28 +89,15 @@ Swipe-to-act may remain on Android where it already exists; web uses explicit bu
 
 ---
 
-## 3. Learn (CME) — no AI
+## 3. Karibu Learn (CME) — separate app (not EHR)
 
-### 3.1 Purpose
+Karibu Learn is documented under `docs/karibu-learn/`. It is **not** an EHR tab, does not use EHR `staff_id` or clinic Supabase, and does not use the AI patterns in this file.
 
-Optional continuing education: refresh knowledge before or after hard cases (e.g. malaria treatment module). **No LLM** — all content is editorial, stored in Supabase, fetched when online.
+- **Product:** simulated case packs (`.kpack`), coral coach + cobalt chart mirror of EHR UX for pre-onboarding.
+- **Auth / data:** Supabase Auth + Learn Supabase only.
+- **AI:** no LLM in Learn case content (editorial / pipeline-generated cases).
 
-### 3.2 Content model (v1)
-
-- **Modules** by topic (IMCI, malaria, ANC, pharmacy, lab limitations, etc.).
-- **Lessons** per module: markdown/HTML body, links to library slugs.
-- **Optional quizzes:** multiple-choice per module; scores stored for the clinician only (no leaderboard v1).
-- **Offline:** not required v1; show clear “connect to load modules” when offline.
-
-### 3.3 UX
-
-- **Learn** tab: module list → lesson reader → optional quiz.
-- No connection to patient id or visit id.
-- Flashcards v1 = structured Q/A pairs in Supabase rendered as flip cards (still no AI generation).
-
-### 3.4 Schema (to implement)
-
-`cme_modules`, `cme_lessons`, `cme_flashcards`, `cme_quiz_questions`, `cme_quiz_attempts` — clinic-agnostic content; attempts keyed by `staff_id`.
+Older drafts in this file described an in-EHR “Learn” tab with `cme_*` tables — **withdrawn** in favor of the standalone Karibu Learn app. Do not implement §3.4 schema on the EHR database for the Learn product.
 
 ---
 
@@ -149,15 +139,16 @@ Consult UI shows **“Case”** + short local label (e.g. “Visit today”) —
 
 ---
 
-## 5. Navigation (locked)
+## 5. EHR navigation (locked)
 
 **Android (clinical home):** bottom navigation
 
 - **Patients** — OPD list, chart, dictation, AI notes on timeline.
-- **Learn** — CME modules (online).
 - **Consult** — list of open threads + entry from chart.
 
-**Web:** same three destinations in clinician app shell (sidebar or top nav).
+**Web:** same two clinical destinations in the EHR app shell (sidebar or top nav).
+
+Karibu Learn is a **separate app** — not listed here and not opened from EHR.
 
 ---
 
@@ -166,16 +157,17 @@ Consult UI shows **“Case”** + short local label (e.g. “Visit today”) —
 | Surface | Offline behavior |
 |---------|------------------|
 | AI notes | Draft/lab generation **skipped** when offline or “poor” for AI (existing `isGoodForAi` pattern on Android); no user-facing error spam. |
-| Learn | Block with “Connect to load courses.” |
 | Consult | Hard block. |
+
+(Karibu Learn offline behavior is defined in Learn app docs — separate product.)
 
 ---
 
 ## 7. Naming and copy (locked)
 
 - UI: **AI note** / **AI notes** — not “Attending,” not “AI suggestion banner.”
-- **Learn** — not “CME” in primary nav (subtitle OK: “Clinical learning”).
 - **Consult** — subtitle OK: “Second opinion.”
+- **Karibu Learn** — separate app branding; not EHR nav copy.
 
 ---
 
@@ -187,11 +179,11 @@ Consult UI shows **“Case”** + short local label (e.g. “Visit today”) —
 | Consult audit | Store **`visit_id`** + optional **`patient_id`** server-side; only **redacted** payload to model |
 | Lab-triggered notes | Yes; same UI; counts toward **3** cap |
 | Critical alerts | **Deterministic rules** v1 in code/config; not model-detected |
-| Nav | **Patients \| Learn \| Consult** for clinical roles |
+| Nav | **Patients \| Consult** in EHR for clinical roles; Karibu Learn is separate app |
 | Web parity | Same AI notes on web within one release after Android v1 |
 | Incorporate | **Keep** for actionable `suggestion_type`s only |
 | Post-sign AI | **Off** for new clinician-facing behavior |
-| CME AI | **None** |
+| Karibu Learn | **Separate app**; not EHR nav; see `docs/karibu-learn/product-boundary.md` |
 | Consult images | **Not allowed** v1 |
 | Consult offline | **Blocked** |
 
@@ -203,4 +195,4 @@ Consult UI shows **“Case”** + short local label (e.g. “Visit today”) —
 2. Wire **lab result sync** → `phase = lab` assist (respect cap).
 3. Replace expanded-by-default cards with **collapsed timeline** AI notes + interruptive tier.
 4. Rename strings to **AI notes**.
-5. Add Learn + Consult surfaces and tables per §3.4 and §4.6.
+5. Add Consult surfaces and tables per §4.6. (Karibu Learn is `apps/learn-android`, not EHR migration.)
