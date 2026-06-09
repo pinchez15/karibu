@@ -139,7 +139,7 @@ class VisitDetailsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             visit = details.visit.toDomain(),
-                            patient = details.patient.toDomain(),
+                            patient = details.patient?.toDomain(),
                             providerNote = details.providerNote?.toDomain(),
                             patientNote = details.clinicianPatientNote?.toDomain(),
                             aiPatientNote = details.aiPatientNote?.toDomain(),

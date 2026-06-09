@@ -69,8 +69,15 @@ class ReferralViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false, error = "Visit not found") }
                     return@collect
                 }
+                // An orphaned visit (patient row not yet synced) can't be
+                // referred — surface it instead of crashing in toDomain().
+                val patientEntity = details.patient
+                if (patientEntity == null) {
+                    _uiState.update { it.copy(isLoading = false, error = "Patient details not available yet") }
+                    return@collect
+                }
                 val visit = details.visit.toDomain()
-                val patient = details.patient.toDomain()
+                val patient = patientEntity.toDomain()
                 val transcript = details.providerNote?.transcript
                 if (!summaryPrefilled) {
                     summaryPrefilled = true
