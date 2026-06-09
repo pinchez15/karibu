@@ -31,10 +31,18 @@ interface NavItem {
   amber?: boolean
 }
 
-/** Admin-only shortcuts to role-specific workstation queues. */
-const ADMIN_WORKSTATIONS: NavItem[] = [
+/**
+ * Admin-only cross-area switcher, rendered consistently at the bottom of EVERY
+ * sidebar so an admin can always jump back to the main dashboard or into another
+ * workstation — the sidebar otherwise swaps by path and strands you with no way
+ * back to main. The item for the area you're already in is filtered out per
+ * render (see `switcher` below).
+ */
+const ADMIN_SWITCHER: NavItem[] = [
+  { id: 'main-dashboard', label: 'Dashboard', href: '/dashboard', icon: Home },
   { id: 'pharmacy-desk', label: 'Pharmacy desk', href: '/dashboard/pharmacy', icon: Pill },
   { id: 'lab-desk', label: 'Lab desk', href: '/dashboard/lab', icon: FlaskConical },
+  { id: 'reports-desk', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
 ]
 
 const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
@@ -109,6 +117,13 @@ export function WebShell({
     return true
   })
 
+  // Cross-area switcher (admins only), shown in every sidebar. Drop any item
+  // whose destination is already in this area's main nav — that removes the
+  // current-area self-link and avoids duplicating links like Today/Reports.
+  const navHrefs = new Set(nav.map((item) => item.href))
+  const switcher =
+    staffRole === 'admin' ? ADMIN_SWITCHER.filter((item) => !navHrefs.has(item.href)) : []
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
@@ -165,10 +180,10 @@ export function WebShell({
               </Link>
             )
           })}
-          {role === 'clinician' && staffRole === 'admin' && (
+          {switcher.length > 0 && (
             <>
               <div className="kh-meta px-2 pt-4 pb-2">WORKSTATIONS</div>
-              {ADMIN_WORKSTATIONS.map((item) => {
+              {switcher.map((item) => {
                 const active = isActive(pathname, item.href)
                 const Icon = item.icon
                 return (
