@@ -73,6 +73,15 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests {
+            // android.util.Log (and other android.jar stubs) otherwise throw
+            // "not mocked" RuntimeExceptions in plain JVM unit tests. Returning
+            // default values lets SyncEngine et al. log freely under test.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 configurations.all {

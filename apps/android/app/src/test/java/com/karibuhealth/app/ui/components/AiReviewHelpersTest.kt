@@ -27,12 +27,24 @@ class AiReviewHelpersTest {
     }
 
     @Test
-    fun dedupeAiReviewSuggestions_collapses_similar_questions() {
+    fun dedupeAiReviewSuggestions_collapses_near_duplicate_phrasings() {
+        // Same question, only word order / stopwords differ — these should collapse.
+        val suggestions = listOf(
+            dto("1", "Should we order an ECG for the patient?"),
+            dto("2", "For the patient, should we order an ECG?"),
+        )
+        assertEquals(1, dedupeAiReviewSuggestions(suggestions).size)
+    }
+
+    @Test
+    fun dedupeAiReviewSuggestions_keeps_clinically_distinct_questions() {
+        // Related topic but genuinely different asks — must NOT be merged, or a
+        // suggestion the clinician needs to see would be silently dropped.
         val suggestions = listOf(
             dto("1", "Should we perform an ECG for cardiac abnormalities?"),
             dto("2", "Should we evaluate cardiac causes of chest pain?"),
         )
-        assertEquals(1, dedupeAiReviewSuggestions(suggestions).size)
+        assertEquals(2, dedupeAiReviewSuggestions(suggestions).size)
     }
 
     private fun dto(id: String, question: String, phase: String = "draft") = AiReviewSuggestionDto(
