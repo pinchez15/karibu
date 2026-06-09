@@ -6,6 +6,11 @@ Status: proposed repository organization plan for evolving Karibu from a single-
 
 Keep one monorepo. Do not create a separate Karibu Learn repository.
 
+**Why one repo:** Karibu Learn and Karibu EHR are **separate apps** (different auth,
+different user databases; neither reachable from the other). They live together so
+Learn can mirror EHR chart UX for pre-onboarding and so design tokens, clinical UI,
+and the case pipeline stay in sync. See [`docs/karibu-learn/product-boundary.md`](docs/karibu-learn/product-boundary.md).
+
 Recommended high-level layout:
 
 ```text
@@ -210,9 +215,9 @@ apps/android/app/src/main/java/com/karibuhealth/app/ui/learn
 
 Reasoning:
 
-- Karibu Learn is a standalone Android app, not an EHR screen.
-- It should have its own application ID, auth configuration, navigation root, local storage, analytics, release pipeline, and permissions.
-- It should share UI through modules, not by living inside the EHR app.
+- Karibu Learn is a standalone Android app, not an EHR screen — **not launchable from EHR**.
+- It should have its own application ID, Supabase Auth, Learn Supabase, navigation root, local storage, analytics, release pipeline, and permissions (EHR keeps Clerk + clinical Supabase).
+- It should share UI through modules, not by living inside the EHR app or sharing user data.
 
 Recommended app identity:
 

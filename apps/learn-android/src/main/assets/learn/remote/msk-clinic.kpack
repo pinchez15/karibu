@@ -1,0 +1,21 @@
+{
+  "id": "msk-clinic",
+  "title": "Aches & joints",
+  "cases": [
+    {
+      "id": "joint-pain",
+      "ready": false,
+      "title": "Aching joints",
+      "topic": "Musculoskeletal",
+      "difficulty": "Intermediate",
+      "source_type": "From the Literature",
+      "mode": "Case Conference",
+      "level": 3,
+      "mins": 9,
+      "credit": 0.25,
+      "patient": { "name": "Achieng Mary", "age": "41F" },
+      "blurb": "Weeks of joint pain in both hands. Sort the inflammatory from the mechanical.",
+      "skills": ["MSK exam", "Differentials", "NSAIDs"]
+    }
+  ]
+}

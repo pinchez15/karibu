@@ -31,6 +31,7 @@ Important observations:
 - `packages/supabase` owns production EHR persistence, clinical AI edge functions, corpus embedding scripts, migrations, and tests.
 - The medical source corpus is currently a root folder with PDFs. It is source material, not generated content, and should be treated separately from generated learning packs.
 - Existing docs already push the EHR toward patient-centered, offline-first records. Karibu Learn should reuse the clinical chart mental model without sharing patient-data storage or PHI code paths.
+- **Product boundary (locked):** [`docs/karibu-learn/product-boundary.md`](docs/karibu-learn/product-boundary.md) — Learn and EHR are separate apps (different auth and user DBs; not reachable from each other). The monorepo exists so Learn can mirror EHR UI for pre-onboarding.
 
 ## Target-State Principles
 
@@ -38,11 +39,13 @@ The platform should support multiple Karibu products without blurring their data
 
 1. `apps/*` contains deployable products.
 2. `packages/*` contains shared code or infrastructure that is product-neutral or explicitly scoped.
-3. Karibu EHR and Karibu Learn are separate Android applications.
-4. Shared Android UI modules must not depend on EHR repositories, Room databases, Supabase tables, or PHI models.
-5. Learn content uses simulated patients only. No real patient identifiers, EHR visit IDs, EHR clinic IDs, or EHR sync queues should exist in Learn packs.
-6. Source medical corpus, content schemas, generation pipeline, generated packs, and delivery infrastructure are separate concepts.
-7. Supabase ownership should be split by domain: EHR clinical operations, corpus/library, learning content distribution, and shared auth/org metadata.
+3. Karibu EHR and Karibu Learn are **separate Android applications** with separate application IDs, release pipelines, and user-facing entry points.
+4. Neither app launches or embeds the other. No shared navigation, deep links, or single sign-on between Learn and EHR.
+5. Shared Android UI modules must not depend on EHR repositories, Room databases, Supabase tables, or PHI models.
+6. Learn content uses simulated patients only. No real patient identifiers, EHR visit IDs, EHR clinic IDs, or EHR sync queues should exist in Learn packs.
+7. Source medical corpus, content schemas, generation pipeline, generated packs, and delivery infrastructure are separate concepts.
+8. **Auth and databases are per product:** EHR uses Clerk + clinical Supabase; Learn uses Supabase Auth + Learn Supabase. No shared user tables or credentials.
+9. **Monorepo rationale:** co-locate Learn and EHR so Learn can mirror EHR chart/workflow UX and share design tokens and content schemas — not to share runtime data.
 
 ## Recommended Target Architecture
 

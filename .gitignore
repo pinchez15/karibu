@@ -62,6 +62,10 @@ packages/supabase/.temp/
 *.orig.*
 android/app/debug.keystore
 ios/Pods/
+**/local.properties
+apps/learn-android/google-services.json
+apps/learn-android/google-services.json
+
 
 # Expo
 .expo/

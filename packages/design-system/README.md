@@ -2,6 +2,8 @@
 
 This package is the future shared source of truth for Karibu visual language across Karibu EHR, Karibu Learn, and future Karibu products.
 
+Karibu EHR and Karibu Learn are **separate apps** (different auth and user databases; not reachable from each other). They share this monorepo so Learn can mirror EHR UI. See [`docs/karibu-learn/product-boundary.md`](../../docs/karibu-learn/product-boundary.md).
+
 It does not redesign the product. The initial token set is extracted from the existing design assets in `karibu_design_files/brand.jsx` and the Android theme files under `apps/android/app/src/main/java/com/karibuhealth/app/ui/theme`.
 
 ## Current Extracted Concepts
