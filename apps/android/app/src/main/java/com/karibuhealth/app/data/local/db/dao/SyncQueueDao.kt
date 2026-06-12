@@ -33,6 +33,41 @@ interface SyncQueueDao {
     @Query("SELECT COUNT(*) FROM sync_queue WHERE status IN ('pending', 'failed') AND attempts < max_attempts")
     fun getPendingCount(): Flow<Int>
 
+    /**
+     * Active (not yet durably synced) outbox entries for a given entity,
+     * excluding the entry currently being processed. Used to decide whether
+     * it's safe to flip `is_synced = true` on the local row — if any sibling
+     * op is still in flight, the row stays dirty so pull-merge can't clobber
+     * the local changes that sibling carries.
+     */
+    @Query("""
+        SELECT COUNT(*) FROM sync_queue
+        WHERE entity_id = :entityId
+        AND id != :excludeId
+        AND status IN ('pending', 'in_progress', 'failed')
+        AND attempts < max_attempts
+    """)
+    suspend fun countActiveForEntity(entityId: String, excludeId: String = ""): Int
+
+    /**
+     * Recover entries stranded at 'in_progress' by process death or worker
+     * cancellation mid-run. The engine is the only writer, so anything still
+     * in_progress at the START of a run is stale and safe to retry.
+     */
+    @Query("UPDATE sync_queue SET status = 'pending' WHERE status = 'in_progress'")
+    suspend fun resetInProgress(): Int
+
+    /** Entries that exhausted retries — invisible to getPendingCount/observePending. */
+    @Query("SELECT COUNT(*) FROM sync_queue WHERE status = 'failed' AND attempts >= max_attempts")
+    fun getTerminallyFailedCount(): Flow<Int>
+
+    @Query("""
+        SELECT * FROM sync_queue
+        WHERE status = 'failed' AND attempts >= max_attempts
+        ORDER BY created_at ASC
+    """)
+    fun observeTerminallyFailed(): Flow<List<SyncQueueEntry>>
+
     @Query("""
         SELECT * FROM sync_queue
         WHERE status IN ('pending', 'failed')

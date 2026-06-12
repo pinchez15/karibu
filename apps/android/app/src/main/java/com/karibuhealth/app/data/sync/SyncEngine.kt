@@ -7,6 +7,11 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.util.NetworkMonitor
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -44,10 +49,22 @@ class SyncEngine @Inject constructor(
         private const val BACKOFF_BASE_MS = 30_000L
     }
 
-    suspend fun processQueue(): Int {
+    // Serializes queue runs in-process (worker + direct ViewModel calls), so
+    // the stale-in_progress reset below can't clobber a concurrent run.
+    private val queueMutex = Mutex()
+
+    suspend fun processQueue(): Int = queueMutex.withLock {
         if (!networkMonitor.isOnline()) {
             Log.d(TAG, "Offline, skipping sync")
             return 0
+        }
+
+        // Recover entries stranded at 'in_progress' by process death or a
+        // cancelled worker. The engine is the only writer and runs are
+        // serialized, so anything in_progress at run start is stale.
+        val recovered = syncQueueDao.resetInProgress()
+        if (recovered > 0) {
+            Log.w(TAG, "Reset $recovered stale in_progress entries to pending")
         }
 
         val entries = syncQueueDao.getRetryable()
@@ -97,6 +114,8 @@ class SyncEngine @Inject constructor(
 
             try {
                 // #region agent log
+                // PHI note: never log payload content here — payloads carry
+                // patient DTOs and transcripts. rpc name + entity ids only.
                 syncDebugLogger.log(
                     hypothesisId = "H-A",
                     location = "SyncEngine.kt:processQueue",
@@ -104,10 +123,10 @@ class SyncEngine @Inject constructor(
                     data = mapOf(
                         "entryId" to entry.id,
                         "operation" to entry.operationType,
+                        "entityType" to entry.entityType,
                         "entityId" to entry.entityId,
                         "dependsOn" to entry.dependsOn,
                         "attempts" to entry.attempts.toString(),
-                        "payloadPreview" to entry.payload.take(200),
                     ),
                 )
                 // #endregion
@@ -115,6 +134,15 @@ class SyncEngine @Inject constructor(
                 processEntry(entry)
                 syncQueueDao.update(entry.copy(status = "completed", serverEntityId = entry.entityId))
                 processedCount++
+            } catch (e: CancellationException) {
+                // The batch was cancelled (worker replaced / process going
+                // away) — this is not an op failure. Put the entry back to
+                // pending WITHOUT counting an attempt and let the next run
+                // retry it, then propagate the cancellation.
+                withContext(NonCancellable) {
+                    syncQueueDao.update(entry.copy(status = "pending"))
+                }
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Sync failed for ${entry.id}: ${e.message}")
                 // #region agent log
@@ -217,6 +245,19 @@ class SyncEngine @Inject constructor(
         }
     }
 
+    /**
+     * Flip the local visit row to is_synced=true ONLY when no other active
+     * outbox entry references it. While sibling ops (lab result, dispense,
+     * finalize, ...) are still queued/failed, the row must stay dirty so
+     * [VisitMerge.mergeRemote] keeps protecting the local clinical fields
+     * those ops carry from being clobbered by a pull.
+     */
+    private suspend fun markVisitSyncedIfQuiet(entry: SyncQueueEntry) {
+        if (syncQueueDao.countActiveForEntity(entry.entityId, excludeId = entry.id) == 0) {
+            visitDao.updateSyncState(entry.entityId, true)
+        }
+    }
+
     private suspend fun syncCreatePatient(entry: SyncQueueEntry) {
         val dto = json.decodeFromString(PatientCreateDto.serializer(), entry.payload)
         Log.d(TAG, "Syncing create_patient via RPC: ${entry.entityId}")
@@ -296,7 +337,7 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("create_visit HTTP ${result.code()} ${body.take(300)}".trim())
         }
 
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
         Log.d(TAG, "Visit synced: ${entry.entityId}")
     }
 
@@ -461,7 +502,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("finalize_clinical_encounter HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
         reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.noteId)
         Log.d(TAG, "Clinical encounter finalized: ${entry.entityId}")
     }
@@ -485,6 +526,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("upsert_visit_clinical_summary HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        markVisitSyncedIfQuiet(entry)
         Log.d(TAG, "Visit clinical summary synced: ${entry.entityId}")
     }
 
@@ -509,6 +551,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("mark_documentation_complete HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        markVisitSyncedIfQuiet(entry)
         Log.d(TAG, "Documentation completion synced: ${entry.entityId}")
     }
 
@@ -590,7 +633,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_submit_pharmacy_order HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
     }
 
     private suspend fun syncStartLab(entry: SyncQueueEntry) {
@@ -602,7 +645,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_start_lab HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
     }
 
     private suspend fun syncRecordLabResult(entry: SyncQueueEntry) {
@@ -614,7 +657,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_record_lab_result HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
     }
 
     private suspend fun syncSetDispensingStatus(entry: SyncQueueEntry) {
@@ -626,7 +669,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_set_dispensing_status HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
     }
 
     private suspend fun syncRecordDispense(entry: SyncQueueEntry) {
@@ -638,7 +681,7 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
         }
-        visitDao.updateSyncState(entry.entityId, true)
+        markVisitSyncedIfQuiet(entry)
     }
 
     private suspend fun syncCreateReferral(entry: SyncQueueEntry) {

@@ -61,6 +61,17 @@ class MainViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
+     * Entries that exhausted all retries (status='failed', attempts >= max).
+     * These drop out of [pendingSyncCount]/[pendingEntries], so without this
+     * the clinician would see "all synced" while clinical writes are stuck.
+     */
+    val failedSyncCount: StateFlow<Int> = syncQueueDao.getTerminallyFailedCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val failedEntries: StateFlow<List<SyncQueueEntry>> = syncQueueDao.observeTerminallyFailed()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
      * User-initiated retry. Resets any failed-with-max-attempts entries so a
      * server-side fix has a chance to land, then runs the queue.
      */

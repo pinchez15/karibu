@@ -58,6 +58,7 @@ fun SyncDetailsSheet(
     onRetryAll: () -> Unit,
     onMarkSynced: (String) -> Unit,
     onExportDebugLog: (() -> String)? = null,
+    failedEntries: List<SyncQueueEntry> = emptyList(),
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
@@ -83,7 +84,7 @@ fun SyncDetailsSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            if (entries.isEmpty()) {
+            if (entries.isEmpty() && failedEntries.isEmpty()) {
                 Text(
                     text = "Nothing pending. You're all caught up.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -97,6 +98,55 @@ fun SyncDetailsSheet(
                         .heightIn(max = 360.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Entries that exhausted all retries. They no longer count
+                    // toward the pending banner, so this is the only place the
+                    // clinician can see (and rescue) them.
+                    if (failedEntries.isNotEmpty()) {
+                        item(key = "needs-attention-header") {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Needs attention (${failedEntries.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                Text(
+                                    text = "These items stopped retrying after repeated failures. They are NOT on the server. Tap “Retry all” to try again.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        items(failedEntries, key = { it.id }) { entry ->
+                            SyncEntryRow(
+                                entry = entry,
+                                onMarkSynced = { onMarkSynced(entry.id) },
+                            )
+                        }
+                        item(key = "needs-attention-retry") {
+                            Button(
+                                onClick = onRetryAll,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.height(16.dp))
+                                Text("  Retry all failed", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                        if (entries.isNotEmpty()) {
+                            item(key = "pending-header") {
+                                Text(
+                                    text = "Waiting to sync (${entries.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
+                    }
                     items(entries, key = { it.id }) { entry ->
                         SyncEntryRow(
                             entry = entry,

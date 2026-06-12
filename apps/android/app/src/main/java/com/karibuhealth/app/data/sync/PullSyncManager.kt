@@ -44,10 +44,11 @@ class PullSyncManager @Inject constructor(
                         Log.d(TAG, "Network reconnected, triggering sync after debounce")
                         delay(RECONNECT_DEBOUNCE_MS)
 
-                        // Trigger immediate push sync
+                        // Trigger immediate push sync. APPEND_OR_REPLACE so a
+                        // batch already running isn't cancelled mid-flight.
                         workManager.enqueueUniqueWork(
                             SyncWorker.WORK_NAME_IMMEDIATE,
-                            ExistingWorkPolicy.REPLACE,
+                            ExistingWorkPolicy.APPEND_OR_REPLACE,
                             SyncWorker.buildImmediateRequest(),
                         )
 

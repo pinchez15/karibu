@@ -141,7 +141,8 @@ class ClerkAuthManager @Inject constructor(
                 val message = createResult.throwable?.message
                     ?.takeIf { it.isNotBlank() }
                     ?: "Invalid email or password"
-                Log.w(TAG, "Password sign-in failed for $identifier: $message", createResult.throwable)
+                // PHI: never log the email/identifier.
+                Log.w(TAG, "Password sign-in failed: $message", createResult.throwable)
                 throw IllegalStateException(message, createResult.throwable)
             }
         }

@@ -22,11 +22,12 @@ fun OfflineBanner(
     isOnline: Boolean,
     pendingSyncCount: Int,
     deviceSavedCount: Int = 0,
+    failedSyncCount: Int = 0,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
-        visible = !isOnline || pendingSyncCount > 0 || deviceSavedCount > 0,
+        visible = !isOnline || pendingSyncCount > 0 || deviceSavedCount > 0 || failedSyncCount > 0,
         enter = slideInVertically(),
         exit = slideOutVertically(),
         modifier = modifier,
@@ -34,17 +35,23 @@ fun OfflineBanner(
         // Only enable taps when there's a queue to show. Offline-only state
         // (no pending items) leaves the banner non-interactive so we don't
         // open an empty details sheet.
-        val tappable = pendingSyncCount > 0 && onClick != null
+        val tappable = (pendingSyncCount > 0 || failedSyncCount > 0) && onClick != null
         // Offline is the NORMAL state on intermittent 3G — it is status, not a
         // warning. Amber is reserved for AI/urgency, so offline uses calm neutral
         // chrome (surfaceVariant); the pending-sync state keeps the soft-cobalt
-        // primaryContainer. Neither shouts.
-        val containerColor =
-            if (!isOnline) MaterialTheme.colorScheme.surfaceVariant
-            else MaterialTheme.colorScheme.primaryContainer
-        val contentColor =
-            if (!isOnline) MaterialTheme.colorScheme.onSurfaceVariant
-            else MaterialTheme.colorScheme.onPrimaryContainer
+        // primaryContainer. Terminally-failed entries are the one true warning
+        // state — clinical writes that stopped retrying — so they use error
+        // chrome.
+        val containerColor = when {
+            failedSyncCount > 0 -> MaterialTheme.colorScheme.errorContainer
+            !isOnline -> MaterialTheme.colorScheme.surfaceVariant
+            else -> MaterialTheme.colorScheme.primaryContainer
+        }
+        val contentColor = when {
+            failedSyncCount > 0 -> MaterialTheme.colorScheme.onErrorContainer
+            !isOnline -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.onPrimaryContainer
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,6 +71,10 @@ fun OfflineBanner(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = when {
+                    failedSyncCount > 0 && tappable ->
+                        "$failedSyncCount failed to sync — tap to review"
+                    failedSyncCount > 0 ->
+                        "$failedSyncCount failed to sync"
                     !isOnline -> "Offline — saved on this device"
                     pendingSyncCount > 0 && tappable ->
                         "$pendingSyncCount to sync to cloud — tap for details"

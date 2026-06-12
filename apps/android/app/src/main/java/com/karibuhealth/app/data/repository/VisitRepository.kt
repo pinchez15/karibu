@@ -54,6 +54,18 @@ class VisitRepository @Inject constructor(
 ) {
     private val opdPatientsCache = MutableStateFlow<List<OpdPatientRow>>(emptyList())
 
+    /**
+     * Flip the local visit row back to synced ONLY when no active outbox
+     * entry still references it. While any sibling op is queued/failed the
+     * row must stay dirty (is_synced=false) so [VisitMerge.mergeRemote]
+     * protects the local clinical fields from being clobbered by a pull.
+     */
+    private suspend fun markVisitSyncedIfQuiet(visitId: String) {
+        if (syncQueueDao.countActiveForEntity(visitId) == 0) {
+            visitDao.updateSyncState(visitId, true)
+        }
+    }
+
     fun getOpenEncountersToday(clinicId: String): Flow<List<VisitWithPatient>> {
         val today = LocalDate.now().toString()
         return visitDao.getOpenEncountersToday(clinicId, today)
@@ -280,8 +292,11 @@ class VisitRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = patientSyncEntryId,
         )
-        syncQueueHelper.enqueue(syncEntry)
-        visit to syncEntry.id
+        // enqueue() may dedup onto an existing pending row — always thread
+        // the SURVIVING id so dependents don't point at a row that was
+        // never inserted (dangling dependsOn = stuck forever).
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        visit to queuedId
     }
 
     /**
@@ -303,6 +318,9 @@ class VisitRepository @Inject constructor(
             submittedBy = staffId,
             updatedAt = now,
         )
+        // Mark the visit dirty in the same flow as the local mutation, so a
+        // pull can't merge-clobber it before the op reaches the server.
+        visitDao.updateSyncState(visitId, false)
 
         val syncEntryId = UUID.randomUUID().toString()
         val rpcBody = SubmitPharmacyOrderRequest(
@@ -315,7 +333,7 @@ class VisitRepository @Inject constructor(
             try {
                 val response = supabaseApi.rpcSubmitPharmacyOrder(rpcBody)
                 if (response.isSuccessful) {
-                    visitDao.updateSyncState(visitId, true)
+                    markVisitSyncedIfQuiet(visitId)
                     return@withContext null
                 }
             } catch (_: Exception) {
@@ -334,7 +352,6 @@ class VisitRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
         )
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     suspend fun startLab(visitId: String): String? = enqueueVisitRpc(
@@ -489,13 +506,16 @@ class VisitRepository @Inject constructor(
         onlineCall: suspend (clientOpId: String) -> retrofit2.Response<okhttp3.ResponseBody>,
     ): String? = withContext(Dispatchers.IO) {
         localMutator()
+        // Dirty the visit in the same flow as the local mutation: until the
+        // op lands on the server, a pull must not clobber these fields.
+        visitDao.updateSyncState(visitId, false)
         val syncEntryId = UUID.randomUUID().toString()
 
         if (networkMonitor.isOnline()) {
             try {
                 val response = onlineCall(syncEntryId)
                 if (response.isSuccessful) {
-                    visitDao.updateSyncState(visitId, true)
+                    markVisitSyncedIfQuiet(visitId)
                     return@withContext null
                 }
             } catch (_: Exception) {
@@ -544,7 +564,6 @@ class VisitRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
         )
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -562,13 +581,18 @@ class VisitRepository @Inject constructor(
         // Optimistic local update so UI reflects "done" immediately.
         visitDao.updateDocumentationComplete(visitId, true, now)
         releaseClinicianQueueAfterDocumentation(visitId, now)
+        // Dirty the visit until the completion lands server-side.
+        visitDao.updateSyncState(visitId, false)
 
         val rpcBody = MarkDocumentationCompleteDto(visitId = visitId)
 
         if (networkMonitor.isOnline() && predecessorSyncId == null) {
             try {
                 val response = supabaseApi.rpcMarkDocumentationComplete(rpcBody)
-                if (response.isSuccessful) return@withContext null
+                if (response.isSuccessful) {
+                    markVisitSyncedIfQuiet(visitId)
+                    return@withContext null
+                }
             } catch (_: Exception) {
                 // Fall through to queue
             }
@@ -586,7 +610,6 @@ class VisitRepository @Inject constructor(
             dependsOn = predecessorSyncId,
         )
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     suspend fun updateStatus(visitId: String, status: VisitStatus) {
