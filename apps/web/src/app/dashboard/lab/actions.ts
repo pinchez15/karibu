@@ -18,11 +18,30 @@ async function assertLabTech() {
   return staff
 }
 
+/**
+ * Ownership pre-check: the service-role client bypasses RLS, so confirm the
+ * visit belongs to the caller's clinic before passing it to any RPC.
+ * Throws when the visit is missing or owned by another clinic.
+ */
+async function assertVisitInClinic(visitId: string, clinicId: string) {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('visits')
+    .select('id')
+    .eq('id', visitId)
+    .eq('clinic_id', clinicId)
+    .maybeSingle()
+  if (!data) {
+    throw new Error('Visit not found')
+  }
+}
+
 export async function startLabRun(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    await assertLabTech()
+    const staff = await assertLabTech()
+    await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -47,7 +66,8 @@ export async function recordLabResult(
   }
 
   try {
-    await assertLabTech()
+    const staff = await assertLabTech()
+    await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -71,7 +91,8 @@ export async function reopenLabResult(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    await assertLabTech()
+    const staff = await assertLabTech()
+    await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
