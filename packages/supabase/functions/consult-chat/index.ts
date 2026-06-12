@@ -4,6 +4,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 import { requireAuth, requireStaffForClinic, authErrorResponse } from '../_shared/auth.ts'
 import { createLogger } from '../_shared/logger.ts'
 
@@ -26,6 +27,16 @@ serve(async (req) => {
     authCtx = await requireAuth(req)
   } catch (err) {
     return authErrorResponse(err, corsHeaders)
+  }
+
+  // Paid LLM call — rate limit per user (same pattern as dictate).
+  const rlKey = authCtx.type === 'clerk' ? `consult:${authCtx.userId}` : 'consult:service'
+  const rl = checkRateLimit(rlKey, { maxRequests: 20, windowMs: 60 * 1000 })
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({ error: 'Too many consult requests. Please wait a minute.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
   }
 
   if (!OPENAI_API_KEY) {

@@ -120,23 +120,22 @@ serve(async (req) => {
 
     await requireStaffForClinic(supabase, authCtx, visit.clinic_id)
 
-    // Upsert the provider note's transcript. unique index on visit_id makes
-    // this idempotent — re-submitting overwrites the prior dictation. Inngest
-    // concurrency=1 per visit_id then collapses duplicate workflow runs.
+    // Upsert the provider note's transcript via rpc_upsert_provider_note
+    // (047): the visit_id uniqueness is a PARTIAL unique index, which a
+    // PostgREST onConflict upsert cannot target, and patient_id is NOT NULL
+    // since 039 — the old direct upsert violated both. The RPC handles the
+    // visit_id conflict path, so re-submitting overwrites the prior
+    // dictation. Inngest concurrency=1 per visit_id then collapses duplicate
+    // workflow runs.
     const now = new Date().toISOString()
     const noteId = crypto.randomUUID()
-    const { error: noteError } = await supabase
-      .from('provider_notes')
-      .upsert(
-        {
-          id: noteId,
-          visit_id,
-          transcript,
-          status: 'draft',
-          updated_at: now,
-        },
-        { onConflict: 'visit_id' },
-      )
+    const { error: noteError } = await supabase.rpc('rpc_upsert_provider_note', {
+      p_id: noteId,
+      p_visit_id: visit_id,
+      p_transcript: transcript,
+      p_status: 'draft',
+      p_patient_id: visit.patient_id,
+    })
     if (noteError) {
       throw new Error(`provider_notes upsert failed: ${noteError.message}`)
     }
