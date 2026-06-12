@@ -15,7 +15,12 @@ import {
   downloadCsv,
 } from './csv-export'
 import { generateHmis105Report, generateMultiHmis105Report } from '../actions'
-import type { Hmis105Report, Hmis105MultiReport, ClinicOption } from '@karibu/shared'
+import type { ClinicOption } from '@karibu/shared'
+import type {
+  Hmis105ReportEx,
+  Hmis105MultiReportEx,
+  Hmis105ReportFailure,
+} from './report-types'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -41,9 +46,9 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
   const [endMonth, setEndMonth] = useState(defaultMonth)
 
   // Single-clinic single-month legacy report
-  const [singleReport, setSingleReport] = useState<Hmis105Report | null>(null)
+  const [singleReport, setSingleReport] = useState<Hmis105ReportEx | null>(null)
   // Multi report
-  const [multiReport, setMultiReport] = useState<Hmis105MultiReport | null>(null)
+  const [multiReport, setMultiReport] = useState<Hmis105MultiReportEx | null>(null)
 
   const [error, setError] = useState<string | null>(null)
   const [generating, startGenerating] = useTransition()
@@ -80,7 +85,14 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
 
     startGenerating(async () => {
       if (isSingleClinicMonth) {
-        const result = await generateHmis105Report(startYear, startMonth)
+        // Pass the selected clinic explicitly so the generated numbers always
+        // belong to the clinic shown in the header (never the admin's own
+        // clinic mislabeled as the selected one).
+        const result = await generateHmis105Report(
+          startYear,
+          startMonth,
+          selectedClinicIds[0],
+        )
         if (result.error) {
           setError(result.error)
         } else if (result.data) {
@@ -103,6 +115,9 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
     })
   }
 
+  const multiFailures: Hmis105ReportFailure[] = activeMultiReport?.failures ?? []
+  const isIncomplete = multiFailures.length > 0
+
   const handleDownloadCsv = () => {
     if (activeReport) {
       const csv = generateHmis105Csv(activeReport)
@@ -111,7 +126,10 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
     } else if (activeMultiReport) {
       const csv = generateMultiHmis105Csv(activeMultiReport)
       const { start_year, start_month, end_year, end_month } = activeMultiReport.date_range
-      const filename = `HMIS105_Multi_${start_year}${String(start_month).padStart(2, '0')}_to_${end_year}${String(end_month).padStart(2, '0')}.csv`
+      // An incomplete file is named as such so it can't be mistaken for a
+      // submittable report after download.
+      const suffix = isIncomplete ? '_INCOMPLETE' : ''
+      const filename = `HMIS105_Multi_${start_year}${String(start_month).padStart(2, '0')}_to_${end_year}${String(end_month).padStart(2, '0')}${suffix}.csv`
       downloadCsv(csv, filename)
     }
   }
@@ -146,7 +164,7 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
 
           {(activeReport || activeMultiReport) && (
             <Button variant="outline" onClick={handleDownloadCsv}>
-              Download CSV
+              {isIncomplete ? 'Download CSV (INCOMPLETE)' : 'Download CSV'}
             </Button>
           )}
 
@@ -161,6 +179,43 @@ export function Hmis105Client({ clinics, staffClinicId }: Hmis105ClientProps) {
       {error && (
         <div className="p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {/* Failed clinic-months: the report is incomplete and must not be submitted */}
+      {isIncomplete && (
+        <div className="p-4 bg-red-50 text-red-900 border-2 border-red-400 rounded-lg space-y-2">
+          <p className="font-bold">
+            Report incomplete — do not submit. {multiFailures.length} clinic-month
+            {multiFailures.length !== 1 ? 's' : ''} failed to generate and{' '}
+            {multiFailures.length !== 1 ? 'are' : 'is'} missing from all tables and the CSV:
+          </p>
+          <ul className="list-disc list-inside text-sm space-y-1">
+            {multiFailures.map((f) => (
+              <li key={`${f.clinic_id}-${f.year}-${f.month}`}>
+                <span className="font-medium">
+                  {f.clinic_name} — {MONTH_NAMES[f.month - 1]} {f.year}
+                </span>
+                : {f.error}
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm">
+            Regenerate the report until no failures remain before submitting to the MoH.
+          </p>
+        </div>
+      )}
+
+      {/* Unfinalized visits never reach HMIS counts — surface them loudly */}
+      {quality && quality.unfinalized_visits > 0 && (
+        <div className="p-4 bg-amber-50 text-amber-900 border border-amber-300 rounded-lg">
+          <span className="font-semibold">
+            {quality.unfinalized_visits.toLocaleString()} visit
+            {quality.unfinalized_visits !== 1 ? 's' : ''} this period{' '}
+            {quality.unfinalized_visits !== 1 ? 'are' : 'is'} unfinalized and not counted
+          </span>{' '}
+          in this report. Only visits with status sent/completed are reported; ask
+          clinicians to finalize pending, in-review, and errored visits before submitting.
         </div>
       )}
 
@@ -206,7 +261,7 @@ function MultiReportView({
   report,
   isMultiMonth,
 }: {
-  report: Hmis105MultiReport
+  report: Hmis105MultiReportEx
   isMultiMonth: boolean
 }) {
   const isSingleClinic = report.clinics.length === 1
@@ -264,7 +319,7 @@ function MultiReportView({
 function MonthlyDetailView({
   reports,
 }: {
-  reports: Hmis105MultiReport['reports']
+  reports: Hmis105MultiReportEx['reports']
 }) {
   const sorted = useMemo(
     () =>
