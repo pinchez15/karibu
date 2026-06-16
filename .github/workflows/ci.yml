@@ -44,6 +44,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           SUPABASE_SECRET_KEY: placeholder
 
+      - name: Unit tests (web)
+        working-directory: apps/web
+        run: pnpm test
+
   build-web:
     name: Build Web
     runs-on: ubuntu-latest

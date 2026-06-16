@@ -3,11 +3,12 @@ import Link from 'next/link'
 import { Pill } from 'lucide-react'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
-import { WebTopBar } from '@/components/web-shell'
-import { PharmacyQueueClient, type DispensingRow } from './PharmacyQueueClient'
+import { WorkspaceTopBar } from '@/components/workspace-top-bar'
+import { PharmacyStationClient } from './PharmacyStationClient'
+import { type DispensingRow, formatOldestWait } from './pharmacy-shared'
 
 /**
- * Pharmacy dispensing board — MVP.
+ * Pharmacy dispensing board — station workspace (MasterDetail).
  *
  * Queue source: visits where the clinician submitted a pharmacy order
  * (`pharmacy_order_submitted_at`) with non-empty `medications` and dispensing
@@ -56,7 +57,11 @@ async function getPharmacyQueue(clinicId: string): Promise<DispensingRow[]> {
   return (data ?? []) as unknown as DispensingRow[]
 }
 
-export default async function PharmacyPage() {
+export default async function PharmacyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ visit?: string }>
+}) {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
@@ -64,39 +69,48 @@ export default async function PharmacyPage() {
     redirect('/dashboard')
   }
 
+  const params = await searchParams
   const queue = await getPharmacyQueue(staff.clinic_id)
+  const oldestSubmitted = queue[0]?.pharmacy_order_submitted_at ?? null
 
   return (
     <>
-      <WebTopBar
+      <WorkspaceTopBar
         title="Today"
-        subtitle="PHARMACY · DISPENSING"
+        roleLabel="PHARMACY · DISPENSING"
+        awaiting={queue.length}
+        oldestWaitLabel={formatOldestWait(oldestSubmitted)}
         actions={
           <Link
             href="/dashboard/pharmacy/history"
-            className="bg-card text-body border border-border rounded-md px-3 py-2 font-medium text-[13px]"
+            className="rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-body"
           >
             History
           </Link>
         }
       />
 
-      <div className="p-6 overflow-auto flex-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
         {queue.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center py-20">
+          <div className="flex flex-1 items-center justify-center py-20">
             <div className="max-w-lg text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-cobalt-soft text-cobalt mb-5">
+              <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cobalt-soft text-cobalt">
                 <Pill className="h-7 w-7" />
               </div>
-              <h2 className="text-2xl font-semibold tracking-tight mb-2">No prescriptions to dispense</h2>
-              <p className="text-base text-body leading-relaxed">
-                Visits appear here after the clinician taps Send to pharmacy (note may still be open).
-                Check back as patients move through the clinic.
+              <h2 className="mb-2 text-2xl font-semibold tracking-tight">
+                No prescriptions to dispense
+              </h2>
+              <p className="text-base leading-relaxed text-body">
+                Visits appear here after the clinician taps Send to pharmacy (note may still be
+                open). Check back as patients move through the clinic.
               </p>
             </div>
           </div>
         ) : (
-          <PharmacyQueueClient initialRows={queue} />
+          <PharmacyStationClient
+            initialRows={queue}
+            initialVisitId={params.visit ?? null}
+          />
         )}
       </div>
     </>
