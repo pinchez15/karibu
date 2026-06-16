@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.sync
 
 import android.content.Context
 import android.util.Log
+import com.karibuhealth.app.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -12,6 +13,11 @@ import javax.inject.Singleton
 /**
  * Session-scoped NDJSON logger for offline sync debugging. Writes to app-private
  * storage so field testers (e.g. Uganda pilot) can share logs without adb.
+ *
+ * PHI policy: the shared file and logcat output are DEBUG-only, and even in
+ * debug builds the data map is redacted to an allowlist of rpc / entity /
+ * status keys — payload bodies, transcripts, error bodies, and anything
+ * patient-identifying are never written.
  */
 @Singleton
 class SyncDebugLogger @Inject constructor(
@@ -22,6 +28,16 @@ class SyncDebugLogger @Inject constructor(
         private const val SESSION_ID = "89c949"
         private const val LOG_FILENAME = "debug-$SESSION_ID.log"
         private const val MAX_BYTES = 512 * 1024
+
+        // rpc/entity/status metadata only. Server error bodies ("error") and
+        // payload previews are deliberately excluded — they can echo PHI.
+        private val SAFE_DATA_KEYS = setOf(
+            "retryableCount", "operationTypes", "entryId", "operation",
+            "entityType", "entityId", "dependsOn", "depStatus", "depOperation",
+            "attempts", "status", "visitId", "localNoteId", "serverNoteId",
+            "noteId", "queueEntryId", "pendingEntriesScanned", "payloadsUpdated",
+            "localId", "remoteId",
+        )
     }
 
     private val logFile: File
@@ -34,6 +50,7 @@ class SyncDebugLogger @Inject constructor(
         data: Map<String, String?> = emptyMap(),
         runId: String = "pre-fix",
     ) {
+        if (!BuildConfig.DEBUG) return
         val payload = buildJsonObject {
             put("sessionId", SESSION_ID)
             put("hypothesisId", hypothesisId)
@@ -42,7 +59,8 @@ class SyncDebugLogger @Inject constructor(
             put("message", message)
             put("timestamp", System.currentTimeMillis())
             put("data", buildJsonObject {
-                data.forEach { (k, v) -> put(k, v ?: "") }
+                data.filterKeys { it in SAFE_DATA_KEYS }
+                    .forEach { (k, v) -> put(k, v ?: "") }
             })
         }
         val line = payload.toString()

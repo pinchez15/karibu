@@ -35,8 +35,19 @@ fun PharmacyHomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var dispenseDialogVisit by remember { mutableStateOf<NeedsPharmacyItem?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Non-blocking warning: dispense recorded but local stock was NOT
+    // decremented (out of stock / no catalog match for the free-text order).
+    LaunchedEffect(uiState.stockWarning) {
+        uiState.stockWarning?.let { warning ->
+            snackbarHostState.showSnackbar(warning, withDismissAction = true)
+            viewModel.dismissStockWarning()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Pharmacy queue") },

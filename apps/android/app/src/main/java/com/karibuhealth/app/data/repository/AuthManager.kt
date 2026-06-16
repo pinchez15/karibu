@@ -1,6 +1,7 @@
 package com.karibuhealth.app.data.repository
 
 import android.util.Log
+import com.karibuhealth.app.BuildConfig
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.util.Analytics
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +30,11 @@ class AuthManager @Inject constructor(
 
         val staff = staffRepository.fetchAndCacheStaff(clerkUserId)
         if (staff != null) {
-            Log.d(TAG, "Staff loaded: ${staff.displayName} (${staff.role}), clinic: ${staff.clinicId}")
+            // No staff name in logs (beta testers run debug builds; logcat is
+            // world-readable to other debuggable tooling).
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Staff loaded: role=${staff.role}, clinic=${staff.clinicId}")
+            }
             analytics.identify(clerkUserId, mapOf(
                 "role" to staff.role.name,
                 "clinic_id" to staff.clinicId,

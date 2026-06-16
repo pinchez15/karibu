@@ -4,8 +4,10 @@ import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.FinalizeClinicalEncounterRequest
+import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
 import com.karibuhealth.app.util.NetworkMonitor
 import io.mockk.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -204,6 +206,83 @@ class SyncEngineTest {
             })
         }
     }
+
+    @Test
+    fun `resets stale in_progress entries at run start`() = runTest {
+        every { networkMonitor.isOnline() } returns true
+        coEvery { syncQueueDao.resetInProgress() } returns 2
+        coEvery { syncQueueDao.getRetryable(any()) } returns emptyList()
+
+        syncEngine.processQueue()
+
+        coVerify { syncQueueDao.resetInProgress() }
+    }
+
+    @Test
+    fun `keeps visit is_synced false while sibling ops are still active`() = runTest {
+        every { networkMonitor.isOnline() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.success("".toResponseBody())
+        // A sibling op (e.g. rpc_record_dispense) for the same visit is still queued.
+        coEvery { syncQueueDao.countActiveForEntity("visit-1", "sync-lab-1") } returns 1
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify(exactly = 0) { visitDao.updateSyncState(any(), true) }
+    }
+
+    @Test
+    fun `marks visit is_synced true when no sibling ops remain`() = runTest {
+        every { networkMonitor.isOnline() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.success("".toResponseBody())
+        coEvery { syncQueueDao.countActiveForEntity("visit-1", "sync-lab-1") } returns 0
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify { visitDao.updateSyncState("visit-1", true) }
+    }
+
+    @Test
+    fun `cancellation requeues entry without counting an attempt or failing it`() = runTest {
+        every { networkMonitor.isOnline() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } throws CancellationException("worker replaced")
+
+        try {
+            syncEngine.processQueue()
+            fail("CancellationException must propagate")
+        } catch (_: CancellationException) {
+            // expected
+        }
+
+        // Reset to pending with the SAME attempt count — cancellation is not
+        // an op failure and must not burn one of the five retry slots.
+        coVerify {
+            syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "pending" && it.attempts == 0 })
+        }
+        coVerify(exactly = 0) {
+            syncQueueDao.update(match { it.attempts > 0 || it.status == "failed" })
+        }
+    }
+
+    private fun makeLabResultEntry(id: String, visitId: String) = makeSyncEntry(
+        id = id,
+        operationType = "rpc_record_lab_result",
+        payload = json.encodeToString(
+            RecordLabResultRequest.serializer(),
+            RecordLabResultRequest(visitId = visitId, result = "MRDT positive", abnormal = true),
+        ),
+        entityId = visitId,
+    )
 
     private fun makeSyncEntry(
         id: String,

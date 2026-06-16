@@ -192,7 +192,16 @@ class DictationViewModel @Inject constructor(
     private var autosaveJob: Job? = null
     private var draftAiQueuedForVisit: String? = null
 
+    // A recording whose transcription FAILED. The audio file is kept on disk
+    // (filesDir/dictation) — tapping the mic on the same section retries the
+    // upload of the kept file instead of forcing the clinician to re-dictate.
+    private var failedRecording: Pair<java.io.File, NoteSection>? = null
+
     init {
+        // Best-effort cleanup of recordings nobody rescued within a week.
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { recorder.pruneOlderThan(KEPT_RECORDING_MAX_AGE_MS) }
+        }
         viewModelScope.launch {
             networkMonitor.connectionStatusFlow.collect { status ->
                 val label = when {
@@ -212,6 +221,7 @@ class DictationViewModel @Inject constructor(
         // that a stop-mid-edit gets persisted before the user moves on.
         const val AUTOSAVE_DEBOUNCE_MS = 1_500L
         const val DRAFT_AI_MIN_CHARS = 50
+        const val KEPT_RECORDING_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
     }
 
     fun load(
@@ -264,6 +274,37 @@ class DictationViewModel @Inject constructor(
             if (incorporateSection != null) {
                 scheduleAutosave()
             }
+            recoverKeptRecording(visitId)
+        }
+    }
+
+    /**
+     * If a previous session left an untranscribed recording for this visit
+     * (upload failed / app died before transcription), re-offer it: tapping
+     * the mic on that section sends the KEPT audio instead of re-recording.
+     */
+    private suspend fun recoverKeptRecording(visitId: String) {
+        if (failedRecording != null) return
+        val kept = withContext(Dispatchers.IO) { recorder.findKeptRecordings(visitId) }
+        if (kept.isEmpty()) return
+        val file = kept.first()
+        // Filename: rec_<visitId>_<Section>_<ts>.m4a — section sits between
+        // the visit id and the timestamp.
+        val section = file.name
+            .removePrefix("rec_")
+            .removePrefix(visitId.replace(Regex("[^A-Za-z0-9_-]"), ""))
+            .trimStart('_')
+            .substringBefore('_')
+            .let { name -> NoteSection.entries.firstOrNull { it.name == name } }
+            ?: NoteSection.AdditionalNote
+        // Older duplicates for this visit are stale takes — drop them.
+        kept.drop(1).forEach { it.delete() }
+        failedRecording = file to section
+        _uiState.update {
+            it.copy(
+                error = "An unsent recording for ${section.displayLabel} was recovered. " +
+                    "Tap the mic on that section to send it.",
+            )
         }
     }
 
@@ -319,7 +360,17 @@ class DictationViewModel @Inject constructor(
             return
         }
 
-        if (!recorder.start()) {
+        // A kept recording for this section is waiting — retry sending it
+        // instead of forcing the clinician to re-dictate the same content.
+        failedRecording?.let { (file, failedSection) ->
+            if (failedSection == section && file.exists()) {
+                failedRecording = null
+                viewModelScope.launch { transcribeSectionRecording(file, section) }
+                return
+            }
+        }
+
+        if (!recorder.start(label = "${state.visitId.orEmpty()}_${section.name}")) {
             _uiState.update { it.copy(error = "Could not start recorder. Try again.") }
             return
         }
@@ -375,18 +426,26 @@ class DictationViewModel @Inject constructor(
                 }
                 scheduleAutosave()
             }
-        } catch (e: DictationException) {
-            _uiState.update {
-                it.copy(error = "Transcription failed for ${section.displayLabel}. Tap mic to try again.")
-            }
-            android.util.Log.w("DictationVM", "section transcribe failed: ${e.message}")
+            // Delete ONLY on success — the audio is the sole copy of the
+            // clinician's dictation until the transcript is in the note.
+            file.delete()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Screen closed mid-upload: keep the audio for recovery on the
+            // next entry to this visit's dictation screen.
+            failedRecording = file to section
+            throw e
         } catch (e: Exception) {
+            // Keep the file. Tapping the mic on the same section retries the
+            // upload of this kept recording (see startRecording).
+            failedRecording = file to section
             _uiState.update {
-                it.copy(error = "Transcription failed for ${section.displayLabel}. Tap mic to try again.")
+                it.copy(
+                    error = "Transcription failed for ${section.displayLabel}. " +
+                        "Your recording is saved — tap the mic on that section to retry sending it.",
+                )
             }
             android.util.Log.w("DictationVM", "section transcribe failed: ${e.message}")
         } finally {
-            file.delete()
             _uiState.update {
                 it.copy(isTranscribing = false, transcribingSection = null)
             }
@@ -676,8 +735,10 @@ class DictationViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        // Abandon any in-progress recording, but DO NOT wipe the dictation
+        // dir: kept recordings from failed transcriptions are recovered on
+        // the next entry to this visit's screen (see recoverKeptRecording).
         recorder.cancel()
-        recorder.clearCache()
     }
 
     private fun decodeClinicalSections(raw: String): ClinicalNoteSections? {

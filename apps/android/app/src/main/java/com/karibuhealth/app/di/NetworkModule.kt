@@ -39,8 +39,11 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply {
+                // BASIC, never BODY: beta testers receive debug builds, and
+                // BODY dumps PHI (patient DTOs, transcripts) plus Bearer
+                // tokens to logcat. BASIC logs method/URL/status only.
                 level = if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.BODY
+                    HttpLoggingInterceptor.Level.BASIC
                 } else {
                     HttpLoggingInterceptor.Level.NONE
                 }

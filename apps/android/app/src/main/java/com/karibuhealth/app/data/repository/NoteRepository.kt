@@ -60,6 +60,17 @@ class NoteRepository @Inject constructor(
     }
 
     /**
+     * Flip the local visit row back to synced ONLY when no active outbox
+     * entry still references it — while sibling ops are queued/failed the
+     * row must stay dirty so pull-merge can't clobber the local changes.
+     */
+    private suspend fun markVisitSyncedIfQuiet(visitId: String) {
+        if (syncQueueDao.countActiveForEntity(visitId) == 0) {
+            visitDao.updateSyncState(visitId, true)
+        }
+    }
+
+    /**
      * Local-only draft save (no queue entry). Used for in-progress note
      * editing where the clinician hasn't tapped Sign yet. Kept as a thin
      * wrapper over `upsertProviderNote` for callers that don't need the
@@ -193,8 +204,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueHelper.enqueue(syncEntry)
-        entity.toDomain() to syncEntry.id
+        // Thread the surviving queue-row id (enqueue may dedup).
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        entity.toDomain() to queuedId
     }
 
     /**
@@ -287,8 +299,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -348,8 +361,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -396,8 +410,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -452,8 +467,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -504,8 +520,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = predecessorSyncId,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -568,6 +585,9 @@ class NoteRepository @Inject constructor(
         )
         visitDao.updateDocumentationComplete(visitId, true, now)
         releaseClinicianQueueAfterDocumentation(visitId, now)
+        // Dirty the visit in the same flow as the local mutation, so a pull
+        // can't merge-clobber it before the op reaches the server.
+        visitDao.updateSyncState(visitId, false)
 
         val syncEntryId = UUID.randomUUID().toString()
         val rpcBody = FinalizeClinicalEncounterRequest(
@@ -589,7 +609,10 @@ class NoteRepository @Inject constructor(
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
                 val response = supabaseApi.rpcFinalizeClinicalEncounter(rpcBody)
-                if (response.isSuccessful) return@withContext null
+                if (response.isSuccessful) {
+                    markVisitSyncedIfQuiet(visitId)
+                    return@withContext null
+                }
             } catch (_: Exception) {
                 // Fall through to queue
             }
@@ -606,8 +629,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     /**
@@ -667,8 +691,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
-        syncQueueHelper.enqueue(syncEntry)
-        entity.toDomain() to syncEntry.id
+        // Thread the surviving queue-row id (enqueue may dedup).
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        entity.toDomain() to queuedId
     }
 
     /**
@@ -695,6 +720,9 @@ class NoteRepository @Inject constructor(
             updatedAt = now,
         )
         providerNoteDao.updateStructuredData(visitId, structuredData, now)
+        // Dirty the visit in the same flow as the local mutation, so a pull
+        // can't merge-clobber it before the op reaches the server.
+        visitDao.updateSyncState(visitId, false)
 
         val rpcBody = VisitClinicalSummaryUpsertDto(
             visitId = visitId,
@@ -709,7 +737,10 @@ class NoteRepository @Inject constructor(
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
                 val response = supabaseApi.rpcUpsertVisitClinicalSummary(rpcBody)
-                if (response.isSuccessful) return@withContext null
+                if (response.isSuccessful) {
+                    markVisitSyncedIfQuiet(visitId)
+                    return@withContext null
+                }
             } catch (_: Exception) {
                 // Fall through to queue
             }
@@ -726,8 +757,9 @@ class NoteRepository @Inject constructor(
             createdAt = System.currentTimeMillis(),
             dependsOn = effectivePredecessor,
         )
+        // enqueue() may dedup onto an existing pending row — return the
+        // SURVIVING id so callers never build a dangling dependsOn chain.
         syncQueueHelper.enqueue(syncEntry)
-        syncEntry.id
     }
 
     suspend fun refreshNotes(visitId: String) {

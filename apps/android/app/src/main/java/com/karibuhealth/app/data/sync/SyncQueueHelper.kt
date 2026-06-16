@@ -42,7 +42,10 @@ class SyncQueueHelper @Inject constructor(
     fun scheduleImmediateSync() {
         workManager.enqueueUniqueWork(
             SyncWorker.WORK_NAME_IMMEDIATE,
-            ExistingWorkPolicy.REPLACE,
+            // APPEND_OR_REPLACE, not REPLACE: REPLACE cancels a sync batch
+            // that's already mid-flight, stranding entries at 'in_progress'
+            // and aborting RPCs that were about to land.
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             SyncWorker.buildImmediateRequest(),
         )
     }

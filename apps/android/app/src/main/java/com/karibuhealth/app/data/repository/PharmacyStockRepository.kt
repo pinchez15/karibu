@@ -36,22 +36,40 @@ class PharmacyStockRepository @Inject constructor(
         }
 
     /**
+     * Result of matching free-text medications to stock. [movementsJson] is
+     * the rpc_record_dispense movements payload; [skippedOutOfStock] are
+     * drugs that MATCHED a stock row but could not be decremented (quantity
+     * on hand too low); [matchedAny] is false when no stock row matched the
+     * free text at all (no decrement happened anywhere).
+     */
+    data class DispenseMovementsResult(
+        val movementsJson: String,
+        val skippedOutOfStock: List<String>,
+        val matchedAny: Boolean,
+    )
+
+    /**
      * Match medication free-text to cached stock rows and build rpc_record_dispense
-     * movements JSON while decrementing quantities locally.
+     * movements JSON while decrementing quantities locally. Items that match
+     * but have insufficient stock are reported back instead of silently
+     * skipped, so the pharmacist can be warned that stock was NOT decremented.
      */
     suspend fun applyOfflineDispenseMovements(
         clinicId: String,
         medications: String?,
         defaultQuantity: Double = 1.0,
-    ): String {
+    ): DispenseMovementsResult {
         val meds = medications?.trim().orEmpty()
-        if (meds.isEmpty()) return "[]"
+        if (meds.isEmpty()) return DispenseMovementsResult("[]", emptyList(), matchedAny = true)
 
         val stock = pharmacyStockDao.getActiveByClinic(clinicId)
         val now = Instant.now().toString()
+        val skipped = mutableListOf<String>()
+        var matchedAny = false
         val movements = buildJsonArray {
             for (item in stock) {
                 if (meds.contains(item.drugName, ignoreCase = true)) {
+                    matchedAny = true
                     if (item.quantityOnHand >= defaultQuantity) {
                         pharmacyStockDao.decrementQuantity(item.id, defaultQuantity, now)
                         add(
@@ -60,11 +78,13 @@ class PharmacyStockRepository @Inject constructor(
                                 put("quantity", defaultQuantity)
                             },
                         )
+                    } else {
+                        skipped.add(item.drugName)
                     }
                 }
             }
         }
-        return movements.toString()
+        return DispenseMovementsResult(movements.toString(), skipped, matchedAny)
     }
 }
 

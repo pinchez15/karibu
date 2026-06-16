@@ -99,6 +99,8 @@ class MainActivity : ComponentActivity() {
                 val pendingSyncCount by viewModel.pendingSyncCount.collectAsState()
                 val deviceSavedCount by viewModel.deviceSavedCount.collectAsState()
                 val pendingEntries by viewModel.pendingEntries.collectAsState()
+                val failedSyncCount by viewModel.failedSyncCount.collectAsState()
+                val failedEntries by viewModel.failedEntries.collectAsState()
                 val navController = rememberNavController()
 
                 var showSyncSheet by remember { mutableStateOf(false) }
@@ -110,6 +112,7 @@ class MainActivity : ComponentActivity() {
                             isOnline = isOnline,
                             pendingSyncCount = pendingSyncCount,
                             deviceSavedCount = deviceSavedCount,
+                            failedSyncCount = failedSyncCount,
                             onClick = { showSyncSheet = true },
                         )
                     },
@@ -124,6 +127,7 @@ class MainActivity : ComponentActivity() {
                 if (showSyncSheet) {
                     SyncDetailsSheet(
                         entries = pendingEntries,
+                        failedEntries = failedEntries,
                         onDismiss = { showSyncSheet = false },
                         onRetryAll = {
                             viewModel.retryAll()

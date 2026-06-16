@@ -23,6 +23,8 @@ data class PharmacyHomeUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionVisitId: String? = null,
+    /** Non-blocking warning: dispense recorded but stock NOT decremented. */
+    val stockWarning: String? = null,
 )
 
 @HiltViewModel
@@ -73,7 +75,7 @@ class PharmacyHomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching {
-                val movements = pharmacyStockRepository.applyOfflineDispenseMovements(
+                val result = pharmacyStockRepository.applyOfflineDispenseMovements(
                     clinicId = staff.clinicId,
                     medications = medications,
                 )
@@ -82,11 +84,27 @@ class PharmacyHomeViewModel @Inject constructor(
                     status = status,
                     notes = notes,
                     staffId = staff.id,
-                    movementsJson = movements,
+                    movementsJson = result.movementsJson,
                 )
+                // Dispense is recorded either way — but warn when stock
+                // wasn't decremented so levels don't silently drift.
+                val warning = when {
+                    result.skippedOutOfStock.isNotEmpty() ->
+                        "Stock not decremented for ${result.skippedOutOfStock.joinToString(", ")} — check stock levels"
+                    !result.matchedAny ->
+                        "No stock items matched this order — stock not decremented. Check stock levels."
+                    else -> null
+                }
+                if (warning != null) {
+                    _uiState.update { it.copy(stockWarning = warning) }
+                }
             }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()
             _uiState.update { it.copy(actionVisitId = null) }
         }
+    }
+
+    fun dismissStockWarning() {
+        _uiState.update { it.copy(stockWarning = null) }
     }
 }
