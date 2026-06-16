@@ -19,6 +19,7 @@ import {
   PackageX,
 } from 'lucide-react'
 import { MasterDetail, STATION_COLLAPSE_BP } from '@/components/master-detail'
+import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import { cn } from '@/lib/utils'
 import {
   captureStationLayoutResized,
@@ -54,6 +55,7 @@ export function PharmacyStationClient({
 }) {
   const dispenseStatus = setDispensingStatusFn ?? defaultSetDispensingStatus
   const router = useRouter()
+  useAutoRefresh()
   const [rows, setRows] = useState(initialRows)
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     if (initialVisitId && initialRows.some((r) => r.id === initialVisitId)) {

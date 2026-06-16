@@ -92,13 +92,15 @@ async function broadcastQueueUpdate(clinicId: string) {
   supabase.removeChannel(channel)
 }
 
-export async function fetchQueueData(clinicId: string): Promise<QueueItem[]> {
+export async function fetchQueueData(): Promise<QueueItem[]> {
+  // Never trust a client-supplied clinic id — the service-role client
+  // bypasses RLS, so the queue is always scoped to the caller's own clinic.
   const staff = await getStaff()
   if (!staff) return []
 
   const supabase = createServiceClient()
   const { data, error } = await supabase.rpc('get_clinic_queue', {
-    p_clinic_id: clinicId,
+    p_clinic_id: staff.clinic_id,
   })
 
   if (error) {

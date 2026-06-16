@@ -25,6 +25,23 @@ interface VisitWithPatient extends Visit {
   doctor: { display_name: string } | null
 }
 
+/**
+ * PostgREST `.or()` filter values are comma/paren-delimited — a raw search
+ * term like "Okello, John" corrupts the filter and silently matches nothing.
+ * Strip the delimiter characters (and ilike wildcards) before interpolating.
+ */
+function sanitizeSearchTerm(term: string): string {
+  return term.replace(/[,()%_\\]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+const PATIENT_ID_CHUNK_SIZE = 200
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
+  return out
+}
+
 async function getVisits(
   clinicId: string,
   statusFilter?: string,
@@ -35,12 +52,30 @@ async function getVisits(
   const supabase = createServiceClient()
 
   let patientIds: string[] | null = null
-  if (search) {
-    const { data: matchingPatients } = await supabase
+  const term = search ? sanitizeSearchTerm(search) : ''
+  if (term) {
+    // UI promises "name, phone, or patient number" — match the composed name
+    // fields plus patient_number and national_id (migrations 017 / 038).
+    const pattern = `%${term}%`
+    const { data: matchingPatients, error: patientErr } = await supabase
       .from('patients')
       .select('id')
       .eq('clinic_id', clinicId)
-      .or(`display_name.ilike.%${search}%,whatsapp_number.ilike.%${search}%`)
+      .or(
+        [
+          `display_name.ilike.${pattern}`,
+          `first_name.ilike.${pattern}`,
+          `last_name.ilike.${pattern}`,
+          `whatsapp_number.ilike.${pattern}`,
+          `patient_number.ilike.${pattern}`,
+          `national_id.ilike.${pattern}`,
+        ].join(','),
+      )
+
+    if (patientErr) {
+      console.error('Failed to search patients:', patientErr)
+      return { visits: [], total: 0 }
+    }
 
     patientIds = matchingPatients?.map(p => p.id) || []
     if (patientIds.length === 0) {
@@ -48,32 +83,54 @@ async function getVisits(
     }
   }
 
-  let query = supabase
-    .from('visits')
-    .select(
-      '*, patient:patients(id, first_name, last_name, display_name, whatsapp_number, date_of_birth, sex, patient_number), doctor:staff!visits_doctor_id_fkey(display_name)',
-      { count: 'exact' },
-    )
-    .eq('clinic_id', clinicId)
-    .order('created_at', { ascending: false })
-    .range((page - 1) * limit, page * limit - 1)
+  // PostgREST `.in()` lists are sent in the URL — an unbounded id list from a
+  // broad search blows past URL limits. Chunk to 200 ids and merge.
+  const idChunks: Array<string[] | null> = patientIds
+    ? chunk(patientIds, PATIENT_ID_CHUNK_SIZE)
+    : [null]
+  const singleQuery = idChunks.length === 1
 
-  if (statusFilter && statusFilter !== 'all') {
-    query = query.eq('status', statusFilter)
+  const buildQuery = (ids: string[] | null) => {
+    let query = supabase
+      .from('visits')
+      .select(
+        '*, patient:patients(id, first_name, last_name, display_name, whatsapp_number, date_of_birth, sex, patient_number), doctor:staff!visits_doctor_id_fkey(display_name)',
+        { count: 'exact' },
+      )
+      .eq('clinic_id', clinicId)
+      .order('created_at', { ascending: false })
+      // Single query: page server-side. Multiple chunks: each chunk only
+      // ever needs rows up to the end of the requested page; the merged set
+      // is re-sorted + sliced below.
+      .range(singleQuery ? (page - 1) * limit : 0, page * limit - 1)
+
+    if (statusFilter && statusFilter !== 'all') {
+      query = query.eq('status', statusFilter)
+    }
+    if (ids) {
+      query = query.in('patient_id', ids)
+    }
+    return query
   }
 
-  if (patientIds) {
-    query = query.in('patient_id', patientIds)
+  let merged: VisitWithPatient[] = []
+  let total = 0
+  for (const ids of idChunks) {
+    const { data, error, count } = await buildQuery(ids)
+    if (error) {
+      console.error('Failed to fetch visits:', error)
+      return { visits: [], total: 0 }
+    }
+    merged = merged.concat((data || []) as VisitWithPatient[])
+    total += count || 0
   }
 
-  const { data, error, count } = await query
-
-  if (error) {
-    console.error('Failed to fetch visits:', error)
-    return { visits: [], total: 0 }
+  if (singleQuery) {
+    return { visits: merged, total }
   }
 
-  return { visits: (data || []) as VisitWithPatient[], total: count || 0 }
+  merged.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+  return { visits: merged.slice((page - 1) * limit, page * limit), total }
 }
 
 function deriveAgeLabel(dob: string | null): string | null {
@@ -102,7 +159,10 @@ export default async function VisitsPage({
 
   const params = await searchParams
   const statusFilter = params.status || 'all'
-  const page = parseInt(params.page || '1', 10)
+  // Guard against non-numeric ?page= — parseInt NaN would feed .range(NaN, …)
+  // and silently return an empty list.
+  const parsedPage = parseInt(params.page || '1', 10)
+  const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
   const search = params.search || ''
 
   const { visits, total } = await getVisits(staff.clinic_id, statusFilter, page, 25, search)

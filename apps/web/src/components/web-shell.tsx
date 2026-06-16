@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Sparkles,
   ListTodo,
+  Settings,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
@@ -43,6 +44,7 @@ const ADMIN_SWITCHER: NavItem[] = [
   { id: 'pharmacy-desk', label: 'Pharmacy desk', href: '/dashboard/pharmacy', icon: Pill },
   { id: 'lab-desk', label: 'Lab desk', href: '/dashboard/lab', icon: FlaskConical },
   { id: 'reports-desk', label: 'Reports', href: '/dashboard/admin/reports', icon: BarChart3 },
+  { id: 'admin-desk', label: 'Admin', href: '/dashboard/admin', icon: Settings },
 ]
 
 const NAV_BY_ROLE: Record<WebShellRole, NavItem[]> = {
@@ -268,5 +270,8 @@ export function WebTopBar({ title, subtitle, subtitleMeta = true, actions }: Web
 function isActive(pathname: string, href: string) {
   if (pathname === href) return true
   if (href === '/dashboard') return false
+  // The admin home link must not light up across the reports subtree, which
+  // has its own nav entries.
+  if (href === '/dashboard/admin' && pathname.startsWith('/dashboard/admin/reports')) return false
   return pathname.startsWith(href)
 }

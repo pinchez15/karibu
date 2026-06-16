@@ -191,15 +191,23 @@ export async function saveDraftNote(input: {
 
 /**
  * Sign a clinician's visit note. This is the Phase 2 successor to the old
- * overloaded "Save" — it now represents the explicit attestation:
+ * overloaded "Save" — it now represents the explicit attestation.
  *
- *   1. provider_notes upsert via rpc_upsert_provider_note with status='signed'
- *      (drives finalized_at/by via the RPC's senior-role gate).
+ * The pipeline is sequential, not atomic, so writes are ordered to make
+ * partial failure recoverable: every supporting write (clinical summary,
+ * patient receipt, visit flags) is an idempotent upsert/update that runs
+ * BEFORE the irreversible sign. If any step fails, the note is still a
+ * draft and the clinician can simply press Sign again; the error message
+ * names the step that failed.
+ *
+ *   1. visit clinical summary (rpc_upsert_visit_clinical_summary)
  *   2. patient_notes (source='clinician_fallback') = receipt-of-record.
  *      AI never overwrites this row (composite unique on visit_id+source).
- *   3. visits: documentation_complete=true, status pending→sent (if pending),
- *      ai_review_status='not_started' so the Inngest poller picks the
- *      visit up within ~60s and structures it in the background.
+ *   3. visits: documentation_complete=true, status pending/error→sent.
+ *      (Post-sign AI review is deprecated — see docs/ai-clinical-assist.md —
+ *      so signing no longer resets ai_review_status to enqueue it.)
+ *   4. provider_notes upsert via rpc_upsert_provider_note with
+ *      status='signed' — the irreversible attestation, last.
  *
  * Service-role client bypasses RLS; we explicitly clinic-scope every write.
  * Roles: senior clinicians (admin/doctor/clinical_officer/midwife) sign.
@@ -235,25 +243,15 @@ export async function signClinicianNote(
 
   const now = new Date().toISOString()
 
-  // 1. provider_notes — upsert + sign in one RPC round-trip.
-  const { error: providerErr } = await supabase.rpc('rpc_upsert_provider_note', {
-    p_id: noteId ?? crypto.randomUUID(),
-    p_visit_id: visitId,
-    p_transcript: text,
-    p_status: 'signed',
-    p_patient_id: visit.patient_id,
-    p_source: 'visit',
-  })
-  if (providerErr) {
-    return {
-      success: false,
-      error: `provider_notes upsert failed: ${providerErr.message}`,
-    }
-  }
-
+  // 1. Visit clinical summary (diagnosis / meds / follow-up / tests).
   if (sections) {
     const summary = await syncVisitClinicalSummary(visitId, sections)
-    if (!summary.success) return summary
+    if (!summary.success) {
+      return {
+        success: false,
+        error: `Could not sign — ${summary.error}. The note is still a draft; try again.`,
+      }
+    }
   }
 
   // 2. patient_notes (clinician_fallback) — receipt-of-record.
@@ -272,18 +270,17 @@ export async function signClinicianNote(
       { onConflict: 'visit_id,source' },
     )
   if (patientErr) {
-    return { success: false, error: `patient_notes upsert failed: ${patientErr.message}` }
+    return {
+      success: false,
+      error: `Could not sign — patient receipt failed: ${patientErr.message}. The note is still a draft; try again.`,
+    }
   }
 
-  // 3. visits: mark documentation complete, advance status pending→sent,
-  //    queue the AI review. Keep AI lifecycle independent of clinical
-  //    status — the cashier never waits on AI.
+  // 3. visits: mark documentation complete, advance status pending→sent.
+  //    Idempotent, so a retry after a failed sign re-applies safely.
   const visitUpdate: Record<string, unknown> = {
     documentation_complete: true,
     documentation_completed_at: now,
-    ai_review_status: 'not_started',
-    ai_review_error: null,
-    ai_review_no_concerns: false,
     updated_at: now,
   }
   if (visit.status === 'pending' || visit.status === 'error') {
@@ -297,7 +294,28 @@ export async function signClinicianNote(
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
   if (vErr) {
-    return { success: false, error: `visits update failed: ${vErr.message}` }
+    return {
+      success: false,
+      error: `Could not sign — visit update failed: ${vErr.message}. The note is still a draft; try again.`,
+    }
+  }
+
+  // 4. provider_notes — upsert + sign in one RPC round-trip. Irreversible
+  //    (edits after this require an amendment with a reason), so it runs last.
+  const { error: providerErr } = await supabase.rpc('rpc_upsert_provider_note', {
+    p_id: noteId ?? crypto.randomUUID(),
+    p_visit_id: visitId,
+    p_transcript: text,
+    p_status: 'signed',
+    p_patient_id: visit.patient_id,
+    p_source: 'visit',
+  })
+  if (providerErr) {
+    revalidatePath(`/dashboard/visits/${visitId}`)
+    return {
+      success: false,
+      error: `The visit was updated but the note signature itself failed: ${providerErr.message}. The note remains a draft — press Sign again.`,
+    }
   }
 
   revalidatePath(`/dashboard/visits/${visitId}`)

@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Loader2, AlertTriangle, Check, Play } from 'lucide-react'
 import { recordLabResult, startLabRun } from './actions'
+import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import { cn } from '@/lib/utils'
 
 export type LabRow = {
@@ -32,6 +33,7 @@ export type LabRow = {
 }
 
 export function LabQueueClient({ initialRows }: { initialRows: LabRow[] }) {
+  useAutoRefresh()
   return (
     <div className="bg-card border border-border rounded-xl">
       <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">

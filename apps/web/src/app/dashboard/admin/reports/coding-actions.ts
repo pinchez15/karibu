@@ -4,6 +4,22 @@ import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import type { HmisDiagnosisCode, VisitDiagnosisCode } from '@karibu/shared'
 
+/**
+ * Ownership pre-check: the service-role client bypasses RLS, so every
+ * visit-scoped operation must first confirm the visit belongs to the
+ * caller's clinic. Returns true only when the visit exists in clinicId.
+ */
+async function visitBelongsToClinic(visitId: string, clinicId: string): Promise<boolean> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('visits')
+    .select('id')
+    .eq('id', visitId)
+    .eq('clinic_id', clinicId)
+    .maybeSingle()
+  return Boolean(data)
+}
+
 export async function getHmisCodes(): Promise<HmisDiagnosisCode[]> {
   const staff = await getStaff()
   if (!staff) throw new Error('Not authenticated')
@@ -27,6 +43,10 @@ export async function getHmisCodes(): Promise<HmisDiagnosisCode[]> {
 export async function getVisitDiagnosisCodes(visitId: string): Promise<VisitDiagnosisCode[]> {
   const staff = await getStaff()
   if (!staff) throw new Error('Not authenticated')
+
+  if (!(await visitBelongsToClinic(visitId, staff.clinic_id))) {
+    return []
+  }
 
   const supabase = createServiceClient()
 
@@ -54,6 +74,10 @@ export async function saveVisitDiagnosisCode(
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
+  if (!(await visitBelongsToClinic(visitId, staff.clinic_id))) {
+    return { error: 'Visit not found' }
+  }
+
   const supabase = createServiceClient()
 
   const { error } = await supabase
@@ -78,6 +102,10 @@ export async function saveVisitDiagnosisCode(
 export async function removeVisitDiagnosisCode(visitId: string, hmisCodeId: number) {
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
+
+  if (!(await visitBelongsToClinic(visitId, staff.clinic_id))) {
+    return { error: 'Visit not found' }
+  }
 
   const supabase = createServiceClient()
 
