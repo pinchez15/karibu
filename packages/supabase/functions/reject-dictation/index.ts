@@ -48,7 +48,7 @@ serve(async (req) => {
 
     const { data: visit, error: visitErr } = await supabase
       .from('visits')
-      .select('id, clinic_id, patient_id')
+      .select('id, clinic_id, patient_id, status')
       .eq('id', visit_id)
       .maybeSingle()
     if (visitErr) throw new Error(`Visit lookup failed: ${visitErr.message}`)
@@ -56,6 +56,16 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Visit not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // Reject only makes sense while the AI output is awaiting review (or the
+    // structuring errored). A finalized visit ('sent'/'completed') must never
+    // have its note and clinical fields wiped by this path.
+    if (visit.status !== 'review' && visit.status !== 'error') {
+      return new Response(
+        JSON.stringify({ error: `Cannot reject a visit in status '${visit.status}'` }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
