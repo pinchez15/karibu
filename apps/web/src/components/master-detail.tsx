@@ -61,25 +61,52 @@ function useCollapsedLayout() {
   return collapsed
 }
 
-function readStoredSplit(): { [LIST_PANEL_ID]: number; [DETAIL_PANEL_ID]: number } | undefined {
-  if (typeof window === 'undefined') return undefined
+const DEFAULT_LAYOUT = {
+  [LIST_PANEL_ID]: 40,
+  [DETAIL_PANEL_ID]: 60,
+} as const
+
+function normalizeStoredLayout(
+  layout: { [LIST_PANEL_ID]: number; [DETAIL_PANEL_ID]: number },
+): { [LIST_PANEL_ID]: number; [DETAIL_PANEL_ID]: number } {
+  const list = layout[LIST_PANEL_ID]
+  const detail = layout[DETAIL_PANEL_ID]
+  if (
+    typeof list !== 'number' ||
+    typeof detail !== 'number' ||
+    list < 25 ||
+    list > 60 ||
+    detail < 35 ||
+    detail > 75
+  ) {
+    return { ...DEFAULT_LAYOUT }
+  }
+  const total = list + detail
+  if (total < 95 || total > 105) {
+    return { ...DEFAULT_LAYOUT }
+  }
+  return layout
+}
+
+function readStoredSplit(): { [LIST_PANEL_ID]: number; [DETAIL_PANEL_ID]: number } {
+  if (typeof window === 'undefined') return { ...DEFAULT_LAYOUT }
   try {
     const raw = sessionStorage.getItem(SESSION_SPLIT_KEY)
-    if (!raw) return undefined
+    if (!raw) return { ...DEFAULT_LAYOUT }
     const parsed = JSON.parse(raw) as Record<string, number>
     if (
       typeof parsed[LIST_PANEL_ID] === 'number' &&
       typeof parsed[DETAIL_PANEL_ID] === 'number'
     ) {
-      return {
+      return normalizeStoredLayout({
         [LIST_PANEL_ID]: parsed[LIST_PANEL_ID],
         [DETAIL_PANEL_ID]: parsed[DETAIL_PANEL_ID],
-      }
+      })
     }
   } catch {
     /* ignore */
   }
-  return undefined
+  return { ...DEFAULT_LAYOUT }
 }
 
 function DetailPaneChrome({
@@ -163,10 +190,7 @@ export function MasterDetail({
   const collapsed = useCollapsedLayout()
   const groupId = useId()
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [defaultLayout] = useState({
-    [LIST_PANEL_ID]: 40,
-    [DETAIL_PANEL_ID]: 60,
-  })
+  const [defaultLayout] = useState(readStoredSplit)
 
   const hasSelection = Boolean(selectedId ?? initialSelectionId)
 
@@ -224,31 +248,31 @@ export function MasterDetail({
   }
 
   return (
-    <div className={cn('min-h-0 flex-1', className)} data-collapsed="false">
+    <div className={cn('min-h-0 w-full flex-1', className)} data-collapsed="false">
       <Group
         id={groupId}
         orientation="horizontal"
-        className="flex h-full min-h-0"
+        className="flex h-full min-h-0 w-full"
         defaultLayout={defaultLayout}
         onLayoutChanged={handleLayoutChanged}
       >
         <Panel
           id={LIST_PANEL_ID}
-          defaultSize={defaultLayout[LIST_PANEL_ID]}
-          minSize={25}
-          maxSize={60}
-          className="min-h-0"
+          defaultSize={`${defaultLayout[LIST_PANEL_ID]}%`}
+          minSize="320px"
+          maxSize="60%"
+          className="min-h-0 min-w-0"
         >
-          <div ref={listPaneRef} className="h-full overflow-auto">
+          <div ref={listPaneRef} className="h-full min-w-0 overflow-auto">
             {list}
           </div>
         </Panel>
-        <Separator className="w-1.5 bg-line-soft hover:bg-cobalt/20 transition-colors data-[separator=active]:bg-cobalt/30" />
+        <Separator className="w-1.5 shrink-0 bg-line-soft hover:bg-cobalt/20 transition-colors data-[separator=active]:bg-cobalt/30" />
         <Panel
           id={DETAIL_PANEL_ID}
-          defaultSize={defaultLayout[DETAIL_PANEL_ID]}
-          minSize={35}
-          className="min-h-0"
+          defaultSize={`${defaultLayout[DETAIL_PANEL_ID]}%`}
+          minSize="360px"
+          className="min-h-0 min-w-0"
         >
           <div
             ref={detailPaneRef}
