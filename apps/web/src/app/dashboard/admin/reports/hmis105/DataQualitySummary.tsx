@@ -3,7 +3,7 @@
 import type { DataQualityStats } from '@karibu/shared'
 
 interface DataQualitySummaryProps {
-  quality: DataQualityStats
+  quality: DataQualityStats & { unfinalized_visits?: number }
 }
 
 export function DataQualitySummary({ quality }: DataQualitySummaryProps) {
@@ -12,6 +12,8 @@ export function DataQualitySummary({ quality }: DataQualitySummaryProps) {
       ? Math.round((quality.coded_visits / quality.total_visits) * 100)
       : 0
 
+  const unfinalized = quality.unfinalized_visits ?? 0
+
   const cards = [
     {
       label: 'Total Visits',
@@ -19,9 +21,15 @@ export function DataQualitySummary({ quality }: DataQualitySummaryProps) {
       sub: `${quality.total_patients.toLocaleString()} patients`,
     },
     {
+      label: 'Unfinalized Visits',
+      value: unfinalized.toLocaleString(),
+      sub: 'not counted in this report',
+      warn: unfinalized > 0,
+    },
+    {
       label: 'Coding Rate',
       value: `${codingRate}%`,
-      sub: `${quality.coded_visits} of ${quality.total_visits} coded`,
+      sub: `${quality.coded_visits} of ${quality.total_visits} with confirmed codes`,
       warn: codingRate < 80,
     },
     {
@@ -31,15 +39,15 @@ export function DataQualitySummary({ quality }: DataQualitySummaryProps) {
       warn: quality.missing_sex > 0,
     },
     {
-      label: 'Missing DOB',
+      label: 'Missing Age',
       value: quality.missing_dob.toLocaleString(),
-      sub: 'patients without date of birth',
+      sub: 'patients with no usable age data',
       warn: quality.missing_dob > 0,
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       {cards.map((card) => (
         <div
           key={card.label}

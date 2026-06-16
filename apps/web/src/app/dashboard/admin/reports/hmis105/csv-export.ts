@@ -1,19 +1,28 @@
-import type { Hmis105Report, Hmis105MultiReport } from '@karibu/shared'
+import type { Hmis105ReportEx, Hmis105MultiReportEx } from './report-types'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 
-export function generateHmis105Csv(report: Hmis105Report): string {
+/**
+ * RFC 4180 field escaping: quote the field and double any embedded double
+ * quotes. Numbers pass through unquoted.
+ */
+function escapeCsvField(value: string | number): string {
+  if (typeof value === 'number') return String(value)
+  return `"${value.replace(/"/g, '""')}"`
+}
+
+export function generateHmis105Csv(report: Hmis105ReportEx): string {
   const monthName = MONTH_NAMES[report.month - 1]
   const lines: string[] = []
 
   // Header rows
   lines.push(`HMIS 105 - Outpatient Department Monthly Summary`)
-  lines.push(`Facility: ${report.clinic_name}`)
+  lines.push(escapeCsvField(`Facility: ${report.clinic_name}`))
   lines.push(`Period: ${monthName} ${report.year}`)
-  lines.push(`Generated: ${new Date(report.generated_at).toLocaleString()}`)
+  lines.push(escapeCsvField(`Generated: ${new Date(report.generated_at).toLocaleString()}`))
   lines.push('')
 
   // Column headers
@@ -36,8 +45,8 @@ export function generateHmis105Csv(report: Hmis105Report): string {
   // Data rows
   for (const row of report.rows) {
     lines.push([
-      `"${row.hmis_code}"`,
-      `"${row.display_name}"`,
+      escapeCsvField(row.hmis_code),
+      escapeCsvField(row.display_name),
       row.male_0_28d,
       row.female_0_28d,
       row.male_29d_4y,
@@ -56,25 +65,40 @@ export function generateHmis105Csv(report: Hmis105Report): string {
   lines.push('')
   lines.push('Data Quality Summary')
   lines.push(`Total finalized visits in period,${report.quality.total_visits}`)
-  lines.push(`Visits with HMIS codes,${report.quality.coded_visits}`)
-  lines.push(`Visits without HMIS codes,${report.quality.uncoded_visits}`)
+  lines.push(`Unfinalized visits (not counted in report),${report.quality.unfinalized_visits}`)
+  lines.push(`Visits with confirmed HMIS codes,${report.quality.coded_visits}`)
+  lines.push(`Visits without confirmed HMIS codes,${report.quality.uncoded_visits}`)
   lines.push(`Patients missing sex,${report.quality.missing_sex}`)
-  lines.push(`Patients missing date of birth,${report.quality.missing_dob}`)
+  lines.push(`Patients with no usable age data,${report.quality.missing_dob}`)
 
   return lines.join('\n')
 }
 
-export function generateMultiHmis105Csv(multiReport: Hmis105MultiReport): string {
+export function generateMultiHmis105Csv(multiReport: Hmis105MultiReportEx): string {
   const lines: string[] = []
   const isMultiClinic = multiReport.clinics.length > 1
   const { start_year, start_month, end_year, end_month } = multiReport.date_range
   const startLabel = `${MONTH_NAMES[start_month - 1]} ${start_year}`
   const endLabel = `${MONTH_NAMES[end_month - 1]} ${end_year}`
+  const failures = multiReport.failures || []
+
+  // An incomplete report must scream, not whisper: anyone opening the file
+  // sees the warning before any numbers.
+  if (failures.length > 0) {
+    lines.push('WARNING: REPORT INCOMPLETE - DO NOT SUBMIT TO MOH')
+    lines.push(`${failures.length} clinic-month(s) failed to generate and are MISSING from this file:`)
+    for (const f of failures) {
+      lines.push(escapeCsvField(
+        `${f.clinic_name} - ${MONTH_NAMES[f.month - 1]} ${f.year}: ${f.error}`,
+      ))
+    }
+    lines.push('')
+  }
 
   lines.push('HMIS 105 - Multi-Clinic/Period Report')
-  lines.push(`Clinics: ${multiReport.clinics.map((c) => c.name).join('; ')}`)
+  lines.push(escapeCsvField(`Clinics: ${multiReport.clinics.map((c) => c.name).join('; ')}`))
   lines.push(`Period: ${startLabel} to ${endLabel}`)
-  lines.push(`Generated: ${new Date(multiReport.generated_at).toLocaleString()}`)
+  lines.push(escapeCsvField(`Generated: ${new Date(multiReport.generated_at).toLocaleString()}`))
   lines.push('')
 
   // Column headers
@@ -103,11 +127,11 @@ export function generateMultiHmis105Csv(multiReport: Hmis105MultiReport): string
     const monthName = MONTH_NAMES[report.month - 1]
     for (const row of report.rows) {
       const fields = [
-        ...(isMultiClinic ? [`"${report.clinic_name}"`] : []),
-        `"${monthName}"`,
+        ...(isMultiClinic ? [escapeCsvField(report.clinic_name)] : []),
+        escapeCsvField(monthName),
         report.year,
-        `"${row.hmis_code}"`,
-        `"${row.display_name}"`,
+        escapeCsvField(row.hmis_code),
+        escapeCsvField(row.display_name),
         row.male_0_28d,
         row.female_0_28d,
         row.male_29d_4y,
@@ -128,10 +152,16 @@ export function generateMultiHmis105Csv(multiReport: Hmis105MultiReport): string
   lines.push('')
   lines.push('Aggregate Data Quality Summary')
   lines.push(`Total finalized visits,${multiReport.aggregated_quality.total_visits}`)
-  lines.push(`Visits with HMIS codes,${multiReport.aggregated_quality.coded_visits}`)
-  lines.push(`Visits without HMIS codes,${multiReport.aggregated_quality.uncoded_visits}`)
+  lines.push(`Unfinalized visits (not counted in report),${multiReport.aggregated_quality.unfinalized_visits}`)
+  lines.push(`Visits with confirmed HMIS codes,${multiReport.aggregated_quality.coded_visits}`)
+  lines.push(`Visits without confirmed HMIS codes,${multiReport.aggregated_quality.uncoded_visits}`)
   lines.push(`Patients missing sex,${multiReport.aggregated_quality.missing_sex}`)
-  lines.push(`Patients missing date of birth,${multiReport.aggregated_quality.missing_dob}`)
+  lines.push(`Patients with no usable age data,${multiReport.aggregated_quality.missing_dob}`)
+
+  if (failures.length > 0) {
+    lines.push('')
+    lines.push('WARNING: REPORT INCOMPLETE - DO NOT SUBMIT TO MOH')
+  }
 
   return lines.join('\n')
 }

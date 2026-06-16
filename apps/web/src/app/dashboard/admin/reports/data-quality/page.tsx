@@ -68,7 +68,7 @@ export default async function DataQualityPage() {
         <div className={`rounded-xl p-6 shadow-sm border ${
           stats.missing_dob > 0 ? 'bg-amber-500/10 border-amber-500/30' : 'bg-card border-border'
         }`}>
-          <p className="text-sm font-medium text-muted-foreground">Patients Missing DOB</p>
+          <p className="text-sm font-medium text-muted-foreground">Patients Missing Age Data</p>
           <p className="text-3xl font-bold mt-2">{stats.missing_dob}</p>
           <p className="text-sm text-muted-foreground mt-1">
             of {stats.total_patients} total patients
@@ -147,10 +147,11 @@ export default async function DataQualityPage() {
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="p-4 border-b border-border">
             <h3 className="font-semibold">
-              Patients Missing Date of Birth ({stats.missing_dob})
+              Patients Missing Age Data ({stats.missing_dob})
             </h3>
             <p className="text-sm text-muted-foreground">
-              Cannot disaggregate by age group for HMIS 105 reporting
+              No date of birth, birth year, or age estimate — cannot disaggregate by
+              age group for HMIS 105 reporting
             </p>
           </div>
           <div className="divide-y divide-border">
@@ -182,7 +183,7 @@ export default async function DataQualityPage() {
         <div className="bg-accent/10 border border-accent/30 rounded-xl p-6 text-center">
           <p className="text-accent font-medium">All data quality checks passed</p>
           <p className="text-sm text-accent/80 mt-1">
-            All patients have sex and DOB recorded, and all finalized visits are coded.
+            All patients have sex and age data recorded, and all finalized visits are coded.
           </p>
         </div>
       )}
