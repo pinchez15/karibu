@@ -276,7 +276,7 @@ export function MasterDetail({
         >
           <div
             ref={detailPaneRef}
-            className="h-full overflow-auto border-l border-line-soft bg-card"
+            className="flex h-full min-h-0 flex-col overflow-hidden border-l border-line-soft bg-card"
           >
             {detailContent}
           </div>

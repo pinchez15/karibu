@@ -53,6 +53,7 @@ import com.karibuhealth.app.ui.util.adaptiveBottomBarScrollPadding
 import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import com.karibuhealth.app.ui.adaptive.KaribuTwoColumnRow
 import com.karibuhealth.app.ui.adaptive.supportsMultiColumn
+import com.karibuhealth.app.ui.dictation.PharmacyPickerSheet
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.AmberSoft
 import com.karibuhealth.app.ui.theme.Body
@@ -76,6 +77,7 @@ fun VisitDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showEbolaScreen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showRxPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(visitId) {
         viewModel.loadVisit(visitId)
@@ -88,6 +90,16 @@ fun VisitDetailsScreen(
             onSubmit = { contact, bleeding, symptoms ->
                 viewModel.recordEbolaScreening(contact, bleeding, symptoms)
                 showEbolaScreen = false
+            },
+        )
+    }
+
+    if (showRxPicker) {
+        PharmacyPickerSheet(
+            onDismiss = { showRxPicker = false },
+            onConfirm = { result ->
+                viewModel.appendPrescriptionLine(result)
+                showRxPicker = false
             },
         )
     }
@@ -324,23 +336,12 @@ fun VisitDetailsScreen(
                     }
 
                     uiState.visit?.let { visit ->
-                        val canSendPharmacy =
-                            !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
-                        if (canSendPharmacy) {
-                            OutlinedButton(
-                                onClick = { viewModel.sendToPharmacy() },
-                                enabled = !uiState.isSendingToPharmacy,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(
-                                    if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
-                                    else "Send to pharmacy",
-                                )
-                            }
-                            uiState.pharmacyMessage?.let { msg ->
-                                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
-                            }
-                        }
+                        VisitPharmacySubmitSection(
+                            visit = visit,
+                            uiState = uiState,
+                            onAddPrescription = { showRxPicker = true },
+                            onSendToPharmacy = viewModel::sendToPharmacy,
+                        )
                     }
 
                     uiState.aiReviewError?.let { err ->
@@ -392,23 +393,12 @@ fun VisitDetailsScreen(
                         )
                     }
                     uiState.visit?.let { visit ->
-                        val canSendPharmacy =
-                            !visit.medications.isNullOrBlank() && visit.pharmacyOrderSubmittedAt == null
-                        if (canSendPharmacy) {
-                            OutlinedButton(
-                                onClick = { viewModel.sendToPharmacy() },
-                                enabled = !uiState.isSendingToPharmacy,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(
-                                    if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
-                                    else "Send to pharmacy",
-                                )
-                            }
-                            uiState.pharmacyMessage?.let { msg ->
-                                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
-                            }
-                        }
+                        VisitPharmacySubmitSection(
+                            visit = visit,
+                            uiState = uiState,
+                            onAddPrescription = { showRxPicker = true },
+                            onSendToPharmacy = viewModel::sendToPharmacy,
+                        )
                     }
                     uiState.aiReviewError?.let { err ->
                         Text(
@@ -1236,6 +1226,51 @@ private fun EbolaScreeningSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun VisitPharmacySubmitSection(
+    visit: Visit,
+    uiState: VisitDetailsUiState,
+    onAddPrescription: () -> Unit,
+    onSendToPharmacy: () -> Unit,
+) {
+    val canSubmit =
+        !visit.medications.isNullOrBlank() || uiState.prescriptionLines.isNotEmpty()
+    if (visit.pharmacyOrderSubmittedAt != null) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (uiState.prescriptionLines.isNotEmpty()) {
+            uiState.prescriptionLines.forEach { line ->
+                val label = listOfNotNull(
+                    line.freeTextName?.takeIf { it.isNotBlank() },
+                    line.doseText?.takeIf { it.isNotBlank() },
+                ).joinToString(" · ")
+                if (label.isNotBlank()) {
+                    Text(label, style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = onAddPrescription,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Add prescription")
+        }
+        OutlinedButton(
+            onClick = onSendToPharmacy,
+            enabled = !uiState.isSendingToPharmacy && canSubmit,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
+                else "Send to pharmacy",
+            )
+        }
+        uiState.pharmacyMessage?.let { msg ->
+            Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
         }
     }
 }

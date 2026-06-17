@@ -63,6 +63,8 @@ data class NeedsPharmacyItem(
     val dispensingStatus: String?,
     val doctorId: String?,
     val visitDate: String?,
+    val prescriptionLines: List<PrescriptionOrderLine> = emptyList(),
+    val dispensedAt: String? = null,
 )
 
 /** Row in the "needs payment" worklist — sent visits awaiting payment. */

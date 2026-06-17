@@ -2,8 +2,6 @@ package com.karibuhealth.app.ui.pharmacy
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Payments
@@ -16,13 +14,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
-import com.karibuhealth.app.ui.adaptive.karibuDialogModifier
+import com.karibuhealth.app.domain.model.PharmacyQueueTab
 import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveQueue
-import com.karibuhealth.app.ui.adaptive.KaribuLayout
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
-import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.Ink
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,15 +30,20 @@ fun PharmacyHomeScreen(
     viewModel: PharmacyHomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var dispenseDialogVisit by remember { mutableStateOf<NeedsPharmacyItem?>(null) }
+    var worksheetItem by remember { mutableStateOf<NeedsPharmacyItem?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val filtered = viewModel.filteredItems
 
-    // Non-blocking warning: dispense recorded but local stock was NOT
-    // decremented (out of stock / no catalog match for the free-text order).
     LaunchedEffect(uiState.stockWarning) {
         uiState.stockWarning?.let { warning ->
             snackbarHostState.showSnackbar(warning, withDismissAction = true)
             viewModel.dismissStockWarning()
+        }
+    }
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            snackbarHostState.showSnackbar(error, withDismissAction = true)
+            viewModel.dismissError()
         }
     }
 
@@ -52,7 +53,6 @@ fun PharmacyHomeScreen(
             TopAppBar(
                 title = { Text("Pharmacy queue") },
                 actions = {
-                    // Patients pay at the pharmacy when they collect their drugs.
                     IconButton(onClick = onNavigateToBilling) {
                         Icon(Icons.Default.Payments, contentDescription = "Billing")
                     }
@@ -63,69 +63,74 @@ fun PharmacyHomeScreen(
             )
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = uiState.isLoading,
-            onRefresh = { viewModel.refresh() },
-            modifier = Modifier.padding(padding),
-        ) {
-            if (uiState.items.isEmpty() && !uiState.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No orders waiting", color = Ink.copy(alpha = 0.6f))
-                }
-            } else {
-                KaribuAdaptiveQueue(
-                    items = uiState.items,
-                    key = { it.visitId },
-                    modifier = Modifier.fillMaxSize(),
-                ) { item ->
-                    PharmacyQueueCard(
-                        item = item,
-                        busy = uiState.actionVisitId == item.visitId,
-                        onOpen = { onNavigateToVisit(item.visitId) },
-                        onStart = { viewModel.markInProgress(item.visitId) },
-                        onDispense = { dispenseDialogVisit = item },
-                    )
+        Column(Modifier.padding(padding)) {
+            PharmacyTabRow(
+                selected = uiState.selectedTab,
+                onSelect = viewModel::selectTab,
+            )
+            PullToRefreshBox(
+                isRefreshing = uiState.isLoading,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.weight(1f),
+            ) {
+                if (filtered.isEmpty() && !uiState.isLoading) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No orders in this tab", color = Ink.copy(alpha = 0.6f))
+                    }
+                } else {
+                    KaribuAdaptiveQueue(
+                        items = filtered,
+                        key = { it.visitId },
+                        modifier = Modifier.fillMaxSize(),
+                    ) { item ->
+                        PharmacyQueueCard(
+                            item = item,
+                            busy = uiState.actionVisitId == item.visitId,
+                            onOpen = { onNavigateToVisit(item.visitId) },
+                            onWorksheet = { worksheetItem = item },
+                        )
+                    }
                 }
             }
         }
     }
 
-    dispenseDialogVisit?.let { item ->
-        var notes by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { dispenseDialogVisit = null },
-            modifier = karibuDialogModifier(),
-            title = { Text("Dispense — ${item.patientName}") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(item.medications.orEmpty(), style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notes (optional)") },
-                    )
-                }
+    worksheetItem?.let { item ->
+        PrescriptionWorksheetSheet(
+            item = item,
+            busy = uiState.actionVisitId == item.visitId,
+            onDismiss = { worksheetItem = null },
+            onStart = { viewModel.startDispense(item.visitId) },
+            onComplete = { drafts, notes ->
+                viewModel.completeDispense(item.visitId, drafts, notes.ifBlank { null })
+                worksheetItem = null
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.dispense(item.visitId, "dispensed", notes.ifBlank { null }, item.medications)
-                        dispenseDialogVisit = null
-                    },
-                ) { Text("Dispensed") }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = {
-                            viewModel.dispense(item.visitId, "partial", notes.ifBlank { null }, item.medications)
-                            dispenseDialogVisit = null
-                        },
-                    ) { Text("Partial") }
-                    TextButton(onClick = { dispenseDialogVisit = null }) { Text("Cancel") }
-                }
+            onSendBack = { reason ->
+                viewModel.sendBackToClinician(item.visitId, reason)
+                worksheetItem = null
             },
         )
+    }
+}
+
+@Composable
+private fun PharmacyTabRow(
+    selected: PharmacyQueueTab,
+    onSelect: (PharmacyQueueTab) -> Unit,
+) {
+    val tabs = listOf(
+        PharmacyQueueTab.Waiting to "Waiting",
+        PharmacyQueueTab.InProgress to "In progress",
+        PharmacyQueueTab.DoneToday to "Done today",
+    )
+    ScrollableTabRow(selected = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0)) {
+        tabs.forEach { (tab, label) ->
+            Tab(
+                selected = selected == tab,
+                onClick = { onSelect(tab) },
+                text = { Text(label) },
+            )
+        }
     }
 }
 
@@ -134,8 +139,7 @@ private fun PharmacyQueueCard(
     item: NeedsPharmacyItem,
     busy: Boolean,
     onOpen: () -> Unit,
-    onStart: () -> Unit,
-    onDispense: () -> Unit,
+    onWorksheet: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -144,18 +148,20 @@ private fun PharmacyQueueCard(
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(item.patientName, fontWeight = FontWeight.SemiBold)
-            KhMetaText(item.medications.orEmpty().take(120))
+            val preview = item.prescriptionLines.firstOrNull()?.displayName()
+                ?: item.medications.orEmpty().take(120)
+            KhMetaText(preview)
+            if (item.prescriptionLines.size > 1) {
+                KhMetaText("${item.prescriptionLines.size} prescription lines")
+            }
             Spacer(Modifier.height(8.dp))
             KhStatusPill(
                 kind = KhStatusKind.Ready,
                 label = item.dispensingStatus ?: "not_started",
             )
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (item.dispensingStatus == "not_started") {
-                    OutlinedButton(onClick = onStart, enabled = !busy) { Text("Start") }
-                }
-                OutlinedButton(onClick = onDispense, enabled = !busy) { Text("Dispense") }
+            OutlinedButton(onClick = onWorksheet, enabled = !busy) {
+                Text("Open worksheet")
             }
         }
     }

@@ -1,66 +1,28 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { Pill } from 'lucide-react'
 import { getStaff } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase'
 import { WorkspaceTopBar } from '@/components/workspace-top-bar'
 import { PharmacyStationClient } from './PharmacyStationClient'
-import { type DispensingRow, formatOldestWait } from './pharmacy-shared'
+import { PharmacyTabs } from './PharmacyTabs'
+import { getPharmacyStationQueue, getPharmacyTabCounts } from './pharmacy-data'
+import { formatOldestWait } from './pharmacy-shared'
+import type { PharmacyQueueTab } from '@karibu/shared'
 
-/**
- * Pharmacy dispensing board — station workspace (MasterDetail).
- *
- * Queue source: visits where the clinician submitted a pharmacy order
- * (`pharmacy_order_submitted_at`) with non-empty `medications` and dispensing
- * is not yet terminal. Independent of `documentation_complete`.
- */
+const VALID_TABS: PharmacyQueueTab[] = ['waiting', 'in_progress', 'done_today']
 
-const STATUS_FILTER = ['not_started', 'in_progress', 'partial', 'out_of_stock']
-
-async function getPharmacyQueue(clinicId: string): Promise<DispensingRow[]> {
-  const supabase = createServiceClient()
-
-  const { data, error } = await supabase
-    .from('visits')
-    .select(`
-      id,
-      visit_date,
-      diagnosis,
-      chief_complaint,
-      medications,
-      dispensing_status,
-      dispense_notes,
-      pharmacy_order_submitted_at,
-      patient:patients!inner (
-        id,
-        patient_number,
-        first_name,
-        last_name,
-        display_name,
-        date_of_birth,
-        sex,
-        whatsapp_number
-      )
-    `)
-    .eq('clinic_id', clinicId)
-    .not('pharmacy_order_submitted_at', 'is', null)
-    .not('medications', 'is', null)
-    .neq('medications', '')
-    .in('dispensing_status', STATUS_FILTER)
-    .order('pharmacy_order_submitted_at', { ascending: true })
-    .limit(100)
-
-  if (error) {
-    console.error('Failed to load pharmacy queue:', error)
-    return []
+function parseTab(raw: string | undefined): PharmacyQueueTab {
+  if (raw && VALID_TABS.includes(raw as PharmacyQueueTab)) {
+    return raw as PharmacyQueueTab
   }
-  return (data ?? []) as unknown as DispensingRow[]
+  return 'waiting'
 }
 
 export default async function PharmacyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ visit?: string }>
+  searchParams: Promise<{ visit?: string; tab?: string }>
 }) {
   const staff = await getStaff()
   if (!staff) redirect('/')
@@ -70,7 +32,11 @@ export default async function PharmacyPage({
   }
 
   const params = await searchParams
-  const queue = await getPharmacyQueue(staff.clinic_id)
+  const tab = parseTab(params.tab)
+  const [queue, counts] = await Promise.all([
+    getPharmacyStationQueue(staff.clinic_id, tab),
+    getPharmacyTabCounts(staff.clinic_id),
+  ])
   const oldestSubmitted = queue[0]?.pharmacy_order_submitted_at ?? null
 
   return (
@@ -78,7 +44,7 @@ export default async function PharmacyPage({
       <WorkspaceTopBar
         title="Today"
         roleLabel="PHARMACY · DISPENSING"
-        awaiting={queue.length}
+        awaiting={counts.waiting + counts.in_progress}
         oldestWaitLabel={formatOldestWait(oldestSubmitted)}
         actions={
           <Link
@@ -91,6 +57,10 @@ export default async function PharmacyPage({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
+        <Suspense fallback={<div className="mb-4 h-9" />}>
+          <PharmacyTabs active={tab} counts={counts} />
+        </Suspense>
+
         {queue.length === 0 ? (
           <div className="flex flex-1 items-center justify-center py-20">
             <div className="max-w-lg text-center">
@@ -98,11 +68,14 @@ export default async function PharmacyPage({
                 <Pill className="h-7 w-7" />
               </div>
               <h2 className="mb-2 text-2xl font-semibold tracking-tight">
-                No prescriptions to dispense
+                {tab === 'done_today' ? 'Nothing dispensed yet today' : 'No prescriptions in this queue'}
               </h2>
               <p className="text-base leading-relaxed text-body">
-                Visits appear here after the clinician taps Send to pharmacy (note may still be
-                open). Check back as patients move through the clinic.
+                {tab === 'waiting'
+                  ? 'Visits appear here after the clinician submits structured prescriptions (note may still be open).'
+                  : tab === 'in_progress'
+                    ? 'Start a dispense from Waiting — in-progress visits show here.'
+                    : 'Completed dispenses from today will appear here for review.'}
               </p>
             </div>
           </div>
@@ -110,6 +83,7 @@ export default async function PharmacyPage({
           <PharmacyStationClient
             initialRows={queue}
             initialVisitId={params.visit ?? null}
+            activeTab={tab}
           />
         )}
       </div>

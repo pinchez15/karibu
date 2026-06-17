@@ -21,10 +21,22 @@ internal suspend fun VisitDao.mapLocalLabQueue(
 internal suspend fun VisitDao.mapLocalPharmacyQueue(
     clinicId: String,
     patientDao: PatientDao,
+    prescriptionOrderRepository: PrescriptionOrderRepository,
 ): List<NeedsPharmacyItem> {
     val today = LocalDate.now().toString()
     return getLocalNeedsPharmacyVisits(clinicId, today).mapNotNull { visit ->
-        visit.toNeedsPharmacyItem(patientDao)
+        visit.toNeedsPharmacyItem(patientDao, prescriptionOrderRepository)
+    }
+}
+
+internal suspend fun VisitDao.mapLocalPharmacyDoneToday(
+    clinicId: String,
+    patientDao: PatientDao,
+    prescriptionOrderRepository: PrescriptionOrderRepository,
+): List<NeedsPharmacyItem> {
+    val today = LocalDate.now().toString()
+    return getLocalPharmacyDoneTodayVisits(clinicId, today).mapNotNull { visit ->
+        visit.toNeedsPharmacyItem(patientDao, prescriptionOrderRepository)
     }
 }
 
@@ -46,11 +58,15 @@ private suspend fun VisitEntity.toNeedsLabItem(patientDao: PatientDao): NeedsLab
     )
 }
 
-private suspend fun VisitEntity.toNeedsPharmacyItem(patientDao: PatientDao): NeedsPharmacyItem? {
+private suspend fun VisitEntity.toNeedsPharmacyItem(
+    patientDao: PatientDao,
+    prescriptionOrderRepository: PrescriptionOrderRepository,
+): NeedsPharmacyItem? {
     val patient = patientDao.getByIdOnce(patientId)?.toDomain() ?: return null
     val name = listOfNotNull(patient.firstName, patient.lastName).joinToString(" ").ifBlank {
         patient.displayName ?: "Unknown"
     }
+    val lines = prescriptionOrderRepository.getLinesForVisit(id)
     return NeedsPharmacyItem(
         visitId = id,
         patientId = patientId,
@@ -61,5 +77,9 @@ private suspend fun VisitEntity.toNeedsPharmacyItem(patientDao: PatientDao): Nee
         dispensingStatus = dispensingStatus,
         doctorId = doctorId,
         visitDate = visitDate,
+        prescriptionLines = lines.ifEmpty {
+            prescriptionOrderRepository.legacyLinesFromText(id, medications)
+        },
+        dispensedAt = dispensedAt,
     )
 }

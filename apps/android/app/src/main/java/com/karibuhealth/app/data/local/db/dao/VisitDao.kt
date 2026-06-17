@@ -238,6 +238,17 @@ interface VisitDao {
 
     @Query("""
         SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND pharmacy_order_submitted_at IS NOT NULL
+          AND dispensing_status IN ('dispensed', 'partial', 'out_of_stock')
+          AND dispensed_at IS NOT NULL
+        ORDER BY dispensed_at DESC
+    """)
+    suspend fun getLocalPharmacyDoneTodayVisits(clinicId: String, date: String): List<VisitEntity>
+
+    @Query("""
+        SELECT * FROM visits
         WHERE patient_id = :patientId
           AND visit_date = :date
         ORDER BY checked_in_at DESC

@@ -765,6 +765,71 @@ export interface Hmis105MultiReport {
 export type PaymentMethod = 'cash' | 'mtn_momo' | 'airtel_money';
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'waived';
 
+// =============================================
+// STRUCTURED PHARMACY (migration 064)
+// =============================================
+
+export type PrescriptionOrderStatus =
+  | 'ordered'
+  | 'dispensing'
+  | 'dispensed'
+  | 'partially_dispensed'
+  | 'out_of_stock'
+  | 'cancelled'
+  | 'needs_clarification';
+
+export type PrescriptionSource = 'manual' | 'manual_confirmed' | 'ai_suggested' | 'legacy_text';
+
+export type DispenseLineStatus = 'dispensed' | 'partially_dispensed' | 'out_of_stock';
+
+export interface PrescriptionOrderLine {
+  id: string;
+  visit_id: string;
+  clinic_id: string;
+  patient_id: string;
+  sort_order: number;
+  medication_code: string | null;
+  free_text_name: string | null;
+  dose_text: string | null;
+  route_text: string | null;
+  frequency_text: string | null;
+  duration_text: string | null;
+  quantity_prescribed: number | null;
+  quantity_unit: string | null;
+  status: PrescriptionOrderStatus;
+  source: PrescriptionSource;
+  ordered_by: string | null;
+  ordered_at: string;
+  notes: string | null;
+}
+
+export interface PrescriptionLineInput {
+  medication_code?: string | null;
+  free_text_name?: string | null;
+  dose_text?: string | null;
+  route_text?: string | null;
+  frequency_text?: string | null;
+  duration_text?: string | null;
+  quantity_prescribed?: number | null;
+  quantity_unit?: string | null;
+  notes?: string | null;
+  source?: PrescriptionSource;
+}
+
+export interface CompleteDispenseLineInput {
+  prescription_order_id: string;
+  line_status: DispenseLineStatus;
+  quantity_dispensed?: number | null;
+  quantity_unit?: string | null;
+  stock_item_id?: string | null;
+  stock_quantity?: number | null;
+  batch_number?: string | null;
+  substitute_medication_code?: string | null;
+  notes?: string | null;
+}
+
+export type PharmacyQueueTab = 'waiting' | 'in_progress' | 'done_today';
+
 export interface Payment {
   id: string;
   visit_id: string;

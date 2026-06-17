@@ -20,7 +20,7 @@ import {
   sectionsHaveClinicalContent,
 } from '@/lib/clinical-note-sections'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
-import { submitPharmacyOrder } from '../actions'
+import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
 
 // Visit detail page. Two paths converge here:
 //
@@ -227,9 +227,8 @@ export function VisitDetailClient({
                     Dispenser note: {visit.dispense_notes}
                   </p>
                 )}
-                <SubmitPharmacyOrderButton
+                <VisitPharmacyPanel
                   visitId={visit.id}
-                  medications={visit.medications}
                   alreadySubmitted={!!visit.pharmacy_order_submitted_at}
                   staffRole={staffRole ?? null}
                 />
@@ -463,54 +462,6 @@ function DispensingBadge({ status }: { status: Visit['dispensing_status'] }) {
     <span className={`inline-flex items-center px-2 py-px rounded-full text-[10px] font-semibold ${c.cls}`}>
       {c.label}
     </span>
-  )
-}
-
-function SubmitPharmacyOrderButton({
-  visitId,
-  medications,
-  alreadySubmitted,
-  staffRole,
-}: {
-  visitId: string
-  medications: string
-  alreadySubmitted: boolean
-  staffRole: StaffRole | null
-}) {
-  const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-  const canSubmit =
-    !alreadySubmitted &&
-    staffRole != null &&
-    ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole)
-
-  if (!canSubmit && !alreadySubmitted) return null
-
-  if (alreadySubmitted) {
-    return (
-      <p className="text-xs text-green mt-2 font-medium">Sent to pharmacy</p>
-    )
-  }
-
-  return (
-    <div className="mt-3">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={pending}
-        onClick={() => {
-          setError(null)
-          startTransition(async () => {
-            const result = await submitPharmacyOrder(visitId, medications)
-            if (!result.success) setError(result.error)
-          })
-        }}
-      >
-        {pending ? 'Sending…' : 'Send to pharmacy'}
-      </Button>
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-    </div>
   )
 }
 

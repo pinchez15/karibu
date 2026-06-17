@@ -374,16 +374,27 @@ export async function updatePatientSex(patientId: string, sex: 'M' | 'F') {
 // screen and re-submit, which fires the Inngest structure-dictation
 // workflow fresh.
 
-/** Submit a pharmacy order without closing the clinical note (EHR pivot). */
+/** Submit structured pharmacy order (migration 064). Note may remain open. */
 export async function submitPharmacyOrder(
   visitId: string,
-  medications: string,
+  input:
+    | string
+    | {
+        lines: Array<{
+          medication_code?: string | null
+          free_text_name?: string | null
+          dose_text?: string | null
+          route_text?: string | null
+          frequency_text?: string | null
+          duration_text?: string | null
+          quantity_prescribed?: number | null
+          quantity_unit?: string | null
+          notes?: string | null
+          source?: string
+        }>
+        medicationsSummary?: string
+      },
 ): Promise<{ success: true } | { success: false; error: string }> {
-  const trimmed = medications.trim()
-  if (!trimmed) {
-    return { success: false, error: 'Medications are required' }
-  }
-
   let staff
   try {
     staff = await requireStaff()
@@ -392,22 +403,42 @@ export async function submitPharmacyOrder(
   }
 
   if (
-    !['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(
-      staff.role,
-    )
+    !['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staff.role)
   ) {
     return { success: false, error: 'Forbidden: clinician role required' }
   }
 
   const supabase = createServiceClient()
-  const { error } = await supabase.rpc('rpc_submit_pharmacy_order', {
-    p_visit_id: visitId,
-    p_medications: trimmed,
-    p_client_op_id: null,
-  })
 
-  if (error) {
-    return { success: false, error: error.message }
+  if (typeof input === 'string') {
+    const trimmed = input.trim()
+    if (!trimmed) {
+      return { success: false, error: 'Medications are required' }
+    }
+    const { error } = await supabase.rpc('rpc_submit_pharmacy_order', {
+      p_visit_id: visitId,
+      p_medications: trimmed,
+      p_lines: null,
+      p_client_op_id: null,
+    })
+    if (error) return { success: false, error: error.message }
+  } else {
+    if (!input.lines.length) {
+      return { success: false, error: 'Add at least one prescription line' }
+    }
+    const summary =
+      input.medicationsSummary?.trim() ||
+      input.lines
+        .map((l) => l.free_text_name || l.medication_code)
+        .filter(Boolean)
+        .join('\n')
+    const { error } = await supabase.rpc('rpc_submit_pharmacy_order', {
+      p_visit_id: visitId,
+      p_medications: summary,
+      p_lines: input.lines,
+      p_client_op_id: null,
+    })
+    if (error) return { success: false, error: error.message }
   }
 
   revalidatePath('/dashboard/pharmacy')

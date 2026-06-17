@@ -13,6 +13,7 @@ import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.data.remote.dto.medicationsSummary
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import com.karibuhealth.app.util.Analytics
@@ -155,6 +156,7 @@ data class DictationUiState(
     val focusedSection: NoteSection? = null,
     val pharmacyOrderSubmitted: Boolean = false,
     val isSendingToPharmacy: Boolean = false,
+    val prescriptionLines: List<com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc> = emptyList(),
     val openLabPickerOnLoad: Boolean = false,
     val openRxPickerOnLoad: Boolean = false,
     val isOnline: Boolean = true,
@@ -310,7 +312,12 @@ class DictationViewModel @Inject constructor(
 
     fun sendToPharmacy() {
         val visitId = _uiState.value.visitId ?: return
-        val meds = _uiState.value.sections.medications.trim()
+        val structured = _uiState.value.prescriptionLines
+        val meds = if (structured.isNotEmpty()) {
+            structured.medicationsSummary()
+        } else {
+            _uiState.value.sections.medications.trim()
+        }
         if (meds.isEmpty()) {
             _uiState.update { it.copy(error = "Add medications before sending to pharmacy") }
             return
@@ -324,7 +331,8 @@ class DictationViewModel @Inject constructor(
             }
             _uiState.update { it.copy(isSendingToPharmacy = true, error = null) }
             runCatching {
-                visitRepository.submitPharmacyOrder(visitId, meds, staffId)
+                val lines = structured.takeIf { it.isNotEmpty() }
+                visitRepository.submitPharmacyOrder(visitId, meds, staffId, lines)
                 syncEngine.processQueue()
             }.onSuccess {
                 _uiState.update {
@@ -473,6 +481,14 @@ class DictationViewModel @Inject constructor(
             )
         }
         scheduleAutosave()
+    }
+
+    fun appendPrescriptionLine(result: PharmacyPickerResult) {
+        _uiState.update { state ->
+            state.copy(
+                prescriptionLines = state.prescriptionLines + result.line,
+            )
+        }
     }
 
     /**

@@ -249,6 +249,22 @@ interface SupabaseApi {
     @POST("rpc/rpc_record_dispense")
     suspend fun rpcRecordDispense(@Body request: RecordDispenseRequest): Response<ResponseBody>
 
+    @POST("rpc/rpc_start_pharmacy_dispense")
+    suspend fun rpcStartPharmacyDispense(@Body request: StartPharmacyDispenseRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_complete_pharmacy_dispense")
+    suspend fun rpcCompletePharmacyDispense(@Body request: CompletePharmacyDispenseRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_send_pharmacy_back_to_clinician")
+    suspend fun rpcSendPharmacyBackToClinician(@Body request: SendPharmacyBackRequest): Response<ResponseBody>
+
+    @GET("prescription_orders")
+    suspend fun getPrescriptionOrdersForVisits(
+        @Query("visit_id") visitIdFilter: String,
+        @Query("select") select: String = "*",
+        @Query("order") order: String = "sort_order.asc",
+    ): List<PrescriptionOrderDto>
+
     // Migration 048 — atomic encounter finalization + clinic catalog.
     @POST("rpc/rpc_finalize_clinical_encounter")
     suspend fun rpcFinalizeClinicalEncounter(@Body request: FinalizeClinicalEncounterRequest): Response<ResponseBody>

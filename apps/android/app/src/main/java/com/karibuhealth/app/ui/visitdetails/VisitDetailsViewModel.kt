@@ -7,12 +7,15 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.remote.api.DictationApiClient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.AiReviewSuggestionDto
+import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
+import com.karibuhealth.app.data.remote.dto.medicationsSummary
 import com.karibuhealth.app.data.remote.dto.RecordCriticalAlertResponseRequest
 import com.karibuhealth.app.data.remote.dto.UpsertCriticalAlertRequest
 import com.karibuhealth.app.data.remote.dto.VisitCriticalAlertDto
 import com.karibuhealth.app.domain.CriticalAlertRules
 import com.karibuhealth.app.ui.components.filterTimelineAiNotes
 import com.karibuhealth.app.data.repository.NoteRepository
+import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.VitalsRepository
@@ -22,6 +25,7 @@ import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
+import com.karibuhealth.app.ui.dictation.PharmacyPickerResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -64,6 +68,7 @@ data class VisitDetailsUiState(
     val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
+    val prescriptionLines: List<PrescriptionLineRpc> = emptyList(),
     val pendingSyncCount: Int = 0,
     val isOnline: Boolean = true,
 )
@@ -107,6 +112,7 @@ val VisitDetailsUiState.activeCriticalAlerts: List<VisitCriticalAlertDto>
 @HiltViewModel
 class VisitDetailsViewModel @Inject constructor(
     private val visitRepository: VisitRepository,
+    private val prescriptionOrderRepository: PrescriptionOrderRepository,
     private val noteRepository: NoteRepository,
     private val vitalsRepository: VitalsRepository,
     private val staffRepository: StaffRepository,
@@ -136,15 +142,19 @@ class VisitDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             visitRepository.getVisitWithDetails(visitId).collect { details ->
                 if (details != null) {
+                    val visit = details.visit.toDomain()
                     _uiState.update {
                         it.copy(
-                            visit = details.visit.toDomain(),
+                            visit = visit,
                             patient = details.patient?.toDomain(),
                             providerNote = details.providerNote?.toDomain(),
                             patientNote = details.clinicianPatientNote?.toDomain(),
                             aiPatientNote = details.aiPatientNote?.toDomain(),
                             isLoading = false,
                         )
+                    }
+                    if (visit.pharmacyOrderSubmittedAt == null && _uiState.value.prescriptionLines.isEmpty()) {
+                        loadPrescriptionLines(visitId)
                     }
                 }
             }
@@ -431,10 +441,28 @@ class VisitDetailsViewModel @Inject constructor(
         }
     }
 
+    fun appendPrescriptionLine(result: PharmacyPickerResult) {
+        _uiState.update { state ->
+            state.copy(prescriptionLines = state.prescriptionLines + result.line)
+        }
+    }
+
+    private suspend fun loadPrescriptionLines(visitId: String) {
+        val lines = prescriptionOrderRepository.getLinesForVisit(visitId)
+        if (lines.isNotEmpty()) {
+            _uiState.update { it.copy(prescriptionLines = lines.map { line -> line.toRpc() }) }
+        }
+    }
+
     fun sendToPharmacy() {
         val visit = _uiState.value.visit ?: return
         val staffId = _uiState.value.currentStaff?.id ?: return
-        val meds = visit.medications?.trim().orEmpty()
+        val structured = _uiState.value.prescriptionLines
+        val meds = if (structured.isNotEmpty()) {
+            structured.medicationsSummary()
+        } else {
+            visit.medications?.trim().orEmpty()
+        }
         if (meds.isEmpty()) {
             _uiState.update { it.copy(pharmacyMessage = "Add medications before sending to pharmacy") }
             return
@@ -442,10 +470,16 @@ class VisitDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSendingToPharmacy = true, pharmacyMessage = null) }
             runCatching {
-                visitRepository.submitPharmacyOrder(visit.id, meds, staffId)
+                visitRepository.submitPharmacyOrder(
+                    visit.id,
+                    meds,
+                    staffId,
+                    structured.takeIf { it.isNotEmpty() },
+                )
+                syncEngine.processQueue()
                 visitRepository.refreshVisit(visit.id)
             }.onSuccess {
-                _uiState.update { it.copy(pharmacyMessage = "Sent to pharmacy") }
+                _uiState.update { it.copy(pharmacyMessage = "Sent to pharmacy", prescriptionLines = emptyList()) }
             }.onFailure { e ->
                 _uiState.update { it.copy(pharmacyMessage = e.message ?: "Could not send to pharmacy") }
             }
@@ -453,3 +487,15 @@ class VisitDetailsViewModel @Inject constructor(
         }
     }
 }
+
+private fun com.karibuhealth.app.domain.model.PrescriptionOrderLine.toRpc() = PrescriptionLineRpc(
+    medicationCode = medicationCode,
+    freeTextName = freeTextName,
+    doseText = doseText,
+    routeText = routeText,
+    frequencyText = frequencyText,
+    durationText = durationText,
+    quantityPrescribed = quantityPrescribed,
+    quantityUnit = quantityUnit,
+    notes = notes,
+)

@@ -43,6 +43,7 @@ import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Body
 import com.karibuhealth.app.ui.theme.Cobalt
+import com.karibuhealth.app.data.remote.dto.summaryText
 import com.karibuhealth.app.ui.theme.Green
 import com.karibuhealth.app.ui.theme.Ink
 import com.karibuhealth.app.ui.theme.KaribuHealthTheme
@@ -114,6 +115,7 @@ fun DictationScreen(
             }
         },
         onSendToPharmacy = viewModel::sendToPharmacy,
+        onAppendPrescriptionLine = viewModel::appendPrescriptionLine,
     )
 }
 
@@ -130,6 +132,7 @@ private fun DictationScreenContent(
     onStructureWithAi: () -> Unit,
     onToggleWhisper: () -> Unit,
     onSendToPharmacy: () -> Unit,
+    onAppendPrescriptionLine: (PharmacyPickerResult) -> Unit,
 ) {
     var showLabPicker by remember { mutableStateOf(false) }
     var signConfirmPending by remember { mutableStateOf(false) }
@@ -306,12 +309,13 @@ private fun DictationScreenContent(
             if (showRxPicker) {
                 PharmacyPickerSheet(
                     onDismiss = { showRxPicker = false },
-                    onConfirm = { addition ->
+                    onConfirm = { result ->
                         val current = sections.medications
-                        val merged = listOf(current, addition)
+                        val merged = listOf(current, result.displaySig)
                             .filter { it.isNotBlank() }
                             .joinToString("\n")
                         onSectionsChange(sections.copy(medications = merged))
+                        onAppendPrescriptionLine(result)
                         showRxPicker = false
                     },
                 )
@@ -452,6 +456,15 @@ private fun DictationClinicalFields(
             AddRxChip(onClick = onOpenRxPicker)
         }
         Spacer(Modifier.height(4.dp))
+        if (uiState.prescriptionLines.isNotEmpty()) {
+            uiState.prescriptionLines.forEach { line ->
+                val label = line.summaryText()
+                if (label.isNotBlank()) {
+                    Text(label, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+        }
         SectionField(
             label = null,
             value = sections.medications,
@@ -478,7 +491,7 @@ private fun DictationClinicalFields(
                     !uiState.isSendingToPharmacy &&
                     !uiState.isRecording &&
                     !uiState.isTranscribing &&
-                    sections.medications.isNotBlank(),
+                    (sections.medications.isNotBlank() || uiState.prescriptionLines.isNotEmpty()),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (uiState.isSendingToPharmacy) {
@@ -889,6 +902,7 @@ private fun DictationScreenPreview() {
             onStructureWithAi = {},
             onToggleWhisper = {},
             onSendToPharmacy = {},
+            onAppendPrescriptionLine = {},
         )
     }
 }

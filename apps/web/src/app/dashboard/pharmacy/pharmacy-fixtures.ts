@@ -1,7 +1,36 @@
-import type { DispensingRow } from './pharmacy-shared'
+import type { PharmacyStationRow } from './pharmacy-data'
+
+function mockLine(
+  visitId: string,
+  idx: number,
+  name: string,
+  overrides: Partial<PharmacyStationRow['prescription_lines'][number]> = {},
+): PharmacyStationRow['prescription_lines'][number] {
+  return {
+    id: `rx-${visitId}-${idx}`,
+    visit_id: visitId,
+    clinic_id: 'clinic-fixture',
+    patient_id: `patient-00${idx}`,
+    sort_order: idx,
+    medication_code: null,
+    free_text_name: name,
+    dose_text: null,
+    route_text: null,
+    frequency_text: null,
+    duration_text: null,
+    quantity_prescribed: 15,
+    quantity_unit: 'tabs',
+    status: 'ordered',
+    source: 'legacy_text',
+    ordered_by: null,
+    ordered_at: '2026-06-16T08:00:00.000Z',
+    notes: null,
+    ...overrides,
+  }
+}
 
 /** Shared queue fixture for Vitest + Playwright station-demo. */
-export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
+export const PHARMACY_STATION_FIXTURE_ROWS: PharmacyStationRow[] = [
   {
     id: 'visit-e2e-001',
     visit_date: '2026-06-16',
@@ -11,6 +40,7 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
     dispensing_status: 'not_started',
     dispense_notes: null,
     pharmacy_order_submitted_at: '2026-06-16T08:00:00.000Z',
+    dispensed_at: null,
     patient: {
       id: 'patient-001',
       patient_number: 'KH-1001',
@@ -21,6 +51,13 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
       sex: 'female',
       whatsapp_number: null,
     },
+    prescription_lines: [
+      mockLine('visit-e2e-001', 0, 'Artemether/Lumefantrine (AL)', {
+        medication_code: 'AL',
+        quantity_prescribed: 24,
+        quantity_unit: 'tabs',
+      }),
+    ],
   },
   {
     id: 'visit-e2e-002',
@@ -31,6 +68,7 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
     dispensing_status: 'not_started',
     dispense_notes: null,
     pharmacy_order_submitted_at: '2026-06-16T08:15:00.000Z',
+    dispensed_at: null,
     patient: {
       id: 'patient-002',
       patient_number: 'KH-1002',
@@ -41,6 +79,12 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
       sex: 'male',
       whatsapp_number: null,
     },
+    prescription_lines: [
+      mockLine('visit-e2e-002', 0, 'Nitrofurantoin 100mg', {
+        quantity_prescribed: 14,
+        quantity_unit: 'caps',
+      }),
+    ],
   },
   {
     id: 'visit-e2e-003',
@@ -51,6 +95,7 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
     dispensing_status: 'partial',
     dispense_notes: 'Only 2 weeks supplied',
     pharmacy_order_submitted_at: '2026-06-16T08:30:00.000Z',
+    dispensed_at: '2026-06-16T09:00:00.000Z',
     patient: {
       id: 'patient-003',
       patient_number: 'KH-1003',
@@ -61,13 +106,15 @@ export const PHARMACY_STATION_FIXTURE_ROWS: DispensingRow[] = [
       sex: 'female',
       whatsapp_number: null,
     },
+    prescription_lines: [
+      mockLine('visit-e2e-003', 0, 'Amlodipine 5mg', {
+        status: 'partially_dispensed',
+        quantity_prescribed: 30,
+      }),
+    ],
   },
 ]
 
-export async function mockE2eDispensingStatus(
-  _visitId: string,
-  _status: 'dispensed' | 'partial' | 'out_of_stock' | 'not_started' | 'in_progress',
-  _notes?: string,
-) {
+export async function mockE2eCompleteDispense() {
   return { success: true as const }
 }

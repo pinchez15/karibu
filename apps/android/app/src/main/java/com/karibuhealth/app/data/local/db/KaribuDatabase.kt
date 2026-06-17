@@ -30,8 +30,9 @@ import com.karibuhealth.app.data.local.db.entity.*
         PregnancyEntity::class,
         AncContactEntity::class,
         EbolaScreeningEntity::class,
+        PrescriptionOrderEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {
@@ -57,4 +58,5 @@ abstract class KaribuDatabase : RoomDatabase() {
     abstract fun admissionObservationDao(): AdmissionObservationDao
     abstract fun medicationOrderDao(): MedicationOrderDao
     abstract fun medicationAdministrationDao(): MedicationAdministrationDao
+    abstract fun prescriptionOrderDao(): PrescriptionOrderDao
 }

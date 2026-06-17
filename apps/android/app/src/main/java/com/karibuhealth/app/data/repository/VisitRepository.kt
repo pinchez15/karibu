@@ -9,10 +9,15 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.MarkDocumentationCompleteDto
+import com.karibuhealth.app.data.remote.dto.CompletePharmacyDispenseRequest
+import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
+import com.karibuhealth.app.data.remote.dto.medicationsSummary
 import com.karibuhealth.app.data.remote.dto.RecordDispenseRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
+import com.karibuhealth.app.data.remote.dto.SendPharmacyBackRequest
 import com.karibuhealth.app.data.remote.dto.SetDispensingStatusRequest
 import com.karibuhealth.app.data.remote.dto.StartLabRequest
+import com.karibuhealth.app.data.remote.dto.StartPharmacyDispenseRequest
 import com.karibuhealth.app.data.remote.dto.ActivateClinicalProtocolRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientRequest
 import com.karibuhealth.app.data.remote.dto.GetOpdPatientsTodayRequest
@@ -28,6 +33,7 @@ import com.karibuhealth.app.domain.model.ReviewStatus
 import com.karibuhealth.app.domain.model.Visit
 import com.karibuhealth.app.domain.model.VisitPriority
 import com.karibuhealth.app.domain.model.VisitStatus
+import com.karibuhealth.app.domain.model.aggregateDispensingStatus
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +56,7 @@ class VisitRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val prescriptionOrderRepository: PrescriptionOrderRepository,
     private val json: Json,
 ) {
     private val opdPatientsCache = MutableStateFlow<List<OpdPatientRow>>(emptyList())
@@ -306,26 +313,38 @@ class VisitRepository @Inject constructor(
         visitId: String,
         medications: String,
         staffId: String,
+        lines: List<PrescriptionLineRpc>? = null,
     ): String? = withContext(Dispatchers.IO) {
+        val structured = lines?.takeIf { it.isNotEmpty() }
         val trimmed = medications.trim()
-        if (trimmed.isEmpty()) return@withContext null
+        val summary = trimmed.ifBlank { structured?.medicationsSummary().orEmpty() }
+        if (summary.isEmpty()) return@withContext null
+
+        val visit = visitDao.getByIdOnce(visitId)
+        if (structured != null && visit != null) {
+            prescriptionOrderRepository.cacheSubmittedLines(
+                visitId = visitId,
+                clinicId = visit.clinicId,
+                patientId = visit.patientId,
+                lines = structured,
+            )
+        }
 
         val now = Instant.now().toString()
         visitDao.updatePharmacyOrderSubmitted(
             id = visitId,
-            medications = trimmed,
+            medications = summary,
             submittedAt = now,
             submittedBy = staffId,
             updatedAt = now,
         )
-        // Mark the visit dirty in the same flow as the local mutation, so a
-        // pull can't merge-clobber it before the op reaches the server.
         visitDao.updateSyncState(visitId, false)
 
         val syncEntryId = UUID.randomUUID().toString()
         val rpcBody = SubmitPharmacyOrderRequest(
             visitId = visitId,
-            medications = trimmed,
+            medications = summary,
+            lines = structured,
             clientOpId = syncEntryId,
         )
 
@@ -333,6 +352,7 @@ class VisitRepository @Inject constructor(
             try {
                 val response = supabaseApi.rpcSubmitPharmacyOrder(rpcBody)
                 if (response.isSuccessful) {
+                    prescriptionOrderRepository.replaceLocalAfterSubmit(visitId)
                     markVisitSyncedIfQuiet(visitId)
                     return@withContext null
                 }
@@ -498,6 +518,102 @@ class VisitRepository @Inject constructor(
         )
     }
 
+    suspend fun startPharmacyDispense(visitId: String): String? {
+        val now = Instant.now().toString()
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_start_pharmacy_dispense",
+            payload = json.encodeToString(
+                StartPharmacyDispenseRequest.serializer(),
+                StartPharmacyDispenseRequest(visitId = visitId),
+            ),
+            localMutator = {
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = "in_progress",
+                    dispenseNotes = null,
+                    dispensedAt = null,
+                    dispensedBy = null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcStartPharmacyDispense(
+                    StartPharmacyDispenseRequest(visitId = visitId, clientOpId = it),
+                )
+            },
+        )
+    }
+
+    suspend fun completePharmacyDispense(
+        visitId: String,
+        request: CompletePharmacyDispenseRequest,
+        staffId: String,
+    ): String? {
+        val aggStatus = aggregateDispensingStatus(request.lines.map { it.lineStatus })
+        val now = Instant.now().toString()
+        val terminal = aggStatus in listOf("dispensed", "partial", "out_of_stock")
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_complete_pharmacy_dispense",
+            payload = json.encodeToString(CompletePharmacyDispenseRequest.serializer(), request),
+            localMutator = {
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = aggStatus,
+                    dispenseNotes = request.notes,
+                    dispensedAt = if (terminal) now else null,
+                    dispensedBy = if (terminal) staffId else null,
+                    updatedAt = now,
+                )
+                prescriptionOrderRepository.applyLocalDispenseOutcomes(
+                    request.lines.map { it.prescriptionOrderId to it.lineStatus },
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcCompletePharmacyDispense(
+                    request.copy(clientOpId = it),
+                )
+            },
+        )
+    }
+
+    suspend fun sendPharmacyBackToClinician(
+        visitId: String,
+        reason: String,
+    ): String? {
+        val trimmed = reason.trim()
+        if (trimmed.isEmpty()) return null
+        val now = Instant.now().toString()
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_send_pharmacy_back_to_clinician",
+            payload = json.encodeToString(
+                SendPharmacyBackRequest.serializer(),
+                SendPharmacyBackRequest(visitId = visitId, reason = trimmed),
+            ),
+            localMutator = {
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = "not_started",
+                    dispenseNotes = trimmed,
+                    dispensedAt = null,
+                    dispensedBy = null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcSendPharmacyBackToClinician(
+                    SendPharmacyBackRequest(
+                        visitId = visitId,
+                        reason = trimmed,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
     private suspend fun enqueueVisitRpc(
         visitId: String,
         operationType: String,
@@ -547,6 +663,27 @@ class VisitRepository @Inject constructor(
                 val decoded = json.decodeFromString(RecordDispenseRequest.serializer(), payload)
                 json.encodeToString(
                     RecordDispenseRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_start_pharmacy_dispense" -> {
+                val decoded = json.decodeFromString(StartPharmacyDispenseRequest.serializer(), payload)
+                json.encodeToString(
+                    StartPharmacyDispenseRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_complete_pharmacy_dispense" -> {
+                val decoded = json.decodeFromString(CompletePharmacyDispenseRequest.serializer(), payload)
+                json.encodeToString(
+                    CompletePharmacyDispenseRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_send_pharmacy_back_to_clinician" -> {
+                val decoded = json.decodeFromString(SendPharmacyBackRequest.serializer(), payload)
+                json.encodeToString(
+                    SendPharmacyBackRequest.serializer(),
                     decoded.copy(clientOpId = syncEntryId),
                 )
             }
