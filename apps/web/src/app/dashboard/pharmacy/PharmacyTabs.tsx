@@ -18,10 +18,10 @@ export function PharmacyTabs({
   active: PharmacyQueueTab
   counts: Record<PharmacyQueueTab, number>
 }) {
-  const pathname = usePathname()
+  const pathname = usePathname() ?? '/dashboard/pharmacy'
   const searchParams = useSearchParams()
 
-  function hrefFor(tab: PharmacyQueueTab) {
+  function hrefFor(tab: PharmacyQueueTab): string {
     const params = new URLSearchParams(searchParams?.toString() ?? '')
     params.set('tab', tab)
     const q = params.toString()

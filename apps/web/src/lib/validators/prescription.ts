@@ -52,6 +52,7 @@ export const CompletePharmacyDispenseSchema = z.object({
 });
 
 export type PrescriptionLineInput = z.infer<typeof PrescriptionLineInputSchema>;
+export type DispenseLineStatus = z.infer<typeof DispenseLineStatusSchema>;
 export type CompleteDispenseLine = z.infer<typeof CompleteDispenseLineSchema>;
 
 export function pharmacyTabForVisit(
