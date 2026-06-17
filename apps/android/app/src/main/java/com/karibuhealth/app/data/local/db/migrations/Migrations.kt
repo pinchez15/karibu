@@ -3,6 +3,37 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v23 -> v24: OPD structured prescription lines (migration 064 mirror).
+val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS prescription_orders (
+                id TEXT NOT NULL PRIMARY KEY,
+                visit_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                medication_code TEXT,
+                free_text_name TEXT,
+                dose_text TEXT,
+                route_text TEXT,
+                frequency_text TEXT,
+                duration_text TEXT,
+                quantity_prescribed REAL,
+                quantity_unit TEXT,
+                status TEXT NOT NULL DEFAULT 'ordered',
+                notes TEXT
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_prescription_orders_visit_id_sort_order " +
+                "ON prescription_orders(visit_id, sort_order)",
+        )
+    }
+}
+
 // v22 -> v23: Ebola/VHF screening record (migration 060 mirror). One new local
 // table; column set + index name match the @Entity exactly.
 val MIGRATION_22_23 = object : Migration(22, 23) {

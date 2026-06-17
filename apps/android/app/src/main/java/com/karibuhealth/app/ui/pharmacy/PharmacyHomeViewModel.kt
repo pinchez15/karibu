@@ -3,12 +3,18 @@ package com.karibuhealth.app.ui.pharmacy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.remote.dto.CompleteDispenseLineRpc
+import com.karibuhealth.app.data.remote.dto.CompletePharmacyDispenseRequest
 import com.karibuhealth.app.data.repository.PharmacyStockRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.WorklistRepository
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
+import com.karibuhealth.app.domain.model.PharmacyQueueTab
 import com.karibuhealth.app.domain.model.Staff
+import com.karibuhealth.app.domain.model.aggregateDispensingStatus
+import com.karibuhealth.app.domain.model.pharmacyTabForVisit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,10 +26,10 @@ import javax.inject.Inject
 data class PharmacyHomeUiState(
     val staff: Staff? = null,
     val items: List<NeedsPharmacyItem> = emptyList(),
+    val selectedTab: PharmacyQueueTab = PharmacyQueueTab.Waiting,
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionVisitId: String? = null,
-    /** Non-blocking warning: dispense recorded but stock NOT decremented. */
     val stockWarning: String? = null,
 )
 
@@ -34,10 +40,19 @@ class PharmacyHomeViewModel @Inject constructor(
     private val worklistRepository: WorklistRepository,
     private val visitRepository: VisitRepository,
     private val pharmacyStockRepository: PharmacyStockRepository,
+    private val syncEngine: SyncEngine,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PharmacyHomeUiState())
     val uiState: StateFlow<PharmacyHomeUiState> = _uiState.asStateFlow()
+
+    val filteredItems: List<NeedsPharmacyItem>
+        get() {
+            val tab = _uiState.value.selectedTab
+            return _uiState.value.items.filter { item ->
+                pharmacyTabForVisit(item.dispensingStatus, item.dispensedAt) == tab
+            }
+        }
 
     init {
         viewModelScope.launch {
@@ -48,56 +63,105 @@ class PharmacyHomeViewModel @Inject constructor(
         }
     }
 
+    fun selectTab(tab: PharmacyQueueTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+    }
+
     fun refresh() {
         val staff = _uiState.value.staff ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             pharmacyStockRepository.refreshStock(staff.clinicId)
-            val items = worklistRepository.getNeedsPharmacy(staff.clinicId)
+            val active = worklistRepository.getNeedsPharmacy(staff.clinicId)
+            val done = worklistRepository.getPharmacyDoneToday(staff.clinicId)
+            val activeIds = active.map { it.visitId }.toSet()
+            val items = active + done.filter { it.visitId !in activeIds }
             _uiState.update { it.copy(items = items, isLoading = false) }
         }
     }
 
-    fun markInProgress(visitId: String) {
-        val staffId = _uiState.value.staff?.id ?: return
+    fun startDispense(visitId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching {
-                visitRepository.setDispensingStatus(visitId, "in_progress", null, staffId)
+                visitRepository.startPharmacyDispense(visitId)
+                syncEngine.processQueue()
             }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()
             _uiState.update { it.copy(actionVisitId = null) }
         }
     }
 
-    fun dispense(visitId: String, status: String, notes: String?, medications: String?) {
+    fun completeDispense(
+        visitId: String,
+        drafts: List<DispenseLineDraft>,
+        visitNotes: String?,
+    ) {
         val staff = _uiState.value.staff ?: return
+        val item = _uiState.value.items.find { it.visitId == visitId }
         viewModelScope.launch {
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching {
-                val result = pharmacyStockRepository.applyOfflineDispenseMovements(
-                    clinicId = staff.clinicId,
-                    medications = medications,
-                )
-                visitRepository.recordDispense(
-                    visitId = visitId,
-                    status = status,
-                    notes = notes,
-                    staffId = staff.id,
-                    movementsJson = result.movementsJson,
-                )
-                // Dispense is recorded either way — but warn when stock
-                // wasn't decremented so levels don't silently drift.
-                val warning = when {
-                    result.skippedOutOfStock.isNotEmpty() ->
-                        "Stock not decremented for ${result.skippedOutOfStock.joinToString(", ")} — check stock levels"
-                    !result.matchedAny ->
-                        "No stock items matched this order — stock not decremented. Check stock levels."
-                    else -> null
+                val notStarted = item?.dispensingStatus.isNullOrBlank() ||
+                    item.dispensingStatus == "not_started"
+                if (notStarted) {
+                    visitRepository.startPharmacyDispense(visitId)
                 }
-                if (warning != null) {
-                    _uiState.update { it.copy(stockWarning = warning) }
+                val warnings = mutableListOf<String>()
+                val hasLegacyLines = drafts.any { it.prescriptionOrderId.startsWith("legacy-") }
+                if (hasLegacyLines) {
+                    val aggStatus = aggregateDispensingStatus(drafts.map { it.lineStatus })
+                    visitRepository.setDispensingStatus(
+                        visitId = visitId,
+                        status = aggStatus,
+                        notes = visitNotes,
+                        staffId = staff.id,
+                    )
+                } else {
+                    val rpcLines = drafts.map { draft ->
+                        var line = CompleteDispenseLineRpc(
+                            prescriptionOrderId = draft.prescriptionOrderId,
+                            lineStatus = draft.lineStatus,
+                            quantityDispensed = draft.quantityDispensed.toDoubleOrNull(),
+                            quantityUnit = draft.quantityUnit.ifBlank { null },
+                            notes = draft.notes.ifBlank { null },
+                        )
+                        val (enriched, warning) = pharmacyStockRepository.enrichDispenseLineWithStock(
+                            clinicId = staff.clinicId,
+                            line = line,
+                            medicationCode = draft.medicationCode,
+                            medicationLabel = draft.displayName,
+                        )
+                        line = enriched
+                        warning?.let { warnings.add(it) }
+                        line
+                    }
+                    visitRepository.completePharmacyDispense(
+                        visitId = visitId,
+                        request = CompletePharmacyDispenseRequest(
+                            visitId = visitId,
+                            lines = rpcLines,
+                            notes = visitNotes,
+                        ),
+                        staffId = staff.id,
+                    )
                 }
+                syncEngine.processQueue()
+                if (warnings.isNotEmpty()) {
+                    _uiState.update { it.copy(stockWarning = warnings.joinToString("\n")) }
+                }
+            }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+            refresh()
+            _uiState.update { it.copy(actionVisitId = null) }
+        }
+    }
+
+    fun sendBackToClinician(visitId: String, reason: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(actionVisitId = visitId) }
+            runCatching {
+                visitRepository.sendPharmacyBackToClinician(visitId, reason)
+                syncEngine.processQueue()
             }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()
             _uiState.update { it.copy(actionVisitId = null) }
@@ -106,5 +170,9 @@ class PharmacyHomeViewModel @Inject constructor(
 
     fun dismissStockWarning() {
         _uiState.update { it.copy(stockWarning = null) }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(error = null) }
     }
 }

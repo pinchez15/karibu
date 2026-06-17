@@ -42,6 +42,7 @@ class SyncEngine @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
     private val syncDebugLogger: SyncDebugLogger,
+import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
     private val json: Json,
 ) {
     companion object {
@@ -227,6 +228,9 @@ class SyncEngine @Inject constructor(
             "rpc_record_lab_result" -> syncRecordLabResult(entry)
             "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
             "rpc_record_dispense" -> syncRecordDispense(entry)
+            "rpc_start_pharmacy_dispense" -> syncStartPharmacyDispense(entry)
+            "rpc_complete_pharmacy_dispense" -> syncCompletePharmacyDispense(entry)
+            "rpc_send_pharmacy_back_to_clinician" -> syncSendPharmacyBack(entry)
             "rpc_create_referral" -> syncCreateReferral(entry)
             "rpc_admit_patient_v2" -> syncAdmitPatientV2(entry)
             "rpc_record_admission_observation" -> syncRecordAdmissionObservation(entry)
@@ -633,7 +637,34 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_submit_pharmacy_order HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        val idMap = prescriptionOrderRepository.replaceLocalAfterSubmit(entry.entityId)
+        remapPendingCompleteDispense(entry.entityId, idMap)
         markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun remapPendingCompleteDispense(visitId: String, idMap: Map<String, String>) {
+        if (idMap.isEmpty()) return
+        val pending = syncQueueDao.getPending().filter { entry ->
+            entry.entityId == visitId && entry.operationType == "rpc_complete_pharmacy_dispense"
+        }
+        for (entry in pending) {
+            val decoded = json.decodeFromString(CompletePharmacyDispenseRequest.serializer(), entry.payload)
+            val remapped = decoded.copy(
+                lines = decoded.lines.map { line ->
+                    line.copy(
+                        prescriptionOrderId = idMap[line.prescriptionOrderId] ?: line.prescriptionOrderId,
+                    )
+                },
+            )
+            syncQueueDao.update(
+                entry.copy(
+                    payload = json.encodeToString(
+                        CompletePharmacyDispenseRequest.serializer(),
+                        remapped,
+                    ),
+                ),
+            )
+        }
     }
 
     private suspend fun syncStartLab(entry: SyncQueueEntry) {
@@ -681,6 +712,44 @@ class SyncEngine @Inject constructor(
             val body = result.errorBody()?.string().orEmpty()
             throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
         }
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncStartPharmacyDispense(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StartPharmacyDispenseRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_start_pharmacy_dispense: ${entry.entityId}")
+        val result = supabaseApi.rpcStartPharmacyDispense(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_start_pharmacy_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncCompletePharmacyDispense(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(CompletePharmacyDispenseRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_complete_pharmacy_dispense: ${entry.entityId}")
+        val result = supabaseApi.rpcCompletePharmacyDispense(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_complete_pharmacy_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        prescriptionOrderRepository.refreshForVisit(entry.entityId)
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncSendPharmacyBack(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(SendPharmacyBackRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_send_pharmacy_back_to_clinician: ${entry.entityId}")
+        val result = supabaseApi.rpcSendPharmacyBackToClinician(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_send_pharmacy_back_to_clinician HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        prescriptionOrderRepository.refreshForVisit(entry.entityId)
         markVisitSyncedIfQuiet(entry)
     }
 

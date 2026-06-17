@@ -3,6 +3,7 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.PharmacyStockDao
 import com.karibuhealth.app.data.local.db.entity.PharmacyStockItemEntity
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.remote.dto.CompleteDispenseLineRpc
 import com.karibuhealth.app.data.remote.dto.PharmacyStockItemDto
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
@@ -85,6 +86,37 @@ class PharmacyStockRepository @Inject constructor(
             }
         }
         return DispenseMovementsResult(movements.toString(), skipped, matchedAny)
+    }
+
+    /**
+     * Attach stock decrement metadata to a structured dispense line when a
+     * cached stock row matches the prescription label or code.
+     */
+    suspend fun enrichDispenseLineWithStock(
+        clinicId: String,
+        line: CompleteDispenseLineRpc,
+        medicationCode: String?,
+        medicationLabel: String,
+    ): Pair<CompleteDispenseLineRpc, String?> {
+        if (line.lineStatus == "out_of_stock") return line to null
+        val stock = pharmacyStockDao.getActiveByClinic(clinicId)
+        val match = stock.firstOrNull { item ->
+            (!medicationCode.isNullOrBlank() && item.drugCode.equals(medicationCode, ignoreCase = true)) ||
+                item.drugName.contains(medicationLabel, ignoreCase = true) ||
+                medicationLabel.contains(item.drugName, ignoreCase = true)
+        } ?: return line to "No stock match for $medicationLabel — stock not decremented"
+
+        val qty = line.quantityDispensed ?: line.stockQuantity ?: 1.0
+        if (match.quantityOnHand < qty) {
+            return line to "Insufficient stock for ${match.drugName} — stock not decremented"
+        }
+
+        val now = Instant.now().toString()
+        pharmacyStockDao.decrementQuantity(match.id, qty, now)
+        return line.copy(
+            stockItemId = match.id,
+            stockQuantity = qty,
+        ) to null
     }
 }
 

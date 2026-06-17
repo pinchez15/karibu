@@ -12,7 +12,7 @@ async function waitForStationReady(page: import('@playwright/test').Page) {
 }
 
 test.describe('pharmacy station workspace', () => {
-  test('Test A — quick mark from list without detail interaction', async ({ page }) => {
+  test('Test A — complete dispense from worksheet', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 })
     await page.goto(FIXTURE_PATH)
     await waitForStationReady(page)
@@ -20,24 +20,22 @@ test.describe('pharmacy station workspace', () => {
     await expect(page.getByRole('separator')).toBeVisible()
 
     const firstRow = page.getByTestId('queue-row-visit-e2e-001')
-    await firstRow.getByTestId('quick-mark').click()
+    await page.getByTestId('save-complete').click()
 
     await expect(firstRow).toHaveCount(0)
     await expect(page.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
   })
 
-  test('Test B — quick mark from detail pane', async ({ page }) => {
+  test('Test B — complete dispense after selecting second row', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 })
     await page.goto(FIXTURE_PATH)
     await waitForStationReady(page)
 
-    await page
-      .getByTestId('pharmacy-detail-pane')
-      .getByRole('button', { name: /Quick mark dispensed/i })
-      .click()
-
-    await expect(page.getByTestId('queue-row-visit-e2e-001')).toHaveCount(0)
+    await page.getByTestId('queue-row-visit-e2e-002').click()
     await expect(page.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
+    await page.getByTestId('save-complete').click()
+
+    await expect(page.getByTestId('queue-row-visit-e2e-002')).toHaveCount(0)
   })
 
   test('Test C — collapses to list + sheet below breakpoint', async ({ page }) => {
@@ -53,7 +51,6 @@ test.describe('pharmacy station workspace', () => {
     await expect(page.locator('[data-collapsed="true"]')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('separator')).toHaveCount(0)
 
-    // Sheet auto-opens for the first selection; dismiss it to pick another row at narrow width.
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('pharmacy-detail-pane')).toBeHidden()
 

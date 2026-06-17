@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
 import com.karibuhealth.app.domain.catalog.HcDrugCatalog
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Line
@@ -63,7 +64,7 @@ private enum class RxPickerStep { Category, Drug, Sig, Confirm }
 @Composable
 fun PharmacyPickerSheet(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (PharmacyPickerResult) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var step by remember { mutableStateOf(RxPickerStep.Category) }
@@ -463,7 +464,28 @@ fun PharmacyPickerSheet(
                     }
                     Spacer(Modifier.height(10.dp))
                     Button(
-                        onClick = { onConfirm(pendingSig) },
+                        onClick = {
+                            val drug = selectedDrug ?: return@Button
+                            val durationLabel = durationDays?.let { "${it}d" }
+                                ?: customDurationText.trim().ifBlank { null }
+                            onConfirm(
+                                PharmacyPickerResult(
+                                    displaySig = pendingSig,
+                                    line = PrescriptionLineRpc(
+                                        medicationCode = drug.code,
+                                        freeTextName = drug.name,
+                                        doseText = strength,
+                                        routeText = route?.code,
+                                        frequencyText = frequency?.code,
+                                        durationText = durationLabel,
+                                        quantityPrescribed = quantityText.trim().toDoubleOrNull(),
+                                        quantityUnit = null,
+                                        notes = notes.trim().ifBlank { null },
+                                        source = "manual",
+                                    ),
+                                ),
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                     ) {

@@ -13,12 +13,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/station-analytics', () => ({
   captureStationWorkspaceViewed: vi.fn(),
   captureStationRowSelected: vi.fn(),
-  captureStationQuickDispense: vi.fn(),
   captureStationLayoutResized: vi.fn(),
 }))
 
-vi.mock('./dispense-with-stock-dialog', () => ({
-  DispenseWithStockDialog: () => null,
+vi.mock('./actions', () => ({
+  startPharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
+  completePharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
+  sendPharmacyBackToClinician: vi.fn().mockResolvedValue({ success: true }),
+  listClinicPharmacyStock: vi.fn().mockResolvedValue([]),
 }))
 
 function mockMatchMedia(matches: boolean) {
@@ -43,26 +45,26 @@ describe('PharmacyStationClient', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders queue headers and inline quick-action buttons', () => {
+  it('renders queue headers and prescription summary', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="waiting"
         refreshOnUpdate={false}
-        setDispensingStatusFn={async () => ({ success: true })}
       />,
     )
 
     expect(screen.getByText('PATIENT')).toBeInTheDocument()
-    expect(screen.getByText('ACTIONS')).toBeInTheDocument()
-    expect(screen.getAllByTestId('quick-mark').length).toBeGreaterThan(0)
+    expect(screen.getByText('PRESCRIPTIONS')).toBeInTheDocument()
+    expect(screen.getAllByText(/Artemether/).length).toBeGreaterThan(0)
   })
 
   it('auto-selects the first row on load', async () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="waiting"
         refreshOnUpdate={false}
-        setDispensingStatusFn={async () => ({ success: true })}
       />,
     )
 
@@ -72,47 +74,17 @@ describe('PharmacyStationClient', () => {
     expect(screen.getByTestId('pharmacy-detail-pane')).toHaveTextContent('Amina Okello')
   })
 
-  it('quick mark removes row and auto-advances selection', async () => {
-    const user = userEvent.setup()
-    const dispense = vi.fn().mockResolvedValue({ success: true })
-
+  it('shows per-line worksheet with save & complete', async () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="waiting"
         refreshOnUpdate={false}
-        setDispensingStatusFn={dispense}
       />,
     )
 
-    const firstRow = screen.getByTestId('queue-row-visit-e2e-001')
-    await user.click(firstRow.querySelector('[data-testid="quick-mark"]')!)
-
-    await waitFor(() => {
-      expect(dispense).toHaveBeenCalledWith('visit-e2e-001', 'dispensed', undefined)
-    })
-    await waitFor(() => {
-      expect(screen.queryByTestId('queue-row-visit-e2e-001')).not.toBeInTheDocument()
-      expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
-    })
-  })
-
-  it('surfaces list error banner when quick mark fails', async () => {
-    const user = userEvent.setup()
-
-    render(
-      <PharmacyStationClient
-        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        refreshOnUpdate={false}
-        setDispensingStatusFn={async () => ({ success: false, error: 'Network error' })}
-      />,
-    )
-
-    await user.click(screen.getByTestId('queue-row-visit-e2e-001').querySelector('[data-testid="quick-mark"]')!)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Network error/)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-    })
+    expect(screen.getByTestId('save-complete')).toBeInTheDocument()
+    expect(screen.getByTestId('rx-line-rx-visit-e2e-001-0')).toBeInTheDocument()
   })
 
   it('fires PostHog workspace viewed on mount', async () => {
@@ -121,8 +93,8 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="waiting"
         refreshOnUpdate={false}
-        setDispensingStatusFn={async () => ({ success: true })}
       />,
     )
 
@@ -137,8 +109,8 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="waiting"
         refreshOnUpdate={false}
-        setDispensingStatusFn={async () => ({ success: true })}
       />,
     )
 

@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.repository
 
 import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
+import com.karibuhealth.app.data.local.db.converter.toDomain
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.CareTaskRow
 import com.karibuhealth.app.data.remote.dto.CareTasksWorklistRequest
@@ -11,6 +12,7 @@ import com.karibuhealth.app.data.remote.dto.NeedsClinicianRow
 import com.karibuhealth.app.data.remote.dto.NeedsLabRow
 import com.karibuhealth.app.data.remote.dto.NeedsPaymentRow
 import com.karibuhealth.app.data.remote.dto.NeedsPharmacyRow
+import com.karibuhealth.app.data.remote.dto.VisitDto
 import com.karibuhealth.app.data.remote.dto.NeedsVitalsRow
 import com.karibuhealth.app.data.remote.dto.WorklistClinicOnlyRequest
 import com.karibuhealth.app.data.remote.dto.WorklistRequest
@@ -22,6 +24,7 @@ import com.karibuhealth.app.domain.model.NeedsPaymentItem
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
 import com.karibuhealth.app.domain.model.NeedsVitalsItem
 import com.karibuhealth.app.util.NetworkMonitor
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -45,6 +48,7 @@ class WorklistRepository @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val visitDao: VisitDao,
     private val patientDao: PatientDao,
+    private val prescriptionOrderRepository: PrescriptionOrderRepository,
 ) {
 
     suspend fun getNeedsVitals(
@@ -85,16 +89,58 @@ class WorklistRepository @Inject constructor(
 
     suspend fun getNeedsPharmacy(clinicId: String): List<NeedsPharmacyItem> =
         withContext(Dispatchers.IO) {
-            if (networkMonitor.isOnline()) {
+            val raw = if (networkMonitor.isOnline()) {
                 runCatching {
                     supabaseApi.rpcWorklistNeedsPharmacy(
                         WorklistClinicOnlyRequest(clinicId = clinicId),
                     ).map { it.toDomain() }
-                }.getOrElse { visitDao.mapLocalPharmacyQueue(clinicId, patientDao) }
+                }.getOrElse { visitDao.mapLocalPharmacyQueue(clinicId, patientDao, prescriptionOrderRepository) }
             } else {
-                visitDao.mapLocalPharmacyQueue(clinicId, patientDao)
+                visitDao.mapLocalPharmacyQueue(clinicId, patientDao, prescriptionOrderRepository)
+            }
+            prescriptionOrderRepository.refreshForVisits(raw.map { it.visitId })
+            enrichPharmacyLines(raw)
+        }
+
+    suspend fun getPharmacyDoneToday(clinicId: String): List<NeedsPharmacyItem> =
+        withContext(Dispatchers.IO) {
+            val today = LocalDate.now().toString()
+            val raw = if (networkMonitor.isOnline()) {
+                runCatching {
+                    supabaseApi.getVisits("eq.$clinicId", "eq.$today")
+                        .filter { visit ->
+                            !visit.pharmacyOrderSubmittedAt.isNullOrBlank() &&
+                                visit.dispensingStatus in TERMINAL_DISPENSING &&
+                                !visit.dispensedAt.isNullOrBlank()
+                        }
+                        .map { it.toPharmacyItem(patientDao) }
+                }.getOrElse {
+                    visitDao.mapLocalPharmacyDoneToday(clinicId, patientDao, prescriptionOrderRepository)
+                }
+            } else {
+                visitDao.mapLocalPharmacyDoneToday(clinicId, patientDao, prescriptionOrderRepository)
+            }
+            prescriptionOrderRepository.refreshForVisits(raw.map { it.visitId })
+            enrichPharmacyLines(raw)
+        }
+
+    private suspend fun enrichPharmacyLines(items: List<NeedsPharmacyItem>): List<NeedsPharmacyItem> {
+        val withLines = prescriptionOrderRepository.attachLines(items)
+        return withLines.map { item ->
+            if (item.prescriptionLines.isNotEmpty()) {
+                item
+            } else if (!item.medications.isNullOrBlank()) {
+                item.copy(
+                    prescriptionLines = prescriptionOrderRepository.legacyLinesFromText(
+                        item.visitId,
+                        item.medications,
+                    ),
+                )
+            } else {
+                item
             }
         }
+    }
 
     suspend fun getNeedsPayment(clinicId: String): List<NeedsPaymentItem> =
         withContext(Dispatchers.IO) {
@@ -137,6 +183,8 @@ class WorklistRepository @Inject constructor(
         }.getOrElse { emptyList() }
     }
 }
+
+private val TERMINAL_DISPENSING = setOf("dispensed", "partial", "out_of_stock")
 
 // =============================================================================
 // Local DTO -> domain mappers
@@ -193,6 +241,25 @@ private fun NeedsPharmacyRow.toDomain() = NeedsPharmacyItem(
     doctorId = doctorId,
     visitDate = visitDate,
 )
+
+private suspend fun VisitDto.toPharmacyItem(patientDao: PatientDao): NeedsPharmacyItem? {
+    val patient = patientDao.getByIdOnce(patientId)?.toDomain() ?: return null
+    val name = listOfNotNull(patient.firstName, patient.lastName).joinToString(" ").ifBlank {
+        patient.displayName ?: "Unknown"
+    }
+    return NeedsPharmacyItem(
+        visitId = id,
+        patientId = patientId,
+        patientName = name,
+        sex = patient.sex,
+        derivedAge = patient.approximateAge,
+        medications = medications,
+        dispensingStatus = dispensingStatus,
+        doctorId = doctorId,
+        visitDate = visitDate,
+        dispensedAt = dispensedAt,
+    )
+}
 
 private fun NeedsPaymentRow.toDomain() = NeedsPaymentItem(
     visitId = visitId,

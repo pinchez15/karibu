@@ -724,9 +724,37 @@ data class RecordReviewResponseRequest(
 
 // EHR pivot RPCs (migration 045)
 @Serializable
+data class PrescriptionLineRpc(
+    @SerialName("medication_code") val medicationCode: String? = null,
+    @SerialName("free_text_name") val freeTextName: String? = null,
+    @SerialName("dose_text") val doseText: String? = null,
+    @SerialName("route_text") val routeText: String? = null,
+    @SerialName("frequency_text") val frequencyText: String? = null,
+    @SerialName("duration_text") val durationText: String? = null,
+    @SerialName("quantity_prescribed") val quantityPrescribed: Double? = null,
+    @SerialName("quantity_unit") val quantityUnit: String? = null,
+    @SerialName("notes") val notes: String? = null,
+    @SerialName("source") val source: String? = "manual",
+)
+
+fun PrescriptionLineRpc.summaryText(): String =
+    listOfNotNull(
+        freeTextName?.takeIf { it.isNotBlank() },
+        medicationCode?.takeIf { it.isNotBlank() },
+        doseText?.takeIf { it.isNotBlank() },
+        routeText?.takeIf { it.isNotBlank() },
+        frequencyText?.takeIf { it.isNotBlank() },
+        durationText?.takeIf { it.isNotBlank() },
+    ).joinToString(" ")
+
+fun List<PrescriptionLineRpc>.medicationsSummary(): String =
+    map { it.summaryText() }.filter { it.isNotBlank() }.joinToString("\n")
+
+@Serializable
 data class SubmitPharmacyOrderRequest(
     @SerialName("p_visit_id") val visitId: String,
     @SerialName("p_medications") val medications: String,
+    @SerialName("p_lines") val lines: List<PrescriptionLineRpc>? = null,
     @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
 
@@ -780,6 +808,59 @@ data class RecordDispenseRequest(
     @SerialName("p_notes") val notes: String? = null,
     @SerialName("p_movements") val movements: String = "[]",
     @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class StartPharmacyDispenseRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class CompleteDispenseLineRpc(
+    @SerialName("prescription_order_id") val prescriptionOrderId: String,
+    @SerialName("line_status") val lineStatus: String,
+    @SerialName("quantity_dispensed") val quantityDispensed: Double? = null,
+    @SerialName("quantity_unit") val quantityUnit: String? = null,
+    @SerialName("stock_item_id") val stockItemId: String? = null,
+    @SerialName("stock_quantity") val stockQuantity: Double? = null,
+    @SerialName("batch_number") val batchNumber: String? = null,
+    @SerialName("substitute_medication_code") val substituteMedicationCode: String? = null,
+    @SerialName("notes") val notes: String? = null,
+)
+
+@Serializable
+data class CompletePharmacyDispenseRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_lines") val lines: List<CompleteDispenseLineRpc>,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class SendPharmacyBackRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_reason") val reason: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class PrescriptionOrderDto(
+    val id: String,
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("sort_order") val sortOrder: Int = 0,
+    @SerialName("medication_code") val medicationCode: String? = null,
+    @SerialName("free_text_name") val freeTextName: String? = null,
+    @SerialName("dose_text") val doseText: String? = null,
+    @SerialName("route_text") val routeText: String? = null,
+    @SerialName("frequency_text") val frequencyText: String? = null,
+    @SerialName("duration_text") val durationText: String? = null,
+    @SerialName("quantity_prescribed") val quantityPrescribed: Double? = null,
+    @SerialName("quantity_unit") val quantityUnit: String? = null,
+    val status: String = "ordered",
+    val notes: String? = null,
 )
 
 // Migration 048 — atomic sign + summary + documentation complete.
