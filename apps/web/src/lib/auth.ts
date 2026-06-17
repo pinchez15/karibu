@@ -98,7 +98,20 @@ export async function hasProvisioningAccess(): Promise<boolean> {
     .eq('is_active', true)
 
   // Bootstrap fallback before the first superadmin row is seeded.
+  // Gated behind an explicit env allowlist: without it, ANY clinic admin
+  // could self-promote to platform superadmin while the table is empty.
   if ((count ?? 0) === 0) {
+    const allowedEmail = process.env.SUPERADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase()
+    if (!allowedEmail) return false
+
+    const user = await currentUser()
+    const email = (
+      user?.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress
+      ?? user?.emailAddresses[0]?.emailAddress
+      ?? ''
+    ).toLowerCase()
+    if (!email || email !== allowedEmail) return false
+
     return isAdmin()
   }
 

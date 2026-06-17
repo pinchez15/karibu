@@ -410,6 +410,18 @@ export async function submitPharmacyOrder(
 
   const supabase = createServiceClient()
 
+  // Ownership pre-check: service-role client bypasses RLS, so confirm the
+  // visit belongs to the caller's clinic before invoking the RPC.
+  const { data: visit } = await supabase
+    .from('visits')
+    .select('id')
+    .eq('id', visitId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+  if (!visit) {
+    return { success: false, error: 'Visit not found' }
+  }
+
   if (typeof input === 'string') {
     const trimmed = input.trim()
     if (!trimmed) {

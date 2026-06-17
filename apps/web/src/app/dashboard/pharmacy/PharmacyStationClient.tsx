@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { ExternalLink } from 'lucide-react'
 import { prescriptionLineDisplayName } from '@karibu/shared'
 import { MasterDetail, STATION_COLLAPSE_BP } from '@/components/master-detail'
+import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import { cn } from '@/lib/utils'
 import {
   captureStationLayoutResized,
@@ -50,6 +51,7 @@ export function PharmacyStationClient({
   completeDispenseFn?: typeof import('./actions').completePharmacyDispense
 }) {
   const router = useRouter()
+  useAutoRefresh()
   const [rows, setRows] = useState(initialRows)
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     if (initialVisitId && initialRows.some((r) => r.id === initialVisitId)) {
