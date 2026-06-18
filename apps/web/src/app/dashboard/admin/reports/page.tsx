@@ -204,7 +204,7 @@ export default async function ReportsOverviewPage() {
             tag="POPULATION"
             title="Demographics"
             desc="Age, sex, geography, repeat-visit rate. Catchment vs registered population."
-            href="/dashboard/admin/reports/coming-soon/demographics"
+            href="/dashboard/admin/reports/demographics"
           />
           <ReportTile
             tag="CLINICAL"
