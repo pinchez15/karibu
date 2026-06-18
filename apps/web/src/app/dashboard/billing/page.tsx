@@ -4,6 +4,7 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
+import { NewChargeForm } from './NewChargeForm'
 
 // Billing unit. Charges (what's owed) + payments (what's paid) → balance.
 // Decoupled from clinical closure: recording a payment never gates documentation.
@@ -31,7 +32,9 @@ async function getCashflow(clinicId: string) {
   return {
     revenue: Number(row?.revenue ?? 0),
     charged: Number(row?.charged ?? 0),
-    outstanding: Number(row?.outstanding ?? 0),
+    // "Owed" can't be negative — payments without recorded charges shouldn't
+    // show as negative outstanding. Surplus is a separate (credit) concept.
+    outstanding: Math.max(0, Number(row?.outstanding ?? 0)),
   }
 }
 
@@ -75,6 +78,10 @@ export default async function BillingPage() {
       <WebTopBar title="Billing" subtitle="PAYMENTS & CASHFLOW" />
       <RealtimeRefresher clinicId={staff.clinic_id} />
       <div className="p-6 overflow-auto flex-1 space-y-5 max-w-5xl">
+        <div className="flex justify-end">
+          <NewChargeForm />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KpiCard label="Revenue (month)" value={ugx(cash.revenue)} hint="Payments received" />
           <KpiCard label="Charged (month)" value={ugx(cash.charged)} hint="Billable charges raised" />

@@ -178,8 +178,14 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top header — logo (→ Today) + unit tabs, sticky across every page */}
-      <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-border bg-card px-5 h-14 shrink-0">
-        <Link href="/dashboard" aria-label="KaribuEHR — go to Today" className="shrink-0">
+      <header className="sticky top-0 z-30 flex items-center border-b border-border bg-card pr-5 h-14 shrink-0">
+        {/* Logo occupies the sidebar's width so the unit tabs begin at the
+            content column's left edge, tracking the sidebar divider line. */}
+        <Link
+          href="/dashboard"
+          aria-label="KaribuEHR — go to Today"
+          className="flex w-[208px] shrink-0 items-center px-4"
+        >
           <KaribuLockup size={28} />
         </Link>
         <nav className="flex items-center gap-1 overflow-x-auto">
