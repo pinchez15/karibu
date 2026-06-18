@@ -457,3 +457,97 @@ export async function submitPharmacyOrder(
   revalidatePath(`/dashboard/visits/${visitId}`)
   return { success: true }
 }
+
+/**
+ * Order lab tests from the catalog (F2 — deterministic ordering for labs).
+ * Writes exact catalog test names into visits.tests_ordered (no free text, so
+ * the bench never sees a misspelling) and sets lab_status='pending'. Merges
+ * with any tests already on the visit.
+ */
+export async function submitLabOrder(
+  visitId: string,
+  tests: string[],
+): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  if (!['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staff.role)) {
+    return { success: false, error: 'Forbidden: clinician role required' }
+  }
+  const clean = tests.map((t) => t.trim()).filter(Boolean)
+  if (clean.length === 0) return { success: false, error: 'Select at least one test.' }
+
+  const supabase = createServiceClient()
+  const { data: visit } = await supabase
+    .from('visits')
+    .select('id, tests_ordered')
+    .eq('id', visitId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+  if (!visit) return { success: false, error: 'Visit not found' }
+
+  const existing = String(visit.tests_ordered ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const merged = Array.from(new Set([...existing, ...clean]))
+
+  const { error } = await supabase
+    .from('visits')
+    .update({ tests_ordered: merged.join(', '), lab_status: 'pending' })
+    .eq('id', visitId)
+    .eq('clinic_id', staff.clinic_id)
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/lab')
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  return { success: true }
+}
+
+/**
+ * Book a follow-up appointment for a patient (F-SCHED / request A). Appears on
+ * the Today calendar. Decoupled from the visit — it's a future scheduled event.
+ */
+export async function createFollowUp(input: {
+  patientId: string
+  scheduledAt: string
+  reason?: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  if (!['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife', 'nursing_assistant'].includes(staff.role)) {
+    return { success: false, error: 'Forbidden: clinician role required' }
+  }
+  if (!input.scheduledAt) return { success: false, error: 'Pick a follow-up date.' }
+
+  const supabase = createServiceClient()
+  const { data: patient } = await supabase
+    .from('patients')
+    .select('id')
+    .eq('id', input.patientId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+  if (!patient) return { success: false, error: 'Patient not found' }
+
+  const { error } = await supabase.rpc('rpc_create_appointment', {
+    p_clinic_id: staff.clinic_id,
+    p_event_type: 'follow_up',
+    p_scheduled_at: new Date(input.scheduledAt).toISOString(),
+    p_patient_id: input.patientId,
+    p_title: null,
+    p_reason: input.reason?.trim() || null,
+    p_unit: 'opd',
+    p_scheduled_end: null,
+  })
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}

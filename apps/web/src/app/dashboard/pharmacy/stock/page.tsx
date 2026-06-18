@@ -3,6 +3,7 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
 import { PharmacyStockClient, type PharmacyStockRow } from './PharmacyStockClient'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 
 async function getStock(clinicId: string): Promise<PharmacyStockRow[]> {
   const supabase = createServiceClient()
@@ -34,6 +35,7 @@ export default async function PharmacyStockPage() {
         title="Stock"
         subtitle="PHARMACY · INVENTORY"
       />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
       <div className="p-6 overflow-auto flex-1">
         <PharmacyStockClient initialRows={stock} />
       </div>

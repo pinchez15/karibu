@@ -1,6 +1,7 @@
 'use server'
 
 import { createServiceClient } from '@/lib/supabase'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 import { getStaff } from '@/lib/auth'
 import type { QueueItem, Patient } from '@karibu/shared'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
@@ -81,15 +82,10 @@ async function findLikelyDuplicatePatient(
   return (data?.[0] as DuplicateCandidate | undefined) ?? null
 }
 
+// Delegate to the shared clinic-refresh broadcast so queue mutations and every
+// other clinic mutation drive the same client refresh channel (lib/realtime).
 async function broadcastQueueUpdate(clinicId: string) {
-  const supabase = createServiceClient()
-  const channel = supabase.channel(`queue-updates:${clinicId}`)
-  await channel.send({
-    type: 'broadcast',
-    event: 'queue_changed',
-    payload: {},
-  })
-  supabase.removeChannel(channel)
+  await broadcastClinicRefresh(clinicId)
 }
 
 export async function fetchQueueData(): Promise<QueueItem[]> {

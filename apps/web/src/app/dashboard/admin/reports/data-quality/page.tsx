@@ -76,6 +76,9 @@ export default async function DataQualityPage() {
         </div>
       </div>
 
+      {/* Issue lists side-by-side + each scrollable, so a long list never
+          buries the sections below it (#12). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
       {/* Uncoded visits */}
       {stats.uncoded_visit_ids.length > 0 && (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -87,7 +90,7 @@ export default async function DataQualityPage() {
               Finalized visits without HMIS diagnosis codes
             </p>
           </div>
-          <div className="divide-y divide-border">
+          <div className="max-h-72 divide-y divide-border overflow-y-auto">
             {stats.uncoded_visit_ids.map((visit) => (
               <Link
                 key={visit.id}
@@ -120,7 +123,7 @@ export default async function DataQualityPage() {
               Cannot disaggregate by sex for HMIS 105 reporting
             </p>
           </div>
-          <div className="divide-y divide-border">
+          <div className="max-h-72 divide-y divide-border overflow-y-auto">
             {stats.patients_missing_sex.map((patient) => (
               <Link
                 key={patient.id}
@@ -154,7 +157,7 @@ export default async function DataQualityPage() {
               age group for HMIS 105 reporting
             </p>
           </div>
-          <div className="divide-y divide-border">
+          <div className="max-h-72 divide-y divide-border overflow-y-auto">
             {stats.patients_missing_dob.map((patient) => (
               <Link
                 key={patient.id}
@@ -175,6 +178,7 @@ export default async function DataQualityPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* All clear */}
       {stats.uncoded_visit_ids.length === 0 &&

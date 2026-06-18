@@ -8,6 +8,26 @@ export type PharmacyStationRow = DispensingRow & {
   dispensed_at: string | null
 }
 
+export type PharmacyStockItem = {
+  id: string
+  drug_name: string
+  drug_code: string
+  strength: string | null
+  formulation: string
+  unit: string
+  quantity_on_hand: number
+}
+
+/**
+ * Discriminated result for the stock list. The picker degrades gracefully on
+ * failure (dispensing still works without stock decrement), so callers get a
+ * readable error instead of a thrown server-action error — which production
+ * redacts to an opaque "Server Components render" digest.
+ */
+export type PharmacyStockResult =
+  | { ok: true; items: PharmacyStockItem[] }
+  | { ok: false; error: string }
+
 const TERMINAL = ['dispensed', 'partial', 'out_of_stock'] as const
 const ACTIVE = ['not_started', 'in_progress', 'partial', 'out_of_stock'] as const
 

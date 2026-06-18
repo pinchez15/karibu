@@ -192,37 +192,37 @@ export default async function ReportsOverviewPage() {
             tag="FINANCIAL"
             title="Clinic profitability"
             desc="Revenue, fees, payouts, and margin per clinic, drillable by service line."
-            href="/dashboard/admin/reports/coming-soon/profitability"
+            href="/dashboard/admin/reports/profitability"
           />
           <ReportTile
             tag="CLINICAL"
             title="Disease burden"
             desc="Top diagnoses by month, age band, and clinic. Triggers outbreak alerts."
-            href="/dashboard/admin/reports/coming-soon/disease-burden"
+            href="/dashboard/admin/reports/disease-burden"
           />
           <ReportTile
             tag="POPULATION"
             title="Demographics"
             desc="Age, sex, geography, repeat-visit rate. Catchment vs registered population."
-            href="/dashboard/admin/reports/coming-soon/demographics"
+            href="/dashboard/admin/reports/demographics"
           />
           <ReportTile
             tag="CLINICAL"
             title="Care delivered"
             desc="Visits, prescriptions, labs, ANC contacts, vaccinations, referrals."
-            href="/dashboard/admin/reports/coming-soon/care-delivered"
+            href="/dashboard/admin/reports/care-delivered"
           />
           <ReportTile
             tag="QUALITY"
             title="30-day readmission"
             desc="Patients returning within 30 days for the same complaint."
-            href="/dashboard/admin/reports/coming-soon/readmission"
+            href="/dashboard/admin/reports/readmission"
           />
           <ReportTile
             tag="MONITORING"
             title="Outbreak watch"
             desc="Continuous monitor that fires when any diagnosis exceeds 2× rolling baseline."
-            href="/dashboard/admin/reports/coming-soon/outbreak"
+            href="/dashboard/admin/reports/outbreak"
           />
           <ReportTile
             tag="CUSTOM"

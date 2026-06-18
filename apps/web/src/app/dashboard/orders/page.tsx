@@ -8,8 +8,13 @@ import {
   type PharmacyOrderRow,
   type ReferralRow,
 } from './OrdersClient'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 
-async function getLabOrders(clinicId: string, staffId: string): Promise<LabOrderRow[]> {
+// Orders is a clinic-wide operational view: it must show every open lab and
+// pharmacy request at the clinic, not just those assigned to the logged-in
+// clinician. The previous `.eq('doctor_id', staffId)` filter hid orders placed
+// by other clinicians and orders on not-yet-claimed visits (doctor_id null).
+async function getLabOrders(clinicId: string): Promise<LabOrderRow[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('visits')
@@ -18,7 +23,6 @@ async function getLabOrders(clinicId: string, staffId: string): Promise<LabOrder
       patient:patients!inner (id, patient_number, first_name, last_name, display_name)
     `)
     .eq('clinic_id', clinicId)
-    .eq('doctor_id', staffId)
     .not('tests_ordered', 'is', null)
     .neq('tests_ordered', '')
     .order('visit_date', { ascending: false })
@@ -31,7 +35,7 @@ async function getLabOrders(clinicId: string, staffId: string): Promise<LabOrder
   return (data ?? []) as unknown as LabOrderRow[]
 }
 
-async function getPharmacyOrders(clinicId: string, staffId: string): Promise<PharmacyOrderRow[]> {
+async function getPharmacyOrders(clinicId: string): Promise<PharmacyOrderRow[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('visits')
@@ -40,7 +44,6 @@ async function getPharmacyOrders(clinicId: string, staffId: string): Promise<Pha
       patient:patients!inner (id, patient_number, first_name, last_name, display_name)
     `)
     .eq('clinic_id', clinicId)
-    .eq('doctor_id', staffId)
     .not('medications', 'is', null)
     .neq('medications', '')
     .order('visit_date', { ascending: false })
@@ -79,8 +82,8 @@ export default async function OrdersPage({
     tab === 'labs' || tab === 'pharmacy' || tab === 'referrals' ? tab : 'all'
 
   const [labs, pharmacy, referrals] = await Promise.all([
-    getLabOrders(staff.clinic_id, staff.id),
-    getPharmacyOrders(staff.clinic_id, staff.id),
+    getLabOrders(staff.clinic_id),
+    getPharmacyOrders(staff.clinic_id),
     getReferralsToday(staff.clinic_id),
   ])
 
@@ -93,7 +96,8 @@ export default async function OrdersPage({
   return (
     <>
       <WebTopBar title="Orders" subtitle={today} subtitleMeta={false} />
-      <div className="flex-1 overflow-auto px-8 py-6 max-w-5xl">
+      <RealtimeRefresher clinicId={staff.clinic_id} />
+      <div className="flex-1 overflow-auto px-8 py-6 max-w-3xl">
         <OrdersClient
           labs={labs}
           pharmacy={pharmacy}

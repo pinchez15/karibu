@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import {
   createPharmacyStockItem,
   recordPharmacyStockMovement,
-  setPharmacyStockActive,
+  setPharmacyStockUnavailable,
 } from './actions'
 
 export type PharmacyStockRow = {
@@ -27,6 +27,15 @@ export type PharmacyStockRow = {
   supplier: string | null
   notes: string | null
   active: boolean
+  is_unavailable: boolean | null
+}
+
+// Drug names are entered inconsistently (ALL CAPS, lower, mixed). Normalize to
+// sentence case for a consistent column — first letter upper, the rest lower.
+function toSentenceCase(name: string): string {
+  const trimmed = name.trim()
+  if (!trimmed) return trimmed
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase()
 }
 
 // Form selection options.
@@ -77,6 +86,14 @@ export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStoc
     r.low_stock_threshold != null && r.quantity_on_hand <= r.low_stock_threshold,
   ).length
 
+  // "Out of stock" = on-hand depleted OR explicitly marked unavailable
+  // ("once stocked but can't be obtained right now"). Surfaced as a list so
+  // the dispenser and the Today board see at a glance what can't be given.
+  const outOfStock = useMemo(
+    () => rows.filter(r => r.active && (r.quantity_on_hand <= 0 || r.is_unavailable)),
+    [rows],
+  )
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -101,8 +118,29 @@ export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStoc
 
       {showAdd && <AddStockForm onDone={() => setShowAdd(false)} />}
 
+      {outOfStock.length > 0 && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 overflow-hidden">
+          <div className="px-4 py-2.5 kh-meta text-destructive border-b border-destructive/20">
+            OUT OF STOCK — {outOfStock.length}
+          </div>
+          <ul className="divide-y divide-destructive/10">
+            {outOfStock.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2 text-[13px]">
+                <span className="font-medium truncate">{toSentenceCase(r.drug_name)}</span>
+                <span className="flex items-center gap-3 shrink-0">
+                  <span className="text-[11px] text-muted-foreground">
+                    {r.is_unavailable ? 'Unavailable' : `0 ${r.unit}`}
+                  </span>
+                  <UnavailableToggle id={r.id} unavailable={!!r.is_unavailable} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[2fr_140px_140px_120px_140px_180px] gap-3 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
+        <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_120px_120px_150px] gap-2 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
           <span>DRUG</span>
           <span>STRENGTH</span>
           <span>FORMULATION</span>
@@ -128,10 +166,9 @@ function StockRow({ row }: { row: PharmacyStockRow }) {
 
   return (
     <div className={cn('border-b border-border last:border-b-0', isLow && 'bg-amber-soft/30')}>
-      <div className="grid grid-cols-[2fr_140px_140px_120px_140px_180px] gap-3 px-4 py-3 items-center">
-        <div>
-          <div className="font-medium">{row.drug_name}</div>
-          <div className="text-[11px] text-muted-foreground font-mono">{row.drug_code}</div>
+      <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_120px_120px_150px] gap-2 px-4 py-2 items-center">
+        <div className="min-w-0">
+          <div className="font-medium truncate">{toSentenceCase(row.drug_name)}</div>
         </div>
         <div className="text-sm">{row.strength ?? '—'}</div>
         <div className="text-sm text-muted-foreground">{row.formulation}</div>
@@ -154,7 +191,7 @@ function StockRow({ row }: { row: PharmacyStockRow }) {
           <Button size="sm" variant="outline" onClick={() => setShowMovement((s) => !s)}>
             {showMovement ? 'Cancel' : 'Record'}
           </Button>
-          <ToggleActiveButton id={row.id} />
+          <UnavailableToggle id={row.id} unavailable={!!row.is_unavailable} />
         </div>
       </div>
       {showMovement && <MovementForm row={row} onDone={() => setShowMovement(false)} />}
@@ -162,20 +199,24 @@ function StockRow({ row }: { row: PharmacyStockRow }) {
   )
 }
 
-function ToggleActiveButton({ id }: { id: string }) {
+// Mark a drug unavailable ("once stocked but can't be obtained right now") or
+// available again. Distinct from on-hand quantity — drives the out-of-stock
+// list at the top of the page (and the Today out-of-stock alert).
+function UnavailableToggle({ id, unavailable }: { id: string; unavailable: boolean }) {
   const [pending, startTransition] = useTransition()
   return (
     <Button
       size="sm"
       variant="ghost"
       disabled={pending}
+      className="text-[11px]"
       onClick={() =>
         startTransition(async () => {
-          await setPharmacyStockActive(id, false)
+          await setPharmacyStockUnavailable(id, !unavailable)
         })
       }
     >
-      <X className="h-3.5 w-3.5" />
+      {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : unavailable ? 'Mark available' : 'Mark unavailable'}
     </Button>
   )
 }

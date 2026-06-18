@@ -49,22 +49,19 @@ interface KaribuWordmarkProps {
 }
 
 /**
- * Karibu wordmark — uses the brand PNG asset (apps/web/public/karibu-wordmark.png)
- * so the cobalt rendering and kerning stay consistent across the site. The
- * source PNG is square (500×500) with the text centered; rendering at a
- * fixed height with `width: auto` lets it scale cleanly. Use a larger
- * height for the marketing pages and a smaller one for the dashboard
- * sidebar.
+ * KaribuEHR wordmark. The product is now branded **KaribuEHR** (one word, the
+ * EHR is part of the name, not a tagline). Rendered as text in the brand cobalt
+ * so it stays crisp at any size and we don't ship a stale "Karibu.health" PNG.
  */
 export function KaribuWordmark({ height = 36, className }: KaribuWordmarkProps) {
   return (
-    <img
-      src="/karibu-wordmark.png"
-      alt="Karibu.health"
-      height={height}
-      style={{ height, width: 'auto', display: 'inline-block' }}
-      className={className}
-    />
+    <span
+      aria-label="KaribuEHR"
+      className={cn('font-semibold tracking-tight text-cobalt leading-none', className)}
+      style={{ fontSize: Math.round(height * 0.7) }}
+    >
+      KaribuEHR
+    </span>
   )
 }
 

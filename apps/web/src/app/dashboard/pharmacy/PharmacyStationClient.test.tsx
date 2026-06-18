@@ -20,7 +20,7 @@ vi.mock('./actions', () => ({
   startPharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
   completePharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
   sendPharmacyBackToClinician: vi.fn().mockResolvedValue({ success: true }),
-  listClinicPharmacyStock: vi.fn().mockResolvedValue([]),
+  listClinicPharmacyStock: vi.fn().mockResolvedValue({ ok: true, items: [] }),
 }))
 
 function mockMatchMedia(matches: boolean) {

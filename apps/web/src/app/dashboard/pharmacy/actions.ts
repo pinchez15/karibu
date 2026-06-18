@@ -8,6 +8,8 @@ import {
   type CompleteDispenseLine,
 } from '@/lib/validators/prescription'
 import type { PrescriptionOrderLine, PharmacyQueueTab } from '@karibu/shared'
+import type { PharmacyStockItem, PharmacyStockResult } from './pharmacy-data'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
 async function assertDispenser() {
   const staff = await requireStaff()
@@ -138,34 +140,46 @@ export async function setDispensingStatus(
   return { success: true }
 }
 
-export async function listClinicPharmacyStock(): Promise<
-  Array<{
-    id: string
-    drug_name: string
-    drug_code: string
-    strength: string | null
-    formulation: string
-    unit: string
-    quantity_on_hand: number
-  }>
-> {
-  const staff = await requireStaff()
-  const supabase = createServiceClient()
-  const { data } = await supabase
-    .from('pharmacy_stock_items')
-    .select('id, drug_name, drug_code, strength, formulation, unit, quantity_on_hand')
-    .eq('clinic_id', staff.clinic_id)
-    .eq('active', true)
-    .order('drug_name', { ascending: true })
-  return (data ?? []) as Array<{
-    id: string
-    drug_name: string
-    drug_code: string
-    strength: string | null
-    formulation: string
-    unit: string
-    quantity_on_hand: number
-  }>
+export async function listClinicPharmacyStock(): Promise<PharmacyStockResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    // An unauthenticated/expired session would otherwise throw out of this
+    // server action and reach the client as the opaque production digest
+    // ("An error occurred in the Server Components render...").
+    console.error('listClinicPharmacyStock: auth failed', e)
+    return { ok: false, error: 'Your session has expired. Refresh the page and sign in again.' }
+  }
+
+  try {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from('pharmacy_stock_items')
+      .select('id, drug_name, drug_code, strength, formulation, unit, quantity_on_hand')
+      .eq('clinic_id', staff.clinic_id)
+      .eq('active', true)
+      .order('drug_name', { ascending: true })
+
+    if (error) {
+      // Previously swallowed: the function destructured only `data`, so a real
+      // PostgREST/Postgres failure silently returned an empty list. Log the
+      // true cause (visible in server logs) and surface a readable message.
+      console.error('listClinicPharmacyStock: query failed', error)
+      return {
+        ok: false,
+        error: 'Could not load the stock list. You can still dispense; stock decrement is unavailable.',
+      }
+    }
+
+    return { ok: true, items: (data ?? []) as PharmacyStockItem[] }
+  } catch (e) {
+    console.error('listClinicPharmacyStock: unexpected error', e)
+    return {
+      ok: false,
+      error: 'Could not load the stock list. You can still dispense; stock decrement is unavailable.',
+    }
+  }
 }
 
 export async function loadPrescriptionOrdersForVisit(
@@ -189,12 +203,15 @@ export async function loadPrescriptionOrdersForVisit(
   return (data ?? []) as PrescriptionOrderLine[]
 }
 
-function revalidatePharmacyPaths(visitId: string, _clinicId: string) {
+function revalidatePharmacyPaths(visitId: string, clinicId: string) {
   revalidatePath('/dashboard/pharmacy')
   revalidatePath('/dashboard/pharmacy/history')
   revalidatePath('/dashboard/pharmacy/stock')
   revalidatePath('/dashboard/stock-overview')
   revalidatePath(`/dashboard/visits/${visitId}`)
+  // Push an instant refresh to every open clinic view (pharmacy queue, stock,
+  // orders, today). Best-effort, fire-and-forget.
+  void broadcastClinicRefresh(clinicId)
 }
 
 export type { PharmacyQueueTab }
