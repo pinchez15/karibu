@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarDays, AlertTriangle, History } from 'lucide-react'
+import { AlertTriangle, History } from 'lucide-react'
 
 export type TodayAppointment = {
   id: string
@@ -14,10 +14,7 @@ export type TodayAppointment = {
   status: string
 }
 
-export type OutOfStockItem = {
-  label: string
-  detail: string
-}
+export type OutOfStockItem = { label: string; detail: string }
 
 export type RoundsVisit = {
   visit_id: string
@@ -26,20 +23,23 @@ export type RoundsVisit = {
   visit_date: string
 }
 
-const EVENT_LABEL: Record<string, string> = {
-  follow_up: 'Follow-up',
-  drive: 'Outreach drive',
-  admin: 'Admin',
-  external_lab_agency: 'Lab / agency visit',
+const EVENT_STYLE: Record<string, { label: string; chip: string }> = {
+  follow_up: { label: 'Follow-up', chip: 'bg-cobalt-soft text-cobalt' },
+  drive: { label: 'Drive', chip: 'bg-accent/15 text-accent' },
+  admin: { label: 'Admin', chip: 'bg-muted text-muted-foreground' },
+  external_lab_agency: { label: 'Lab / agency', chip: 'bg-amber-soft text-amber-ink' },
 }
 
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 function time(ts: string): string {
   return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
-// The "morning stand-up" panels for the Today board (#2, #9): what's scheduled,
-// what can't be dispensed, and a read-back of yesterday's patients for learning
-// and follow-up. Rendered above the operational queue.
+// Morning stand-up board (note #2): a week-ahead CALENDAR of scheduled patients,
+// drives, admin work and lab/agency visits; an out-of-stock alert strip; and a
+// read-back of yesterday's patients. Walk-ins live in the queue below.
 export function TodayPanels({
   appointments,
   outOfStock,
@@ -49,103 +49,107 @@ export function TodayPanels({
   outOfStock: OutOfStockItem[]
   rounds: RoundsVisit[]
 }) {
+  // 7 day columns starting today.
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + i)
+    return d
+  })
+  const byDay = new Map<string, TodayAppointment[]>()
+  for (const a of appointments) {
+    const k = dayKey(new Date(a.scheduled_at))
+    const list = byDay.get(k) ?? []
+    list.push(a)
+    byDay.set(k, list)
+  }
+
   return (
-    <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
-      {/* Calendar / agenda */}
-      <Panel title="On the calendar" icon={CalendarDays} count={appointments.length}>
-        {appointments.length === 0 ? (
-          <Empty>Nothing scheduled today.</Empty>
-        ) : (
-          appointments.map((a) => {
-            const label = a.patient_name || a.title || EVENT_LABEL[a.event_type] || 'Event'
-            const sub = a.patient_name ? a.reason || EVENT_LABEL[a.event_type] : EVENT_LABEL[a.event_type]
-            const inner = (
-              <div className="flex items-start justify-between gap-2 px-3 py-2 text-[13px] hover:bg-secondary/40">
-                <span className="min-w-0">
-                  <span className="font-medium">{label}</span>
-                  {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{time(a.scheduled_at)}</span>
+    <div className="mb-5 space-y-3">
+      {outOfStock.length > 0 && (
+        <div className="rounded-xl border border-amber-soft bg-amber-soft/20 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-amber-ink">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold">Out of stock ({outOfStock.length})</span>
+            <span className="truncate text-xs text-amber-ink/80">
+              {outOfStock.slice(0, 6).map((o) => o.label).join(' · ')}
+              {outOfStock.length > 6 ? ` +${outOfStock.length - 6} more` : ''}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Week calendar */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="border-b border-line-soft px-4 py-2.5 text-sm font-semibold">This week</div>
+        <div className="grid grid-cols-1 divide-y divide-line-soft sm:grid-cols-7 sm:divide-x sm:divide-y-0">
+          {days.map((d, i) => {
+            const events = (byDay.get(dayKey(d)) ?? []).sort((a, b) =>
+              a.scheduled_at < b.scheduled_at ? -1 : 1,
+            )
+            const isToday = i === 0
+            return (
+              <div key={dayKey(d)} className={`min-h-[7rem] p-2 ${isToday ? 'bg-cobalt-soft/15' : ''}`}>
+                <div className="mb-1.5 flex items-baseline justify-between">
+                  <span className={`text-xs font-semibold ${isToday ? 'text-cobalt' : 'text-body'}`}>
+                    {d.toLocaleDateString('en-GB', { weekday: 'short' })}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{d.getDate()}</span>
+                </div>
+                <div className="space-y-1">
+                  {events.length === 0 ? (
+                    <span className="text-[11px] text-muted-foreground/60">—</span>
+                  ) : (
+                    events.map((a) => {
+                      const style = EVENT_STYLE[a.event_type] ?? EVENT_STYLE.admin
+                      const label = a.patient_name || a.title || style.label
+                      const chip = (
+                        <div className={`rounded px-1.5 py-1 text-[11px] leading-tight ${style.chip}`}>
+                          <span className="block font-medium truncate">{label}</span>
+                          <span className="block opacity-80">{time(a.scheduled_at)} · {style.label}</span>
+                        </div>
+                      )
+                      return a.patient_id ? (
+                        <Link key={a.id} href={`/dashboard/patients/${a.patient_id}`} className="block">
+                          {chip}
+                        </Link>
+                      ) : (
+                        <div key={a.id}>{chip}</div>
+                      )
+                    })
+                  )}
+                </div>
               </div>
             )
-            return (
-              <li key={a.id}>
-                {a.patient_id ? <Link href={`/dashboard/patients/${a.patient_id}`}>{inner}</Link> : inner}
-              </li>
-            )
-          })
-        )}
-      </Panel>
-
-      {/* Out-of-stock alerts */}
-      <Panel title="Out of stock" icon={AlertTriangle} count={outOfStock.length} warn>
-        {outOfStock.length === 0 ? (
-          <Empty>Pharmacy and lab fully stocked.</Empty>
-        ) : (
-          outOfStock.map((o, i) => (
-            <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-[13px]">
-              <span className="min-w-0 truncate font-medium">{o.label}</span>
-              <span className="shrink-0 text-xs text-amber-ink">{o.detail}</span>
-            </li>
-          ))
-        )}
-      </Panel>
-
-      {/* Rounds — yesterday's patients */}
-      <Panel title="Seen yesterday" icon={History} count={rounds.length}>
-        {rounds.length === 0 ? (
-          <Empty>No patients seen yesterday.</Empty>
-        ) : (
-          rounds.map((r) => (
-            <li key={r.visit_id}>
-              <Link
-                href={`/dashboard/visits/${r.visit_id}`}
-                className="block px-3 py-2 text-[13px] hover:bg-secondary/40"
-              >
-                <span className="font-medium">{r.patient_name || 'Unknown patient'}</span>
-                <span className="block truncate text-xs text-muted-foreground">{r.summary}</span>
-              </Link>
-            </li>
-          ))
-        )}
-      </Panel>
-    </div>
-  )
-}
-
-function Panel({
-  title,
-  icon: Icon,
-  count,
-  warn,
-  children,
-}: {
-  title: string
-  icon: React.ComponentType<{ className?: string }>
-  count: number
-  warn?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex min-w-0 flex-col rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b border-line-soft px-3 py-2.5">
-        <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${warn && count > 0 ? 'text-amber-ink' : 'text-cobalt'}`} />
-          <h3 className="text-sm font-semibold">{title}</h3>
+          })}
         </div>
-        <span
-          className={`rounded-full px-1.5 py-px text-[11px] font-semibold ${
-            warn && count > 0 ? 'bg-amber-soft text-amber-ink' : 'bg-background text-muted-foreground'
-          }`}
-        >
-          {count}
-        </span>
       </div>
-      <ul className="max-h-64 divide-y divide-line-soft overflow-y-auto">{children}</ul>
+
+      {/* Rounds — yesterday's patients, for learning + follow-up */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-line-soft px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-cobalt" />
+            <h3 className="text-sm font-semibold">Seen yesterday</h3>
+          </div>
+          <span className="text-[11px] text-muted-foreground">{rounds.length}</span>
+        </div>
+        {rounds.length === 0 ? (
+          <p className="px-4 py-4 text-xs text-muted-foreground">No patients seen yesterday.</p>
+        ) : (
+          <ul className="max-h-56 divide-y divide-line-soft overflow-y-auto">
+            {rounds.map((r) => (
+              <li key={r.visit_id}>
+                <Link href={`/dashboard/visits/${r.visit_id}`} className="block px-4 py-2 text-[13px] hover:bg-secondary/40">
+                  <span className="font-medium">{r.patient_name || 'Unknown patient'}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{r.summary}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <li className="px-3 py-6 text-center text-xs text-muted-foreground">{children}</li>
 }
