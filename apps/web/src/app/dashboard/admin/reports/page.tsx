@@ -192,13 +192,13 @@ export default async function ReportsOverviewPage() {
             tag="FINANCIAL"
             title="Clinic profitability"
             desc="Revenue, fees, payouts, and margin per clinic, drillable by service line."
-            href="/dashboard/admin/reports/coming-soon/profitability"
+            href="/dashboard/admin/reports/profitability"
           />
           <ReportTile
             tag="CLINICAL"
             title="Disease burden"
             desc="Top diagnoses by month, age band, and clinic. Triggers outbreak alerts."
-            href="/dashboard/admin/reports/coming-soon/disease-burden"
+            href="/dashboard/admin/reports/disease-burden"
           />
           <ReportTile
             tag="POPULATION"
@@ -210,7 +210,7 @@ export default async function ReportsOverviewPage() {
             tag="CLINICAL"
             title="Care delivered"
             desc="Visits, prescriptions, labs, ANC contacts, vaccinations, referrals."
-            href="/dashboard/admin/reports/coming-soon/care-delivered"
+            href="/dashboard/admin/reports/care-delivered"
           />
           <ReportTile
             tag="QUALITY"
