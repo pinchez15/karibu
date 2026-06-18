@@ -230,7 +230,7 @@ function OrderRow({
   detail?: string
 }) {
   return (
-    <div className="px-[18px] py-3 grid grid-cols-[1.2fr_2fr_auto] gap-3 items-start text-[13px]">
+    <div className="px-[18px] py-2.5 grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto] gap-3 items-start text-[13px]">
       <div>
         {patientHref ? (
           <Link href={patientHref} className="font-semibold hover:underline">

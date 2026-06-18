@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { getStaff } from '@/lib/auth'
 import { WebTopBar } from '@/components/web-shell'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { Badge } from '@/components/ui/badge'
 import type { CareTaskStatus, CareTaskType, StaffRole } from '@karibu/shared'
 import {
@@ -38,7 +39,8 @@ import {
 
 const PAGE_SUBTITLE = 'WORKLISTS'
 
-const PREVIEW_LIMIT = 5
+// Cards are scrollable, so show real depth rather than a 5-row teaser.
+const PREVIEW_LIMIT = 25
 
 // ---------------------------------------------------------------------------
 // Tiny formatters — duplicated locally so the page stays a server component.
@@ -163,7 +165,9 @@ function WorklistCard({
       {count === 0 ? (
         <div className="p-4 text-sm text-muted-foreground italic">{empty}</div>
       ) : (
-        <ul className="divide-y divide-border">{children}</ul>
+        // Scrollable so a long pending list stays a compact quick-view card
+        // instead of stretching the whole page (worklist mockup feedback).
+        <ul className="max-h-[420px] overflow-y-auto divide-y divide-border">{children}</ul>
       )}
     </div>
   )
@@ -205,7 +209,7 @@ function PreviewRow({
 function NeedsVitalsCard({ rows }: { rows: NeedsVitalsRow[] }) {
   return (
     <WorklistCard
-      title="Needs vitals"
+      title="Pending vitals"
       count={rows.length}
       icon={Activity}
       empty="No patients waiting for vitals."
@@ -226,7 +230,7 @@ function NeedsVitalsCard({ rows }: { rows: NeedsVitalsRow[] }) {
 function NeedsClinicianCard({ rows }: { rows: NeedsClinicianRow[] }) {
   return (
     <WorklistCard
-      title="Needs clinician"
+      title="Pending clinician"
       count={rows.length}
       icon={Stethoscope}
       empty="No patients ready for a clinician."
@@ -264,7 +268,7 @@ function NeedsClinicianCard({ rows }: { rows: NeedsClinicianRow[] }) {
 function NeedsLabCard({ rows }: { rows: NeedsLabRow[] }) {
   return (
     <WorklistCard
-      title="Needs lab"
+      title="Pending lab"
       count={rows.length}
       icon={FlaskConical}
       empty="No pending lab orders."
@@ -285,7 +289,7 @@ function NeedsLabCard({ rows }: { rows: NeedsLabRow[] }) {
 function NeedsPharmacyCard({ rows }: { rows: NeedsPharmacyRow[] }) {
   return (
     <WorklistCard
-      title="Needs pharmacy"
+      title="Pending pharmacy"
       count={rows.length}
       icon={Pill}
       empty="No pending dispensing."
@@ -306,7 +310,7 @@ function NeedsPharmacyCard({ rows }: { rows: NeedsPharmacyRow[] }) {
 function NeedsPaymentCard({ rows }: { rows: NeedsPaymentRow[] }) {
   return (
     <WorklistCard
-      title="Needs payment"
+      title="Pending payment"
       count={rows.length}
       icon={CreditCard}
       empty="No outstanding payments."
@@ -446,6 +450,7 @@ export default async function WorklistsPage() {
   return (
     <>
       <WebTopBar title="Worklists" subtitle={PAGE_SUBTITLE} />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
       <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <NeedsVitalsCard rows={needsVitals} />
         <NeedsClinicianCard rows={needsClinician} />

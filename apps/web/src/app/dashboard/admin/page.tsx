@@ -36,6 +36,33 @@ async function getClinicStats(clinicId: string) {
     visitsByDay[date] = (visitsByDay[date] || 0) + 1
   }
 
+  // Cases this month, broken out by clinician, with how many still need
+  // finalization (= note not signed: status not in sent/completed). This is
+  // the per-clinician "finalize before it counts" view (#16).
+  const now = new Date()
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const { data: monthVisits } = await supabase
+    .from('visits')
+    .select('status, doctor:staff!visits_doctor_id_fkey(display_name)')
+    .eq('clinic_id', clinicId)
+    .gte('visit_date', monthStart)
+
+  const byClinician: Record<string, { total: number; unfinalized: number }> = {}
+  let unfinalizedCount = 0
+  for (const v of monthVisits || []) {
+    const name = (v as { doctor?: { display_name?: string } | null }).doctor?.display_name ?? 'Unassigned'
+    byClinician[name] = byClinician[name] || { total: 0, unfinalized: 0 }
+    byClinician[name].total += 1
+    const finalized = v.status === 'sent' || v.status === 'completed'
+    if (!finalized) {
+      byClinician[name].unfinalized += 1
+      unfinalizedCount += 1
+    }
+  }
+  const casesByClinician = Object.entries(byClinician)
+    .map(([name, c]) => ({ name, ...c }))
+    .sort((a, b) => b.total - a.total)
+
   // Get clinic info
   const { data: clinic } = await supabase
     .from('clinics')
@@ -48,6 +75,8 @@ async function getClinicStats(clinicId: string) {
     patientCount: patientCount || 0,
     visitsByDay,
     totalWeekVisits: recentVisits?.length || 0,
+    casesByClinician,
+    unfinalizedCount,
     clinic,
   }
 }
@@ -156,6 +185,40 @@ export default async function AdminPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Cases by clinician + finalization (this month) */}
+      <div className="mt-8 bg-card rounded-xl p-6 border border-border">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <h3 className="text-lg font-semibold">Cases by clinician (this month)</h3>
+          <span
+            className={`text-sm font-medium px-3 py-1 rounded-full ${
+              stats.unfinalizedCount > 0 ? 'bg-amber-soft text-amber-ink' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {stats.unfinalizedCount} awaiting finalization
+          </span>
+        </div>
+        {stats.casesByClinician.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No visits yet this month.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {stats.casesByClinician.map((c) => (
+              <li key={c.name} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <span className="font-medium truncate">{c.name}</span>
+                <span className="flex items-center gap-4 shrink-0">
+                  <span className="text-muted-foreground">{c.total} cases</span>
+                  {c.unfinalized > 0 && (
+                    <span className="text-amber-ink font-medium">{c.unfinalized} to finalize</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-3 text-xs text-muted-foreground">
+          Finalize = sign the note (status → sent/completed). Unfinalized cases are excluded from HMIS 105 and reports.
+        </p>
       </div>
 
       {/* Quick Actions */}

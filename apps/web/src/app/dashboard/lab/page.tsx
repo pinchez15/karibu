@@ -5,6 +5,7 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
 import { LabQueueClient, type LabRow } from './LabQueueClient'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 
 /**
  * Lab board — MVP.
@@ -82,6 +83,7 @@ export default async function LabPage() {
           </Link>
         }
       />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
 
       <div className="p-6 overflow-auto flex-1">
         {queue.length === 0 ? (

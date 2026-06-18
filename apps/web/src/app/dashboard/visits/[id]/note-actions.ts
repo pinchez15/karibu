@@ -18,6 +18,25 @@ const CLINICAL_ROLES = new Set([
   'nursing_assistant',
 ])
 
+/**
+ * Check a patient out of today's queue WITHOUT signing the note. Queue position
+ * is operational; documentation is clinical (F1 / #6). The note can stay open.
+ */
+export async function checkOutVisit(
+  visitId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_check_out_visit', {
+    p_visit_id: visitId,
+    p_client_op_id: null,
+  })
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  return { success: true }
+}
+
 // Senior clinicians who can sign / amend / cosign a note (matches the role
 // gates baked into rpc_sign_provider_note + rpc_amend_provider_note +
 // rpc_cosign_provider_note in migrations 039 / 044).
@@ -156,6 +175,17 @@ export async function queueDraftAiAssist(input: {
     return
   }
 
+  // In production `inngest.send()` requires INNGEST_EVENT_KEY to reach Inngest
+  // Cloud, and the deployed /api/inngest app must be registered (INNGEST_SIGNING_KEY)
+  // for reviewClinicianNote to actually run. If either is missing, AI notes never
+  // generate — surface that loudly rather than failing silently.
+  if (process.env.NODE_ENV === 'production' && !process.env.INNGEST_EVENT_KEY) {
+    console.error(
+      'queueDraftAiAssist: INNGEST_EVENT_KEY is not set in production — draft AI notes will NOT be dispatched. ' +
+        'Set INNGEST_EVENT_KEY + INNGEST_SIGNING_KEY and register /api/inngest in the Inngest dashboard.',
+    )
+  }
+
   try {
     await inngest.send({
       name: 'note.draft-ai-assist',
@@ -166,7 +196,7 @@ export async function queueDraftAiAssist(input: {
       },
     })
   } catch (err) {
-    console.warn('queueDraftAiAssist inngest failed:', err)
+    console.error('queueDraftAiAssist: inngest.send failed — AI notes will not generate for visit', input.visit_id, err)
   }
 }
 

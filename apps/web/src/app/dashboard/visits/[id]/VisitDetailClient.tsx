@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Mic, Printer, Sparkles, CheckCircle2, Send } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Mic, Printer, Sparkles, CheckCircle2, Send, LogOut } from 'lucide-react'
+import { checkOutVisit } from './note-actions'
 import { Button } from '@/components/ui/button'
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
@@ -20,7 +22,39 @@ import {
   sectionsHaveClinicalContent,
 } from '@/lib/clinical-note-sections'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
+import { VitalsCard } from './VitalsCard'
 import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
+
+// Friendly operational labels for queue_status — deliberately not the clinical
+// note state. A patient can be "Checked out" with the note still a draft (#6).
+const QUEUE_LABELS: Record<string, string> = {
+  waiting: 'In clinic',
+  with_nurse: 'With nurse',
+  ready_for_doctor: 'Ready for clinician',
+  with_doctor: 'With clinician',
+  completed: 'Checked out',
+  cancelled: 'Cancelled',
+}
+function queueLabel(status: string | null | undefined): string {
+  if (!status) return '—'
+  return QUEUE_LABELS[status] ?? status.replace(/_/g, ' ')
+}
+
+function CheckOutButton({ visitId }: { visitId: string }) {
+  const router = useRouter()
+  const [pending, start] = useTransition()
+  return (
+    <Button
+      variant="outline"
+      className="gap-2"
+      disabled={pending}
+      onClick={() => start(async () => { await checkOutVisit(visitId); router.refresh() })}
+    >
+      <LogOut className="h-4 w-4" />
+      {pending ? 'Checking out…' : 'Check out'}
+    </Button>
+  )
+}
 
 // Visit detail page. Two paths converge here:
 //
@@ -157,8 +191,10 @@ export function VisitDetailClient({
             <p className="font-medium">{visit.nurse?.display_name || '-'}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Queue Status</p>
-            <p className="font-medium capitalize">{visit.queue_status?.replace('_', ' ') || '-'}</p>
+            {/* Operational presence only — NOT the note/documentation state.
+                "Waiting" here no longer implies the note is unfinished (#6). */}
+            <p className="text-sm text-muted-foreground">Visit</p>
+            <p className="font-medium">{queueLabel(visit.queue_status)}</p>
           </div>
         </div>
       </div>
@@ -166,6 +202,8 @@ export function VisitDetailClient({
       {(visit.critical_alerts ?? []).map((alert) => (
         <VisitCriticalAlertBanner key={alert.id} alert={alert} />
       ))}
+
+      <VitalsCard patientId={visit.patient_id} visitId={visit.id} />
 
       {!visit.documentation_complete && (visit.ai_review_suggestions?.length ?? 0) > 0 && (
         <AiNotesTimeline suggestions={visit.ai_review_suggestions ?? []} />
@@ -178,12 +216,17 @@ export function VisitDetailClient({
             Create a printable transfer summary for the receiving HCIV or hospital.
           </p>
         </div>
-        <Button asChild variant="outline" className="shrink-0 gap-2">
-          <Link href={`/dashboard/referrals/new?visitId=${visit.id}`}>
-            <Send className="h-4 w-4" />
-            Refer to hospital
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {visit.queue_status !== 'completed' && visit.queue_status !== 'cancelled' && (
+            <CheckOutButton visitId={visit.id} />
+          )}
+          <Button asChild variant="outline" className="gap-2">
+            <Link href={`/dashboard/referrals/new?visitId=${visit.id}`}>
+              <Send className="h-4 w-4" />
+              Refer to hospital
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Note editor — desktop clinicians type or dictate the note here. After

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Karibu Health',
+  title: 'KaribuEHR',
   description: 'AI-native clinical documentation for Uganda',
   icons: {
     icon: '/logos/icon-only.svg',

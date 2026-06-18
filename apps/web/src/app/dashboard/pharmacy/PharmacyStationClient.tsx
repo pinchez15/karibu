@@ -10,7 +10,7 @@ import {
 } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, X } from 'lucide-react'
 import { prescriptionLineDisplayName } from '@karibu/shared'
 import { MasterDetail, STATION_COLLAPSE_BP } from '@/components/master-detail'
 import { useAutoRefresh } from '@/hooks/use-auto-refresh'
@@ -194,7 +194,16 @@ export function PharmacyStationClient({
 
   const detail = selectedRow ? (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center justify-end gap-2 border-b border-line-soft px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line-soft px-4 py-2">
+        <button
+          type="button"
+          onClick={() => setSelectedId(null)}
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+          aria-label="Close patient detail"
+        >
+          <X className="h-3.5 w-3.5" />
+          Close
+        </button>
         <Link
           href={`/dashboard/visits/${selectedRow.id}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-cobalt hover:underline"

@@ -2,6 +2,7 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import { ClinicianDashboard } from './ClinicianDashboard'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { QueueItem } from '@karibu/shared'
 
 async function getQueueData(clinicId: string): Promise<QueueItem[]> {
@@ -71,11 +72,14 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <ClinicianDashboard
-      queue={queue}
-      reviewCount={reviewCount}
-      visitsToday={visitsToday}
-      showPhysicalQueue={showPhysicalQueue}
-    />
+    <>
+      <RealtimeRefresher clinicId={staff.clinic_id} />
+      <ClinicianDashboard
+        queue={queue}
+        reviewCount={reviewCount}
+        visitsToday={visitsToday}
+        showPhysicalQueue={showPhysicalQueue}
+      />
+    </>
   )
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
 // Pharmacy stock actions.
 //
@@ -83,6 +84,7 @@ export async function createPharmacyStockItem(formData: FormData): Promise<Actio
   }
 
   revalidatePath('/dashboard/pharmacy/stock')
+  void broadcastClinicRefresh(staff.clinic_id)
   return { success: true }
 }
 
@@ -163,5 +165,29 @@ export async function setPharmacyStockActive(id: string, active: boolean): Promi
 
   if (error) return { success: false, error: error.message }
   revalidatePath('/dashboard/pharmacy/stock')
+  void broadcastClinicRefresh(staff.clinic_id)
+  return { success: true }
+}
+
+// Mark a drug as unavailable ("once stocked but can't be obtained right now")
+// or available again. Distinct from quantity_on_hand and from `active` (which
+// retires an item) — drives the out-of-stock list + Today out-of-stock alert.
+export async function setPharmacyStockUnavailable(id: string, unavailable: boolean): Promise<ActionResult> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not authenticated' }
+  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+    return { success: false, error: 'Only dispensers and admins can edit stock' }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('pharmacy_stock_items')
+    .update({ is_unavailable: unavailable })
+    .eq('id', id)
+    .eq('clinic_id', staff.clinic_id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/dashboard/pharmacy/stock')
+  void broadcastClinicRefresh(staff.clinic_id)
   return { success: true }
 }

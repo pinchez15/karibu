@@ -13,10 +13,10 @@ import {
   sendPharmacyBackToClinician,
   startPharmacyDispense,
 } from './actions'
-import type { PharmacyStationRow } from './pharmacy-data'
+import type { PharmacyStationRow, PharmacyStockItem } from './pharmacy-data'
 import { patientDisplayName, patientMeta } from './pharmacy-shared'
 
-type StockOption = Awaited<ReturnType<typeof listClinicPharmacyStock>>[number]
+type StockOption = PharmacyStockItem
 
 type LineDraft = {
   prescription_order_id: string
@@ -85,8 +85,15 @@ export function PrescriptionWorksheet({
 
   useEffect(() => {
     listClinicPharmacyStock()
-      .then(setStock)
-      .catch((e) => setLoadError(e?.message ?? 'Failed to load stock'))
+      .then((result) => {
+        if (result.ok) {
+          setStock(result.items)
+          setLoadError(null)
+        } else {
+          setLoadError(result.error)
+        }
+      })
+      .catch(() => setLoadError('Could not load the stock list. You can still dispense; stock decrement is unavailable.'))
   }, [])
 
   const stockByCode = useMemo(() => {

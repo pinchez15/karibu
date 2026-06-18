@@ -2,177 +2,119 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import type { Visit, VisitStatus } from '@karibu/shared'
 import { WebTopBar } from '@/components/web-shell'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { PatientsToolbar } from './PatientsToolbar'
-import {
-  VISIT_STATUS_DISPLAY,
-  VISIT_STATUS_FILTER_ORDER,
-  getStatusDisplay,
-} from '@/lib/visit-status'
 
-interface VisitWithPatient extends Visit {
-  patient: {
-    id: string
-    first_name: string | null
-    last_name: string | null
-    display_name: string | null
-    whatsapp_number: string | null
-    date_of_birth: string | null
-    sex: 'M' | 'F' | null
-    patient_number: string | null
-  }
-  doctor: { display_name: string } | null
+// This page is a patient FINDER: locate a patient and open their chart. It is
+// no longer a visit/workflow queue — status (draft / pending review / signed /
+// closed / errored) lives in Worklists now. One row per patient.
+interface PatientRow {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  display_name: string | null
+  whatsapp_number: string | null
+  date_of_birth: string | null
+  birth_year: number | null
+  approximate_age: number | null
+  dob_precision: string | null
+  sex: 'M' | 'F' | null
+  patient_number: number | null
+  village: string | null
+  parish: string | null
 }
 
 /**
- * PostgREST `.or()` filter values are comma/paren-delimited — a raw search
- * term like "Okello, John" corrupts the filter and silently matches nothing.
- * Strip the delimiter characters (and ilike wildcards) before interpolating.
+ * PostgREST `.or()` values are comma/paren-delimited — strip the delimiter
+ * characters (and ilike wildcards) so a raw term can't corrupt the filter.
  */
 function sanitizeSearchTerm(term: string): string {
   return term.replace(/[,()%_\\]/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-const PATIENT_ID_CHUNK_SIZE = 200
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = []
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size))
-  return out
-}
-
-async function getVisits(
-  clinicId: string,
-  statusFilter?: string,
-  page: number = 1,
-  limit: number = 25,
-  search?: string,
-) {
+async function getPatients(clinicId: string, page: number, limit: number, search?: string) {
   const supabase = createServiceClient()
+  const cols =
+    'id, first_name, last_name, display_name, whatsapp_number, date_of_birth, birth_year, approximate_age, dob_precision, sex, patient_number, village, parish'
 
-  let patientIds: string[] | null = null
+  let query = supabase
+    .from('patients')
+    .select(cols, { count: 'exact' })
+    .eq('clinic_id', clinicId)
+    .order('created_at', { ascending: false })
+    .range((page - 1) * limit, page * limit - 1)
+
   const term = search ? sanitizeSearchTerm(search) : ''
   if (term) {
-    // UI promises "name, phone, or patient number" — match the composed name
-    // fields plus patient_number and national_id (migrations 017 / 038).
     const pattern = `%${term}%`
-    const { data: matchingPatients, error: patientErr } = await supabase
-      .from('patients')
-      .select('id')
-      .eq('clinic_id', clinicId)
-      .or(
-        [
-          `display_name.ilike.${pattern}`,
-          `first_name.ilike.${pattern}`,
-          `last_name.ilike.${pattern}`,
-          `whatsapp_number.ilike.${pattern}`,
-          `patient_number.ilike.${pattern}`,
-          `national_id.ilike.${pattern}`,
-        ].join(','),
-      )
-
-    if (patientErr) {
-      console.error('Failed to search patients:', patientErr)
-      return { visits: [], total: 0 }
-    }
-
-    patientIds = matchingPatients?.map(p => p.id) || []
-    if (patientIds.length === 0) {
-      return { visits: [], total: 0 }
-    }
+    query = query.or(
+      [
+        `display_name.ilike.${pattern}`,
+        `first_name.ilike.${pattern}`,
+        `last_name.ilike.${pattern}`,
+        `whatsapp_number.ilike.${pattern}`,
+        `national_id.ilike.${pattern}`,
+      ].join(','),
+    )
   }
 
-  // PostgREST `.in()` lists are sent in the URL — an unbounded id list from a
-  // broad search blows past URL limits. Chunk to 200 ids and merge.
-  const idChunks: Array<string[] | null> = patientIds
-    ? chunk(patientIds, PATIENT_ID_CHUNK_SIZE)
-    : [null]
-  const singleQuery = idChunks.length === 1
-
-  const buildQuery = (ids: string[] | null) => {
-    let query = supabase
-      .from('visits')
-      .select(
-        '*, patient:patients(id, first_name, last_name, display_name, whatsapp_number, date_of_birth, sex, patient_number), doctor:staff!visits_doctor_id_fkey(display_name)',
-        { count: 'exact' },
-      )
-      .eq('clinic_id', clinicId)
-      .order('created_at', { ascending: false })
-      // Single query: page server-side. Multiple chunks: each chunk only
-      // ever needs rows up to the end of the requested page; the merged set
-      // is re-sorted + sliced below.
-      .range(singleQuery ? (page - 1) * limit : 0, page * limit - 1)
-
-    if (statusFilter && statusFilter !== 'all') {
-      query = query.eq('status', statusFilter)
-    }
-    if (ids) {
-      query = query.in('patient_id', ids)
-    }
-    return query
+  const { data, error, count } = await query
+  if (error) {
+    console.error('Failed to fetch patients:', error)
+    return { patients: [], total: 0 }
   }
-
-  let merged: VisitWithPatient[] = []
-  let total = 0
-  for (const ids of idChunks) {
-    const { data, error, count } = await buildQuery(ids)
-    if (error) {
-      console.error('Failed to fetch visits:', error)
-      return { visits: [], total: 0 }
-    }
-    merged = merged.concat((data || []) as VisitWithPatient[])
-    total += count || 0
-  }
-
-  if (singleQuery) {
-    return { visits: merged, total }
-  }
-
-  merged.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
-  return { visits: merged.slice((page - 1) * limit, page * limit), total }
+  return { patients: (data ?? []) as unknown as PatientRow[], total: count ?? 0 }
 }
 
-function deriveAgeLabel(dob: string | null): string | null {
-  if (!dob) return null
-  const parsed = Date.parse(dob)
-  if (Number.isNaN(parsed)) return null
-  const years = Math.floor((Date.now() - parsed) / (365.25 * 24 * 60 * 60 * 1000))
-  if (years < 0) return null
-  if (years >= 1) return `${years}y`
-  const months = Math.floor((Date.now() - parsed) / (30.44 * 24 * 60 * 60 * 1000))
-  return months > 0 ? `${months}m` : '<1m'
+// Age from the best available source — exact DOB, else birth year, else an
+// approximate age. This is the fix for ages "in Supabase but not showing": the
+// old derivation only read date_of_birth, so year-only / age-estimate patients
+// rendered as "—".
+function ageLabel(p: PatientRow): string {
+  if (p.date_of_birth) {
+    const parsed = Date.parse(p.date_of_birth)
+    if (!Number.isNaN(parsed)) {
+      const years = Math.floor((Date.now() - parsed) / (365.25 * 24 * 60 * 60 * 1000))
+      if (years >= 1) return `${years}y`
+      const months = Math.floor((Date.now() - parsed) / (30.44 * 24 * 60 * 60 * 1000))
+      return months > 0 ? `${months}m` : '<1m'
+    }
+  }
+  if (p.birth_year) return `${new Date().getFullYear() - p.birth_year}y`
+  if (p.approximate_age != null) return `~${p.approximate_age}y`
+  return '—'
 }
 
-function patientName(p: VisitWithPatient['patient']): string {
+function patientName(p: PatientRow): string {
   const composed = [p.first_name, p.last_name].filter(Boolean).join(' ')
   return composed || p.display_name || 'Unknown patient'
 }
 
-export default async function VisitsPage({
+function locationLabel(p: PatientRow): string {
+  return [p.village, p.parish].filter(Boolean).join(', ') || '—'
+}
+
+const GRID = 'md:grid-cols-[minmax(180px,1.6fr)_110px_150px_64px_56px_minmax(130px,1.1fr)]'
+
+export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string; search?: string }>
+  searchParams: Promise<{ page?: string; search?: string }>
 }) {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
   const params = await searchParams
-  const statusFilter = params.status || 'all'
-  // Guard against non-numeric ?page= — parseInt NaN would feed .range(NaN, …)
-  // and silently return an empty list.
   const parsedPage = parseInt(params.page || '1', 10)
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
   const search = params.search || ''
 
-  const { visits, total } = await getVisits(staff.clinic_id, statusFilter, page, 25, search)
+  const { patients, total } = await getPatients(staff.clinic_id, page, 25, search)
   const totalPages = Math.ceil(total / 25)
 
-  const filters: Array<'all' | VisitStatus> = ['all', ...VISIT_STATUS_FILTER_ORDER]
-
-  const buildHref = (status: string, targetPage?: number): string => {
+  const buildHref = (targetPage?: number): string => {
     const qs = new URLSearchParams()
-    if (status !== 'all') qs.set('status', status)
     if (search) qs.set('search', search)
     if (targetPage && targetPage > 1) qs.set('page', String(targetPage))
     const query = qs.toString()
@@ -181,138 +123,75 @@ export default async function VisitsPage({
 
   return (
     <>
-      <WebTopBar title="Patients" subtitle={`${total} visits`} subtitleMeta={false} />
+      <WebTopBar title="Patients" subtitle={`${total} ${total === 1 ? 'patient' : 'patients'}`} subtitleMeta={false} />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
       <div className="flex-1 overflow-auto px-8 py-6 space-y-4">
-      <PatientsToolbar />
+        <PatientsToolbar />
 
-      {/* Status filter chips */}
-      <div className="flex flex-wrap gap-2">
-        {filters.map((status) => {
-          const active = statusFilter === status
-          const label =
-            status === 'all'
-              ? 'All'
-              : VISIT_STATUS_DISPLAY[status]?.label ?? status
-          return (
+        <p className="text-sm text-muted-foreground">
+          {total} {total === 1 ? 'patient' : 'patients'}
+          {search && <> matching &ldquo;{search}&rdquo;</>}
+        </p>
+
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className={`hidden md:grid ${GRID} gap-4 px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-semibold uppercase tracking-wide text-muted-foreground`}>
+            <div>Patient</div>
+            <div>Patient #</div>
+            <div>Phone</div>
+            <div>Age</div>
+            <div>Sex</div>
+            <div>Location</div>
+          </div>
+
+          {patients.map((p) => (
             <Link
-              key={status}
-              href={buildHref(status)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card text-foreground border border-border hover:bg-secondary'
-              }`}
+              key={p.id}
+              href={`/dashboard/patients/${p.id}`}
+              className={`grid grid-cols-1 ${GRID} gap-y-1 md:gap-4 px-4 py-2.5 border-b border-border last:border-b-0 hover:bg-secondary/40 transition-colors`}
             >
-              {label}
+              <div className="min-w-0 font-medium truncate">{patientName(p)}</div>
+              <div className="text-sm text-muted-foreground md:text-foreground truncate">
+                {p.patient_number ?? '—'}
+              </div>
+              <div className="text-sm text-muted-foreground md:text-foreground truncate">
+                {p.whatsapp_number ?? '—'}
+              </div>
+              <div className="text-sm text-muted-foreground md:text-foreground">{ageLabel(p)}</div>
+              <div className="text-sm text-muted-foreground md:text-foreground">{p.sex ?? '—'}</div>
+              <div className="text-sm text-muted-foreground md:text-foreground truncate">{locationLabel(p)}</div>
             </Link>
-          )
-        })}
-      </div>
+          ))}
 
-      <p className="text-sm text-muted-foreground">
-        {total} {total === 1 ? 'visit' : 'visits'}
-        {search && <> matching &ldquo;{search}&rdquo;</>}
-      </p>
-
-      {/* Patients / visits table — landscape-first. Drops back to a stacked
-          card on narrow viewports so the row stays scannable on tablets. */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="hidden md:grid md:grid-cols-[minmax(220px,2fr)_120px_120px_minmax(180px,1.4fr)_120px_140px] gap-4 px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <div>Patient</div>
-          <div>Patient #</div>
-          <div>Age / Sex</div>
-          <div>Doctor</div>
-          <div>Visit date</div>
-          <div>Status</div>
+          {patients.length === 0 && (
+            <div className="py-12 text-center text-muted-foreground">No patients found</div>
+          )}
         </div>
 
-        {visits.map((visit) => {
-          const display = getStatusDisplay(visit.status)
-          const name = patientName(visit.patient)
-          const age = deriveAgeLabel(visit.patient.date_of_birth)
-          const ageSex = [age, visit.patient.sex].filter(Boolean).join(' · ') || '—'
-          const dateLabel = new Date(visit.visit_date).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })
-
-          return (
-            <div
-              key={visit.id}
-              className="grid grid-cols-1 md:grid-cols-[minmax(220px,2fr)_120px_120px_minmax(180px,1.4fr)_120px_140px] gap-y-1 md:gap-4 px-4 py-3 border-b border-border last:border-b-0 hover:bg-secondary/40 transition-colors"
-            >
-              <div className="min-w-0">
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex gap-2">
+              {page > 1 && (
                 <Link
-                  href={`/dashboard/patients/${visit.patient.id}`}
-                  className="font-medium hover:underline truncate block"
+                  href={buildHref(page - 1)}
+                  className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
                 >
-                  {name}
+                  Previous
                 </Link>
-                {visit.patient.whatsapp_number && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {visit.patient.whatsapp_number}
-                  </div>
-                )}
-                {visit.status === 'error' && visit.error_message && (
-                  <p className="text-xs text-destructive mt-1 truncate">
-                    {visit.error_message}
-                  </p>
-                )}
-              </div>
-              <div className="text-sm text-muted-foreground md:text-foreground truncate">
-                {visit.patient.patient_number ?? '—'}
-              </div>
-              <div className="text-sm text-muted-foreground md:text-foreground">{ageSex}</div>
-              <div className="text-sm text-muted-foreground md:text-foreground truncate">
-                {visit.doctor?.display_name ?? 'Unassigned'}
-              </div>
-              <div className="text-sm text-muted-foreground md:text-foreground">{dateLabel}</div>
-              <div>
+              )}
+              {page < totalPages && (
                 <Link
-                  href={`/dashboard/visits/${visit.id}`}
-                  className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full hover:opacity-80 ${display.bg} ${display.color}`}
+                  href={buildHref(page + 1)}
+                  className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
                 >
-                  {display.label}
+                  Next
                 </Link>
-              </div>
+              )}
             </div>
-          )
-        })}
-
-        {visits.length === 0 && (
-          <div className="py-12 text-center text-muted-foreground">
-            {search ? 'No patients found' : 'No visits found'}
           </div>
         )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={buildHref(statusFilter, page - 1)}
-                className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
-              >
-                Previous
-              </Link>
-            )}
-            {page < totalPages && (
-              <Link
-                href={buildHref(statusFilter, page + 1)}
-                className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-secondary transition-colors"
-              >
-                Next
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
       </div>
     </>
   )

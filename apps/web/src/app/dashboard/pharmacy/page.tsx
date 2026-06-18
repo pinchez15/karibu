@@ -8,6 +8,7 @@ import { PharmacyStationClient } from './PharmacyStationClient'
 import { PharmacyTabs } from './PharmacyTabs'
 import { getPharmacyStationQueue, getPharmacyTabCounts } from './pharmacy-data'
 import { formatOldestWait } from './pharmacy-shared'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { PharmacyQueueTab } from '@karibu/shared'
 
 const VALID_TABS: PharmacyQueueTab[] = ['waiting', 'in_progress', 'done_today']
@@ -55,6 +56,7 @@ export default async function PharmacyPage({
           </Link>
         }
       />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-6">
         <Suspense fallback={<div className="mb-4 h-9" />}>
