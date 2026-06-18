@@ -36,7 +36,7 @@ export default async function ProfitabilityReportPage() {
     | undefined
   const revenue = Number(cash?.revenue ?? 0)
   const charged = Number(cash?.charged ?? 0)
-  const outstanding = Number(cash?.outstanding ?? 0)
+  const outstanding = Math.max(0, Number(cash?.outstanding ?? 0))
 
   const byCategory: Record<string, number> = {}
   for (const c of charges ?? []) {
