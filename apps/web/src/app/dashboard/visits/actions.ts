@@ -506,3 +506,48 @@ export async function submitLabOrder(
   revalidatePath(`/dashboard/visits/${visitId}`)
   return { success: true }
 }
+
+/**
+ * Book a follow-up appointment for a patient (F-SCHED / request A). Appears on
+ * the Today calendar. Decoupled from the visit — it's a future scheduled event.
+ */
+export async function createFollowUp(input: {
+  patientId: string
+  scheduledAt: string
+  reason?: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  if (!['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife', 'nursing_assistant'].includes(staff.role)) {
+    return { success: false, error: 'Forbidden: clinician role required' }
+  }
+  if (!input.scheduledAt) return { success: false, error: 'Pick a follow-up date.' }
+
+  const supabase = createServiceClient()
+  const { data: patient } = await supabase
+    .from('patients')
+    .select('id')
+    .eq('id', input.patientId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+  if (!patient) return { success: false, error: 'Patient not found' }
+
+  const { error } = await supabase.rpc('rpc_create_appointment', {
+    p_clinic_id: staff.clinic_id,
+    p_event_type: 'follow_up',
+    p_scheduled_at: new Date(input.scheduledAt).toISOString(),
+    p_patient_id: input.patientId,
+    p_title: null,
+    p_reason: input.reason?.trim() || null,
+    p_unit: 'opd',
+    p_scheduled_end: null,
+  })
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard')
+  return { success: true }
+}

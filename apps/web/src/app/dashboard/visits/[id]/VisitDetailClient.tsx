@@ -23,6 +23,7 @@ import {
 } from '@/lib/clinical-note-sections'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 import { VitalsCard } from './VitalsCard'
+import { BookFollowUp } from './BookFollowUp'
 import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
 import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
 
@@ -217,7 +218,8 @@ export function VisitDetailClient({
             Create a printable transfer summary for the receiving HCIV or hospital.
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <BookFollowUp patientId={visit.patient_id} />
           {visit.queue_status !== 'completed' && visit.queue_status !== 'cancelled' && (
             <CheckOutButton visitId={visit.id} />
           )}
