@@ -588,6 +588,27 @@ export function PendingDictationCard({
           )}
         </Button>
       </div>
+
+      {/* Floating dictate button (#7d) — always reachable: focus any field, then
+          tap to dictate into it without scrolling to the action bar. */}
+      <button
+        type="button"
+        onClick={isRecording ? stopRecording : startRecording}
+        disabled={pending || savingDraft || isTranscribing}
+        title={focusedSection ? 'Dictate into the focused field' : 'Tap a field first, then dictate'}
+        aria-label={isRecording ? 'Stop dictation' : 'Dictate'}
+        className={`fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors disabled:opacity-50 ${
+          isRecording ? 'bg-destructive text-white' : 'bg-cobalt text-white hover:bg-cobalt/90'
+        }`}
+      >
+        {isRecording ? (
+          <Square className="h-6 w-6" />
+        ) : isTranscribing ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <Mic className="h-6 w-6" />
+        )}
+      </button>
     </div>
   )
 }
