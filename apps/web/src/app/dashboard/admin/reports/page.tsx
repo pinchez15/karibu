@@ -216,13 +216,13 @@ export default async function ReportsOverviewPage() {
             tag="QUALITY"
             title="30-day readmission"
             desc="Patients returning within 30 days for the same complaint."
-            href="/dashboard/admin/reports/coming-soon/readmission"
+            href="/dashboard/admin/reports/readmission"
           />
           <ReportTile
             tag="MONITORING"
             title="Outbreak watch"
             desc="Continuous monitor that fires when any diagnosis exceeds 2× rolling baseline."
-            href="/dashboard/admin/reports/coming-soon/outbreak"
+            href="/dashboard/admin/reports/outbreak"
           />
           <ReportTile
             tag="CUSTOM"
