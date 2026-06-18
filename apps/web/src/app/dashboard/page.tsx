@@ -3,7 +3,86 @@ import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import { ClinicianDashboard } from './ClinicianDashboard'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
+import type { TodayAppointment, OutOfStockItem, RoundsVisit } from './TodayPanels'
 import type { QueueItem } from '@karibu/shared'
+
+function sentenceCase(s: string): string {
+  const t = s.trim()
+  return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : t
+}
+
+async function getTodayAppointments(clinicId: string): Promise<TodayAppointment[]> {
+  const supabase = createServiceClient()
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 1)
+  const { data, error } = await supabase.rpc('rpc_list_appointments', {
+    p_clinic_id: clinicId,
+    p_from: start.toISOString(),
+    p_to: end.toISOString(),
+  })
+  if (error) {
+    console.error('today: appointments', error)
+    return []
+  }
+  return (data ?? []) as TodayAppointment[]
+}
+
+async function getOutOfStock(clinicId: string): Promise<OutOfStockItem[]> {
+  const supabase = createServiceClient()
+  const [pharm, lab] = await Promise.all([
+    supabase
+      .from('pharmacy_stock_items')
+      .select('drug_name, is_unavailable, quantity_on_hand, unit')
+      .eq('clinic_id', clinicId)
+      .eq('active', true),
+    supabase
+      .from('lab_stock_items')
+      .select('test_name, is_unavailable, quantity_on_hand, unit')
+      .eq('clinic_id', clinicId)
+      .eq('active', true),
+  ])
+  const items: OutOfStockItem[] = []
+  for (const r of pharm.data ?? []) {
+    if (r.is_unavailable || Number(r.quantity_on_hand) <= 0) {
+      items.push({ label: sentenceCase(r.drug_name as string), detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim() })
+    }
+  }
+  for (const r of lab.data ?? []) {
+    if (r.is_unavailable || Number(r.quantity_on_hand) <= 0) {
+      items.push({ label: `${r.test_name as string} (lab)`, detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim() })
+    }
+  }
+  return items
+}
+
+async function getRounds(clinicId: string): Promise<RoundsVisit[]> {
+  const supabase = createServiceClient()
+  const y = new Date()
+  y.setDate(y.getDate() - 1)
+  const yesterday = y.toISOString().slice(0, 10)
+  const { data, error } = await supabase
+    .from('visits')
+    .select('id, visit_date, diagnosis, chief_complaint, patient:patients(display_name, first_name, last_name)')
+    .eq('clinic_id', clinicId)
+    .eq('visit_date', yesterday)
+    .in('status', ['sent', 'completed'])
+    .order('updated_at', { ascending: false })
+    .limit(25)
+  if (error) {
+    console.error('today: rounds', error)
+    return []
+  }
+  return (data ?? []).map((v) => {
+    const p = (Array.isArray(v.patient) ? v.patient[0] : v.patient) as
+      | { display_name?: string | null; first_name?: string | null; last_name?: string | null }
+      | null
+    const name = p?.display_name || [p?.first_name, p?.last_name].filter(Boolean).join(' ') || null
+    const summary = (v.diagnosis as string | null)?.trim() || (v.chief_complaint as string | null)?.trim() || 'No summary'
+    return { visit_id: v.id as string, patient_name: name, summary, visit_date: v.visit_date as string }
+  })
+}
 
 async function getQueueData(clinicId: string): Promise<QueueItem[]> {
   const supabase = createServiceClient()
@@ -64,12 +143,16 @@ export default async function DashboardPage() {
   if (staff.role === 'lab_tech') redirect('/dashboard/lab')
   if (staff.role === 'dispenser') redirect('/dashboard/pharmacy')
 
-  const [queue, reviewCount, visitsToday, showPhysicalQueue] = await Promise.all([
-    getQueueData(staff.clinic_id),
-    getReviewCount(staff.clinic_id),
-    getVisitsToday(staff.clinic_id),
-    getShowPhysicalQueue(staff.clinic_id),
-  ])
+  const [queue, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
+    await Promise.all([
+      getQueueData(staff.clinic_id),
+      getReviewCount(staff.clinic_id),
+      getVisitsToday(staff.clinic_id),
+      getShowPhysicalQueue(staff.clinic_id),
+      getTodayAppointments(staff.clinic_id),
+      getOutOfStock(staff.clinic_id),
+      getRounds(staff.clinic_id),
+    ])
 
   return (
     <>
@@ -79,6 +162,9 @@ export default async function DashboardPage() {
         reviewCount={reviewCount}
         visitsToday={visitsToday}
         showPhysicalQueue={showPhysicalQueue}
+        appointments={appointments}
+        outOfStock={outOfStock}
+        rounds={rounds}
       />
     </>
   )

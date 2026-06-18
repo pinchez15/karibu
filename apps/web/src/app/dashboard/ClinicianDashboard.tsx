@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Filter, Search, Sparkles } from 'lucide-react'
 import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
+import { TodayPanels, type TodayAppointment, type OutOfStockItem, type RoundsVisit } from './TodayPanels'
 import { formatClinicDate } from '@/lib/format-clinic-date'
 import { cn } from '@/lib/utils'
 import type { QueueItem } from '@karibu/shared'
@@ -26,6 +27,10 @@ interface ClinicianDashboardProps {
   avgVisitMinutes?: number
   /** When false, hide the legacy physical queue table (chart-first workflow). */
   showPhysicalQueue?: boolean
+  /** Morning stand-up panels (#2/#9). */
+  appointments?: TodayAppointment[]
+  outOfStock?: OutOfStockItem[]
+  rounds?: RoundsVisit[]
 }
 
 export function ClinicianDashboard({
@@ -34,6 +39,9 @@ export function ClinicianDashboard({
   visitsToday = 0,
   avgVisitMinutes,
   showPhysicalQueue = true,
+  appointments = [],
+  outOfStock = [],
+  rounds = [],
 }: ClinicianDashboardProps) {
   const waiting = queue.length
   const avgLabel = avgVisitMinutes
@@ -75,6 +83,8 @@ export function ClinicianDashboard({
         </div>
 
         {/* Stats */}
+        <TodayPanels appointments={appointments} outOfStock={outOfStock} rounds={rounds} />
+
         <div className="grid grid-cols-4 gap-3 mb-5">
           <Stat label="VISITS TODAY" value={String(visitsToday + waiting)} delta={null} />
           <Stat label="WAITING" value={String(waiting)} delta={null} />
