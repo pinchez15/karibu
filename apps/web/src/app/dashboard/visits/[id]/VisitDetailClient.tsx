@@ -24,6 +24,7 @@ import {
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 import { VitalsCard } from './VitalsCard'
 import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
+import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
 
 // Friendly operational labels for queue_status — deliberately not the clinical
 // note state. A patient can be "Checked out" with the note still a draft (#6).
@@ -277,6 +278,8 @@ export function VisitDetailClient({
                 />
               </div>
             )}
+
+            <VisitLabPanel visitId={visit.id} staffRole={staffRole ?? null} />
             {visit.follow_up_instructions && (
               <div>
                 <p className="text-sm text-muted-foreground">Follow-up Instructions</p>
