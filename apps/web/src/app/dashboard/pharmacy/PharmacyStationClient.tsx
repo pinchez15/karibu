@@ -204,13 +204,23 @@ export function PharmacyStationClient({
           <X className="h-3.5 w-3.5" />
           Close
         </button>
-        <Link
-          href={`/dashboard/visits/${selectedRow.id}`}
-          className="inline-flex items-center gap-1 text-xs font-medium text-cobalt hover:underline"
-        >
-          Open chart
-          <ExternalLink className="h-3 w-3" />
-        </Link>
+        <div className="flex items-center gap-4">
+          <a
+            href={`/dashboard/pharmacy/${selectedRow.id}/receipt`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-cobalt hover:underline"
+          >
+            Print receipt
+          </a>
+          <Link
+            href={`/dashboard/visits/${selectedRow.id}`}
+            className="inline-flex items-center gap-1 text-xs font-medium text-cobalt hover:underline"
+          >
+            Open chart
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
       <PrescriptionWorksheet
         row={selectedRow}

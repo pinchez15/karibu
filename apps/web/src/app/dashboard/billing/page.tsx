@@ -111,7 +111,19 @@ export default async function BillingPage() {
                       )}
                       <span className="text-muted-foreground"> · {c.description}</span>
                     </span>
-                    <span className="shrink-0 font-medium">{ugx(c.amount_ugx)}</span>
+                    <span className="flex shrink-0 items-center gap-3">
+                      <span className="font-medium">{ugx(c.amount_ugx)}</span>
+                      {c.patient && (
+                        <a
+                          href={`/dashboard/billing/${c.patient.id}/receipt`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-cobalt hover:underline"
+                        >
+                          Receipt
+                        </a>
+                      )}
+                    </span>
                   </li>
                 )
               })}
