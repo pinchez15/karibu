@@ -5,6 +5,7 @@ import { ClinicianDashboard } from './ClinicianDashboard'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { TodayAppointment, OutOfStockItem, RoundsVisit } from './TodayPanels'
 import type { QueueItem } from '@karibu/shared'
+import { countReviewNotesItems } from '@/lib/review-notes'
 
 function sentenceCase(s: string): string {
   const t = s.trim()
@@ -99,14 +100,7 @@ async function getQueueData(clinicId: string): Promise<QueueItem[]> {
 }
 
 async function getReviewCount(clinicId: string): Promise<number> {
-  const supabase = createServiceClient()
-  const { count } = await supabase
-    .from('visits')
-    .select('*', { count: 'exact', head: true })
-    .eq('clinic_id', clinicId)
-    .eq('review_status', 'pending_review')
-
-  return count || 0
+  return countReviewNotesItems(clinicId)
 }
 
 async function getShowPhysicalQueue(clinicId: string): Promise<boolean> {

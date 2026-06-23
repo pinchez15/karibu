@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Search, Sparkles } from 'lucide-react'
+import { Filter, Search } from 'lucide-react'
 import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
 import { TodayPanels, type TodayAppointment, type OutOfStockItem, type RoundsVisit } from './TodayPanels'
@@ -90,21 +90,14 @@ export function ClinicianDashboard({
           <Stat label="WAITING" value={String(waiting)} delta={null} />
           <Stat label="AVG TIME" value={avgLabel} delta={null} />
           <Stat
-            label="TO REVIEW"
+            label="TO FINALIZE"
             value={String(reviewCount)}
-            delta={reviewCount ? 'AI' : null}
+            delta={reviewCount ? 'notes' : null}
             deltaAmber
           />
         </div>
 
-        <div
-          className={
-            showPhysicalQueue
-              ? 'grid grid-cols-[1.6fr_1fr] gap-4'
-              : 'grid grid-cols-1 gap-4'
-          }
-        >
-          {showPhysicalQueue ? (
+        {showPhysicalQueue ? (
           <div className="bg-card border border-border rounded-xl opacity-90">
             <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">
               <div>
@@ -174,32 +167,7 @@ export function ClinicianDashboard({
               })
             )}
           </div>
-          ) : null}
-
-          {/* Side column */}
-          <div className="flex flex-col gap-4">
-            {/* AI-structured notes awaiting clinician sign-off */}
-            <div className="bg-card border border-amber/40 rounded-xl p-[18px]">
-              <div className="flex items-center gap-1.5 text-amber kh-meta mb-2">
-                <Sparkles className="h-3.5 w-3.5" /> NOTES TO REVIEW
-              </div>
-              <div className="text-[22px] font-semibold tracking-tight">
-                {reviewCount} {reviewCount === 1 ? 'visit' : 'visits'}
-              </div>
-              <div className="text-[13px] text-muted-foreground mt-1">
-                {reviewCount === 0
-                  ? 'When AI structures a SOAP note from dictation, it appears here for you to confirm—not for scheduling.'
-                  : 'Confirm AI-structured SOAP notes and HMIS codes before the record is final.'}
-              </div>
-              <Link
-                href="/dashboard/review"
-                className="block w-full mt-3.5 bg-amber text-amber-ink rounded-md py-2.5 font-semibold text-[13px] text-center hover:bg-amber/90 transition-colors"
-              >
-                Open review queue
-              </Link>
-            </div>
-          </div>
-        </div>
+        ) : null}
       </div>
     </>
   )

@@ -23,8 +23,8 @@ export default function PrintNotFound() {
           No patient note to print
         </h1>
         <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px', lineHeight: 1.5 }}>
-          This visit doesn&apos;t have a reviewed patient note yet. Approve it from the
-          review queue first, then come back here to print.
+          This visit doesn&apos;t have a finalized patient note yet. Open the chart, complete the
+          note, and sign it — then come back here to print.
         </p>
         <Link
           href="/dashboard/review"
@@ -39,7 +39,7 @@ export default function PrintNotFound() {
             fontSize: '14px',
           }}
         >
-          Go to review queue
+          Go to Review Notes
         </Link>
       </div>
     </main>

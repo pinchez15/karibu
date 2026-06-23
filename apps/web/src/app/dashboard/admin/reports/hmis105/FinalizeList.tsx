@@ -1,19 +1,10 @@
 import Link from 'next/link'
-
-export type UnfinalizedRow = {
-  visit_id: string
-  patient_name: string | null
-  patient_number: number | null
-  visit_date: string
-  doctor_name: string | null
-  status: string
-  has_diagnosis: boolean
-}
+import type { UnfinalizedVisitRow } from '@/lib/review-notes'
 
 // Per-clinician "finalize before it counts" list (#11). Unfinalized visits are
 // excluded from HMIS 105 (only signed sent/completed visits count). Grouped by
 // the clinician who saw the patient so each gets their own short list to sign.
-export function FinalizeList({ rows }: { rows: UnfinalizedRow[] }) {
+export function FinalizeList({ rows }: { rows: UnfinalizedVisitRow[] }) {
   if (rows.length === 0) {
     return (
       <div className="no-print rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
@@ -22,7 +13,7 @@ export function FinalizeList({ rows }: { rows: UnfinalizedRow[] }) {
     )
   }
 
-  const groups = new Map<string, UnfinalizedRow[]>()
+  const groups = new Map<string, UnfinalizedVisitRow[]>()
   for (const r of rows) {
     const key = r.doctor_name ?? 'Unassigned'
     const list = groups.get(key) ?? []

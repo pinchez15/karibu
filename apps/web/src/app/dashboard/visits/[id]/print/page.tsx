@@ -125,9 +125,9 @@ export default async function PrintPatientNotePage({
     return (
       <PrintBlocker
         title="Patient note not ready"
-        message="The AI hasn't generated a patient summary for this visit yet. This usually means transcription failed. Try Reject &amp; Reprocess from the review queue, or contact support if it persists."
-        ctaHref="/dashboard/review"
-        ctaLabel="Back to review queue"
+        message="The patient summary isn't ready for this visit yet. Open the chart to complete and sign the note, or check Review Notes for anything still pending."
+        ctaHref={`/dashboard/visits/${id}`}
+        ctaLabel="Open visit chart"
       />
     )
   }

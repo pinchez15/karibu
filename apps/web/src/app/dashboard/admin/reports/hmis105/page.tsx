@@ -1,30 +1,13 @@
 import { getStaff, isAdmin } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Hmis105Client } from './Hmis105Client'
-import { FinalizeList, type UnfinalizedRow } from './FinalizeList'
+import { FinalizeList } from './FinalizeList'
 import { PrintLandscapeButton } from './PrintLandscapeButton'
 import { fetchAllClinics } from '../actions'
-
-async function getUnfinalized(clinicId: string): Promise<UnfinalizedRow[]> {
-  const supabase = createServiceClient()
-  const now = new Date()
-  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  const to = now.toISOString().slice(0, 10)
-  const { data, error } = await supabase.rpc('rpc_unfinalized_visits', {
-    p_clinic_id: clinicId,
-    p_from: from,
-    p_to: to,
-  })
-  if (error) {
-    console.error('hmis105: unfinalized', error)
-    return []
-  }
-  return (data ?? []) as UnfinalizedRow[]
-}
+import { fetchUnfinalizedVisits, monthToDateRange } from '@/lib/review-notes'
 
 export default async function Hmis105Page() {
   const staff = await getStaff()
@@ -33,9 +16,10 @@ export default async function Hmis105Page() {
   const admin = await isAdmin()
   if (!admin) redirect('/dashboard')
 
+  const { from, to } = monthToDateRange()
   const [{ data: clinics }, unfinalized] = await Promise.all([
     fetchAllClinics(),
-    getUnfinalized(staff.clinic_id),
+    fetchUnfinalizedVisits(staff.clinic_id, from, to),
   ])
 
   return (
