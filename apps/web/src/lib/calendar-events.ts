@@ -22,29 +22,51 @@ export const CLINIC_EVENT_META: Record<
     shortLabel: 'Follow-up',
     color: '#1e5a8a',
     textColor: '#ffffff',
-    hint: 'Linked to a patient chart',
+    hint: 'TB, HIV/ART, hypertension, ANC, or post-visit return — linked to patient chart',
   },
   drive: {
-    label: 'Immunization drive / outreach',
-    shortLabel: 'Drive',
+    label: 'Outreach / clinic day',
+    shortLabel: 'Outreach',
     color: '#0d9488',
     textColor: '#ffffff',
-    hint: 'Clinic-wide event (e.g. immunization day)',
+    hint: 'Immunization (EPI), community mobilization, ANC day, or VHT coordination',
   },
   admin: {
-    label: 'Admin / clinic task',
+    label: 'Admin / reporting',
     shortLabel: 'Admin',
     color: '#64748b',
     textColor: '#ffffff',
-    hint: 'Meetings, stock count, reporting',
+    hint: 'Morning handover, HMIS reporting, stock count, or staff meeting',
   },
   external_lab_agency: {
-    label: 'External lab / agency visit',
+    label: 'Lab run / agency visit',
     shortLabel: 'Lab / agency',
     color: '#c27803',
     textColor: '#ffffff',
-    hint: 'Outside lab pickup or agency visit',
+    hint: 'Hub lab sample transport, district supervisor, or partner agency visit',
   },
+}
+
+/** Quick-fill titles for HC III scheduling (no DB change — maps to existing event types). */
+export const EVENT_TITLE_PRESETS: Partial<Record<ClinicEventType, string[]>> = {
+  drive: [
+    'Immunization drive (EPI)',
+    'Outreach / community mobilization',
+    'ANC clinic day',
+    'ART clinic day',
+    'VHT coordination meeting',
+  ],
+  admin: [
+    'Morning handover',
+    'HMIS 105 reporting deadline',
+    'Monthly stock count',
+    'Staff meeting',
+  ],
+  external_lab_agency: [
+    'Hub lab sample run',
+    'District supervisor visit',
+    'Partner agency visit',
+  ],
 }
 
 export function appointmentTitle(a: ClinicAppointment): string {

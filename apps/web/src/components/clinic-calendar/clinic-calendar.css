@@ -1,6 +1,8 @@
 /* FullCalendar — align with Karibu tokens */
 .clinic-calendar .fc {
   --fc-border-color: hsl(var(--border));
+  --fc-page-bg-color: hsl(var(--card));
+  --fc-neutral-bg-color: hsl(var(--secondary) / 0.35);
   --fc-button-bg-color: hsl(var(--cobalt));
   --fc-button-border-color: hsl(var(--cobalt));
   --fc-button-hover-bg-color: hsl(var(--cobalt) / 0.9);
@@ -9,6 +11,13 @@
   --fc-today-bg-color: hsl(var(--cobalt-soft) / 0.35);
   --fc-event-border-color: transparent;
   font-size: 13px;
+}
+
+.clinic-calendar .fc .fc-scrollgrid,
+.clinic-calendar .fc .fc-scrollgrid-section > td,
+.clinic-calendar .fc .fc-col-header-cell,
+.clinic-calendar .fc .fc-daygrid-day {
+  border-color: hsl(var(--border));
 }
 
 .clinic-calendar .fc .fc-toolbar-title {
@@ -27,10 +36,15 @@
   min-height: 4.5rem;
 }
 
+.clinic-calendar--preview .fc .fc-daygrid-day-frame {
+  min-height: 3.25rem;
+}
+
 .clinic-calendar .fc .fc-daygrid-event {
   font-size: 11px;
   border-radius: 4px;
   padding: 1px 2px;
+  cursor: pointer;
 }
 
 .clinic-calendar .fc .fc-button {
@@ -39,4 +53,13 @@
   text-transform: capitalize;
   border-radius: 6px;
   padding: 0.35rem 0.65rem;
+}
+
+.clinic-calendar--preview .fc .fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.clinic-calendar--preview .fc .fc-col-header-cell {
+  padding: 0.35rem 0;
 }

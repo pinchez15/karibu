@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createClinicEvent } from '@/app/dashboard/calendar/actions'
 import { searchPatients } from '@/app/dashboard/actions'
-import { CLINIC_EVENT_META, type ClinicEventType } from '@/lib/calendar-events'
+import { CLINIC_EVENT_META, EVENT_TITLE_PRESETS, type ClinicEventType } from '@/lib/calendar-events'
 import type { Patient } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 
@@ -115,11 +115,31 @@ export function AddCalendarEventForm({
       {needsTitle && (
         <div className="space-y-1.5">
           <Label htmlFor="cal-title">Title</Label>
+          {(EVENT_TITLE_PRESETS[eventType]?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {EVENT_TITLE_PRESETS[eventType]!.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setTitle(preset)}
+                  className="rounded-full border border-border bg-secondary/40 px-2.5 py-0.5 text-[11px] font-medium text-body hover:bg-secondary/70 transition-colors"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          )}
           <Input
             id="cal-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={eventType === 'drive' ? 'Immunization drive' : 'Event name'}
+            placeholder={
+              eventType === 'drive'
+                ? 'e.g. Immunization drive (EPI)'
+                : eventType === 'admin'
+                  ? 'e.g. HMIS 105 reporting deadline'
+                  : 'Event name'
+            }
             required
           />
         </div>
@@ -196,7 +216,7 @@ export function AddCalendarEventForm({
           id="cal-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Reason, location, or instructions"
+          placeholder="Village, VHT name, transport notes, or clinical reason"
         />
       </div>
 
