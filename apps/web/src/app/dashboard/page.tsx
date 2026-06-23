@@ -16,8 +16,10 @@ async function getTodayAppointments(clinicId: string): Promise<TodayAppointment[
   const supabase = createServiceClient()
   const start = new Date()
   start.setHours(0, 0, 0, 0)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 7) // week-ahead calendar, not just today
+  start.setDate(start.getDate() - 7)
+  const end = new Date()
+  end.setHours(0, 0, 0, 0)
+  end.setDate(end.getDate() + 56)
   const { data, error } = await supabase.rpc('rpc_list_appointments', {
     p_clinic_id: clinicId,
     p_from: start.toISOString(),

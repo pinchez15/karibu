@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter, Search } from 'lucide-react'
+import { Filter } from 'lucide-react'
 import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
 import { TodayPanels, type TodayAppointment, type OutOfStockItem, type RoundsVisit } from './TodayPanels'
@@ -58,31 +58,6 @@ export function ClinicianDashboard({
       />
 
       <div className="p-6 overflow-auto flex-1">
-        {/* Patient-first entry — chart search is the primary clinician surface. */}
-        <div className="mb-5 rounded-xl border border-cobalt/30 bg-cobalt-soft/20 p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-cobalt kh-meta mb-1">
-                <Search className="h-3.5 w-3.5" /> FIND A PATIENT
-              </div>
-              <p className="text-sm text-body max-w-xl">
-                Search by name, phone, or patient number to open the chart. Today&apos;s encounters
-                and open visits live on the patients list.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <ClinicianSearchBar className="w-[min(100%,320px)]" />
-              <Link
-                href="/dashboard/visits"
-                className="rounded-md bg-cobalt px-4 py-2 text-[13px] font-semibold text-white hover:bg-cobalt/90 transition-colors"
-              >
-                Today&apos;s patients
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
         <TodayPanels appointments={appointments} outOfStock={outOfStock} rounds={rounds} />
 
         <div className="grid grid-cols-4 gap-3 mb-5">

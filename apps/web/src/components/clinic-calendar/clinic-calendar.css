@@ -1,0 +1,42 @@
+/* FullCalendar — align with Karibu tokens */
+.clinic-calendar .fc {
+  --fc-border-color: hsl(var(--border));
+  --fc-button-bg-color: hsl(var(--cobalt));
+  --fc-button-border-color: hsl(var(--cobalt));
+  --fc-button-hover-bg-color: hsl(var(--cobalt) / 0.9);
+  --fc-button-hover-border-color: hsl(var(--cobalt) / 0.9);
+  --fc-button-active-bg-color: hsl(var(--cobalt) / 0.85);
+  --fc-today-bg-color: hsl(var(--cobalt-soft) / 0.35);
+  --fc-event-border-color: transparent;
+  font-size: 13px;
+}
+
+.clinic-calendar .fc .fc-toolbar-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.clinic-calendar .fc .fc-col-header-cell-cushion,
+.clinic-calendar .fc .fc-daygrid-day-number {
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+}
+
+.clinic-calendar .fc .fc-daygrid-day-frame {
+  min-height: 4.5rem;
+}
+
+.clinic-calendar .fc .fc-daygrid-event {
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 1px 2px;
+}
+
+.clinic-calendar .fc .fc-button {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+}
