@@ -59,8 +59,44 @@ export interface Staff {
   role: StaffRole;
   is_active: boolean;
   deactivated_at: string | null;
+  onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** KaribuEHR Onboarding module — cross-role training before real patients. */
+export interface OnboardingModule {
+  id: string;
+  title: string;
+  subtitle: string;
+  simulated_role: StaffRole;
+  sort_order: number;
+  case_id: string;
+  pack_id: string;
+  coach_intro: string;
+  android_primary: boolean;
+  web_bonus?: string;
+}
+
+export interface OnboardingManifest {
+  version: number;
+  title: string;
+  subtitle: string;
+  modules: OnboardingModule[];
+}
+
+export interface OnboardingModuleProgress {
+  module_id: string;
+  completed_at: string;
+  score: number | null;
+  total: number | null;
+}
+
+export interface OnboardingStatus {
+  completed: boolean;
+  completed_at: string | null;
+  required_modules: string[];
+  progress: OnboardingModuleProgress[];
 }
 
 export interface Patient {

@@ -480,4 +480,13 @@ interface SupabaseApi {
     suspend fun rpcRecordBillingPayment(
         @Body request: RecordBillingPaymentRequest,
     ): RecordBillingPaymentResponse
+
+    // EHR onboarding (migration 079)
+    @POST("rpc/rpc_get_onboarding_status")
+    suspend fun rpcGetOnboardingStatus(): OnboardingStatusDto
+
+    @POST("rpc/rpc_complete_onboarding_module")
+    suspend fun rpcCompleteOnboardingModule(
+        @Body request: CompleteOnboardingModuleRequest,
+    ): CompleteOnboardingModuleResponse
 }

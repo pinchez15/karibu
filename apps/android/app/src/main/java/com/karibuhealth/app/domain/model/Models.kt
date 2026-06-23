@@ -84,9 +84,12 @@ data class Staff(
     val role: StaffRole,
     val isActive: Boolean,
     val deactivatedAt: String?,
+    val onboardingCompletedAt: String? = null,
     val createdAt: String,
     val updatedAt: String,
-)
+) {
+    val needsOnboarding: Boolean get() = onboardingCompletedAt.isNullOrBlank()
+}
 
 data class Patient(
     val id: String,

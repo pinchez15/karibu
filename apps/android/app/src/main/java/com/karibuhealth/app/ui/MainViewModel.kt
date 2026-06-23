@@ -7,14 +7,17 @@ import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.sync.SyncDebugLogger
 import com.karibuhealth.app.data.sync.SyncEngine
+import com.karibuhealth.app.domain.model.Staff
 import com.karibuhealth.app.util.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,11 +32,34 @@ class MainViewModel @Inject constructor(
     private val visitDao: VisitDao,
     private val syncEngine: SyncEngine,
     private val syncDebugLogger: SyncDebugLogger,
+    private val staffRepository: StaffRepository,
 ) : ViewModel() {
 
     val isAuthenticated: StateFlow<Boolean> = authTokenStore.observeToken()
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val currentStaff: StateFlow<Staff?> = authTokenStore.observeClerkUserId()
+        .flatMapLatest { clerkId ->
+            if (clerkId.isNullOrBlank()) flowOf(null)
+            else staffRepository.getStaffByClerkId(clerkId)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val needsOnboarding: StateFlow<Boolean> = currentStaff
+        .map { it?.needsOnboarding == true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    init {
+        viewModelScope.launch {
+            authTokenStore.observeClerkUserId().collect { clerkId ->
+                if (!clerkId.isNullOrBlank()) {
+                    staffRepository.fetchAndCacheStaff(clerkId)
+                }
+            }
+        }
+    }
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnlineFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)

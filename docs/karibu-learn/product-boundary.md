@@ -1,47 +1,52 @@
 # Karibu Learn and Karibu EHR — product boundary
 
-**Status:** Locked. Supersedes any doc that describes Learn as an EHR screen, tab, or shared user base.
+**Status:** Locked for KaribuLearn vs EHR data/auth. KaribuEHR Onboarding is a separate EHR feature (see [`karibu-ehr-onboarding.md`](../karibu-ehr-onboarding.md)).
 
-## Two applications
+## Two CME / training products
 
-| | Karibu EHR | Karibu Learn |
-|---|------------|--------------|
-| **Purpose** | Clinical record for signed-up clinics | Free CME: simulated cases that teach the Karibu chart |
-| **Android app** | `apps/android` (`com.karibuhealth.app`) | `apps/learn-android` (`com.karibuhealth.learn`) |
-| **Web** | Clinic dashboard / chart | `learn.karibu.health` (and `apps/web/src/app/learn` during development) |
-| **Auth** | Clerk | Supabase Auth (separate project) |
-| **Database** | EHR Supabase (PHI, visits, sync) | Learn Supabase (learners, progress, pack catalog — no PHI) |
-| **Patient data** | Real clinic patients | Simulated patients in `.kpack` content only |
+| | Karibu EHR | KaribuLearn | KaribuEHR Onboarding |
+|---|------------|-------------|----------------------|
+| **Purpose** | Clinical record for signed-up clinics | Free CME: clinical reasoning | Required staff training on the product |
+| **Android** | `apps/android` (`com.karibuhealth.app`) | `apps/learn-android` (`com.karibuhealth.learn`) | Inside `apps/android` (Clerk) |
+| **Web** | Clinic dashboard / chart | **None** (Android only) | `/onboarding` (Clerk) |
+| **Auth** | Clerk | Supabase Auth (separate project) | Clerk |
+| **Database** | EHR Supabase (PHI) | Learn Supabase (no PHI) | EHR Supabase (progress only) |
+| **Patient data** | Real clinic patients | Simulated `.kpack` only | Simulated cases — no real writes |
 
-Karibu Learn and Karibu EHR are **completely separate apps**. They do not share user databases, auth providers, or runtime data. A Learn account does not grant EHR access; an EHR account does not grant Learn access.
+**KaribuLearn** and **Karibu EHR** are separate apps: different auth, different user databases, no cross-launch. **KaribuEHR Onboarding** lives inside EHR and uses Clerk.
 
-## Not reachable from each other
+KaribuLearn does not grant EHR access. KaribuLearn accounts do not use Clerk.
 
-- Karibu EHR must **not** launch, deep-link to, or embed Karibu Learn.
-- Karibu Learn must **not** launch, deep-link to, or embed Karibu EHR.
-- There is no “open Learn from clinic” or “open chart from Learn” product flow.
+## KaribuLearn (free CME)
 
-Marketing copy may mention that clinics can later adopt Karibu EHR; that is positioning only, not a technical integration.
+- Android-only distribution (`apps/learn-android`).
+- Teaches medicine; familiarity with mobile chart UX is a side benefit.
+- No web app, no EHR integration, no Clerk.
+
+## KaribuEHR Onboarding
+
+- Required before registering real patients (`onboarding_completed_at`, migration 079).
+- Cross-role modules for every new staff member.
+- Reuses case fixtures from the Learn content pipeline; coach copy focuses on software literacy.
+- Android-primary; web adds desk-wide bonus context.
 
 ## Why both live in this monorepo
 
-The repository is a **platform monorepo**, not a single-product app repo. Karibu Learn and Karibu EHR live together so that:
+- Learn and Onboarding can **mirror** EHR interaction patterns (chart layout, vitals, notes) using shared design tokens and `.kpack` schema.
+- Engineering velocity: one case pipeline feeds KaribuLearn (medicine) and Onboarding (product training).
 
-- Learn can **mirror** EHR interaction patterns (chart layout, vitals, notes, coach vs chart chrome) for **pre-onboarding**: staff practice on simulated cases before their facility signs up for EHR.
-- Shared **design tokens**, clinical presentation models, and content schemas can evolve in one place without copying repos.
-- The case-generation pipeline and `.kpack` format stay next to the apps that consume them.
-
-Monorepo co-location is for **UI and workflow parity** and engineering velocity — not for shared auth, shared Supabase, or cross-app navigation.
+Monorepo co-location is for **UI and content parity** — not shared auth or PHI.
 
 ## Implementation rules
 
-- Learn code lives under `apps/learn-android` and Learn-owned packages. Transitional Learn UI under `apps/android/.../ui/learn` is legacy staging until ported; it must not be wired into EHR navigation.
-- Do not import EHR Room, sync, PHI models, Clerk, or EHR Supabase clients into Learn.
-- Do not import Learn learner progress or Learn Supabase into EHR.
+- **KaribuLearn:** `apps/learn-android` only. Do not import EHR Room, Clerk, or EHR Supabase.
+- **Onboarding:** `apps/android/.../ui/onboarding` and `apps/web/src/app/onboarding`. May reuse Learn walkthrough composables and `.kpack` assets bundled in EHR; must not import Learn Supabase.
+- **EHR:** Do not embed KaribuLearn app or public CME routes in EHR navigation.
+- Legacy `apps/android/.../ui/learn` and `apps/web/src/app/learn` are transitional; Onboarding supersedes in-EHR use of those paths.
 
 ## Related docs
 
 - Vision: [`vision.md`](vision.md)
-- Learn Android architecture: [`../../apps/learn-android/ARCHITECTURE.md`](../../apps/learn-android/ARCHITECTURE.md)
+- EHR Onboarding: [`../karibu-ehr-onboarding.md`](../karibu-ehr-onboarding.md)
+- Learn Android: [`../../apps/learn-android/ARCHITECTURE.md`](../../apps/learn-android/ARCHITECTURE.md)
 - Case packs: [`../karibu-learn-pack-schema.md`](../karibu-learn-pack-schema.md)
-- Platform layout: [`../../architecture.md`](../../architecture.md)

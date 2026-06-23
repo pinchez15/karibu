@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { OnboardingGuard } from '@/components/onboarding-guard'
 
 /**
  * Dashboard layout — wraps every /dashboard/* page in the role-aware web shell.
@@ -36,17 +37,19 @@ export default async function DashboardLayout({
     .toUpperCase()
 
   return (
-    <DashboardShell
-      clinicName={clinic?.name}
-      staffRole={staff.role}
-      staff={{
-        displayName: staff.display_name,
-        role: roleLabel(staff.role),
-        initials,
-      }}
-    >
-      {children}
-    </DashboardShell>
+    <OnboardingGuard onboardingComplete={Boolean(staff.onboarding_completed_at)}>
+      <DashboardShell
+        clinicName={clinic?.name}
+        staffRole={staff.role}
+        staff={{
+          displayName: staff.display_name,
+          role: roleLabel(staff.role),
+          initials,
+        }}
+      >
+        {children}
+      </DashboardShell>
+    </OnboardingGuard>
   )
 }
 

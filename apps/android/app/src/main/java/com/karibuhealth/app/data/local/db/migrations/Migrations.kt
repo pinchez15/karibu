@@ -13,6 +13,15 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+// v26 -> v27: staff onboarding completion timestamp (migration 079 mirror).
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE staff ADD COLUMN onboarding_completed_at TEXT",
+        )
+    }
+}
+
 // v24 -> v25: dose slot linkage + IV drip monitoring (migration 074 mirror).
 val MIGRATION_24_25 = object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {

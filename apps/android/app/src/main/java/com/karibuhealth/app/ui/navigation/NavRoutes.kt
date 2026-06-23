@@ -67,10 +67,12 @@ sealed interface NavRoute {
     @Serializable data object StartPregnancy : NavRoute
     @Serializable data class PregnancyDetail(val pregnancyId: String) : NavRoute
 
+    @Serializable data object Onboarding : NavRoute
+
     /**
      * Legacy route type — **do not wire into EHR NavHost**. Karibu Learn is a
-     * separate app (`apps/learn-android`), not reachable from Karibu EHR.
-     * See `docs/karibu-learn/product-boundary.md`. Remove when no references remain.
+     * separate Android app (`apps/learn-android`), not reachable from Karibu EHR.
+     * See `docs/karibu-learn/product-boundary.md`.
      */
     @Serializable data object KaribuLearn : NavRoute
 }

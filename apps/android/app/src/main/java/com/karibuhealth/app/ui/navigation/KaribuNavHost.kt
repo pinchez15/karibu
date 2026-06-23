@@ -33,15 +33,28 @@ import com.karibuhealth.app.ui.anc.PregnancyDetailScreen
 import com.karibuhealth.app.ui.inpatient.WardHandoverScreen
 import com.karibuhealth.app.ui.inpatient.AdmitPatientScreen
 import com.karibuhealth.app.ui.inpatient.AdmissionChartScreen
+import com.karibuhealth.app.ui.onboarding.OnboardingBlockedScreen
+import com.karibuhealth.app.ui.onboarding.OnboardingRoot
 
 @Composable
 fun KaribuNavHost(
     navController: NavHostController,
     isAuthenticated: Boolean,
+    needsOnboarding: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val startRoute: NavRoute = if (isAuthenticated) NavRoute.Home else NavRoute.Auth
+    val startRoute: NavRoute = when {
+        !isAuthenticated -> NavRoute.Auth
+        needsOnboarding -> NavRoute.Onboarding
+        else -> NavRoute.Home
+    }
     val navigator = rememberKaribuNavigator(navController, startRoute)
+
+    androidx.compose.runtime.LaunchedEffect(isAuthenticated, needsOnboarding) {
+        if (!isAuthenticated) return@LaunchedEffect
+        val target = if (needsOnboarding) NavRoute.Onboarding else NavRoute.Home
+        navigator.resetRoot(target, NavRoute.Auth, inclusive = true)
+    }
 
     // Edge-swipe navigation wraps the whole host: a left-edge swipe goes back a
     // level (always safe — defers to popBackStack), a right-edge swipe goes
@@ -61,8 +74,16 @@ fun KaribuNavHost(
         ) {
             composable<NavRoute.Auth> {
                 AuthScreen(onAuthenticated = {
-                    navigator.resetRoot(NavRoute.Home, NavRoute.Auth, inclusive = true)
+                    // Post-auth destination is chosen by LaunchedEffect(isAuthenticated, needsOnboarding).
                 })
+            }
+
+            composable<NavRoute.Onboarding> {
+                OnboardingRoot(
+                    onFinished = {
+                        navigator.resetRoot(NavRoute.Home, NavRoute.Onboarding, inclusive = true)
+                    },
+                )
             }
 
             composable<NavRoute.Home> {
@@ -108,23 +129,31 @@ fun KaribuNavHost(
             }
 
             composable<NavRoute.CheckIn> {
-                CheckInScreen(
-                    onNavigateBack = { navigator.back() },
-                    onCheckedIn = { visitId ->
-                        navigator.goReset(NavRoute.VisitDetails(visitId), NavRoute.Queue)
-                    },
-                )
+                if (needsOnboarding) {
+                    OnboardingBlockedScreen(onOpenTraining = { navigator.go(NavRoute.Onboarding) })
+                } else {
+                    CheckInScreen(
+                        onNavigateBack = { navigator.back() },
+                        onCheckedIn = { visitId ->
+                            navigator.goReset(NavRoute.VisitDetails(visitId), NavRoute.Queue)
+                        },
+                    )
+                }
             }
 
             composable<NavRoute.NewVisit> {
-                NewVisitScreen(
-                    onNavigateBack = { navigator.back() },
-                    // After patient + visit is created, route through the vitals
-                    // capture screen, then dictation. Both are skippable.
-                    onVisitCreated = { visitId, patientId ->
-                        navigator.goReset(NavRoute.Vitals(visitId, patientId), NavRoute.Home)
-                    },
-                )
+                if (needsOnboarding) {
+                    OnboardingBlockedScreen(onOpenTraining = { navigator.go(NavRoute.Onboarding) })
+                } else {
+                    NewVisitScreen(
+                        onNavigateBack = { navigator.back() },
+                        // After patient + visit is created, route through the vitals
+                        // capture screen, then dictation. Both are skippable.
+                        onVisitCreated = { visitId, patientId ->
+                            navigator.goReset(NavRoute.Vitals(visitId, patientId), NavRoute.Home)
+                        },
+                    )
+                }
             }
 
             composable<NavRoute.Vitals> { backStackEntry ->

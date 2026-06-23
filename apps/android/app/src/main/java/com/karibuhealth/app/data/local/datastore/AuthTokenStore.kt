@@ -42,6 +42,10 @@ class AuthTokenStore @Inject constructor(
         return context.authDataStore.data.first()[KEY_CLERK_USER_ID]
     }
 
+    fun observeClerkUserId(): Flow<String?> {
+        return context.authDataStore.data.map { it[KEY_CLERK_USER_ID] }
+    }
+
     suspend fun saveClerkUserId(userId: String) {
         context.authDataStore.edit { prefs ->
             prefs[KEY_CLERK_USER_ID] = userId

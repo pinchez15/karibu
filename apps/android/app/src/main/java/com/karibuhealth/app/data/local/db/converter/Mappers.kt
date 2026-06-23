@@ -49,6 +49,7 @@ fun StaffDto.toEntity() = StaffEntity(
     id = id, clerkUserId = clerkUserId, clinicId = clinicId,
     email = email, displayName = displayName, role = role,
     isActive = isActive, deactivatedAt = deactivatedAt,
+    onboardingCompletedAt = onboardingCompletedAt,
     createdAt = createdAt, updatedAt = updatedAt,
 )
 
@@ -57,6 +58,7 @@ fun StaffEntity.toDomain() = Staff(
     email = email, displayName = displayName,
     role = StaffRole.valueOf(role),
     isActive = isActive, deactivatedAt = deactivatedAt,
+    onboardingCompletedAt = onboardingCompletedAt,
     createdAt = createdAt, updatedAt = updatedAt,
 )
 

@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
                 KaribuAdaptiveProvider {
                 val viewModel: MainViewModel = hiltViewModel()
                 val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+                val needsOnboarding by viewModel.needsOnboarding.collectAsState()
                 val isOnline by viewModel.isOnline.collectAsState()
                 val pendingSyncCount by viewModel.pendingSyncCount.collectAsState()
                 val deviceSavedCount by viewModel.deviceSavedCount.collectAsState()
@@ -120,6 +121,7 @@ class MainActivity : ComponentActivity() {
                     KaribuNavHost(
                         navController = navController,
                         isAuthenticated = isAuthenticated,
+                        needsOnboarding = needsOnboarding,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }

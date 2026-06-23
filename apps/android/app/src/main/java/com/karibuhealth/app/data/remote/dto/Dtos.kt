@@ -34,8 +34,41 @@ data class StaffDto(
     val role: String,
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("deactivated_at") val deactivatedAt: String? = null,
+    @SerialName("onboarding_completed_at") val onboardingCompletedAt: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
+)
+
+@Serializable
+data class OnboardingStatusDto(
+    val completed: Boolean = false,
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("required_modules") val requiredModules: List<String> = emptyList(),
+    val progress: List<OnboardingModuleProgressDto> = emptyList(),
+)
+
+@Serializable
+data class OnboardingModuleProgressDto(
+    @SerialName("module_id") val moduleId: String,
+    @SerialName("completed_at") val completedAt: String,
+    val score: Int? = null,
+    val total: Int? = null,
+)
+
+@Serializable
+data class CompleteOnboardingModuleRequest(
+    @SerialName("p_module_id") val moduleId: String,
+    @SerialName("p_score") val score: Int? = null,
+    @SerialName("p_total") val total: Int? = null,
+)
+
+@Serializable
+data class CompleteOnboardingModuleResponse(
+    @SerialName("module_id") val moduleId: String,
+    val completed: Boolean = false,
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("modules_done") val modulesDone: Int = 0,
+    @SerialName("modules_required") val modulesRequired: Int = 0,
 )
 
 @Serializable

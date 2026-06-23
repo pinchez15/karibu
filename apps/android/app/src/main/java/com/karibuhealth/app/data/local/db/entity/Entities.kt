@@ -34,6 +34,7 @@ data class StaffEntity(
     val role: String,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "deactivated_at") val deactivatedAt: String?,
+    @ColumnInfo(name = "onboarding_completed_at") val onboardingCompletedAt: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
 )
