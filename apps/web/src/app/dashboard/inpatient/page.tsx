@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getStaff } from '@/lib/auth'
 import { WebTopBar } from '@/components/web-shell'
+import { WardCensusClient } from '@/components/inpatient/WardCensusClient'
+import { loadActiveAdmissions } from './actions'
+import { Plus } from 'lucide-react'
 
-// Inpatient unit landing (HC III admissions). The admissions ward list + admit
-// flow are Android-first (rpc_admit_patient, InpatientHomeScreen); the web view
-// is a read surface for now.
 const CLINICAL = new Set(['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife', 'nursing_assistant'])
 
 export default async function InpatientPage() {
@@ -12,18 +13,24 @@ export default async function InpatientPage() {
   if (!staff) redirect('/')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
+  const rows = await loadActiveAdmissions(staff.clinic_id)
+
   return (
     <>
-      <WebTopBar title="Inpatient" subtitle="ADMISSIONS" />
-      <div className="p-6 overflow-auto flex-1">
-        <div className="max-w-2xl rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Admissions</h2>
-          <p className="mt-2 text-sm text-body">
-            Ward admissions are managed on the Android app (admit, ward round, observations).
-            A web admissions board will surface active inpatients here.
-          </p>
-        </div>
-      </div>
+      <WebTopBar
+        title="Ward"
+        subtitle="ADMISSIONS"
+        actions={
+          <Link
+            href="/dashboard/inpatient/admit"
+            className="inline-flex items-center gap-1.5 rounded-md bg-cobalt px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-cobalt/90"
+          >
+            <Plus className="h-4 w-4" />
+            Admit
+          </Link>
+        }
+      />
+      <WardCensusClient rows={rows} />
     </>
   )
 }
