@@ -274,7 +274,7 @@ export function PatientsToolbar() {
           <Input
             value={search}
             onChange={(e) => updateSearch(e.target.value)}
-            placeholder="Search by name or phone..."
+            placeholder="Search name, patient #, phone, or address..."
             className="pl-9"
           />
         </div>
