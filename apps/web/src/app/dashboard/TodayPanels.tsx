@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { AlertTriangle, History } from 'lucide-react'
-import { ClinicCalendar } from '@/components/clinic-calendar/ClinicCalendar'
+import { TwoWeekPreview } from '@/components/clinic-calendar/TwoWeekPreview'
 import type { ClinicAppointment } from '@/lib/calendar-events'
 
 export type TodayAppointment = ClinicAppointment
@@ -40,7 +40,7 @@ export function TodayPanels({
         </div>
       )}
 
-      <ClinicCalendar variant="preview" initialAppointments={appointments} />
+      <TwoWeekPreview appointments={appointments} />
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-line-soft px-4 py-2.5">

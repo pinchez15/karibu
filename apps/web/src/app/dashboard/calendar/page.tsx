@@ -22,7 +22,7 @@ export default async function CalendarPage() {
         subtitleMeta={false}
       />
       <div className="p-6 overflow-auto flex-1">
-        <ClinicCalendar variant="full" initialAppointments={appointments} />
+        <ClinicCalendar initialAppointments={appointments} />
       </div>
     </>
   )

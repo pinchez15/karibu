@@ -1,50 +1,90 @@
-/* FullCalendar — align with Karibu tokens */
+/* FullCalendar — Karibu tokens use rgb(), not hsl() */
 .clinic-calendar .fc {
-  --fc-border-color: hsl(var(--border));
-  --fc-page-bg-color: hsl(var(--card));
-  --fc-neutral-bg-color: hsl(var(--secondary) / 0.35);
-  --fc-button-bg-color: hsl(var(--cobalt));
-  --fc-button-border-color: hsl(var(--cobalt));
-  --fc-button-hover-bg-color: hsl(var(--cobalt) / 0.9);
-  --fc-button-hover-border-color: hsl(var(--cobalt) / 0.9);
-  --fc-button-active-bg-color: hsl(var(--cobalt) / 0.85);
-  --fc-today-bg-color: hsl(var(--cobalt-soft) / 0.35);
+  --fc-border-color: rgb(var(--border));
+  --fc-page-bg-color: rgb(var(--card));
+  --fc-neutral-bg-color: rgb(var(--secondary) / 0.35);
+  --fc-neutral-text-color: rgb(var(--muted-foreground));
+  --fc-button-bg-color: rgb(var(--primary));
+  --fc-button-border-color: rgb(var(--primary));
+  --fc-button-text-color: #fff;
+  --fc-button-hover-bg-color: rgb(var(--primary) / 0.9);
+  --fc-button-hover-border-color: rgb(var(--primary) / 0.9);
+  --fc-button-active-bg-color: rgb(var(--primary) / 0.85);
+  --fc-today-bg-color: rgb(var(--kh-cobalt-soft) / 0.45);
   --fc-event-border-color: transparent;
+  --fc-now-indicator-color: rgb(var(--primary));
+  color: rgb(var(--body));
   font-size: 13px;
 }
 
-.clinic-calendar .fc .fc-scrollgrid,
+/* Tailwind preflight can collapse FullCalendar tables — restore layout */
+.clinic-calendar .fc table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.clinic-calendar .fc .fc-scrollgrid {
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 .clinic-calendar .fc .fc-scrollgrid-section > td,
 .clinic-calendar .fc .fc-col-header-cell,
 .clinic-calendar .fc .fc-daygrid-day {
-  border-color: hsl(var(--border));
+  border: 1px solid rgb(var(--border));
+}
+
+.clinic-calendar .fc .fc-col-header-cell-cushion {
+  display: block;
+  padding: 0.5rem 0.25rem;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(var(--muted-foreground));
+  text-decoration: none;
+}
+
+.clinic-calendar .fc .fc-daygrid-day-number {
+  display: inline-block;
+  padding: 0.35rem 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(var(--body));
+  text-decoration: none;
+}
+
+.clinic-calendar .fc .fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.clinic-calendar .fc .fc-daygrid-day-frame {
+  min-height: 5.5rem;
+}
+
+.clinic-calendar .fc .fc-day-today .fc-daygrid-day-number {
+  background-color: rgb(var(--primary));
+  color: #fff;
+  border-radius: 9999px;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 .clinic-calendar .fc .fc-toolbar-title {
   font-size: 1rem;
   font-weight: 600;
-}
-
-.clinic-calendar .fc .fc-col-header-cell-cushion,
-.clinic-calendar .fc .fc-daygrid-day-number {
-  font-size: 12px;
-  color: hsl(var(--muted-foreground));
-  text-decoration: none;
-}
-
-.clinic-calendar .fc .fc-daygrid-day-frame {
-  min-height: 4.5rem;
-}
-
-.clinic-calendar--preview .fc .fc-daygrid-day-frame {
-  min-height: 3.25rem;
+  color: rgb(var(--ink));
 }
 
 .clinic-calendar .fc .fc-daygrid-event {
   font-size: 11px;
   border-radius: 4px;
-  padding: 1px 2px;
+  padding: 1px 4px;
   cursor: pointer;
+  margin-top: 1px;
 }
 
 .clinic-calendar .fc .fc-button {
@@ -53,13 +93,28 @@
   text-transform: capitalize;
   border-radius: 6px;
   padding: 0.35rem 0.65rem;
+  box-shadow: none;
 }
 
-.clinic-calendar--preview .fc .fc-daygrid-day-top {
-  flex-direction: row;
-  justify-content: space-between;
+.clinic-calendar .fc .fc-button:focus {
+  box-shadow: none;
 }
 
-.clinic-calendar--preview .fc .fc-col-header-cell {
-  padding: 0.35rem 0;
+.clinic-calendar .fc .fc-more-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgb(var(--primary));
+}
+
+.clinic-calendar .fc .fc-popover {
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(var(--ink) / 0.08);
+}
+
+.clinic-calendar .fc .fc-popover-header {
+  background: rgb(var(--secondary) / 0.5);
+  padding: 0.5rem 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
 }

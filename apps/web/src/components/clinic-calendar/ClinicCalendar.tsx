@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import type { EventClickArg, DatesSetArg, PluginDef } from '@fullcalendar/core'
 import type { DateClickArg } from '@fullcalendar/interaction'
 import Link from 'next/link'
-import { ArrowRight, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { listAppointmentsInRange } from '@/app/dashboard/calendar/actions'
 import {
@@ -18,22 +18,14 @@ import './clinic-calendar.css'
 
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
 
-const loadDayGrid = () =>
-  import('@fullcalendar/daygrid').then((m) => m.default)
-
-const loadInteraction = () =>
-  import('@fullcalendar/interaction').then((m) => m.default)
-
-type ClinicCalendarVariant = 'preview' | 'full'
+const loadDayGrid = () => import('@fullcalendar/daygrid').then((m) => m.default)
+const loadInteraction = () => import('@fullcalendar/interaction').then((m) => m.default)
 
 export function ClinicCalendar({
   initialAppointments,
-  variant = 'full',
 }: {
   initialAppointments: ClinicAppointment[]
-  variant?: ClinicCalendarVariant
 }) {
-  const isPreview = variant === 'preview'
   const [appointments, setAppointments] = useState(initialAppointments)
   const [dayGridPlugin, setDayGridPlugin] = useState<PluginDef | null>(null)
   const [interactionPlugin, setInteractionPlugin] = useState<PluginDef | null>(null)
@@ -45,8 +37,8 @@ export function ClinicCalendar({
 
   useEffect(() => {
     void loadDayGrid().then(setDayGridPlugin)
-    if (!isPreview) void loadInteraction().then(setInteractionPlugin)
-  }, [isPreview])
+    void loadInteraction().then(setInteractionPlugin)
+  }, [])
 
   const events = useMemo(() => appointments.map(toFullCalendarEvent), [appointments])
 
@@ -62,10 +54,9 @@ export function ClinicCalendar({
 
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
-      if (isPreview) return
       refreshRange(arg.start, arg.end)
     },
-    [isPreview, refreshRange],
+    [refreshRange],
   )
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
@@ -91,19 +82,9 @@ export function ClinicCalendar({
   }, [refreshRange])
 
   const plugins = useMemo(() => {
-    if (!dayGridPlugin) return null
-    if (isPreview) return [dayGridPlugin]
-    if (!interactionPlugin) return null
+    if (!dayGridPlugin || !interactionPlugin) return null
     return [dayGridPlugin, interactionPlugin]
-  }, [dayGridPlugin, interactionPlugin, isPreview])
-
-  const previewRange = useMemo(() => {
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
-    const end = new Date(start)
-    end.setDate(end.getDate() + 14)
-    return { start, end }
-  }, [])
+  }, [dayGridPlugin, interactionPlugin])
 
   if (!plugins) {
     return (
@@ -114,74 +95,48 @@ export function ClinicCalendar({
   }
 
   return (
-    <div className={isPreview ? 'space-y-0' : 'space-y-3'}>
+    <div className="space-y-3">
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-4 py-2.5">
           <div>
-            <h2 className="text-sm font-semibold">
-              {isPreview ? 'Next two weeks' : 'Clinic calendar'}
-            </h2>
+            <h2 className="text-sm font-semibold">Clinic calendar</h2>
             <p className="text-xs text-muted-foreground">
-              {isPreview
-                ? 'Upcoming follow-ups, outreach days, and clinic events'
-                : 'Schedule follow-ups, outreach, reporting, and lab runs'}
+              Schedule follow-ups, outreach, reporting, and lab runs
             </p>
           </div>
-          {isPreview ? (
-            <Link
-              href="/dashboard/calendar"
-              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-semibold text-cobalt hover:bg-cobalt-soft/30 transition-colors"
-            >
-              Open calendar
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                setAddDate(new Date())
-                setShowAddForm(true)
-                setSelectedEvent(null)
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Add event
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              setAddDate(new Date())
+              setShowAddForm(true)
+              setSelectedEvent(null)
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Add event
+          </Button>
         </div>
 
-        <div className={`clinic-calendar px-2 pb-3 pt-1 ${isPreview ? 'clinic-calendar--preview' : ''}`}>
+        <div className="clinic-calendar px-2 pb-3 pt-1">
           <FullCalendar
             plugins={plugins}
-            initialView="twoWeek"
-            initialDate={isPreview ? previewRange.start : undefined}
-            validRange={isPreview ? { start: previewRange.start, end: previewRange.end } : undefined}
-            views={{
-              twoWeek: {
-                type: 'dayGrid',
-                duration: { weeks: 2 },
-                buttonText: '2 weeks',
-              },
+            initialView="dayGridMonth"
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: '',
             }}
-            headerToolbar={
-              isPreview
-                ? false
-                : {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'twoWeek,dayGridMonth',
-                  }
-            }
-            height={isPreview ? 280 : 'auto'}
+            height="auto"
             fixedWeekCount={false}
-            dayMaxEvents={isPreview ? 2 : 4}
+            dayMaxEvents={3}
+            moreLinkClick="popover"
             events={events}
             datesSet={handleDatesSet}
-            dateClick={isPreview ? undefined : handleDateClick}
+            dateClick={handleDateClick}
             eventClick={handleEventClick}
-            nowIndicator={!isPreview}
+            nowIndicator
             eventDisplay="block"
             selectable={false}
             editable={false}
@@ -203,7 +158,7 @@ export function ClinicCalendar({
         </div>
       </div>
 
-      {!isPreview && showAddForm && (
+      {showAddForm && (
         <AddCalendarEventForm
           defaultDate={addDate}
           onCreated={handleCreated}
@@ -235,20 +190,13 @@ export function ClinicCalendar({
               Close
             </Button>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedEvent.patient_id && (
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/dashboard/patients/${selectedEvent.patient_id}`}>
-                  Open patient chart
-                </Link>
-              </Button>
-            )}
-            {isPreview && (
-              <Button asChild variant="outline" size="sm">
-                <Link href="/dashboard/calendar">Manage on calendar</Link>
-              </Button>
-            )}
-          </div>
+          {selectedEvent.patient_id && (
+            <Button asChild variant="outline" size="sm" className="mt-3">
+              <Link href={`/dashboard/patients/${selectedEvent.patient_id}`}>
+                Open patient chart
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </div>
