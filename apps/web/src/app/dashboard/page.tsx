@@ -120,13 +120,17 @@ export default async function DashboardPage() {
   if (staff.role === 'lab_tech') redirect('/dashboard/lab')
   if (staff.role === 'dispenser') redirect('/dashboard/pharmacy')
 
+  const now = new Date()
+  const daysBack = now.getDay()
+  const daysForward = 13 - now.getDay()
+
   const [queue, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
     await Promise.all([
       getQueueData(staff.clinic_id),
       getReviewCount(staff.clinic_id),
       getVisitsToday(staff.clinic_id),
       getShowPhysicalQueue(staff.clinic_id),
-      loadClinicAppointments(staff.clinic_id, { daysBack: 0, daysForward: 14 }),
+      loadClinicAppointments(staff.clinic_id, { daysBack, daysForward }),
       getOutOfStock(staff.clinic_id),
       getRounds(staff.clinic_id),
     ])

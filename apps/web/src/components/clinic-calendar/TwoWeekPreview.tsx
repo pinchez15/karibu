@@ -16,12 +16,20 @@ function timeLabel(ts: string): string {
   return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
+function startOfWeekSunday(d: Date): Date {
+  const copy = new Date(d)
+  copy.setHours(0, 0, 0, 0)
+  copy.setDate(copy.getDate() - copy.getDay())
+  return copy
+}
+
 export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointment[] }) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const weekStart = startOfWeekSunday(today)
   const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(today)
+    const d = new Date(weekStart)
     d.setDate(d.getDate() + i)
     return d
   })
@@ -52,6 +60,17 @@ export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointme
         </Link>
       </div>
 
+      <div className="grid grid-cols-7 border-b border-line-soft bg-secondary/30">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label) => (
+          <div
+            key={label}
+            className="border-r border-line-soft px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0"
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+
       <div className="grid grid-cols-7 divide-x divide-line-soft">
         {days.map((d) => {
           const events = (byDay.get(dayKey(d)) ?? []).sort((a, b) =>
@@ -61,16 +80,18 @@ export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointme
           return (
             <div
               key={dayKey(d)}
-              className={`min-h-[5.5rem] border-b border-line-soft p-2 ${isToday ? 'bg-cobalt-soft/25' : 'bg-card'}`}
+              className="min-h-[5.5rem] border-b border-line-soft bg-card p-2"
             >
               <div className="mb-1.5 flex items-baseline justify-between gap-1">
-                <span
-                  className={`text-[11px] font-semibold ${isToday ? 'text-cobalt' : 'text-muted-foreground'}`}
-                >
+                <span className="text-[11px] font-semibold text-muted-foreground">
                   {d.toLocaleDateString('en-GB', { weekday: 'short' })}
                 </span>
                 <span
-                  className={`text-[11px] font-semibold tabular-nums ${isToday ? 'text-cobalt' : 'text-body'}`}
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
+                    isToday
+                      ? 'border-2 border-red text-red'
+                      : 'text-body'
+                  }`}
                 >
                   {d.getDate()}
                 </span>

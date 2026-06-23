@@ -5,9 +5,9 @@ import dynamic from 'next/dynamic'
 import type { EventClickArg, DatesSetArg, PluginDef } from '@fullcalendar/core'
 import type { DateClickArg } from '@fullcalendar/interaction'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { listAppointmentsInRange } from '@/app/dashboard/calendar/actions'
+import { listAppointmentsInRange, deleteClinicEvent } from '@/app/dashboard/calendar/actions'
 import {
   CLINIC_EVENT_META,
   type ClinicAppointment,
@@ -29,10 +29,11 @@ export function ClinicCalendar({
   const [appointments, setAppointments] = useState(initialAppointments)
   const [dayGridPlugin, setDayGridPlugin] = useState<PluginDef | null>(null)
   const [interactionPlugin, setInteractionPlugin] = useState<PluginDef | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null)
   const [addDate, setAddDate] = useState<Date | undefined>()
   const [selectedEvent, setSelectedEvent] = useState<ClinicAppointment | null>(null)
   const [, startRefresh] = useTransition()
+  const [, startDelete] = useTransition()
   const rangeRef = useRef<{ from: string; to: string } | null>(null)
 
   useEffect(() => {
@@ -42,7 +43,12 @@ export function ClinicCalendar({
 
   const events = useMemo(() => appointments.map(toFullCalendarEvent), [appointments])
 
-  const refreshRange = useCallback((from: Date, to: Date) => {
+  const refreshRange = useCallback((from?: Date, to?: Date) => {
+    if (!from || !to) {
+      if (!rangeRef.current) return
+      from = new Date(rangeRef.current.from)
+      to = new Date(rangeRef.current.to)
+    }
     const fromIso = from.toISOString()
     const toIso = to.toISOString()
     rangeRef.current = { from: fromIso, to: toIso }
@@ -61,7 +67,7 @@ export function ClinicCalendar({
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
     setAddDate(arg.date)
-    setShowAddForm(true)
+    setFormMode('add')
     setSelectedEvent(null)
   }, [])
 
@@ -69,16 +75,15 @@ export function ClinicCalendar({
     (arg: EventClickArg) => {
       const match = appointments.find((a) => a.id === arg.event.id)
       setSelectedEvent(match ?? null)
-      setShowAddForm(false)
+      setFormMode(null)
     },
     [appointments],
   )
 
-  const handleCreated = useCallback(() => {
-    setShowAddForm(false)
-    if (rangeRef.current) {
-      refreshRange(new Date(rangeRef.current.from), new Date(rangeRef.current.to))
-    }
+  const handleSaved = useCallback(() => {
+    setFormMode(null)
+    setSelectedEvent(null)
+    refreshRange()
   }, [refreshRange])
 
   const plugins = useMemo(() => {
@@ -110,7 +115,7 @@ export function ClinicCalendar({
             className="gap-1.5"
             onClick={() => {
               setAddDate(new Date())
-              setShowAddForm(true)
+              setFormMode('add')
               setSelectedEvent(null)
             }}
           >
@@ -158,15 +163,24 @@ export function ClinicCalendar({
         </div>
       </div>
 
-      {showAddForm && (
+      {formMode === 'add' && (
         <AddCalendarEventForm
           defaultDate={addDate}
-          onCreated={handleCreated}
-          onCancel={() => setShowAddForm(false)}
+          onSaved={handleSaved}
+          onCancel={() => setFormMode(null)}
         />
       )}
 
-      {selectedEvent && !showAddForm && (
+      {formMode === 'edit' && selectedEvent && (
+        <AddCalendarEventForm
+          event={selectedEvent}
+          onSaved={handleSaved}
+          onDeleted={handleSaved}
+          onCancel={() => setFormMode(null)}
+        />
+      )}
+
+      {selectedEvent && formMode !== 'edit' && (
         <div className="rounded-xl border border-border bg-card p-4 text-sm">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -190,13 +204,50 @@ export function ClinicCalendar({
               Close
             </Button>
           </div>
-          {selectedEvent.patient_id && (
-            <Button asChild variant="outline" size="sm" className="mt-3">
-              <Link href={`/dashboard/patients/${selectedEvent.patient_id}`}>
-                Open patient chart
-              </Link>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setFormMode('edit')}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
             </Button>
-          )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    'Remove this event from the calendar? This cannot be undone.',
+                  )
+                ) {
+                  return
+                }
+                startDelete(async () => {
+                  const result = await deleteClinicEvent(selectedEvent.id)
+                  if (result.success) {
+                    setSelectedEvent(null)
+                    refreshRange()
+                  }
+                })
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </Button>
+            {selectedEvent.patient_id && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dashboard/patients/${selectedEvent.patient_id}`}>
+                  Open patient chart
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

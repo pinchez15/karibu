@@ -4,23 +4,48 @@ import { useEffect, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClinicEvent } from '@/app/dashboard/calendar/actions'
+import {
+  createClinicEvent,
+  deleteClinicEvent,
+  updateClinicEvent,
+} from '@/app/dashboard/calendar/actions'
 import { searchPatients } from '@/app/dashboard/actions'
-import { CLINIC_EVENT_META, EVENT_TITLE_PRESETS, type ClinicEventType } from '@/lib/calendar-events'
+import {
+  CLINIC_EVENT_META,
+  EVENT_TITLE_PRESETS,
+  type ClinicAppointment,
+  type ClinicEventType,
+} from '@/lib/calendar-events'
 import type { Patient } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 
 const EVENT_TYPES = Object.keys(CLINIC_EVENT_META) as ClinicEventType[]
 
+function localDateInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function localTimeInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function AddCalendarEventForm({
   defaultDate,
-  onCreated,
+  event,
+  onSaved,
+  onDeleted,
   onCancel,
 }: {
   defaultDate?: Date
-  onCreated: () => void
+  /** When set, form edits an existing calendar event. */
+  event?: ClinicAppointment
+  onSaved: () => void
+  onDeleted?: () => void
   onCancel: () => void
 }) {
+  const isEdit = Boolean(event)
   const [eventType, setEventType] = useState<ClinicEventType>('drive')
   const [title, setTitle] = useState('')
   const [reason, setReason] = useState('')
@@ -32,11 +57,29 @@ export function AddCalendarEventForm({
   const [patientLabel, setPatientLabel] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
+  const [deleting, startDelete] = useTransition()
 
   useEffect(() => {
+    if (event) {
+      const scheduled = new Date(event.scheduled_at)
+      setEventType(event.event_type)
+      setTitle(event.title ?? '')
+      setReason(event.reason ?? '')
+      setDate(localDateInputValue(scheduled))
+      setTime(localTimeInputValue(scheduled))
+      setPatientId(event.patient_id)
+      setPatientLabel(event.patient_name)
+      return
+    }
     const d = defaultDate ?? new Date()
-    setDate(d.toISOString().slice(0, 10))
-  }, [defaultDate])
+    setEventType('drive')
+    setTitle('')
+    setReason('')
+    setDate(localDateInputValue(d))
+    setTime('09:00')
+    setPatientId(null)
+    setPatientLabel(null)
+  }, [defaultDate, event])
 
   useEffect(() => {
     if (patientQuery.trim().length < 2) {
@@ -68,23 +111,28 @@ export function AddCalendarEventForm({
           return
         }
         start(async () => {
-          const result = await createClinicEvent({
+          const body = {
             event_type: eventType,
             scheduled_at: scheduledAt.toISOString(),
             title: needsTitle ? title : undefined,
             reason: reason || undefined,
             patient_id: patientId ?? undefined,
-          })
+          }
+          const result = isEdit
+            ? await updateClinicEvent(event!.id, body)
+            : await createClinicEvent(body)
           if (!result.success) {
             setError(result.error)
             return
           }
-          onCreated()
+          onSaved()
         })
       }}
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Add calendar event</h3>
+        <h3 className="text-sm font-semibold">
+          {isEdit ? 'Edit calendar event' : 'Add calendar event'}
+        </h3>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           Cancel
         </Button>
@@ -222,9 +270,39 @@ export function AddCalendarEventForm({
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-        {pending ? 'Saving…' : 'Add to calendar'}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={pending || deleting} className="w-full sm:w-auto">
+          {pending ? 'Saving…' : isEdit ? 'Save changes' : 'Add to calendar'}
+        </Button>
+        {isEdit && onDeleted && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending || deleting}
+            className="border-destructive text-destructive hover:bg-destructive/10"
+            onClick={() => {
+              if (
+                !window.confirm(
+                  'Remove this event from the calendar? This cannot be undone.',
+                )
+              ) {
+                return
+              }
+              setError(null)
+              startDelete(async () => {
+                const result = await deleteClinicEvent(event!.id)
+                if (!result.success) {
+                  setError(result.error)
+                  return
+                }
+                onDeleted()
+              })
+            }}
+          >
+            {deleting ? 'Removing…' : 'Delete event'}
+          </Button>
+        )}
+      </div>
     </form>
   )
 }
