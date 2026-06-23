@@ -11,7 +11,6 @@ export default async function BillingReceiptPage({
   const { patientId } = await params
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (staff.role !== 'admin') redirect('/dashboard')
 
   const supabase = createServiceClient()
 

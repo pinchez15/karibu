@@ -95,6 +95,7 @@ private fun ChargeDto.toDomain() = ChargeItem(
     source = source ?: "manual",
     createdAt = createdAt.orEmpty(),
     voided = voided ?: false,
+    createdByName = creator?.toDisplayName(),
 )
 
 private fun BillingPaymentDto.toDomain() = BillingPaymentItem(
@@ -105,4 +106,10 @@ private fun BillingPaymentDto.toDomain() = BillingPaymentItem(
     paymentMethod = paymentMethod,
     receiptNumber = receiptNumber,
     createdAt = createdAt.orEmpty(),
+    collectedByName = collector?.toDisplayName(),
 )
+
+private fun StaffNameDto.toDisplayName(): String? {
+    val composed = listOfNotNull(firstName, lastName).joinToString(" ").trim()
+    return displayName?.takeIf { it.isNotBlank() } ?: composed.takeIf { it.isNotBlank() }
+}

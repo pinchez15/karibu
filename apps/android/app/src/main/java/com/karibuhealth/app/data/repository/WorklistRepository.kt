@@ -140,7 +140,7 @@ class WorklistRepository @Inject constructor(
                                 visit.dispensingStatus in TERMINAL_DISPENSING &&
                                 !visit.dispensedAt.isNullOrBlank()
                         }
-                        .map { it.toPharmacyItem(patientDao) }
+                        .mapNotNull { it.toPharmacyItem(patientDao) }
                 }.getOrElse {
                     visitDao.mapLocalPharmacyDoneToday(clinicId, patientDao, prescriptionOrderRepository)
                 }

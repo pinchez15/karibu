@@ -76,6 +76,21 @@ fun PatientBillScreen(
                         CircularProgressIndicator()
                     }
                 } else {
+                    val activeCharges = uiState.charges.filter { !it.voided }
+                    val totalBill = activeCharges.sumOf { it.amountUgx.toLong() }
+                    val totalPaid = uiState.payments.sumOf {
+                        (it.amountUgx + it.amountBarterUgx).toLong()
+                    }
+                    val remaining = (totalBill - totalPaid).coerceAtLeast(0)
+                    val payCashNum = if (uiState.payMethod == "barter") 0
+                        else uiState.payCash.toIntOrNull() ?: 0
+                    val payBarterNum = when (uiState.payMethod) {
+                        "cash", "mtn_momo", "airtel_money" -> 0
+                        else -> uiState.payBarter.toIntOrNull() ?: 0
+                    }
+                    val paymentBeingRecorded = payCashNum + payBarterNum
+                    val remainingAfterPayment = (remaining - paymentBeingRecorded).coerceAtLeast(0)
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = KaribuLayout.contentPadding(),
@@ -83,9 +98,9 @@ fun PatientBillScreen(
                     ) {
                         item {
                             BalanceSummary(
-                                charged = uiState.balance.charged,
-                                paid = uiState.balance.paid,
-                                balance = uiState.balance.balance,
+                                totalBill = totalBill,
+                                totalPaid = totalPaid,
+                                remaining = remaining,
                             )
                         }
 
@@ -106,45 +121,65 @@ fun PatientBillScreen(
                             items(activeCharges, key = { it.id }) { charge ->
                                 ChargeRow(
                                     charge = charge,
-                                    canVoid = uiState.isAdmin,
                                     isSaving = uiState.isSaving,
                                     onVoid = { viewModel.voidCharge(charge.id) },
                                 )
                             }
+                            item {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text("Bill total", fontWeight = FontWeight.SemiBold)
+                                    Text(formatUgx(totalBill.toInt()), fontWeight = FontWeight.SemiBold)
+                                }
+                            }
                         }
 
-                        if (uiState.isAdmin) {
-                            item {
-                                Text(
-                                    "Record payment",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                KhMetaText(text = "Partial payments and cash + barter supported.")
-                            }
-                            item {
-                                PaymentForm(
-                                    payMethod = uiState.payMethod,
-                                    payCash = uiState.payCash,
-                                    payBarter = uiState.payBarter,
-                                    payBarterDesc = uiState.payBarterDesc,
-                                    isSaving = uiState.isSaving,
-                                    onMethodChange = viewModel::updatePayMethod,
-                                    onCashChange = viewModel::updatePayCash,
-                                    onBarterChange = viewModel::updatePayBarter,
-                                    onBarterDescChange = viewModel::updatePayBarterDesc,
-                                    onSubmit = viewModel::recordPayment,
-                                )
-                            }
+                        item {
+                            Text(
+                                "Record payment",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            KhMetaText(text = "Partial payments and cash + barter supported.")
+                        }
+                        item {
+                            PaymentForm(
+                                payMethod = uiState.payMethod,
+                                payCash = uiState.payCash,
+                                payBarter = uiState.payBarter,
+                                payBarterDesc = uiState.payBarterDesc,
+                                isSaving = uiState.isSaving,
+                                remaining = remaining,
+                                remainingAfterPayment = remainingAfterPayment,
+                                paymentBeingRecorded = paymentBeingRecorded,
+                                onMethodChange = viewModel::updatePayMethod,
+                                onCashChange = viewModel::updatePayCash,
+                                onBarterChange = viewModel::updatePayBarter,
+                                onBarterDescChange = viewModel::updatePayBarterDesc,
+                                onSubmit = viewModel::recordPayment,
+                            )
                         }
 
                         if (uiState.payments.isNotEmpty()) {
                             item {
-                                Text(
-                                    "Payments",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        "Payments",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        "Total paid: ${formatUgx(totalPaid.toInt())}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                             items(uiState.payments, key = { it.id }) { payment ->
                                 PaymentHistoryRow(payment)
@@ -169,22 +204,35 @@ fun PatientBillScreen(
 }
 
 @Composable
-private fun BalanceSummary(charged: Long, paid: Long, balance: Long) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun BalanceSummary(totalBill: Long, totalPaid: Long, remaining: Long) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Bill summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            KhMetaText(text = "CHARGED")
-            Text(formatUgx(charged), fontWeight = FontWeight.SemiBold)
+            KhMetaText(text = "TOTAL BILL")
+            Text(formatUgx(totalBill.toInt()), fontWeight = FontWeight.SemiBold)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             KhMetaText(text = "PAID")
-            Text(formatUgx(paid), fontWeight = FontWeight.SemiBold)
+            Text(formatUgx(totalPaid.toInt()), fontWeight = FontWeight.SemiBold)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            KhMetaText(text = "BALANCE")
+            KhMetaText(text = "REMAINING")
             Text(
-                formatUgx(balance),
+                formatUgx(remaining.toInt()),
                 fontWeight = FontWeight.Bold,
-                color = if (balance > 0) AmberInk else MaterialTheme.colorScheme.onSurface,
+                color = if (remaining > 0) AmberInk else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        if (remaining > 0) {
+            Text(
+                "${formatUgx(totalPaid.toInt())} received of ${formatUgx(totalBill.toInt())} billed",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -193,7 +241,6 @@ private fun BalanceSummary(charged: Long, paid: Long, balance: Long) {
 @Composable
 private fun ChargeRow(
     charge: ChargeItem,
-    canVoid: Boolean,
     isSaving: Boolean,
     onVoid: () -> Unit,
 ) {
@@ -210,12 +257,17 @@ private fun ChargeRow(
                     charge.unitPriceUgx?.let { append(" · ${formatUgx(it)}/unit") }
                 },
             )
+            charge.createdByName?.let {
+                Text(
+                    "Added by $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Text(formatUgx(charge.amountUgx), fontWeight = FontWeight.SemiBold)
-        if (canVoid) {
-            IconButton(onClick = onVoid, enabled = !isSaving) {
-                Icon(Icons.Default.Delete, contentDescription = "Remove charge")
-            }
+        IconButton(onClick = onVoid, enabled = !isSaving) {
+            Icon(Icons.Default.Delete, contentDescription = "Remove charge")
         }
     }
 }
@@ -223,7 +275,16 @@ private fun ChargeRow(
 @Composable
 private fun PaymentHistoryRow(payment: BillingPaymentItem) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        KhMetaText(text = payment.receiptNumber?.let { "#$it" } ?: payment.paymentMethod)
+        Column {
+            KhMetaText(text = payment.receiptNumber?.let { "#$it" } ?: payment.paymentMethod)
+            payment.collectedByName?.let {
+                Text(
+                    "Received by $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Column(horizontalAlignment = Alignment.End) {
             if (payment.amountUgx > 0) Text(formatUgx(payment.amountUgx))
             if (payment.amountBarterUgx > 0) {
@@ -244,6 +305,9 @@ private fun PaymentForm(
     payBarter: String,
     payBarterDesc: String,
     isSaving: Boolean,
+    remaining: Long,
+    remainingAfterPayment: Long,
+    paymentBeingRecorded: Int,
     onMethodChange: (String) -> Unit,
     onCashChange: (String) -> Unit,
     onBarterChange: (String) -> Unit,
@@ -295,6 +359,19 @@ private fun PaymentForm(
                 singleLine = true,
             )
         }
+        Text(
+            text = if (paymentBeingRecorded > 0) {
+                "Remaining after this payment: ${formatUgx(remainingAfterPayment.toInt())}"
+            } else {
+                "Amount still owed: ${formatUgx(remaining.toInt())}"
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = if (remainingAfterPayment > 0 || paymentBeingRecorded == 0) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
+        )
         Button(onClick = onSubmit, enabled = !isSaving, modifier = Modifier.fillMaxWidth()) {
             if (isSaving) {
                 CircularProgressIndicator(modifier = Modifier.padding(4.dp))

@@ -96,8 +96,8 @@ object InpatientDoseSchedule {
     }
 
     data class ScheduleResult(
-        val dueNow: List<DoseSlot>,
-        val prnOrders: List<MedicationOrderEntity>,
+        val dueNow: List<DoseSlot> = emptyList(),
+        val prnOrders: List<MedicationOrderEntity> = emptyList(),
     )
 
     private fun normalizeFreq(freq: String?): String {

@@ -44,7 +44,6 @@ function categoryLabel(c: string | null): string {
 type Props = {
   patientId: string
   patientName: string
-  balance: { charged: number; paid: number; balance: number }
   charges: PatientChargeRow[]
   payments: PatientPaymentRow[]
   visits: PatientVisitOption[]
@@ -53,7 +52,6 @@ type Props = {
 export function PatientBillClient({
   patientId,
   patientName,
-  balance,
   charges,
   payments,
   visits,
@@ -71,6 +69,17 @@ export function PatientBillClient({
   const [payBarterDesc, setPayBarterDesc] = useState('')
 
   const activeCharges = charges.filter((c) => !c.voided)
+  const totalBill = activeCharges.reduce((sum, c) => sum + c.amount_ugx, 0)
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount_ugx + p.amount_barter_ugx, 0)
+  const remaining = Math.max(0, totalBill - totalPaid)
+
+  const payCashNum = payMethod === 'barter' ? 0 : Number(payCash || 0)
+  const payBarterNum =
+    payMethod === 'cash' || payMethod === 'mtn_momo' || payMethod === 'airtel_money'
+      ? 0
+      : Number(payBarter || 0)
+  const paymentBeingRecorded = payCashNum + payBarterNum
+  const remainingAfterPayment = Math.max(0, remaining - paymentBeingRecorded)
 
   function run(fn: () => Promise<{ success: false; error: string } | { success: true }>) {
     setError(null)
@@ -103,14 +112,29 @@ export function PatientBillClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <BalanceCard label="Charged" value={ugx(balance.charged)} />
-        <BalanceCard label="Paid" value={ugx(balance.paid)} hint="Cash + barter credit" />
-        <BalanceCard
-          label="Balance"
-          value={ugx(balance.balance)}
-          warn={balance.balance > 0}
-        />
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold">Bill summary</h3>
+        <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 text-[13px]">
+          <div className="flex justify-between gap-3 sm:block">
+            <dt className="text-muted-foreground">Total bill</dt>
+            <dd className="text-lg font-semibold sm:mt-1">{ugx(totalBill)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 sm:block">
+            <dt className="text-muted-foreground">Paid</dt>
+            <dd className="text-lg font-semibold sm:mt-1">{ugx(totalPaid)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 sm:block">
+            <dt className="text-muted-foreground">Remaining</dt>
+            <dd className={`text-lg font-bold sm:mt-1 ${remaining > 0 ? 'text-amber-ink' : ''}`}>
+              {ugx(remaining)}
+            </dd>
+          </div>
+        </dl>
+        {remaining > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {ugx(totalPaid)} received of {ugx(totalBill)} billed.
+          </p>
+        )}
       </div>
 
       {/* Build from visit */}
@@ -171,7 +195,12 @@ export function PatientBillClient({
               <tbody className="divide-y divide-line-soft">
                 {activeCharges.map((c) => (
                   <tr key={c.id}>
-                    <td className="px-4 py-2">{c.description}</td>
+                    <td className="px-4 py-2">
+                      <div>{c.description}</div>
+                      {c.created_by_name && (
+                        <div className="text-xs text-muted-foreground">Added by {c.created_by_name}</div>
+                      )}
+                    </td>
                     <td className="px-2 py-2 text-muted-foreground">{categoryLabel(c.category)}</td>
                     <td className="px-2 py-2 text-right">{c.quantity}</td>
                     <td className="px-2 py-2 text-right">
@@ -195,6 +224,15 @@ export function PatientBillClient({
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="border-t border-line-soft bg-background/50 font-semibold">
+                  <td className="px-4 py-2.5" colSpan={4}>
+                    Bill total
+                  </td>
+                  <td className="px-2 py-2.5 text-right">{ugx(totalBill)}</td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
@@ -298,17 +336,31 @@ export function PatientBillClient({
             />
           </div>
         </div>
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            {paymentBeingRecorded > 0 ? (
+              <>
+                Remaining after this payment:{' '}
+                <span
+                  className={
+                    remainingAfterPayment > 0 ? 'font-semibold text-amber-ink' : 'font-semibold text-green'
+                  }
+                >
+                  {ugx(remainingAfterPayment)}
+                </span>
+              </>
+            ) : (
+              <>
+                Amount still owed: <span className="font-semibold text-amber-ink">{ugx(remaining)}</span>
+              </>
+            )}
+          </div>
           <Button
             disabled={pending}
             onClick={() =>
               run(async () => {
-                const cash =
-                  payMethod === 'barter' ? 0 : Number(payCash || 0)
-                const barter =
-                  payMethod === 'cash' || payMethod === 'mtn_momo' || payMethod === 'airtel_money'
-                    ? 0
-                    : Number(payBarter || 0)
+                const cash = payCashNum
+                const barter = payBarterNum
                 const r = await recordBillingPayment({
                   patientId,
                   amountCashUgx: cash,
@@ -332,13 +384,21 @@ export function PatientBillClient({
       {/* Payment history */}
       {payments.length > 0 && (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-line-soft text-sm font-semibold">Payments</div>
+          <div className="px-4 py-3 border-b border-line-soft flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold">Payments</div>
+            <div className="text-sm text-muted-foreground">
+              Total paid: <span className="font-semibold text-ink">{ugx(totalPaid)}</span>
+            </div>
+          </div>
           <ul className="divide-y divide-line-soft">
             {payments.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground min-w-0">
                   {new Date(p.created_at).toLocaleDateString('en-GB')}
                   {p.receipt_number && ` · #${p.receipt_number}`}
+                  {p.collected_by_name && (
+                    <span className="block text-xs">Received by {p.collected_by_name}</span>
+                  )}
                 </span>
                 <span>
                   {p.amount_ugx > 0 && <span>{ugx(p.amount_ugx)} cash</span>}
@@ -357,26 +417,6 @@ export function PatientBillClient({
       )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  )
-}
-
-function BalanceCard({
-  label,
-  value,
-  hint,
-  warn,
-}: {
-  label: string
-  value: string
-  hint?: string
-  warn?: boolean
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="kh-meta">{label}</div>
-      <div className={`mt-1 text-xl font-semibold ${warn ? 'text-amber-ink' : ''}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </div>
   )
 }

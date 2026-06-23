@@ -459,7 +459,7 @@ interface SupabaseApi {
         @Query("clinic_id") clinicId: String,
         @Query("voided") voided: String = "eq.false",
         @Query("select") select: String =
-            "id,description,category,amount_ugx,quantity,unit_price_ugx,visit_id,source,created_at,voided",
+            "id,description,category,amount_ugx,quantity,unit_price_ugx,visit_id,source,created_at,voided,creator:staff!created_by(display_name,first_name,last_name)",
         @Query("order") order: String = "created_at.desc",
     ): List<ChargeDto>
 
@@ -469,7 +469,7 @@ interface SupabaseApi {
         @Query("clinic_id") clinicId: String,
         @Query("status") status: String = "eq.paid",
         @Query("select") select: String =
-            "id,amount_ugx,amount_barter_ugx,barter_description,payment_method,receipt_number,created_at",
+            "id,amount_ugx,amount_barter_ugx,barter_description,payment_method,receipt_number,created_at,collector:staff!collected_by(display_name,first_name,last_name)",
         @Query("order") order: String = "created_at.desc",
     ): List<BillingPaymentDto>
 

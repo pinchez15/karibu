@@ -13,7 +13,6 @@ function ugx(n: number): string {
 export default async function BillingPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (staff.role !== 'admin') redirect('/dashboard')
 
   const patients = await listPatientBalances()
   const withBalance = patients.filter((p) => p.balance > 0)
@@ -48,9 +47,9 @@ export default async function BillingPage() {
                   </Link>
                   <span className="flex shrink-0 items-center gap-4">
                     <span className="text-muted-foreground hidden sm:inline">
-                      {ugx(p.paid)} paid of {ugx(p.charged)}
+                      {ugx(p.paid)} paid · {ugx(p.charged)} total
                     </span>
-                    <span className="font-semibold text-amber-ink">{ugx(p.balance)}</span>
+                    <span className="font-semibold text-amber-ink">{ugx(p.balance)} owed</span>
                   </span>
                 </li>
               ))}

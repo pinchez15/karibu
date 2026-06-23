@@ -110,9 +110,9 @@ export function BillingReceipt({ data }: { data: BillingReceiptData }) {
 
       <div>{'\n' + HR_LIGHT}</div>
       <section>
-        <div>{row('Total charged:', `UGX ${ugx(charged)}`)}</div>
+        <div>{row('Total bill:', `UGX ${ugx(charged)}`)}</div>
         <div>{row('Total paid:', `UGX ${ugx(paid)}`)}</div>
-        <div className="bold">{row('Balance:', `UGX ${ugx(balance)}`)}</div>
+        <div className="bold">{row('Remaining:', `UGX ${ugx(balance)}`)}</div>
       </section>
 
       <div>{'\n' + HR_HEAVY}</div>

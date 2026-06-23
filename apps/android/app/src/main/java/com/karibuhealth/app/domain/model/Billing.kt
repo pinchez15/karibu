@@ -26,6 +26,7 @@ data class ChargeItem(
     val source: String,
     val createdAt: String,
     val voided: Boolean,
+    val createdByName: String? = null,
 )
 
 data class BillingPaymentItem(
@@ -36,4 +37,5 @@ data class BillingPaymentItem(
     val paymentMethod: String,
     val receiptNumber: String?,
     val createdAt: String,
+    val collectedByName: String? = null,
 )

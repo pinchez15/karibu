@@ -5,11 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.BillingRepository
-import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.domain.model.BillingPaymentItem
 import com.karibuhealth.app.domain.model.ChargeItem
 import com.karibuhealth.app.domain.model.PatientBillingBalance
-import com.karibuhealth.app.domain.model.StaffRole
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +22,6 @@ data class PatientBillUiState(
     val balance: PatientBillingBalance = PatientBillingBalance(0, 0, 0),
     val charges: List<ChargeItem> = emptyList(),
     val payments: List<BillingPaymentItem> = emptyList(),
-    val isAdmin: Boolean = false,
     val payMethod: String = "cash",
     val payCash: String = "",
     val payBarter: String = "",
@@ -38,7 +35,6 @@ data class PatientBillUiState(
 class PatientBillViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val billingRepository: BillingRepository,
-    private val staffRepository: StaffRepository,
     private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -48,11 +44,7 @@ class PatientBillViewModel @Inject constructor(
     val uiState: StateFlow<PatientBillUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            val staff = staffRepository.getCurrentStaff()
-            _uiState.update { it.copy(isAdmin = staff?.role == StaffRole.admin) }
-            load()
-        }
+        load()
     }
 
     fun load() {
@@ -104,7 +96,6 @@ class PatientBillViewModel @Inject constructor(
     }
 
     fun voidCharge(chargeId: String) {
-        if (!_uiState.value.isAdmin) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, error = null) }
             runCatching { billingRepository.voidCharge(chargeId) }
@@ -117,7 +108,6 @@ class PatientBillViewModel @Inject constructor(
     }
 
     fun recordPayment() {
-        if (!_uiState.value.isAdmin) return
         val state = _uiState.value
         val cash = when (state.payMethod) {
             "barter" -> 0

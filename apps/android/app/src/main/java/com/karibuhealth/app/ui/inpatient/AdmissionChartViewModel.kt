@@ -12,6 +12,7 @@ import com.karibuhealth.app.data.local.db.entity.IvInfusionEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity
+import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.repository.InpatientRepository
 import com.karibuhealth.app.data.repository.ReferralRepository
 import com.karibuhealth.app.data.repository.VisitRepository

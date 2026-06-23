@@ -26,6 +26,7 @@ export type PatientChargeRow = {
   source: string
   created_at: string
   voided: boolean
+  created_by_name: string | null
 }
 
 export type PatientPaymentRow = {
@@ -36,12 +37,21 @@ export type PatientPaymentRow = {
   payment_method: string
   receipt_number: string | null
   created_at: string
+  collected_by_name: string | null
 }
 
 export type PatientVisitOption = {
   id: string
   label: string
   started_at: string | null
+}
+
+function staffDisplayName(
+  row: { display_name?: string | null; first_name?: string | null; last_name?: string | null } | null,
+): string | null {
+  if (!row) return null
+  const composed = [row.first_name, row.last_name].filter(Boolean).join(' ')
+  return (row.display_name?.trim() || composed || null) as string | null
 }
 
 function billingPaths(patientId?: string) {
@@ -91,7 +101,6 @@ export async function listPatientBalances(): Promise<PatientBalanceRow[]> {
   } catch {
     return []
   }
-  if (staff.role !== 'admin') return []
   const supabase = createServiceClient()
   const { data, error } = await supabase.rpc('rpc_billing_patient_balances', {
     p_clinic_id: staff.clinic_id,
@@ -122,7 +131,6 @@ export async function getPatientBillingDetail(patientId: string): Promise<{
   } catch {
     return null
   }
-  if (staff.role !== 'admin') return null
 
   const supabase = createServiceClient()
   const { data: patient } = await supabase
@@ -138,14 +146,16 @@ export async function getPatientBillingDetail(patientId: string): Promise<{
     supabase
       .from('charges')
       .select(
-        'id, description, category, amount_ugx, quantity, unit_price_ugx, visit_id, source, created_at, voided',
+        'id, description, category, amount_ugx, quantity, unit_price_ugx, visit_id, source, created_at, voided, creator:staff!created_by(display_name, first_name, last_name)',
       )
       .eq('clinic_id', staff.clinic_id)
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false }),
     supabase
       .from('payments')
-      .select('id, amount_ugx, amount_barter_ugx, barter_description, payment_method, receipt_number, created_at')
+      .select(
+        'id, amount_ugx, amount_barter_ugx, barter_description, payment_method, receipt_number, created_at, collector:staff!collected_by(display_name, first_name, last_name)',
+      )
       .eq('clinic_id', staff.clinic_id)
       .eq('patient_id', patientId)
       .eq('status', 'paid')
@@ -180,6 +190,9 @@ export async function getPatientBillingDetail(patientId: string): Promise<{
       source: c.source as string,
       created_at: c.created_at as string,
       voided: Boolean(c.voided),
+      created_by_name: staffDisplayName(
+        c.creator as { display_name?: string | null; first_name?: string | null; last_name?: string | null } | null,
+      ),
     })),
     payments: (payments ?? []).map((p) => ({
       id: p.id as string,
@@ -189,6 +202,9 @@ export async function getPatientBillingDetail(patientId: string): Promise<{
       payment_method: p.payment_method as string,
       receipt_number: p.receipt_number as string | null,
       created_at: p.created_at as string,
+      collected_by_name: staffDisplayName(
+        p.collector as { display_name?: string | null; first_name?: string | null; last_name?: string | null } | null,
+      ),
     })),
     visits: (visits ?? []).map((v) => {
       const date = v.visit_date
@@ -233,7 +249,6 @@ export async function addCharge(input: {
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
-  if (staff.role !== 'admin') return { success: false, error: 'Billing is admin-only' }
   if (!input.patientId) return { success: false, error: 'Pick a patient.' }
   if (!input.description.trim()) return { success: false, error: 'Description is required.' }
   if (!Number.isFinite(input.amountUgx) || input.amountUgx < 0) {
@@ -285,8 +300,6 @@ export async function generateChargesFromVisit(
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
-  if (staff.role !== 'admin') return { success: false, error: 'Billing is admin-only' }
-
   const supabase = createServiceClient()
   const { data: visit } = await supabase
     .from('visits')
@@ -316,8 +329,6 @@ export async function voidCharge(
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
-  if (staff.role !== 'admin') return { success: false, error: 'Billing is admin-only' }
-
   const supabase = createServiceClient()
   const { data: charge } = await supabase
     .from('charges')
@@ -350,8 +361,6 @@ export async function recordBillingPayment(input: {
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
-  if (staff.role !== 'admin') return { success: false, error: 'Billing is admin-only' }
-
   const cash = Math.round(input.amountCashUgx)
   const barter = Math.round(input.amountBarterUgx)
   if (cash < 0 || barter < 0) return { success: false, error: 'Amounts must be non-negative' }

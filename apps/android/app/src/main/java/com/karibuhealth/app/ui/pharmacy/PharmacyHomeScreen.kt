@@ -123,7 +123,9 @@ private fun PharmacyTabRow(
         PharmacyQueueTab.InProgress to "In progress",
         PharmacyQueueTab.DoneToday to "Done today",
     )
-    ScrollableTabRow(selected = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0)) {
+    ScrollableTabRow(
+        selectedTabIndex = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0),
+    ) {
         tabs.forEach { (tab, label) ->
             Tab(
                 selected = selected == tab,

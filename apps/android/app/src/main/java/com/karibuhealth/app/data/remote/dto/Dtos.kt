@@ -539,6 +539,13 @@ data class PatientBalanceRow(
 )
 
 @Serializable
+data class StaffNameDto(
+    @SerialName("display_name") val displayName: String? = null,
+    @SerialName("first_name") val firstName: String? = null,
+    @SerialName("last_name") val lastName: String? = null,
+)
+
+@Serializable
 data class ChargeDto(
     val id: String,
     val description: String,
@@ -550,6 +557,7 @@ data class ChargeDto(
     val source: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     val voided: Boolean? = null,
+    val creator: StaffNameDto? = null,
 )
 
 @Serializable
@@ -561,6 +569,7 @@ data class BillingPaymentDto(
     @SerialName("payment_method") val paymentMethod: String,
     @SerialName("receipt_number") val receiptNumber: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+    val collector: StaffNameDto? = null,
 )
 
 @Serializable

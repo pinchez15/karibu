@@ -48,6 +48,13 @@ const CLINICAL = [
   'records_officer',
 ]
 
+/** Every clinic staff role that can record patient payments at the front desk. */
+const BILLING_STAFF = [
+  ...CLINICAL,
+  'lab_tech',
+  'dispenser',
+]
+
 interface UnitDef {
   id: string
   label: string
@@ -115,7 +122,7 @@ const UNITS: UnitDef[] = [
     label: 'Billing',
     icon: CreditCard,
     basePaths: ['/dashboard/billing'],
-    roles: [],
+    roles: BILLING_STAFF,
     items: [
       { id: 'billing-payments', label: 'Payments', href: '/dashboard/billing', icon: Receipt },
       { id: 'billing-reports', label: 'Reports', href: '/dashboard/billing/reports', icon: BarChart3 },
@@ -176,9 +183,10 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
 
   const visibleUnits = UNITS.filter((u) => canSeeUnit(u, staffRole))
   const activeUnit = visibleUnits.find((u) => u.id === currentUnitId) ?? visibleUnits[0]
-  const items = activeUnit?.items ?? []
-
   const isAdmin = staffRole === 'admin'
+  const items = (activeUnit?.items ?? []).filter(
+    (item) => item.id !== 'billing-reports' || isAdmin,
+  )
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

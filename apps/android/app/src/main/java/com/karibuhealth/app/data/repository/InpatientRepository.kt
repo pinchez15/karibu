@@ -35,6 +35,7 @@ import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
 import com.karibuhealth.app.data.remote.dto.RecordDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.RecordMedicationAdminRequest
+import com.karibuhealth.app.data.remote.dto.RecordPostnatalObsRequest
 import com.karibuhealth.app.data.remote.dto.RecordIvInfusionCheckRequest
 import com.karibuhealth.app.data.remote.dto.StartIvInfusionRequest
 import com.karibuhealth.app.data.remote.dto.StopIvInfusionRequest

@@ -14,7 +14,6 @@ export default async function PatientBillPage({
   const { patientId } = await params
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (staff.role !== 'admin') redirect('/dashboard')
 
   const supabase = createServiceClient()
   const { data: patient } = await supabase
@@ -41,7 +40,6 @@ export default async function PatientBillPage({
         <PatientBillClient
           patientId={patientId}
           patientName={patientName}
-          balance={detail.balance}
           charges={detail.charges}
           payments={detail.payments}
           visits={detail.visits}
