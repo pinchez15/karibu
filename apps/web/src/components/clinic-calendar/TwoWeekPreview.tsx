@@ -7,6 +7,7 @@ import {
   type ClinicAppointment,
   appointmentTitle,
 } from '@/lib/calendar-events'
+import './clinic-calendar.css'
 
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -80,18 +81,18 @@ export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointme
           return (
             <div
               key={dayKey(d)}
-              className="min-h-[5.5rem] border-b border-line-soft bg-card p-2"
+              className={`min-h-[5.5rem] border-b border-line-soft p-2 ${isToday ? 'calendar-today-bg' : 'bg-card'}`}
             >
               <div className="mb-1.5 flex items-baseline justify-between gap-1">
                 <span className="text-[11px] font-semibold text-muted-foreground">
                   {d.toLocaleDateString('en-GB', { weekday: 'short' })}
                 </span>
                 <span
-                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
+                  className={
                     isToday
-                      ? 'border-2 border-red text-red'
-                      : 'text-body'
-                  }`}
+                      ? 'calendar-today-date text-[11px] tabular-nums'
+                      : 'text-[11px] font-semibold tabular-nums text-body'
+                  }
                 >
                   {d.getDate()}
                 </span>

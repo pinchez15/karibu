@@ -65,12 +65,25 @@
   min-height: 5.5rem;
 }
 
-.clinic-calendar .fc .fc-day-today .fc-daygrid-day-number {
+.clinic-calendar .fc .fc-day-today .fc-daygrid-day-number,
+.calendar-today-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
   background-color: rgb(var(--primary));
   color: #fff;
   border-radius: 9999px;
-  min-width: 1.5rem;
   text-align: center;
+}
+
+.calendar-today-bg,
+.clinic-calendar .fc .fc-day-today .fc-daygrid-day-frame {
+  background-color: rgb(var(--kh-cobalt-soft) / 0.45);
 }
 
 .clinic-calendar .fc .fc-toolbar-title {
