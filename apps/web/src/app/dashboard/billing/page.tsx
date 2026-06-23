@@ -5,9 +5,8 @@ import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { NewChargeForm } from './NewChargeForm'
+import { listPatientBalances } from './actions'
 
-// Billing unit. Charges (what's owed) + payments (what's paid) → balance.
-// Decoupled from clinical closure: recording a payment never gates documentation.
 function ugx(n: number): string {
   return `UGX ${Math.round(n).toLocaleString('en-US')}`
 }
@@ -32,35 +31,8 @@ async function getCashflow(clinicId: string) {
   return {
     revenue: Number(row?.revenue ?? 0),
     charged: Number(row?.charged ?? 0),
-    // "Owed" can't be negative — payments without recorded charges shouldn't
-    // show as negative outstanding. Surplus is a separate (credit) concept.
     outstanding: Math.max(0, Number(row?.outstanding ?? 0)),
   }
-}
-
-type ChargeRow = {
-  id: string
-  description: string
-  category: string | null
-  amount_ugx: number
-  created_at: string
-  patient: { id: string; display_name: string | null; first_name: string | null; last_name: string | null } | null
-}
-
-async function getRecentCharges(clinicId: string): Promise<ChargeRow[]> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('charges')
-    .select('id, description, category, amount_ugx, created_at, patient:patients(id, display_name, first_name, last_name)')
-    .eq('clinic_id', clinicId)
-    .eq('voided', false)
-    .order('created_at', { ascending: false })
-    .limit(25)
-  if (error) {
-    console.error('billing: charges', error)
-    return []
-  }
-  return (data ?? []) as unknown as ChargeRow[]
 }
 
 export default async function BillingPage() {
@@ -68,10 +40,13 @@ export default async function BillingPage() {
   if (!staff) redirect('/')
   if (staff.role !== 'admin') redirect('/dashboard')
 
-  const [cash, charges] = await Promise.all([
+  const [cash, patients] = await Promise.all([
     getCashflow(staff.clinic_id),
-    getRecentCharges(staff.clinic_id),
+    listPatientBalances(),
   ])
+
+  const withBalance = patients.filter((p) => p.balance > 0)
+  const paidUp = patients.filter((p) => p.balance <= 0)
 
   return (
     <>
@@ -83,60 +58,63 @@ export default async function BillingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <KpiCard label="Revenue (month)" value={ugx(cash.revenue)} hint="Payments received" />
+          <KpiCard label="Revenue (month)" value={ugx(cash.revenue)} hint="Cash & mobile received" />
           <KpiCard label="Charged (month)" value={ugx(cash.charged)} hint="Billable charges raised" />
           <KpiCard
             label="Outstanding"
             value={ugx(cash.outstanding)}
-            hint="Charged − paid"
+            hint="Charged − paid (incl. barter)"
             warn={cash.outstanding > 0}
           />
         </div>
 
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-line-soft text-sm font-semibold">Recent charges</div>
-          {charges.length === 0 ? (
+          <div className="px-4 py-3 border-b border-line-soft text-sm font-semibold">
+            Patients with balance
+          </div>
+          {withBalance.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              No charges yet. Charges raised during visits (consultation, lab, pharmacy) appear here.
+              No outstanding balances. Open a patient bill to build charges from their care.
             </div>
           ) : (
             <ul className="divide-y divide-line-soft">
-              {charges.map((c) => {
-                const name =
-                  c.patient?.display_name ||
-                  [c.patient?.first_name, c.patient?.last_name].filter(Boolean).join(' ') ||
-                  'Unknown patient'
-                return (
-                  <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
-                    <span className="min-w-0">
-                      {c.patient ? (
-                        <Link href={`/dashboard/patients/${c.patient.id}`} className="font-medium hover:underline">
-                          {name}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{name}</span>
-                      )}
-                      <span className="text-muted-foreground"> · {c.description}</span>
+              {withBalance.map((p) => (
+                <li key={p.patient_id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
+                  <Link
+                    href={`/dashboard/billing/${p.patient_id}`}
+                    className="min-w-0 font-medium hover:underline"
+                  >
+                    {p.patient_name}
+                  </Link>
+                  <span className="flex shrink-0 items-center gap-4">
+                    <span className="text-muted-foreground hidden sm:inline">
+                      {ugx(p.paid)} paid of {ugx(p.charged)}
                     </span>
-                    <span className="flex shrink-0 items-center gap-3">
-                      <span className="font-medium">{ugx(c.amount_ugx)}</span>
-                      {c.patient && (
-                        <a
-                          href={`/dashboard/billing/${c.patient.id}/receipt`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-cobalt hover:underline"
-                        >
-                          Receipt
-                        </a>
-                      )}
-                    </span>
-                  </li>
-                )
-              })}
+                    <span className="font-semibold text-amber-ink">{ugx(p.balance)}</span>
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
         </div>
+
+        {paidUp.length > 0 && (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-line-soft text-sm font-semibold text-muted-foreground">
+              Recently billed (paid up)
+            </div>
+            <ul className="divide-y divide-line-soft">
+              {paidUp.slice(0, 15).map((p) => (
+                <li key={p.patient_id} className="flex items-center justify-between gap-3 px-4 py-2 text-[13px]">
+                  <Link href={`/dashboard/billing/${p.patient_id}`} className="hover:underline">
+                    {p.patient_name}
+                  </Link>
+                  <span className="text-muted-foreground">{ugx(p.charged)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </>
   )

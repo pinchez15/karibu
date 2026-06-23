@@ -11,7 +11,13 @@ export type BillingReceiptData = {
   } | null
   clinic: { name: string; phone: string | null; umdpc_number: string | null } | null
   charges: { description: string; amount_ugx: number }[]
-  payments: { method: string; amount_ugx: number; receipt_number: string | null }[]
+  payments: {
+    method: string
+    amount_ugx: number
+    amount_barter_ugx?: number
+    barter_description?: string | null
+    receipt_number: string | null
+  }[]
 }
 
 function patientName(p: BillingReceiptData['patient']): string {
@@ -28,12 +34,17 @@ const METHOD_LABEL: Record<string, string> = {
   cash: 'Cash',
   mtn_momo: 'MTN MoMo',
   airtel_money: 'Airtel Money',
+  barter: 'Barter',
+  mixed: 'Mixed',
 }
 
 export function BillingReceipt({ data }: { data: BillingReceiptData }) {
   const clinicName = data.clinic?.name || 'KaribuEHR'
   const charged = data.charges.reduce((s, c) => s + c.amount_ugx, 0)
-  const paid = data.payments.reduce((s, p) => s + p.amount_ugx, 0)
+  const paid = data.payments.reduce(
+    (s, p) => s + p.amount_ugx + (p.amount_barter_ugx ?? 0),
+    0,
+  )
   const balance = charged - paid
 
   const printedAt = new Date().toLocaleString('en-GB', {
@@ -79,9 +90,20 @@ export function BillingReceipt({ data }: { data: BillingReceiptData }) {
         <>
           <div>{'\n' + sectionRule('PAID')}</div>
           <section>
-            {data.payments.map((p, i) => (
-              <div key={i}>{row(METHOD_LABEL[p.method] ?? p.method, ugx(p.amount_ugx))}</div>
-            ))}
+            {data.payments.map((p, i) => {
+              const barter = p.amount_barter_ugx ?? 0
+              const label =
+                barter > 0 && p.amount_ugx > 0
+                  ? `${METHOD_LABEL[p.method] ?? p.method}`
+                  : METHOD_LABEL[p.method] ?? p.method
+              const amt =
+                barter > 0
+                  ? p.amount_ugx > 0
+                    ? `${ugx(p.amount_ugx)} + ${ugx(barter)} barter`
+                    : `${ugx(barter)} barter`
+                  : ugx(p.amount_ugx)
+              return <div key={i}>{row(label.slice(0, 22), amt)}</div>
+            })}
           </section>
         </>
       )}

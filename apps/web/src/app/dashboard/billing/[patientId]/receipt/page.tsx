@@ -39,7 +39,7 @@ export default async function BillingReceiptPage({
       .order('created_at', { ascending: true }),
     supabase
       .from('payments')
-      .select('amount_ugx, payment_method, status, receipt_number, created_at')
+      .select('amount_ugx, amount_barter_ugx, barter_description, payment_method, status, receipt_number, created_at')
       .eq('clinic_id', staff.clinic_id)
       .eq('patient_id', patientId)
       .eq('status', 'paid')
@@ -56,6 +56,8 @@ export default async function BillingReceiptPage({
     payments: (payments ?? []).map((p) => ({
       method: p.payment_method as string,
       amount_ugx: Number(p.amount_ugx),
+      amount_barter_ugx: Number(p.amount_barter_ugx ?? 0),
+      barter_description: (p.barter_description as string | null) ?? null,
       receipt_number: (p.receipt_number as string | null) ?? null,
     })),
   }
