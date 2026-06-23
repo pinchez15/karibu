@@ -17,6 +17,7 @@ import {
   BedDouble,
   CreditCard,
   Database,
+  BarChart3,
   Receipt,
   type LucideIcon,
 } from 'lucide-react'
@@ -115,7 +116,10 @@ const UNITS: UnitDef[] = [
     icon: CreditCard,
     basePaths: ['/dashboard/billing'],
     roles: [],
-    items: [{ id: 'billing-payments', label: 'Payments', href: '/dashboard/billing', icon: Receipt }],
+    items: [
+      { id: 'billing-payments', label: 'Payments', href: '/dashboard/billing', icon: Receipt },
+      { id: 'billing-reports', label: 'Reports', href: '/dashboard/billing/reports', icon: BarChart3 },
+    ],
   },
   {
     id: 'data',
@@ -315,6 +319,8 @@ function isActive(pathname: string, href: string) {
   if (href === '/dashboard/admin' && pathname.startsWith('/dashboard/admin/reports')) return false
   // Pharmacy/lab "Today" roots shouldn't stay lit on their stock/history children.
   if ((href === '/dashboard/pharmacy' || href === '/dashboard/lab') && pathname !== href) return false
+  // Billing Payments only on the list root — not patient bills or reports.
+  if (href === '/dashboard/billing' && pathname.startsWith('/dashboard/billing/')) return false
   if (href === '/dashboard/admin/reports' && pathname.startsWith('/dashboard/admin/reports/')) return false
   return pathname.startsWith(href)
 }
