@@ -10,6 +10,8 @@ import type {
   AdmissionObservation,
   CensusRow,
   InpatientVisitContext,
+  IvInfusion,
+  IvInfusionCheck,
   MedicationAdmin,
   MedicationOrder,
   ObservationInput,
@@ -78,19 +80,35 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
   const patient = Array.isArray(admission.patient) ? admission.patient[0] : admission.patient
   if (!patient) return null
 
+  const obsPromise = supabase.rpc('rpc_admission_observations', { p_admission_id: admissionId })
+  const ordersPromise = supabase.rpc('rpc_admission_medication_orders', { p_admission_id: admissionId })
+  const adminsPromise = supabase.rpc('rpc_admission_medication_admins', { p_admission_id: admissionId })
+  const notesPromise = supabase.rpc('rpc_admission_notes', { p_admission_id: admissionId })
+  const ivPromise = supabase.rpc('rpc_admission_iv_infusions', { p_admission_id: admissionId })
+  const ivChecksPromise = supabase.rpc('rpc_admission_iv_infusion_checks', { p_admission_id: admissionId })
+
   const [
     { data: observations },
     { data: orders },
     { data: admins },
     { data: notes },
+    ivResult,
+    ivChecksResult,
     visitCtx,
   ] = await Promise.all([
-    supabase.rpc('rpc_admission_observations', { p_admission_id: admissionId }),
-    supabase.rpc('rpc_admission_medication_orders', { p_admission_id: admissionId }),
-    supabase.rpc('rpc_admission_medication_admins', { p_admission_id: admissionId }),
-    supabase.rpc('rpc_admission_notes', { p_admission_id: admissionId }),
+    obsPromise,
+    ordersPromise,
+    adminsPromise,
+    notesPromise,
+    ivPromise,
+    ivChecksPromise,
     ensureInpatientVisit(admissionId, clinicId, admission.patient_id as string),
   ])
+
+  const ivInfusions = ivResult.error ? [] : ((ivResult.data ?? []) as IvInfusion[])
+  const ivInfusionChecks = ivChecksResult.error ? [] : ((ivChecksResult.data ?? []) as IvInfusionCheck[])
+  if (ivResult.error) console.warn('rpc_admission_iv_infusions:', ivResult.error.message)
+  if (ivChecksResult.error) console.warn('rpc_admission_iv_infusion_checks:', ivChecksResult.error.message)
 
   return {
     admission: {
@@ -101,6 +119,8 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
     medicationOrders: (orders ?? []) as MedicationOrder[],
     medicationAdmins: (admins ?? []) as MedicationAdmin[],
     notes: (notes ?? []) as AdmissionNote[],
+    ivInfusions,
+    ivInfusionChecks,
     visit: visitCtx,
   }
 }
@@ -303,6 +323,7 @@ export async function recordMedicationAdmin(
   orderId: string,
   given: boolean,
   notGivenReason?: string,
+  scheduledFor?: string,
 ): Promise<ActionResult> {
   let staff
   try {
@@ -323,6 +344,7 @@ export async function recordMedicationAdmin(
     p_status: given ? 'given' : 'not_given',
     p_not_given_reason: given ? null : notGivenReason?.trim() || 'Other',
     p_administered_at: new Date().toISOString(),
+    p_scheduled_for: scheduledFor ?? null,
     p_client_op_id: null,
   })
 
@@ -465,5 +487,105 @@ export async function referAdmission(
   if (discErr) return { success: false, error: discErr.message }
 
   revalidatePath('/dashboard/inpatient')
+  return { success: true }
+}
+
+export async function startIvInfusion(
+  admissionId: string,
+  input: {
+    fluidType: string
+    volumeMl: number
+    additive?: string
+    rateMlHr?: number
+    dropsPerMin?: number
+    siteLocation?: string
+    notes?: string
+  },
+): Promise<ActionResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const roleErr = clinicalRoleError(staff.role)
+  if (roleErr) return { success: false, error: roleErr }
+
+  const admission = await assertAdmissionInClinic(admissionId, staff.clinic_id)
+  if (!admission) return { success: false, error: 'Admission not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_start_iv_infusion', {
+    p_id: randomUUID(),
+    p_admission_id: admissionId,
+    p_fluid_type: input.fluidType,
+    p_volume_ml: input.volumeMl,
+    p_additive: input.additive && input.additive !== 'none' ? input.additive : null,
+    p_rate_ml_hr: input.rateMlHr ?? null,
+    p_drops_per_min: input.dropsPerMin ?? null,
+    p_site_location: input.siteLocation?.trim() || null,
+    p_notes: input.notes?.trim() || null,
+    p_client_op_id: null,
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/inpatient/${admissionId}`)
+  return { success: true }
+}
+
+export async function recordIvInfusionCheck(
+  admissionId: string,
+  infusionId: string,
+  input: { dripRunning: boolean; siteOk: boolean; note?: string },
+): Promise<ActionResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const roleErr = clinicalRoleError(staff.role)
+  if (roleErr) return { success: false, error: roleErr }
+
+  const admission = await assertAdmissionInClinic(admissionId, staff.clinic_id)
+  if (!admission) return { success: false, error: 'Admission not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_record_iv_infusion_check', {
+    p_id: randomUUID(),
+    p_infusion_id: infusionId,
+    p_drip_running: input.dripRunning,
+    p_site_ok: input.siteOk,
+    p_note: input.note?.trim() || null,
+    p_checked_at: new Date().toISOString(),
+    p_client_op_id: null,
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/inpatient/${admissionId}`)
+  return { success: true }
+}
+
+export async function stopIvInfusion(admissionId: string, infusionId: string): Promise<ActionResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const roleErr = clinicalRoleError(staff.role)
+  if (roleErr) return { success: false, error: roleErr }
+
+  const admission = await assertAdmissionInClinic(admissionId, staff.clinic_id)
+  if (!admission) return { success: false, error: 'Admission not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_stop_iv_infusion', {
+    p_infusion_id: infusionId,
+    p_client_op_id: null,
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/inpatient/${admissionId}`)
   return { success: true }
 }

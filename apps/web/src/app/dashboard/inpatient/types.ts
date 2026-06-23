@@ -78,6 +78,30 @@ export type MedicationAdmin = {
   status: 'given' | 'not_given'
   not_given_reason: string | null
   administered_at: string
+  scheduled_for: string | null
+}
+
+export type IvInfusion = {
+  id: string
+  fluid_type: string
+  additive: string | null
+  volume_ml: number
+  rate_ml_hr: number | null
+  drops_per_min: number | null
+  started_at: string
+  stopped_at: string | null
+  active: boolean
+  site_location: string | null
+  notes: string | null
+}
+
+export type IvInfusionCheck = {
+  id: string
+  infusion_id: string
+  checked_at: string
+  drip_running: boolean
+  site_ok: boolean
+  note: string | null
 }
 
 export type AdmissionNote = {

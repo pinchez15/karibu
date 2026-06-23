@@ -30,6 +30,8 @@ export default async function AdmissionChartPage({
       medicationOrders={chart.medicationOrders}
       medicationAdmins={chart.medicationAdmins}
       notes={chart.notes}
+      ivInfusions={chart.ivInfusions}
+      ivInfusionChecks={chart.ivInfusionChecks}
       visit={chart.visit}
       staffRole={staff.role as StaffRole}
     />
