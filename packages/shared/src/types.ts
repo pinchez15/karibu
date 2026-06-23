@@ -3,6 +3,8 @@
 // the dictation into a SOAP note with citations, clinician reviews + prints.
 // No ambient audio capture, no DPPA cross-border consent flow, no audio storage.
 
+import type { LabTestResultRow } from './lab-queue';
+
 /** OPD worklist filter keys — mirrors clinics.workflow_config.default_opd_filters. */
 export type OpdPatientFilter =
   | 'waiting'
@@ -168,6 +170,7 @@ export interface Visit {
   // text. Set by the lab tech via /dashboard/lab actions.
   lab_status: 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal';
   lab_results: string | null;
+  lab_test_results?: LabTestResultRow[] | null;
   lab_abnormal: boolean;
   lab_completed_at: string | null;
   lab_completed_by: string | null;

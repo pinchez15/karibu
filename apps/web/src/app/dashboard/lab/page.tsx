@@ -4,22 +4,16 @@ import { FlaskConical } from 'lucide-react'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
-import { LabQueueClient, type LabRow } from './LabQueueClient'
+import { LabQueueClient, type LabVisitRow } from './LabQueueClient'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
+import { countOpenLabTests, mergeLabTestResults, type LabTestResultRow } from '@karibu/shared'
 
 /**
- * Lab board — MVP.
- *
- * Queue source: visits where the clinician has recorded `tests_ordered`
- * (free text — written into the visit during dictation or via the AI
- * structuring pipeline) and lab_status is 'pending' or 'running'.
- *
- * Result entry is also free text on `visits.lab_results`. Once we've
- * watched lab techs use this in real clinics, a follow-up migration adds
- * structured `lab_orders` + `lab_results` rows per test.
+ * Lab board — one row per ordered test, grouped by patient visit.
+ * Per-test state lives in visits.lab_test_results (migration 075).
  */
 
-async function getLabQueue(clinicId: string): Promise<LabRow[]> {
+async function getLabQueue(clinicId: string): Promise<LabVisitRow[]> {
   const supabase = createServiceClient()
 
   const { data, error } = await supabase
@@ -32,6 +26,7 @@ async function getLabQueue(clinicId: string): Promise<LabRow[]> {
       tests_ordered,
       lab_status,
       lab_results,
+      lab_test_results,
       lab_abnormal,
       doctor_id,
       doctor:staff!visits_doctor_id_fkey (display_name),
@@ -56,7 +51,14 @@ async function getLabQueue(clinicId: string): Promise<LabRow[]> {
     console.error('Failed to load lab queue:', error)
     return []
   }
-  return (data ?? []) as unknown as LabRow[]
+
+  return (data ?? [])
+    .map((row) => {
+      const visit = row as unknown as Omit<LabVisitRow, 'tests'>
+      const tests = mergeLabTestResults(visit.tests_ordered, visit.lab_test_results ?? [])
+      return { ...visit, tests }
+    })
+    .filter((row) => countOpenLabTests(row.tests) > 0)
 }
 
 export default async function LabPage() {

@@ -36,6 +36,61 @@ async function assertVisitInClinic(visitId: string, clinicId: string) {
   }
 }
 
+export async function startLabTest(
+  visitId: string,
+  testName: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const staff = await assertLabTech()
+    await assertVisitInClinic(visitId, staff.clinic_id)
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_start_lab_test', {
+    p_visit_id: visitId,
+    p_test_name: testName,
+    p_client_op_id: crypto.randomUUID(),
+  })
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/dashboard/lab')
+  return { success: true }
+}
+
+export async function recordLabTestResult(
+  visitId: string,
+  testName: string,
+  result: string,
+  abnormal: boolean,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const trimmed = result.trim()
+  if (trimmed.length < 1) {
+    return { success: false, error: 'Result cannot be empty' }
+  }
+
+  try {
+    const staff = await assertLabTech()
+    await assertVisitInClinic(visitId, staff.clinic_id)
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_record_lab_test_result', {
+    p_visit_id: visitId,
+    p_test_name: testName,
+    p_result: trimmed,
+    p_abnormal: abnormal,
+    p_client_op_id: crypto.randomUUID(),
+  })
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/dashboard/lab')
+  revalidatePath('/dashboard/lab/history')
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  return { success: true }
+}
+
 export async function startLabRun(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
