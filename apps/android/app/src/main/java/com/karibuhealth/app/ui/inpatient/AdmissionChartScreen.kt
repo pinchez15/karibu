@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.weight
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import com.karibuhealth.app.ui.inpatient.chart.AdmissionLabPanel
+import com.karibuhealth.app.ui.inpatient.chart.ClinicalDock
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,6 +56,14 @@ import com.karibuhealth.app.domain.InpatientDangerSigns
 import java.time.Duration
 import java.time.Instant
 
+private enum class ChartTab(val label: String) {
+    ROUNDS("Rounds"),
+    MEDS("Meds"),
+    ORDERS("Lab/Rx"),
+    MATERNITY("Maternity"),
+    NOTES("Notes"),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdmissionChartScreen(
@@ -61,6 +74,8 @@ fun AdmissionChartScreen(
     var showSheet by remember { mutableStateOf(false) }
     var showAddMed by remember { mutableStateOf(false) }
     var notGivenForOrder by remember { mutableStateOf<String?>(null) }
+    var skipDoseScheduledFor by remember { mutableStateOf<String?>(null) }
+    var selectedTab by remember { mutableStateOf(ChartTab.ROUNDS) }
     var showDischarge by remember { mutableStateOf(false) }
     var showRefer by remember { mutableStateOf(false) }
     var showDelivery by remember { mutableStateOf(false) }
@@ -108,137 +123,196 @@ fun AdmissionChartScreen(
         },
     ) { padding ->
         val activeOrders = s.medicationOrders.filter { it.active }
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+    val isMaternity = s.admission?.ward == "maternity"
+    val tabs = buildList {
+        add(ChartTab.ROUNDS)
+        add(ChartTab.MEDS)
+        add(ChartTab.ORDERS)
+        if (isMaternity) add(ChartTab.MATERNITY)
+        add(ChartTab.NOTES)
+    }
+    androidx.compose.runtime.LaunchedEffect(isMaternity) {
+        if (selectedTab == ChartTab.MATERNITY && !isMaternity) selectedTab = ChartTab.ROUNDS
+    }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             s.admission?.let { a ->
-                item(key = "header") {
-                    OutlinedCard(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            val meta = listOfNotNull(
-                                if (a.ward == "maternity") "Maternity" else "General",
-                                a.bedLabel?.let { "Bed $it" },
-                                a.weightKg?.let { "${it} kg" },
-                            ).joinToString(" · ")
-                            Text(meta, fontWeight = FontWeight.Medium)
-                            a.chiefComplaint?.takeIf { it.isNotBlank() }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                            if (!a.isSynced) {
-                                Text(
-                                    "Saved on device — will sync when online.",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                OutlinedCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val meta = listOfNotNull(
+                            if (a.ward == "maternity") "Maternity" else "General",
+                            a.bedLabel?.let { "Bed $it" },
+                            a.weightKg?.let { "${it} kg" },
+                        ).joinToString(" · ")
+                        Text(meta, fontWeight = FontWeight.Medium)
+                        a.chiefComplaint?.takeIf { it.isNotBlank() }?.let {
+                            Text("Reason: $it", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        if (!a.isSynced) {
+                            Text(
+                                "Saved on device — will sync when online.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
             }
 
             if (s.dangerFindings.isNotEmpty()) {
-                item(key = "danger") { DangerSignBanner(findings = s.dangerFindings) }
+                DangerSignBanner(findings = s.dangerFindings)
             }
 
-            // ── Maternal danger alerts (with first-response checklists) ──────
-            items(s.maternalAlerts, key = { "maternal-${it.slug}" }) { alert ->
-                MaternalAlertBanner(alert)
-            }
-
-            // ── Newborn danger signs (care bundle) ──────────────────────────
-            if (s.newbornFindings.isNotEmpty()) {
-                item(key = "newborn-danger") { NewbornDangerBanner(s.newbornFindings) }
-            }
-
-            // ── Maternity: delivery + postnatal ─────────────────────────────
-            if (s.admission?.ward == "maternity") {
-                item(key = "delivery") {
-                    DeliverySummaryCard(
-                        delivery = s.delivery,
-                        onRecord = { showDelivery = true },
+            ClinicalDock(
+                latestObs = s.observations.firstOrNull(),
+                doseSchedule = s.doseSchedule,
+                ivInfusions = s.ivInfusions,
+                isSaving = s.isSaving,
+                onQuickVitals = viewModel::recordQuickVitals,
+                onGiveDose = { orderId, scheduledFor ->
+                    viewModel.recordDose(
+                        orderId,
+                        given = true,
+                        scheduledFor = scheduledFor.takeIf { it.isNotBlank() },
                     )
-                }
-                item(key = "postnatal") {
-                    PostnatalCard(
-                        rounds = s.postnatalObs,
-                        onRecordMother = { postnatalSubject = "mother" },
-                        onRecordNewborn = { postnatalSubject = "newborn" },
-                    )
-                }
-            }
+                },
+                onSkipDose = { orderId, scheduledFor ->
+                    notGivenForOrder = orderId
+                    skipDoseScheduledFor = scheduledFor.takeIf { it.isNotBlank() }
+                },
+                onStartIv = { fluid, vol, add, rate, drops, site, notes ->
+                    viewModel.startIvInfusion(fluid, vol, add, rate, drops, site, notes)
+                },
+                onIvCheck = { id, running, siteOk ->
+                    viewModel.recordIvCheck(id, running, siteOk, null)
+                },
+                onStopIv = viewModel::stopIvInfusion,
+            )
 
-            // ── Treatment ───────────────────────────────────────────────────
-            item(key = "tx-header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                ) {
-                    Text("Treatment", style = MaterialTheme.typography.labelLarge)
-                    TextButton(onClick = { showAddMed = true }) { Text("Add medication") }
-                }
-            }
-            if (activeOrders.isEmpty()) {
-                item(key = "tx-empty") {
-                    Text(
-                        "No active medications.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                items(activeOrders, key = { "order-${it.id}" }) { order ->
-                    MedicationOrderCard(
-                        order = order,
-                        lastAdmin = s.medicationAdmins.firstOrNull { it.orderId == order.id },
-                        onGive = { viewModel.recordDose(order.id, given = true) },
-                        onNotGiven = { notGivenForOrder = order.id },
-                        onStop = { viewModel.stopMedicationOrder(order.id) },
+            TabRow(selectedTabIndex = tabs.indexOf(selectedTab).coerceAtLeast(0)) {
+                tabs.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(tab.label) },
                     )
                 }
             }
 
-            item(key = "record-obs") {
-                Button(onClick = { showSheet = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Record observation")
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                when (selectedTab) {
+                    ChartTab.ROUNDS -> {
+                        item(key = "full-round") {
+                            Button(onClick = { showSheet = true }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Full round (IMCI / AVPU / SpO₂)")
+                            }
+                        }
+                        if (s.observations.isEmpty()) {
+                            item(key = "rounds-empty") {
+                                Text(
+                                    "No observations yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        } else {
+                            items(s.observations, key = { "obs-${it.id}" }) { obs -> ObservationRow(obs) }
+                        }
+                    }
+                    ChartTab.MEDS -> {
+                        item(key = "tx-header") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text("All medications", style = MaterialTheme.typography.labelLarge)
+                                TextButton(onClick = { showAddMed = true }) { Text("Add") }
+                            }
+                        }
+                        if (activeOrders.isEmpty()) {
+                            item(key = "tx-empty") {
+                                Text(
+                                    "No active medications.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        } else {
+                            items(activeOrders, key = { "order-${it.id}" }) { order ->
+                                MedicationOrderCard(
+                                    order = order,
+                                    lastAdmin = s.medicationAdmins.firstOrNull { it.orderId == order.id },
+                                    onGive = { viewModel.recordDose(order.id, given = true) },
+                                    onNotGiven = { notGivenForOrder = order.id },
+                                    onStop = { viewModel.stopMedicationOrder(order.id) },
+                                )
+                            }
+                        }
+                    }
+                    ChartTab.ORDERS -> {
+                        item(key = "lab-order") {
+                            AdmissionLabPanel(
+                                enabled = s.labOrdersOnline && s.inpatientVisitId != null,
+                                testsOrdered = s.inpatientTestsOrdered,
+                                onSubmit = viewModel::submitLabOrder,
+                            )
+                        }
+                    }
+                    ChartTab.MATERNITY -> {
+                        items(s.maternalAlerts, key = { "maternal-${it.slug}" }) { alert ->
+                            MaternalAlertBanner(alert)
+                        }
+                        if (s.newbornFindings.isNotEmpty()) {
+                            item(key = "newborn-danger") { NewbornDangerBanner(s.newbornFindings) }
+                        }
+                        item(key = "delivery") {
+                            DeliverySummaryCard(
+                                delivery = s.delivery,
+                                onRecord = { showDelivery = true },
+                            )
+                        }
+                        item(key = "postnatal") {
+                            PostnatalCard(
+                                rounds = s.postnatalObs,
+                                onRecordMother = { postnatalSubject = "mother" },
+                                onRecordNewborn = { postnatalSubject = "newborn" },
+                            )
+                        }
+                    }
+                    ChartTab.NOTES -> {
+                        item(key = "notes-header") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text("Progress notes", style = MaterialTheme.typography.labelLarge)
+                                TextButton(onClick = { showAddNote = true }) { Text("Add note") }
+                            }
+                        }
+                        if (s.notes.isEmpty()) {
+                            item(key = "notes-empty") {
+                                Text(
+                                    "No progress notes yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        } else {
+                            items(s.notes, key = { "note-${it.id}" }) { note -> ProgressNoteRow(note) }
+                        }
+                    }
                 }
-            }
-            item(key = "rounds-header") {
-                Text("Rounds", style = MaterialTheme.typography.labelLarge)
-            }
-            if (s.observations.isEmpty()) {
-                item(key = "rounds-empty") {
-                    Text(
-                        "No observations yet.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                items(s.observations, key = { "obs-${it.id}" }) { obs -> ObservationRow(obs) }
-            }
-
-            // ── Progress notes ──────────────────────────────────────────────
-            item(key = "notes-header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                ) {
-                    Text("Progress notes", style = MaterialTheme.typography.labelLarge)
-                    TextButton(onClick = { showAddNote = true }) { Text("Add note") }
-                }
-            }
-            if (s.notes.isEmpty()) {
-                item(key = "notes-empty") {
-                    Text(
-                        "No progress notes yet.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                items(s.notes, key = { "note-${it.id}" }) { note -> ProgressNoteRow(note) }
             }
         }
     }
@@ -256,10 +330,16 @@ fun AdmissionChartScreen(
 
     notGivenForOrder?.let { orderId ->
         NotGivenReasonDialog(
-            onDismiss = { notGivenForOrder = null },
+            onDismiss = { notGivenForOrder = null; skipDoseScheduledFor = null },
             onPick = { reason ->
-                viewModel.recordDose(orderId, given = false, notGivenReason = reason)
+                viewModel.recordDose(
+                    orderId,
+                    given = false,
+                    notGivenReason = reason,
+                    scheduledFor = skipDoseScheduledFor,
+                )
                 notGivenForOrder = null
+                skipDoseScheduledFor = null
             },
         )
     }
@@ -401,7 +481,7 @@ private fun MedicationOrderCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun AddMedicationSheet(
     onDismiss: () -> Unit,
@@ -424,6 +504,16 @@ private fun AddMedicationSheet(
                 value = drug, onValueChange = { drug = it },
                 modifier = Modifier.fillMaxWidth(), label = { Text("Drug") }, singleLine = true,
             )
+            Text("Frequency", style = MaterialTheme.typography.labelMedium)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("STAT", "OD", "BD", "TDS", "QDS", "PRN").forEach { chip ->
+                    FilterChip(
+                        selected = freq.equals(chip, ignoreCase = true),
+                        onClick = { freq = chip },
+                        label = { Text(chip) },
+                    )
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = dose, onValueChange = { dose = it },

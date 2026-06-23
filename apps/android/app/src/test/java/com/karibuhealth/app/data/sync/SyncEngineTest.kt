@@ -61,6 +61,9 @@ class SyncEngineTest {
         pregnancyDao = mockk(relaxed = true)
         ancContactDao = mockk(relaxed = true)
         ebolaScreeningDao = mockk(relaxed = true)
+        val ivInfusionDao = mockk<com.karibuhealth.app.data.local.db.dao.IvInfusionDao>(relaxed = true)
+        val ivInfusionCheckDao = mockk<com.karibuhealth.app.data.local.db.dao.IvInfusionCheckDao>(relaxed = true)
+        val prescriptionOrderRepository = mockk<com.karibuhealth.app.data.repository.PrescriptionOrderRepository>(relaxed = true)
         supabaseApi = mockk(relaxed = true)
         networkMonitor = mockk()
         pullReconciliationService = mockk(relaxed = true)
@@ -84,10 +87,13 @@ class SyncEngineTest {
             pregnancyDao = pregnancyDao,
             ancContactDao = ancContactDao,
             ebolaScreeningDao = ebolaScreeningDao,
+            ivInfusionDao = ivInfusionDao,
+            ivInfusionCheckDao = ivInfusionCheckDao,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
             pullReconciliationService = pullReconciliationService,
             syncDebugLogger = syncDebugLogger,
+            prescriptionOrderRepository = prescriptionOrderRepository,
             json = json,
         )
     }

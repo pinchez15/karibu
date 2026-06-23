@@ -1,5 +1,6 @@
 package com.karibuhealth.app.data.repository
 
+import com.karibuhealth.app.data.local.db.dao.AdmissionNoteDao
 import com.karibuhealth.app.data.local.db.dao.AdmissionCensusRow
 import com.karibuhealth.app.data.local.db.dao.AdmissionDao
 import com.karibuhealth.app.data.local.db.dao.AdmissionObservationDao
@@ -7,7 +8,8 @@ import com.karibuhealth.app.data.local.db.dao.DeliveryDao
 import com.karibuhealth.app.data.local.db.dao.MedicationAdministrationDao
 import com.karibuhealth.app.data.local.db.dao.MedicationOrderDao
 import com.karibuhealth.app.data.local.db.dao.PostnatalObservationDao
-import com.karibuhealth.app.data.local.db.dao.AdmissionNoteDao
+import com.karibuhealth.app.data.local.db.dao.IvInfusionCheckDao
+import com.karibuhealth.app.data.local.db.dao.IvInfusionDao
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionNoteEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
@@ -15,11 +17,14 @@ import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity
+import com.karibuhealth.app.data.local.db.entity.IvInfusionCheckEntity
+import com.karibuhealth.app.data.local.db.entity.IvInfusionEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
 import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionDeliveryRequest
+import com.karibuhealth.app.data.remote.dto.AdmissionIvRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionMedicationsRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionPostnatalRequest
 import com.karibuhealth.app.data.remote.dto.AdmissionNotesRequest
@@ -30,7 +35,9 @@ import com.karibuhealth.app.data.remote.dto.AdmitPatientV2Request
 import com.karibuhealth.app.data.remote.dto.RecordAdmissionObservationRequest
 import com.karibuhealth.app.data.remote.dto.RecordDeliveryRequest
 import com.karibuhealth.app.data.remote.dto.RecordMedicationAdminRequest
-import com.karibuhealth.app.data.remote.dto.RecordPostnatalObsRequest
+import com.karibuhealth.app.data.remote.dto.RecordIvInfusionCheckRequest
+import com.karibuhealth.app.data.remote.dto.StartIvInfusionRequest
+import com.karibuhealth.app.data.remote.dto.StopIvInfusionRequest
 import com.karibuhealth.app.data.remote.dto.StopMedicationOrderRequest
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
@@ -58,6 +65,8 @@ class InpatientRepository @Inject constructor(
     private val deliveryDao: DeliveryDao,
     private val postnatalObservationDao: PostnatalObservationDao,
     private val admissionNoteDao: AdmissionNoteDao,
+    private val ivInfusionDao: IvInfusionDao,
+    private val ivInfusionCheckDao: IvInfusionCheckDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
@@ -326,7 +335,7 @@ class InpatientRepository @Inject constructor(
                         MedicationAdministrationEntity(
                             id = it.id, orderId = it.orderId, admissionId = it.admissionId,
                             clinicId = it.clinicId, status = it.status, notGivenReason = it.notGivenReason,
-                            administeredAt = it.administeredAt, isSynced = true,
+                            administeredAt = it.administeredAt, scheduledFor = it.scheduledFor, isSynced = true,
                         )
                     },
                 )
@@ -400,6 +409,7 @@ class InpatientRepository @Inject constructor(
         orderId: String,
         given: Boolean,
         notGivenReason: String?,
+        scheduledFor: String? = null,
     ): String = withContext(Dispatchers.IO) {
         val adminId = UUID.randomUUID().toString()
         val now = Instant.now().toString()
@@ -407,11 +417,11 @@ class InpatientRepository @Inject constructor(
         val entity = MedicationAdministrationEntity(
             id = adminId, orderId = orderId, admissionId = admissionId, clinicId = clinicId,
             status = status, notGivenReason = if (given) null else notGivenReason?.takeIf { it.isNotBlank() },
-            administeredAt = now, isSynced = false,
+            administeredAt = now, scheduledFor = scheduledFor, isSynced = false,
         )
         val request = RecordMedicationAdminRequest(
             id = adminId, orderId = orderId, status = status,
-            notGivenReason = entity.notGivenReason, administeredAt = now,
+            notGivenReason = entity.notGivenReason, administeredAt = now, scheduledFor = scheduledFor,
         )
         val syncEntry = SyncQueueEntry(
             id = UUID.randomUUID().toString(),
@@ -670,6 +680,143 @@ class InpatientRepository @Inject constructor(
             else throw IllegalStateException("rpc_record_admission_note HTTP ${resp.code()}")
         }
         id
+    }
+
+    // ── IV drip monitoring (migration 074) ─────────────────────────────────
+
+    fun observeIvInfusions(admissionId: String): Flow<List<IvInfusionEntity>> =
+        ivInfusionDao.observeForAdmission(admissionId)
+
+    fun observeIvInfusionChecks(admissionId: String): Flow<List<IvInfusionCheckEntity>> =
+        ivInfusionCheckDao.observeForAdmission(admissionId)
+
+    suspend fun refreshIvInfusions(admissionId: String) {
+        if (!networkMonitor.isOnline()) return
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val remote = supabaseApi.rpcAdmissionIvInfusions(AdmissionIvRequest(admissionId))
+                ivInfusionDao.upsertAll(
+                    remote.map {
+                        IvInfusionEntity(
+                            id = it.id, admissionId = it.admissionId, clinicId = it.clinicId,
+                            patientId = it.patientId, fluidType = it.fluidType, additive = it.additive,
+                            volumeMl = it.volumeMl, rateMlHr = it.rateMlHr, dropsPerMin = it.dropsPerMin,
+                            startedAt = it.startedAt, stoppedAt = it.stoppedAt, active = it.active,
+                            siteLocation = it.siteLocation, notes = it.notes, isSynced = true,
+                        )
+                    },
+                )
+            }
+            runCatching {
+                val checks = supabaseApi.rpcAdmissionIvInfusionChecks(AdmissionIvRequest(admissionId))
+                ivInfusionCheckDao.upsertAll(
+                    checks.map {
+                        IvInfusionCheckEntity(
+                            id = it.id, infusionId = it.infusionId, admissionId = it.admissionId,
+                            clinicId = it.clinicId, checkedAt = it.checkedAt, dripRunning = it.dripRunning,
+                            siteOk = it.siteOk, note = it.note, isSynced = true,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    suspend fun startIvInfusion(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+        fluidType: String,
+        volumeMl: Int,
+        additive: String?,
+        rateMlHr: Int?,
+        dropsPerMin: Int?,
+        siteLocation: String?,
+        notes: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val id = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val entity = IvInfusionEntity(
+            id = id, admissionId = admissionId, clinicId = clinicId, patientId = patientId,
+            fluidType = fluidType, additive = additive?.takeIf { it.isNotBlank() && it != "none" },
+            volumeMl = volumeMl, rateMlHr = rateMlHr, dropsPerMin = dropsPerMin,
+            startedAt = now, active = true, siteLocation = siteLocation, notes = notes, isSynced = false,
+        )
+        val request = StartIvInfusionRequest(
+            id = id, admissionId = admissionId, fluidType = fluidType, volumeMl = volumeMl,
+            additive = entity.additive, rateMlHr = rateMlHr, dropsPerMin = dropsPerMin,
+            siteLocation = siteLocation, notes = notes,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_start_iv_infusion",
+            entityType = "iv_infusion",
+            entityId = id,
+            payload = json.encodeToString(StartIvInfusionRequest.serializer(), request.copy(clientOpId = id)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        ivInfusionDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcStartIvInfusion(request.copy(clientOpId = id))
+            if (resp.isSuccessful) ivInfusionDao.markSynced(id)
+            else throw IllegalStateException("rpc_start_iv_infusion HTTP ${resp.code()}")
+        }
+        id
+    }
+
+    suspend fun recordIvInfusionCheck(
+        clinicId: String,
+        admissionId: String,
+        infusionId: String,
+        dripRunning: Boolean,
+        siteOk: Boolean,
+        note: String?,
+    ): String = withContext(Dispatchers.IO) {
+        val id = UUID.randomUUID().toString()
+        val now = Instant.now().toString()
+        val entity = IvInfusionCheckEntity(
+            id = id, infusionId = infusionId, admissionId = admissionId, clinicId = clinicId,
+            checkedAt = now, dripRunning = dripRunning, siteOk = siteOk, note = note, isSynced = false,
+        )
+        val request = RecordIvInfusionCheckRequest(
+            id = id, infusionId = infusionId, dripRunning = dripRunning, siteOk = siteOk,
+            note = note, checkedAt = now,
+        )
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_record_iv_infusion_check",
+            entityType = "iv_infusion_check",
+            entityId = id,
+            payload = json.encodeToString(RecordIvInfusionCheckRequest.serializer(), request.copy(clientOpId = id)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        ivInfusionCheckDao.upsert(entity)
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcRecordIvInfusionCheck(request.copy(clientOpId = id))
+            if (resp.isSuccessful) ivInfusionCheckDao.markSynced(id)
+            else throw IllegalStateException("rpc_record_iv_infusion_check HTTP ${resp.code()}")
+        }
+        id
+    }
+
+    suspend fun stopIvInfusion(infusionId: String) = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        ivInfusionDao.deactivateLocal(infusionId, now)
+        val request = StopIvInfusionRequest(infusionId = infusionId)
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "rpc_stop_iv_infusion",
+            entityType = "iv_infusion",
+            entityId = infusionId,
+            payload = json.encodeToString(StopIvInfusionRequest.serializer(), request.copy(clientOpId = infusionId)),
+            status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
+        )
+        pushOrQueue(syncEntry) {
+            val resp = supabaseApi.rpcStopIvInfusion(request.copy(clientOpId = infusionId))
+            if (resp.isSuccessful) ivInfusionDao.markSynced(infusionId)
+            else throw IllegalStateException("rpc_stop_iv_infusion HTTP ${resp.code()}")
+        }
+        Unit
     }
 
     /** Try the RPC immediately when online; otherwise (or on failure) enqueue the outbox row. */

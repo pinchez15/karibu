@@ -243,6 +243,7 @@ data class VisitDto(
     @SerialName("lab_abnormal") val labAbnormal: Boolean = false,
     @SerialName("lab_completed_at") val labCompletedAt: String? = null,
     @SerialName("lab_completed_by") val labCompletedBy: String? = null,
+    @SerialName("lab_test_results") val labTestResults: List<LabTestResultDto>? = null,
 )
 
 // Used as the payload for sync queue entries of type "create_visit". The
@@ -780,6 +781,32 @@ data class RecordPaymentRpcResponse(
 )
 
 @Serializable
+data class LabTestResultDto(
+    val test: String,
+    val status: String,
+    val result: String? = null,
+    val abnormal: Boolean = false,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null,
+)
+
+@Serializable
+data class StartLabTestRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_test_name") val testName: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordLabTestResultRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_test_name") val testName: String,
+    @SerialName("p_result") val result: String,
+    @SerialName("p_abnormal") val abnormal: Boolean = false,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
 data class StartLabRequest(
     @SerialName("p_visit_id") val visitId: String,
     @SerialName("p_client_op_id") val clientOpId: String? = null,
@@ -1123,6 +1150,7 @@ data class RecordMedicationAdminRequest(
     @SerialName("p_status") val status: String,
     @SerialName("p_not_given_reason") val notGivenReason: String? = null,
     @SerialName("p_administered_at") val administeredAt: String? = null,
+    @SerialName("p_scheduled_for") val scheduledFor: String? = null,
     @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
 
@@ -1155,6 +1183,74 @@ data class MedicationAdministrationDto(
     val status: String,
     @SerialName("not_given_reason") val notGivenReason: String? = null,
     @SerialName("administered_at") val administeredAt: String,
+    @SerialName("scheduled_for") val scheduledFor: String? = null,
+)
+
+// ── IV infusions (migration 074) ───────────────────────────────────────────
+@Serializable
+data class AdmissionIvRequest(
+    @SerialName("p_admission_id") val admissionId: String,
+)
+
+@Serializable
+data class StartIvInfusionRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_admission_id") val admissionId: String,
+    @SerialName("p_fluid_type") val fluidType: String,
+    @SerialName("p_volume_ml") val volumeMl: Int,
+    @SerialName("p_additive") val additive: String? = null,
+    @SerialName("p_rate_ml_hr") val rateMlHr: Int? = null,
+    @SerialName("p_drops_per_min") val dropsPerMin: Int? = null,
+    @SerialName("p_site_location") val siteLocation: String? = null,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordIvInfusionCheckRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_infusion_id") val infusionId: String,
+    @SerialName("p_drip_running") val dripRunning: Boolean = true,
+    @SerialName("p_site_ok") val siteOk: Boolean = true,
+    @SerialName("p_note") val note: String? = null,
+    @SerialName("p_checked_at") val checkedAt: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class StopIvInfusionRequest(
+    @SerialName("p_infusion_id") val infusionId: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class IvInfusionDto(
+    val id: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("fluid_type") val fluidType: String,
+    val additive: String? = null,
+    @SerialName("volume_ml") val volumeMl: Int,
+    @SerialName("rate_ml_hr") val rateMlHr: Int? = null,
+    @SerialName("drops_per_min") val dropsPerMin: Int? = null,
+    @SerialName("started_at") val startedAt: String,
+    @SerialName("stopped_at") val stoppedAt: String? = null,
+    val active: Boolean = true,
+    @SerialName("site_location") val siteLocation: String? = null,
+    val notes: String? = null,
+)
+
+@Serializable
+data class IvInfusionCheckDto(
+    val id: String,
+    @SerialName("infusion_id") val infusionId: String,
+    @SerialName("admission_id") val admissionId: String,
+    @SerialName("clinic_id") val clinicId: String,
+    @SerialName("checked_at") val checkedAt: String,
+    @SerialName("drip_running") val dripRunning: Boolean = true,
+    @SerialName("site_ok") val siteOk: Boolean = true,
+    val note: String? = null,
 )
 
 // ── Inpatient discharge (migration 055) ────────────────────────────────────

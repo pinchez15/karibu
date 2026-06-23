@@ -12,6 +12,8 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
+private val visitLabJson = Json { ignoreUnknownKeys = true }
+
 // ========== Clinic ==========
 
 private val clinicJson = Json { ignoreUnknownKeys = true }
@@ -159,6 +161,7 @@ fun VisitDto.toEntity(isSynced: Boolean = true) = VisitEntity(
     pharmacyOrderSubmittedBy = pharmacyOrderSubmittedBy,
     labStatus = labStatus, labResults = labResults, labAbnormal = labAbnormal,
     labCompletedAt = labCompletedAt, labCompletedBy = labCompletedBy,
+    labTestResultsJson = labTestResults?.let { visitLabJson.encodeToString(it) } ?: "[]",
     isSynced = isSynced,
 )
 
@@ -233,6 +236,7 @@ fun Visit.toEntity(isSynced: Boolean = true) = VisitEntity(
     pharmacyOrderSubmittedBy = pharmacyOrderSubmittedBy,
     labStatus = labStatus, labResults = labResults, labAbnormal = labAbnormal,
     labCompletedAt = labCompletedAt, labCompletedBy = labCompletedBy,
+    labTestResultsJson = "[]",
     isSynced = isSynced,
 )
 

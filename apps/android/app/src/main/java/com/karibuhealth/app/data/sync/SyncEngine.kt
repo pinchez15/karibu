@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.*
+import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -38,11 +39,13 @@ class SyncEngine @Inject constructor(
     private val pregnancyDao: PregnancyDao,
     private val ancContactDao: AncContactDao,
     private val ebolaScreeningDao: EbolaScreeningDao,
+    private val ivInfusionDao: IvInfusionDao,
+    private val ivInfusionCheckDao: IvInfusionCheckDao,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val pullReconciliationService: PullReconciliationService,
     private val syncDebugLogger: SyncDebugLogger,
-import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
+    private val prescriptionOrderRepository: PrescriptionOrderRepository,
     private val json: Json,
 ) {
     companion object {
@@ -225,7 +228,9 @@ import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
             "record_payment" -> syncRecordPayment(entry)
             "rpc_submit_pharmacy_order" -> syncSubmitPharmacyOrder(entry)
             "rpc_start_lab" -> syncStartLab(entry)
+            "rpc_start_lab_test" -> syncStartLabTest(entry)
             "rpc_record_lab_result" -> syncRecordLabResult(entry)
+            "rpc_record_lab_test_result" -> syncRecordLabTestResult(entry)
             "rpc_set_dispensing_status" -> syncSetDispensingStatus(entry)
             "rpc_record_dispense" -> syncRecordDispense(entry)
             "rpc_start_pharmacy_dispense" -> syncStartPharmacyDispense(entry)
@@ -237,6 +242,9 @@ import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
             "rpc_add_medication_order" -> syncAddMedicationOrder(entry)
             "rpc_stop_medication_order" -> syncStopMedicationOrder(entry)
             "rpc_record_medication_admin" -> syncRecordMedicationAdmin(entry)
+            "rpc_start_iv_infusion" -> syncStartIvInfusion(entry)
+            "rpc_record_iv_infusion_check" -> syncRecordIvInfusionCheck(entry)
+            "rpc_stop_iv_infusion" -> syncStopIvInfusion(entry)
             "rpc_discharge_admission" -> syncDischargeAdmission(entry)
             "rpc_record_delivery" -> syncRecordDelivery(entry)
             "rpc_record_postnatal_obs" -> syncRecordPostnatalObs(entry)
@@ -691,6 +699,30 @@ import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
         markVisitSyncedIfQuiet(entry)
     }
 
+    private suspend fun syncStartLabTest(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StartLabTestRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_start_lab_test: ${entry.entityId}")
+        val result = supabaseApi.rpcStartLabTest(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_start_lab_test HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncRecordLabTestResult(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordLabTestResultRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_record_lab_test_result: ${entry.entityId}")
+        val result = supabaseApi.rpcRecordLabTestResult(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_lab_test_result HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        markVisitSyncedIfQuiet(entry)
+    }
+
     private suspend fun syncSetDispensingStatus(entry: SyncQueueEntry) {
         val decoded = json.decodeFromString(SetDispensingStatusRequest.serializer(), entry.payload)
         val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
@@ -822,6 +854,39 @@ import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
             throw IllegalStateException("rpc_record_medication_admin HTTP ${result.code()} ${body.take(300)}".trim())
         }
         medicationAdministrationDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncStartIvInfusion(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StartIvInfusionRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcStartIvInfusion(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_start_iv_infusion HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        ivInfusionDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordIvInfusionCheck(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordIvInfusionCheckRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordIvInfusionCheck(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_iv_infusion_check HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        ivInfusionCheckDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncStopIvInfusion(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(StopIvInfusionRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcStopIvInfusion(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_stop_iv_infusion HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        ivInfusionDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncDischargeAdmission(entry: SyncQueueEntry) {

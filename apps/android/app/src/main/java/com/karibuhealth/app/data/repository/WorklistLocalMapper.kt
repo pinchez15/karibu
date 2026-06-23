@@ -1,6 +1,7 @@
 package com.karibuhealth.app.data.repository
 
 import com.karibuhealth.app.data.local.db.converter.toDomain
+import com.karibuhealth.app.domain.LabQueue
 import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.VisitEntity
@@ -15,7 +16,7 @@ internal suspend fun VisitDao.mapLocalLabQueue(
     val today = LocalDate.now().toString()
     return getLocalNeedsLabVisits(clinicId, today).mapNotNull { visit ->
         visit.toNeedsLabItem(patientDao)
-    }
+    }.filter { it.tests.isNotEmpty() }
 }
 
 internal suspend fun VisitDao.mapLocalPharmacyQueue(
@@ -52,6 +53,10 @@ private suspend fun VisitEntity.toNeedsLabItem(patientDao: PatientDao): NeedsLab
         sex = patient.sex,
         derivedAge = patient.approximateAge,
         chiefComplaint = chiefComplaint,
+        diagnosis = diagnosis,
+        testsOrdered = testsOrdered,
+        tests = LabQueue.mergeLabTestResults(testsOrdered, LabQueue.parseStoredResults(labTestResultsJson))
+            .filter { it.status == "pending" || it.status == "running" },
         labStatus = labStatus,
         doctorId = doctorId,
         visitDate = visitDate,

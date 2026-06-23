@@ -7,14 +7,17 @@ import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.entity.AdmissionEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionNoteEntity
 import com.karibuhealth.app.data.local.db.entity.AdmissionObservationEntity
-import com.karibuhealth.app.data.local.db.entity.DeliveryEntity
+import com.karibuhealth.app.data.local.db.entity.IvInfusionCheckEntity
+import com.karibuhealth.app.data.local.db.entity.IvInfusionEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity
 import com.karibuhealth.app.data.repository.InpatientRepository
 import com.karibuhealth.app.data.repository.ReferralRepository
+import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.ReferralUrgency
 import com.karibuhealth.app.domain.InpatientDangerSigns
+import com.karibuhealth.app.domain.InpatientDoseSchedule
 import com.karibuhealth.app.domain.MaternalDangerSigns
 import com.karibuhealth.app.domain.NewbornDangerSigns
 import com.karibuhealth.app.domain.ObservationRangeCheck
@@ -50,6 +53,12 @@ data class AdmissionChartUiState(
     val newbornFindings: List<NewbornDangerSigns.Finding> = emptyList(),
     // Progress notes (migration 058).
     val notes: List<AdmissionNoteEntity> = emptyList(),
+    val ivInfusions: List<IvInfusionEntity> = emptyList(),
+    val ivInfusionChecks: List<IvInfusionCheckEntity> = emptyList(),
+    val doseSchedule: InpatientDoseSchedule.ScheduleResult = InpatientDoseSchedule.ScheduleResult(),
+    val inpatientVisitId: String? = null,
+    val inpatientTestsOrdered: String? = null,
+    val labOrdersOnline: Boolean = false,
     // Set once the admission is discharged/transferred, so the UI navigates back.
     val closed: Boolean = false,
     val error: String? = null,
@@ -74,6 +83,7 @@ data class ObservationInput(
 @HiltViewModel
 class AdmissionChartViewModel @Inject constructor(
     private val inpatientRepository: InpatientRepository,
+    private val visitRepository: VisitRepository,
     private val referralRepository: ReferralRepository,
     private val authTokenStore: AuthTokenStore,
     savedStateHandle: SavedStateHandle,
@@ -103,11 +113,13 @@ class AdmissionChartViewModel @Inject constructor(
         viewModelScope.launch {
             inpatientRepository.observeMedicationOrders(admissionId).collect { orders ->
                 _state.update { it.copy(medicationOrders = orders) }
+                recomputeDoseSchedule()
             }
         }
         viewModelScope.launch {
             inpatientRepository.observeMedicationAdmins(admissionId).collect { admins ->
                 _state.update { it.copy(medicationAdmins = admins) }
+                recomputeDoseSchedule()
             }
         }
         viewModelScope.launch { inpatientRepository.refreshMedications(admissionId) }
@@ -131,6 +143,48 @@ class AdmissionChartViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { inpatientRepository.refreshNotes(admissionId) }
+        viewModelScope.launch {
+            inpatientRepository.observeIvInfusions(admissionId).collect { rows ->
+                _state.update { it.copy(ivInfusions = rows) }
+            }
+        }
+        viewModelScope.launch {
+            inpatientRepository.observeIvInfusionChecks(admissionId).collect { rows ->
+                _state.update { it.copy(ivInfusionChecks = rows) }
+            }
+        }
+        viewModelScope.launch { inpatientRepository.refreshIvInfusions(admissionId) }
+        viewModelScope.launch { loadInpatientVisit() }
+    }
+
+    private fun loadInpatientVisit() {
+        viewModelScope.launch {
+            val admission = _state.value.admission ?: return@launch
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            val ctx = visitRepository.ensureInpatientVisit(clinicId, admissionId, admission.patientId)
+            _state.update {
+                it.copy(
+                    inpatientVisitId = ctx?.visitId,
+                    inpatientTestsOrdered = ctx?.testsOrdered,
+                    labOrdersOnline = ctx != null,
+                )
+            }
+        }
+    }
+
+    fun submitLabOrder(testNames: List<String>) {
+        val visitId = _state.value.inpatientVisitId ?: return
+        viewModelScope.launch {
+            runCatching { visitRepository.submitLabOrder(visitId, testNames) }
+                .onSuccess { loadInpatientVisit() }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    private fun recomputeDoseSchedule() {
+        val st = _state.value
+        val schedule = InpatientDoseSchedule.buildSchedule(st.medicationOrders, st.medicationAdmins)
+        _state.update { it.copy(doseSchedule = schedule) }
     }
 
     fun addNote(text: String) {
@@ -237,7 +291,12 @@ class AdmissionChartViewModel @Inject constructor(
         viewModelScope.launch { runCatching { inpatientRepository.stopMedicationOrder(orderId) } }
     }
 
-    fun recordDose(orderId: String, given: Boolean, notGivenReason: String? = null) {
+    fun recordDose(
+        orderId: String,
+        given: Boolean,
+        notGivenReason: String? = null,
+        scheduledFor: String? = null,
+    ) {
         val admission = _state.value.admission ?: return
         viewModelScope.launch {
             val clinicId = authTokenStore.getClinicId() ?: return@launch
@@ -248,8 +307,80 @@ class AdmissionChartViewModel @Inject constructor(
                     orderId = orderId,
                     given = given,
                     notGivenReason = notGivenReason,
+                    scheduledFor = scheduledFor,
                 )
             }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun recordQuickVitals(
+        tempC: Double?,
+        pulseBpm: Int?,
+        respRate: Int?,
+        bpSystolic: Int?,
+        bpDiastolic: Int?,
+    ) {
+        recordObservation(
+            ObservationInput(
+                tempC = tempC,
+                pulseBpm = pulseBpm,
+                respRate = respRate,
+                bpSystolic = bpSystolic,
+                bpDiastolic = bpDiastolic,
+            ),
+        )
+    }
+
+    fun startIvInfusion(
+        fluidType: String,
+        volumeMl: Int,
+        additive: String?,
+        rateMlHr: Int?,
+        dropsPerMin: Int?,
+        siteLocation: String?,
+        notes: String?,
+    ) {
+        val admission = _state.value.admission ?: return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.startIvInfusion(
+                    clinicId = clinicId,
+                    admissionId = admissionId,
+                    patientId = admission.patientId,
+                    fluidType = fluidType,
+                    volumeMl = volumeMl,
+                    additive = additive,
+                    rateMlHr = rateMlHr,
+                    dropsPerMin = dropsPerMin,
+                    siteLocation = siteLocation,
+                    notes = notes,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun recordIvCheck(infusionId: String, dripRunning: Boolean, siteOk: Boolean, note: String?) {
+        val admission = _state.value.admission ?: return
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            runCatching {
+                inpatientRepository.recordIvInfusionCheck(
+                    clinicId = clinicId,
+                    admissionId = admissionId,
+                    infusionId = infusionId,
+                    dripRunning = dripRunning,
+                    siteOk = siteOk,
+                    note = note,
+                )
+            }.onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun stopIvInfusion(infusionId: String) {
+        viewModelScope.launch {
+            runCatching { inpatientRepository.stopIvInfusion(infusionId) }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
         }
     }
 

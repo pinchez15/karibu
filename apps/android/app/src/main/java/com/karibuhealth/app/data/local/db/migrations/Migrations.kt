@@ -4,6 +4,68 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 // v23 -> v24: OPD structured prescription lines (migration 064 mirror).
+// v25 -> v26: per-test lab results JSON on visits (migration 075 mirror).
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE visits ADD COLUMN lab_test_results TEXT NOT NULL DEFAULT '[]'",
+        )
+    }
+}
+
+// v24 -> v25: dose slot linkage + IV drip monitoring (migration 074 mirror).
+val MIGRATION_24_25 = object : Migration(24, 25) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE medication_administrations ADD COLUMN scheduled_for TEXT",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS iv_infusions (
+                id TEXT NOT NULL PRIMARY KEY,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                fluid_type TEXT NOT NULL,
+                additive TEXT,
+                volume_ml INTEGER NOT NULL,
+                rate_ml_hr INTEGER,
+                drops_per_min INTEGER,
+                started_at TEXT NOT NULL,
+                stopped_at TEXT,
+                active INTEGER NOT NULL DEFAULT 1,
+                site_location TEXT,
+                notes TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_iv_infusions_admission_id_active " +
+                "ON iv_infusions(admission_id, active)",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS iv_infusion_checks (
+                id TEXT NOT NULL PRIMARY KEY,
+                infusion_id TEXT NOT NULL,
+                admission_id TEXT NOT NULL,
+                clinic_id TEXT NOT NULL,
+                checked_at TEXT NOT NULL,
+                drip_running INTEGER NOT NULL DEFAULT 1,
+                site_ok INTEGER NOT NULL DEFAULT 1,
+                note TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_iv_infusion_checks_infusion_id_checked_at " +
+                "ON iv_infusion_checks(infusion_id, checked_at)",
+        )
+    }
+}
+
 val MIGRATION_23_24 = object : Migration(23, 24) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

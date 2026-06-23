@@ -148,6 +148,7 @@ data class VisitEntity(
     @ColumnInfo(name = "lab_abnormal") val labAbnormal: Boolean = false,
     @ColumnInfo(name = "lab_completed_at") val labCompletedAt: String? = null,
     @ColumnInfo(name = "lab_completed_by") val labCompletedBy: String? = null,
+    @ColumnInfo(name = "lab_test_results") val labTestResultsJson: String = "[]",
     // Local-only field
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )

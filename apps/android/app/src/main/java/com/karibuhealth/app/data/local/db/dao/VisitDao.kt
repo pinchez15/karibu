@@ -197,6 +197,44 @@ interface VisitDao {
 
     @Query("""
         UPDATE visits
+        SET lab_status = :labStatus,
+            lab_results = :labResults,
+            lab_abnormal = :labAbnormal,
+            lab_test_results = :labTestResultsJson,
+            lab_completed_at = :labCompletedAt,
+            lab_completed_by = :labCompletedBy,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateLabWithTestResults(
+        id: String,
+        labStatus: String,
+        labResults: String?,
+        labAbnormal: Boolean,
+        labTestResultsJson: String,
+        labCompletedAt: String?,
+        labCompletedBy: String?,
+        updatedAt: String,
+    )
+
+    @Query("""
+        UPDATE visits
+        SET tests_ordered = :testsOrdered,
+            lab_status = :labStatus,
+            lab_test_results = :labTestResultsJson,
+            updated_at = :updatedAt
+        WHERE id = :id
+    """)
+    suspend fun updateTestsOrdered(
+        id: String,
+        testsOrdered: String,
+        labStatus: String,
+        labTestResultsJson: String,
+        updatedAt: String,
+    )
+
+    @Query("""
+        UPDATE visits
         SET dispensing_status = :dispensingStatus,
             dispense_notes = :dispenseNotes,
             dispensed_at = :dispensedAt,

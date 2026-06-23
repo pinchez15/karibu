@@ -63,6 +63,18 @@ interface SupabaseApi {
         @Query("select") select: String = "*",
     ): List<VisitDto>
 
+    @GET("visits")
+    suspend fun getVisitsByAdmission(
+        @Query("admission_id") admissionId: String,
+        @Query("clinic_id") clinicId: String,
+        @Query("order") order: String = "visit_date.desc",
+        @Query("limit") limit: Int = 1,
+        @Query("select") select: String = "*",
+    ): List<VisitDto>
+
+    @POST("visits")
+    suspend fun insertVisit(@Body body: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
+
     // Visit creation goes through the SECURITY DEFINER RPC instead of a direct
     // INSERT — direct inserts were returning 404 from PostgREST's INSERT-with-
     // RETURNING flow even with Prefer: return=minimal.
@@ -237,6 +249,12 @@ interface SupabaseApi {
     @POST("rpc/rpc_start_lab")
     suspend fun rpcStartLab(@Body request: StartLabRequest): Response<ResponseBody>
 
+    @POST("rpc/rpc_start_lab_test")
+    suspend fun rpcStartLabTest(@Body request: StartLabTestRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_lab_test_result")
+    suspend fun rpcRecordLabTestResult(@Body request: RecordLabTestResultRequest): Response<ResponseBody>
+
     @POST("rpc/rpc_record_lab_result")
     suspend fun rpcRecordLabResult(@Body request: RecordLabResultRequest): Response<ResponseBody>
 
@@ -314,6 +332,22 @@ interface SupabaseApi {
     suspend fun rpcAdmissionMedicationAdmins(
         @Body request: AdmissionMedicationsRequest,
     ): List<MedicationAdministrationDto>
+
+    // IV drip monitoring (migration 074).
+    @POST("rpc/rpc_start_iv_infusion")
+    suspend fun rpcStartIvInfusion(@Body request: StartIvInfusionRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_iv_infusion_check")
+    suspend fun rpcRecordIvInfusionCheck(@Body request: RecordIvInfusionCheckRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_stop_iv_infusion")
+    suspend fun rpcStopIvInfusion(@Body request: StopIvInfusionRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_admission_iv_infusions")
+    suspend fun rpcAdmissionIvInfusions(@Body request: AdmissionIvRequest): List<IvInfusionDto>
+
+    @POST("rpc/rpc_admission_iv_infusion_checks")
+    suspend fun rpcAdmissionIvInfusionChecks(@Body request: AdmissionIvRequest): List<IvInfusionCheckDto>
 
     // Inpatient discharge (migration 055).
     @POST("rpc/rpc_discharge_admission")

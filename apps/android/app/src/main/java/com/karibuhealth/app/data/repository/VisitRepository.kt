@@ -14,9 +14,11 @@ import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
 import com.karibuhealth.app.data.remote.dto.medicationsSummary
 import com.karibuhealth.app.data.remote.dto.RecordDispenseRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
+import com.karibuhealth.app.data.remote.dto.RecordLabTestResultRequest
 import com.karibuhealth.app.data.remote.dto.SendPharmacyBackRequest
 import com.karibuhealth.app.data.remote.dto.SetDispensingStatusRequest
 import com.karibuhealth.app.data.remote.dto.StartLabRequest
+import com.karibuhealth.app.data.remote.dto.StartLabTestRequest
 import com.karibuhealth.app.data.remote.dto.StartPharmacyDispenseRequest
 import com.karibuhealth.app.data.remote.dto.ActivateClinicalProtocolRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientRequest
@@ -25,6 +27,7 @@ import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.sync.VisitMerge
+import com.karibuhealth.app.domain.LabQueue
 import com.karibuhealth.app.domain.model.Department
 import com.karibuhealth.app.domain.model.OpdPatientFilter
 import com.karibuhealth.app.domain.model.OpdPatientRow
@@ -436,6 +439,167 @@ class VisitRepository @Inject constructor(
         )
     }
 
+    suspend fun startLabTest(visitId: String, testName: String): String? {
+        val visit = visitDao.getByIdOnce(visitId) ?: return null
+        val stored = LabQueue.parseStoredResults(visit.labTestResultsJson)
+        val merged = LabQueue.mergeLabTestResults(visit.testsOrdered, stored)
+        val updated = LabQueue.applyStartTest(merged, testName)
+        val derived = LabQueue.deriveVisitLabState(updated)
+        val now = Instant.now().toString()
+        val encoded = LabQueue.encodeResults(updated)
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_start_lab_test",
+            payload = json.encodeToString(
+                StartLabTestRequest.serializer(),
+                StartLabTestRequest(visitId = visitId, testName = testName),
+            ),
+            localMutator = {
+                visitDao.updateLabWithTestResults(
+                    id = visitId,
+                    labStatus = derived.labStatus,
+                    labResults = derived.labResults,
+                    labAbnormal = derived.labAbnormal,
+                    labTestResultsJson = encoded,
+                    labCompletedAt = if (derived.allComplete) now else visit.labCompletedAt,
+                    labCompletedBy = if (derived.allComplete) visit.labCompletedBy else null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcStartLabTest(
+                    StartLabTestRequest(visitId = visitId, testName = testName, clientOpId = it),
+                )
+            },
+        )
+    }
+
+    suspend fun recordLabTestResult(
+        visitId: String,
+        testName: String,
+        result: String,
+        abnormal: Boolean,
+        staffId: String,
+    ): String? {
+        val trimmed = result.trim()
+        if (trimmed.isEmpty()) return null
+        val visit = visitDao.getByIdOnce(visitId) ?: return null
+        val stored = LabQueue.parseStoredResults(visit.labTestResultsJson)
+        val merged = LabQueue.mergeLabTestResults(visit.testsOrdered, stored)
+        val updated = LabQueue.applyRecordResult(merged, testName, trimmed, abnormal)
+        val derived = LabQueue.deriveVisitLabState(updated)
+        val now = Instant.now().toString()
+        val encoded = LabQueue.encodeResults(updated)
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_record_lab_test_result",
+            payload = json.encodeToString(
+                RecordLabTestResultRequest.serializer(),
+                RecordLabTestResultRequest(
+                    visitId = visitId,
+                    testName = testName,
+                    result = trimmed,
+                    abnormal = abnormal,
+                ),
+            ),
+            localMutator = {
+                visitDao.updateLabWithTestResults(
+                    id = visitId,
+                    labStatus = derived.labStatus,
+                    labResults = derived.labResults,
+                    labAbnormal = derived.labAbnormal,
+                    labTestResultsJson = encoded,
+                    labCompletedAt = if (derived.allComplete) now else null,
+                    labCompletedBy = if (derived.allComplete) staffId else null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcRecordLabTestResult(
+                    RecordLabTestResultRequest(
+                        visitId = visitId,
+                        testName = testName,
+                        result = trimmed,
+                        abnormal = abnormal,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
+    /** Merge catalog test names onto a visit and set lab_status pending (web F2). */
+    suspend fun submitLabOrder(visitId: String, testNames: List<String>): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            val clean = testNames.map { it.trim() }.filter { it.isNotEmpty() }
+            if (clean.isEmpty()) return@withContext Result.failure(IllegalArgumentException("Select at least one test"))
+            val visit = visitDao.getByIdOnce(visitId)
+                ?: return@withContext Result.failure(IllegalStateException("Visit not found"))
+            val existing = LabQueue.parseTestsOrdered(visit.testsOrdered)
+            val merged = (existing + clean).distinct()
+            val testsOrdered = merged.joinToString(", ")
+            val results = LabQueue.mergeLabTestResults(testsOrdered, LabQueue.parseStoredResults(visit.labTestResultsJson))
+            val encoded = LabQueue.encodeResults(results)
+            val now = Instant.now().toString()
+            visitDao.updateTestsOrdered(visitId, testsOrdered, "pending", encoded, now)
+            visitDao.updateSyncState(visitId, false)
+            if (networkMonitor.isOnline()) {
+                runCatching {
+                    supabaseApi.updateVisit(
+                        visitId,
+                        mapOf("tests_ordered" to testsOrdered, "lab_status" to "pending"),
+                    )
+                    visitDao.updateSyncState(visitId, true)
+                }.onFailure {
+                    return@withContext Result.failure(it)
+                }
+            }
+            Result.success(Unit)
+        }
+
+    data class InpatientVisitContext(
+        val visitId: String,
+        val testsOrdered: String?,
+        val labStatus: String?,
+    )
+
+    suspend fun ensureInpatientVisit(
+        clinicId: String,
+        admissionId: String,
+        patientId: String,
+    ): InpatientVisitContext? = withContext(Dispatchers.IO) {
+        if (!networkMonitor.isOnline()) return@withContext null
+        runCatching {
+            val existing = supabaseApi.getVisitsByAdmission("eq.$admissionId", "eq.$clinicId").firstOrNull()
+            if (existing != null) {
+                visitDao.upsert(existing.toEntity())
+                return@runCatching InpatientVisitContext(
+                    visitId = existing.id,
+                    testsOrdered = existing.testsOrdered,
+                    labStatus = existing.labStatus,
+                )
+            }
+            val visitId = UUID.randomUUID().toString()
+            val today = LocalDate.now().toString()
+            val body = mapOf(
+                "id" to visitId,
+                "clinic_id" to clinicId,
+                "patient_id" to patientId,
+                "admission_id" to admissionId,
+                "visit_date" to today,
+                "department" to "opd",
+                "status" to "pending",
+                "queue_status" to "waiting",
+                "priority" to "normal",
+            )
+            val resp = supabaseApi.insertVisit(body)
+            if (!resp.isSuccessful) return@runCatching null
+            val dto = supabaseApi.getVisitById("eq.$visitId").firstOrNull() ?: return@runCatching null
+            visitDao.upsert(dto.toEntity())
+            InpatientVisitContext(visitId = dto.id, testsOrdered = dto.testsOrdered, labStatus = dto.labStatus)
+        }.getOrNull()
+    }
+
     suspend fun setDispensingStatus(
         visitId: String,
         status: String,
@@ -649,6 +813,20 @@ class VisitRepository @Inject constructor(
                 val decoded = json.decodeFromString(RecordLabResultRequest.serializer(), payload)
                 json.encodeToString(
                     RecordLabResultRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_start_lab_test" -> {
+                val decoded = json.decodeFromString(StartLabTestRequest.serializer(), payload)
+                json.encodeToString(
+                    StartLabTestRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_record_lab_test_result" -> {
+                val decoded = json.decodeFromString(RecordLabTestResultRequest.serializer(), payload)
+                json.encodeToString(
+                    RecordLabTestResultRequest.serializer(),
                     decoded.copy(clientOpId = syncEntryId),
                 )
             }

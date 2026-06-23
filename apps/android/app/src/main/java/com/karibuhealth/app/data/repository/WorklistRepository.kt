@@ -3,6 +3,8 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.converter.toDomain
+import com.karibuhealth.app.data.local.db.converter.toEntity
+import com.karibuhealth.app.domain.LabQueue
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.CareTaskRow
 import com.karibuhealth.app.data.remote.dto.CareTasksWorklistRequest
@@ -76,7 +78,7 @@ class WorklistRepository @Inject constructor(
     }
 
     suspend fun getNeedsLab(clinicId: String): List<NeedsLabItem> = withContext(Dispatchers.IO) {
-        if (networkMonitor.isOnline()) {
+        val base = if (networkMonitor.isOnline()) {
             runCatching {
                 supabaseApi.rpcWorklistNeedsLab(
                     WorklistClinicOnlyRequest(clinicId = clinicId),
@@ -84,6 +86,31 @@ class WorklistRepository @Inject constructor(
             }.getOrElse { visitDao.mapLocalLabQueue(clinicId, patientDao) }
         } else {
             visitDao.mapLocalLabQueue(clinicId, patientDao)
+        }
+        enrichLabItems(clinicId, base)
+    }
+
+    private suspend fun enrichLabItems(clinicId: String, items: List<NeedsLabItem>): List<NeedsLabItem> {
+        return items.mapNotNull { item ->
+            if (networkMonitor.isOnline()) {
+                runCatching {
+                    supabaseApi.getVisitById("eq.${item.visitId}").firstOrNull()?.let { dto ->
+                        visitDao.upsert(dto.toEntity())
+                    }
+                }
+            }
+            val visit = visitDao.getByIdOnce(item.visitId) ?: return@mapNotNull item
+            val stored = LabQueue.parseStoredResults(visit.labTestResultsJson)
+            val merged = LabQueue.mergeLabTestResults(visit.testsOrdered, stored)
+            val open = merged.filter { it.status == "pending" || it.status == "running" }
+            if (open.isEmpty()) return@mapNotNull null
+            item.copy(
+                diagnosis = visit.diagnosis,
+                testsOrdered = visit.testsOrdered,
+                tests = open,
+                labStatus = visit.labStatus,
+                chiefComplaint = visit.chiefComplaint ?: item.chiefComplaint,
+            )
         }
     }
 

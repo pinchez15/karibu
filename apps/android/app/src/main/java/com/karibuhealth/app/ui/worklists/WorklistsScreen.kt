@@ -468,6 +468,7 @@ private fun ClinicianRowBody(item: NeedsClinicianItem) {
 private fun LabRowBody(item: NeedsLabItem) {
     PrimaryRow(name = item.patientName, ageSex = ageSexLabel(item.derivedAge, item.sex))
     item.chiefComplaint?.takeIf { it.isNotBlank() }?.let { SecondaryRow(it) }
+    item.tests.takeIf { it.isNotEmpty() }?.joinToString { it.test }?.let { SecondaryRow(it) }
     val meta = listOfNotNull(
         item.labStatus?.uppercase()?.replace('_', ' '),
         item.visitDate,

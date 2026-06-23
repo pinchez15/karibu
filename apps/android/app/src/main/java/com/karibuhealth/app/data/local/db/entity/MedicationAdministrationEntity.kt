@@ -25,5 +25,6 @@ data class MedicationAdministrationEntity(
     val status: String, // given | not_given
     @ColumnInfo(name = "not_given_reason") val notGivenReason: String? = null,
     @ColumnInfo(name = "administered_at") val administeredAt: String,
+    @ColumnInfo(name = "scheduled_for") val scheduledFor: String? = null,
     @ColumnInfo(name = "is_synced") val isSynced: Boolean = true,
 )

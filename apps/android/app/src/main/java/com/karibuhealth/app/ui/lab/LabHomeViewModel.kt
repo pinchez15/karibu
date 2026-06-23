@@ -23,7 +23,7 @@ data class LabHomeUiState(
     val items: List<NeedsLabItem> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val actionVisitId: String? = null,
+    val actionKey: String? = null,
 )
 
 @HiltViewModel
@@ -61,33 +61,33 @@ class LabHomeViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
-    fun startLab(visitId: String) {
+    fun startLabTest(visitId: String, testName: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(actionVisitId = visitId, error = null) }
-            runCatching { visitRepository.startLab(visitId) }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
-                }
+            val key = "$visitId:$testName"
+            _uiState.update { it.copy(actionKey = key, error = null) }
+            runCatching { visitRepository.startLabTest(visitId, testName) }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()
-            _uiState.update { it.copy(actionVisitId = null) }
+            _uiState.update { it.copy(actionKey = null) }
         }
     }
 
-    fun recordResult(visitId: String, result: String, abnormal: Boolean) {
+    fun recordLabTestResult(visitId: String, testName: String, result: String, abnormal: Boolean) {
         val staffId = _uiState.value.staff?.id ?: return
         viewModelScope.launch {
-            _uiState.update { it.copy(actionVisitId = visitId, error = null) }
-            runCatching { visitRepository.recordLabResult(visitId, result, abnormal, staffId) }
-                .onSuccess {
-                    if (networkMonitor.isOnline() && networkMonitor.currentStatus().isGoodForAi) {
-                        runCatching { dictationApiClient.requestLabAiAssist(visitId) }
-                    }
+            val key = "$visitId:$testName"
+            _uiState.update { it.copy(actionKey = key, error = null) }
+            runCatching {
+                visitRepository.recordLabTestResult(visitId, testName, result, abnormal, staffId)
+            }.onSuccess {
+                if (networkMonitor.isOnline() && networkMonitor.currentStatus().isGoodForAi) {
+                    runCatching { dictationApiClient.requestLabAiAssist(visitId) }
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
-                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(error = e.message) }
+            }
             refresh()
-            _uiState.update { it.copy(actionVisitId = null) }
+            _uiState.update { it.copy(actionKey = null) }
         }
     }
 }

@@ -25,6 +25,8 @@ import com.karibuhealth.app.data.local.db.migrations.MIGRATION_20_21
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_21_22
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_22_23
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_23_24
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_24_25
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_25_26
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_9_10
 import dagger.Module
 import dagger.Provides
@@ -68,6 +70,8 @@ object DatabaseModule {
                 MIGRATION_21_22,
                 MIGRATION_22_23,
                 MIGRATION_23_24,
+                MIGRATION_24_25,
+                MIGRATION_25_26,
             )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
@@ -102,4 +106,7 @@ object DatabaseModule {
         db.medicationAdministrationDao()
     @Provides fun providePrescriptionOrderDao(db: KaribuDatabase): PrescriptionOrderDao =
         db.prescriptionOrderDao()
+    @Provides fun provideIvInfusionDao(db: KaribuDatabase): IvInfusionDao = db.ivInfusionDao()
+    @Provides fun provideIvInfusionCheckDao(db: KaribuDatabase): IvInfusionCheckDao =
+        db.ivInfusionCheckDao()
 }
