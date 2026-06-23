@@ -441,4 +441,43 @@ interface SupabaseApi {
     suspend fun rpcListReferralsToday(
         @Body request: com.karibuhealth.app.data.remote.dto.ListReferralsTodayRequest,
     ): List<com.karibuhealth.app.data.remote.dto.ReferralTodayRowDto>
+
+    // Billing (migrations 076–077) — patient-level charges and payments.
+    @POST("rpc/rpc_billing_patient_balances")
+    suspend fun rpcBillingPatientBalances(
+        @Body request: WorklistClinicOnlyRequest,
+    ): List<BillingPatientBalanceRow>
+
+    @POST("rpc/rpc_patient_balance")
+    suspend fun rpcPatientBalance(
+        @Body request: PatientBalanceRequest,
+    ): List<PatientBalanceRow>
+
+    @GET("charges")
+    suspend fun getChargesForPatient(
+        @Query("patient_id") patientId: String,
+        @Query("clinic_id") clinicId: String,
+        @Query("voided") voided: String = "eq.false",
+        @Query("select") select: String =
+            "id,description,category,amount_ugx,quantity,unit_price_ugx,visit_id,source,created_at,voided",
+        @Query("order") order: String = "created_at.desc",
+    ): List<ChargeDto>
+
+    @GET("payments")
+    suspend fun getBillingPaymentsForPatient(
+        @Query("patient_id") patientId: String,
+        @Query("clinic_id") clinicId: String,
+        @Query("status") status: String = "eq.paid",
+        @Query("select") select: String =
+            "id,amount_ugx,amount_barter_ugx,barter_description,payment_method,receipt_number,created_at",
+        @Query("order") order: String = "created_at.desc",
+    ): List<BillingPaymentDto>
+
+    @POST("rpc/rpc_void_charge")
+    suspend fun rpcVoidCharge(@Body request: VoidChargeRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_billing_payment")
+    suspend fun rpcRecordBillingPayment(
+        @Body request: RecordBillingPaymentRequest,
+    ): RecordBillingPaymentResponse
 }

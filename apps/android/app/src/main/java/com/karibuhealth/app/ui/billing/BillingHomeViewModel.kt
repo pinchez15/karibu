@@ -3,8 +3,13 @@ package com.karibuhealth.app.ui.billing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
-import com.karibuhealth.app.data.repository.WorklistRepository
-import com.karibuhealth.app.domain.model.NeedsPaymentItem
+import com.karibuhealth.app.data.repository.BillingRepository
+import com.karibuhealth.app.data.repository.StaffRepository
+import com.karibuhealth.app.domain.model.BillingPaymentItem
+import com.karibuhealth.app.domain.model.ChargeItem
+import com.karibuhealth.app.domain.model.PatientBalanceItem
+import com.karibuhealth.app.domain.model.PatientBillingBalance
+import com.karibuhealth.app.domain.model.StaffRole
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,12 +21,13 @@ import javax.inject.Inject
 data class BillingHomeUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
-    val items: List<NeedsPaymentItem> = emptyList(),
+    val patients: List<PatientBalanceItem> = emptyList(),
+    val error: String? = null,
 )
 
 @HiltViewModel
 class BillingHomeViewModel @Inject constructor(
-    private val worklistRepository: WorklistRepository,
+    private val billingRepository: BillingRepository,
     private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -34,7 +40,7 @@ class BillingHomeViewModel @Inject constructor(
 
     fun load() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
             fetch()
             _uiState.update { it.copy(isLoading = false) }
         }
@@ -42,7 +48,7 @@ class BillingHomeViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
+            _uiState.update { it.copy(isRefreshing = true, error = null) }
             fetch()
             _uiState.update { it.copy(isRefreshing = false) }
         }
@@ -50,7 +56,12 @@ class BillingHomeViewModel @Inject constructor(
 
     private suspend fun fetch() {
         val clinicId = authTokenStore.getClinicId() ?: return
-        val items = worklistRepository.getNeedsPayment(clinicId)
-        _uiState.update { it.copy(items = items) }
+        runCatching {
+            billingRepository.getPatientBalances(clinicId)
+        }.onSuccess { patients ->
+            _uiState.update { it.copy(patients = patients.sortedByDescending { p -> p.balance }) }
+        }.onFailure { e ->
+            _uiState.update { it.copy(error = e.message ?: "Could not load billing") }
+        }
     }
 }

@@ -41,8 +41,10 @@ sealed interface NavRoute {
     // hand-pick which sections to render but reuse the same RPCs.
     @Serializable data object Worklists : NavRoute
 
-    /** Visits with outstanding payment — `rpc_worklist_needs_payment`. */
+    /** Patient-level billing — charges, payments, balances (migrations 076–077). */
     @Serializable data object Billing : NavRoute
+
+    @Serializable data class PatientBill(val patientId: String) : NavRoute
 
     /** Today's labs, pharmacy, and referrals — clinician action queue. */
     @Serializable data object Orders : NavRoute

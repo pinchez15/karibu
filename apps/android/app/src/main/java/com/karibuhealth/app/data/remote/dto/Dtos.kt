@@ -515,6 +515,77 @@ data class WorklistClinicOnlyRequest(
     @SerialName("p_clinic_id") val clinicId: String,
 )
 
+@Serializable
+data class BillingPatientBalanceRow(
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    val charged: Long = 0,
+    val paid: Long = 0,
+    val balance: Long = 0,
+    @SerialName("last_charge_at") val lastChargeAt: String? = null,
+)
+
+@Serializable
+data class PatientBalanceRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+)
+
+@Serializable
+data class PatientBalanceRow(
+    val charged: Long = 0,
+    val paid: Long = 0,
+    val balance: Long = 0,
+)
+
+@Serializable
+data class ChargeDto(
+    val id: String,
+    val description: String,
+    val category: String? = null,
+    @SerialName("amount_ugx") val amountUgx: Int,
+    val quantity: Double? = null,
+    @SerialName("unit_price_ugx") val unitPriceUgx: Int? = null,
+    @SerialName("visit_id") val visitId: String? = null,
+    val source: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    val voided: Boolean? = null,
+)
+
+@Serializable
+data class BillingPaymentDto(
+    val id: String,
+    @SerialName("amount_ugx") val amountUgx: Int,
+    @SerialName("amount_barter_ugx") val amountBarterUgx: Int? = null,
+    @SerialName("barter_description") val barterDescription: String? = null,
+    @SerialName("payment_method") val paymentMethod: String,
+    @SerialName("receipt_number") val receiptNumber: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class VoidChargeRequest(
+    @SerialName("p_charge_id") val chargeId: String,
+)
+
+@Serializable
+data class RecordBillingPaymentRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_amount_cash_ugx") val amountCashUgx: Int,
+    @SerialName("p_payment_method") val paymentMethod: String,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_amount_barter_ugx") val amountBarterUgx: Int = 0,
+    @SerialName("p_barter_description") val barterDescription: String? = null,
+    @SerialName("p_notes") val notes: String? = null,
+)
+
+@Serializable
+data class RecordBillingPaymentResponse(
+    val id: String? = null,
+    @SerialName("receipt_number") val receiptNumber: String? = null,
+)
+
 // rpc_worklist_my_drafts — Clerk-authenticated callers pass clinic-only;
 // service-role callers must supply p_staff_id (Android only ever calls with
 // a Clerk JWT, but we keep the optional field for future server-side

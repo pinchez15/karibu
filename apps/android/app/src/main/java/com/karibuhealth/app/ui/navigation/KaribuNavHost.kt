@@ -24,6 +24,7 @@ import com.karibuhealth.app.ui.review.ReviewScreen
 import com.karibuhealth.app.ui.payment.PaymentScreen
 import com.karibuhealth.app.ui.success.SuccessScreen
 import com.karibuhealth.app.ui.billing.BillingHomeScreen
+import com.karibuhealth.app.ui.billing.PatientBillScreen
 import com.karibuhealth.app.ui.worklists.WorklistsScreen
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
 import com.karibuhealth.app.ui.anc.AncRegistryScreen
@@ -315,12 +316,15 @@ fun KaribuNavHost(
             composable<NavRoute.Billing> {
                 BillingHomeScreen(
                     onNavigateBack = { navigator.back() },
-                    onNavigateToVisit = { visitId ->
-                        navigator.go(NavRoute.VisitDetails(visitId))
+                    onOpenPatientBill = { patientId ->
+                        navigator.go(NavRoute.PatientBill(patientId))
                     },
-                    onNavigateToPayment = { visitId ->
-                        navigator.go(NavRoute.Payment(visitId))
-                    },
+                )
+            }
+
+            composable<NavRoute.PatientBill> {
+                PatientBillScreen(
+                    onNavigateBack = { navigator.back() },
                 )
             }
 
