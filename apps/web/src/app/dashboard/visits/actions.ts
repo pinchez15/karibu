@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff, requireStaff } from '@/lib/auth'
+import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
 export type DobPrecision = 'exact' | 'year_only' | 'age_estimate' | 'unknown'
@@ -287,6 +288,9 @@ export async function createPatientWithVisit(formData: FormData) {
     if (candidates.length > 0 && !confirmDuplicate) {
       return { duplicateCandidates: candidates }
     }
+
+    const onboardingBlock = ensureCanRegisterPatients(staff)
+    if (onboardingBlock.error) return { error: onboardingBlock.error }
 
     const { data: newPatient, error: patientError } = await supabase
       .from('patients')

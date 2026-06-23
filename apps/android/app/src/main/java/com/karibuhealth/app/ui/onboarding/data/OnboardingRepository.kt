@@ -74,20 +74,25 @@ class OnboardingRepository @Inject constructor(
                     total = total,
                 ),
             )
-            if (response.completed) {
-                val clerkId = staffDao.getByIdOnce(staffId)?.clerkUserId
-                if (clerkId != null) {
-                    val remote = supabaseApi.getStaff("eq.$clerkId").firstOrNull()
-                    if (remote != null) {
-                        staffDao.upsert(remote.toEntity())
-                    } else if (response.completedAt != null) {
-                        val current = staffDao.getByIdOnce(staffId) ?: return@runCatching response.completed
-                        staffDao.upsert(current.copy(onboardingCompletedAt = response.completedAt))
-                    }
-                }
-            }
+            refreshStaffFromServer(staffId)
             response.completed
         }
+    }
+
+    private suspend fun refreshStaffFromServer(staffId: String) {
+        val clerkId = staffDao.getByIdOnce(staffId)?.clerkUserId ?: return
+        runCatching {
+            supabaseApi.getStaff("eq.$clerkId").firstOrNull()?.let { staffDao.upsert(it.toEntity()) }
+        }
+    }
+
+    /** Pull module progress + completion flag from server (shared with web). */
+    suspend fun syncFromServer(staffId: String): OnboardingStatusDto? {
+        val status = fetchRemoteStatus() ?: return null
+        if (status.completed) {
+            refreshStaffFromServer(staffId)
+        }
+        return status
     }
 
     fun mergeProgress(

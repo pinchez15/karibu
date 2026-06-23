@@ -8,7 +8,7 @@ import { Btn, Eyebrow, Meta } from '@/app/learn/lib/ui'
 import { Walkthrough } from '@/app/learn/components/Walkthrough'
 import type { LearnCase } from '@/app/learn/lib/types'
 import type { OnboardingManifest, OnboardingModule } from '@karibu/shared'
-import { completeOnboardingModuleAction } from './actions'
+import { completeOnboardingModuleAction, refreshOnboardingStatusAction } from './actions'
 import * as data from '@/app/learn/lib/data'
 
 type ModuleRow = OnboardingModule & { completed: boolean }
@@ -47,6 +47,33 @@ export function OnboardingClient({
     if (allComplete) router.replace('/dashboard')
   }, [allComplete, router])
 
+  const syncFromServer = React.useCallback(async () => {
+    try {
+      const status = await refreshOnboardingStatusAction()
+      setCompleted(new Set(status.progress.map((row) => row.module_id)))
+      if (status.completed) {
+        router.replace('/dashboard')
+      }
+    } catch {
+      // Offline or session expired — keep local module set.
+    }
+  }, [router])
+
+  // Hub/welcome poll so laptop ↔ phone stay in sync on shared Clerk account.
+  React.useEffect(() => {
+    if (view.k !== 'hub' && view.k !== 'welcome') return
+    syncFromServer()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') syncFromServer()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const timer = window.setInterval(syncFromServer, 20_000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.clearInterval(timer)
+    }
+  }, [view.k, syncFromServer])
+
   const openModule = async (module: ModuleRow) => {
     setError(null)
     try {
@@ -68,6 +95,7 @@ export function OnboardingClient({
     try {
       const result = await completeOnboardingModuleAction(module.id, score, total)
       setCompleted((prev) => new Set(prev).add(module.id))
+      await syncFromServer()
       if (result?.completed) {
         router.replace('/dashboard')
       } else {

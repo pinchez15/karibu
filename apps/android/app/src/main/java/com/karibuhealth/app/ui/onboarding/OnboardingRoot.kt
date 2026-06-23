@@ -85,6 +85,10 @@ fun OnboardingRoot(
         if (state.allComplete) onFinished()
     }
 
+    LaunchedEffect(nav) {
+        if (nav is OnboardingNav.Hub) viewModel.refresh()
+    }
+
     CompositionLocalProvider(LocalKl provides CoralPalette) {
         Box(
             modifier

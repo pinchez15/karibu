@@ -18,10 +18,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
@@ -103,6 +105,14 @@ class MainActivity : ComponentActivity() {
                 val failedSyncCount by viewModel.failedSyncCount.collectAsState()
                 val failedEntries by viewModel.failedEntries.collectAsState()
                 val navController = rememberNavController()
+
+                val lifecycleOwner = LocalLifecycleOwner.current
+                LaunchedEffect(lifecycleOwner, isAuthenticated) {
+                    if (!isAuthenticated) return@LaunchedEffect
+                    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        viewModel.refreshOnboardingFromServer()
+                    }
+                }
 
                 var showSyncSheet by remember { mutableStateOf(false) }
 

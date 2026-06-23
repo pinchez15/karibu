@@ -38,15 +38,21 @@ class OnboardingViewModel @Inject constructor(
         refresh()
     }
 
+    /** Re-fetch from server so web ↔ Android progress stays aligned. */
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             runCatching {
+                val staff = staffRepository.getCurrentStaff()
                 val manifest = repository.loadManifest()
-                val status = repository.fetchRemoteStatus()
-                repository.mergeProgress(manifest, status) to manifest
-            }.onSuccess { (modules, manifest) ->
-                val status = repository.fetchRemoteStatus()
+                val status = if (staff != null) {
+                    repository.syncFromServer(staff.id) ?: repository.fetchRemoteStatus()
+                } else {
+                    repository.fetchRemoteStatus()
+                }
+                val modules = repository.mergeProgress(manifest, status)
+                Triple(modules, manifest, status)
+            }.onSuccess { (modules, manifest, status) ->
                 _uiState.update {
                     it.copy(
                         isLoading = false,

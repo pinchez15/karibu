@@ -36,6 +36,16 @@ Cases reuse KaribuLearn `.kpack` fixtures (e.g. `core-opd` / `fever-headache`) w
 
 Existing staff are grandfathered on migration (`onboarding_completed_at = now()`). Only **new** staff rows must train.
 
+## Cross-device progress
+
+Module completion is stored in **`staff_onboarding_progress`** on EHR Supabase, keyed by Clerk identity (same staff row on web and Android).
+
+- Complete a module on **web** → Android hub refreshes on foreground / when opening training (polls `rpc_get_onboarding_status`).
+- Complete a module on **Android** → web hub polls every 20s and on tab focus (`refreshOnboardingStatusAction`).
+- When all modules finish, `staff.onboarding_completed_at` is set once; both surfaces unlock patient registration.
+
+Staff may use their personal phone, a clinic tablet, or a laptop — any device signed into the same Clerk account shares one progress record.
+
 ## RPCs
 
 - `rpc_get_onboarding_status()`

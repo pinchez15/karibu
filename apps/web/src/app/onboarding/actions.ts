@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { requireStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import type { OnboardingStatus } from '@karibu/shared'
@@ -12,6 +13,11 @@ export async function getOnboardingStatus(): Promise<OnboardingStatus> {
   if (error) throw error
 
   return data as OnboardingStatus
+}
+
+/** Poll from web onboarding UI — progress is shared with Android via RPC. */
+export async function refreshOnboardingStatusAction(): Promise<OnboardingStatus> {
+  return getOnboardingStatus()
 }
 
 export async function completeOnboardingModuleAction(
@@ -28,6 +34,9 @@ export async function completeOnboardingModuleAction(
     p_total: total ?? null,
   })
   if (error) throw error
+
+  revalidatePath('/dashboard')
+  revalidatePath('/onboarding')
 
   return data
 }

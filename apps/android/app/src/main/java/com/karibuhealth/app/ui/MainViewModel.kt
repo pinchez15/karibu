@@ -124,4 +124,12 @@ class MainViewModel @Inject constructor(
     }
 
     fun readDebugLog(): String = syncDebugLogger.readAll()
+
+    /** Refresh staff + onboarding gate from server (web ↔ phone sync). */
+    fun refreshOnboardingFromServer() {
+        viewModelScope.launch {
+            val clerkId = authTokenStore.getClerkUserId() ?: return@launch
+            staffRepository.fetchAndCacheStaff(clerkId)
+        }
+    }
 }

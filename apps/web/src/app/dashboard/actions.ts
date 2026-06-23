@@ -3,6 +3,7 @@
 import { createServiceClient } from '@/lib/supabase'
 import { broadcastClinicRefresh } from '@/lib/realtime-server'
 import { getStaff } from '@/lib/auth'
+import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
 import type { QueueItem, Patient } from '@karibu/shared'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 
@@ -241,6 +242,9 @@ export async function addPatientToQueue(data: {
     if (duplicateCandidate && !data.confirm_duplicate) {
       return { duplicateCandidate }
     }
+
+    const onboardingBlock = ensureCanRegisterPatients(staff)
+    if (onboardingBlock.error) return { error: onboardingBlock.error }
 
     // New patient
     let formattedPhone: string | null = null
