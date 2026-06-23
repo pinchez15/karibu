@@ -26,6 +26,7 @@ import {
 } from './note-actions'
 import { submitPharmacyOrder } from '../actions'
 import type { StaffRole } from '@karibu/shared'
+import { cn } from '@/lib/utils'
 
 /**
  * Structured clinician note editor (mirrors Android DictationScreen).
@@ -41,6 +42,9 @@ interface PendingDictationCardProps {
   initialSections?: ClinicalNoteSections | null
   initialNoteId?: string | null
   mode?: 'save' | 'editing'
+  /** Review Notes panel: tighter layout, context shown by parent. */
+  variant?: 'default' | 'review'
+  showLabBanner?: boolean
   onClose?: () => void
   labResults?: string | null
   labAbnormal?: boolean
@@ -58,6 +62,8 @@ export function PendingDictationCard({
   initialSections = null,
   initialNoteId = null,
   mode = 'save',
+  variant = 'default',
+  showLabBanner = true,
   onClose,
   labResults = null,
   labAbnormal = false,
@@ -368,16 +374,26 @@ export function PendingDictationCard({
     !isRecording &&
     !isTranscribing
 
+  const isReview = variant === 'review'
+
   return (
-    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+    <div className={cn('space-y-4', !isReview && 'bg-card border border-border rounded-lg p-4')}>
+      {!isReview && (
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">
           {mode === 'editing' ? 'Edit clinician note' : 'Clinician note'}
         </h3>
         <AutosaveIndicator status={autosaveStatus} />
       </div>
+      )}
 
-      {labResults && labResults.trim() && (
+      {isReview && (
+        <div className="flex items-center justify-between gap-2">
+          <AutosaveIndicator status={autosaveStatus} />
+        </div>
+      )}
+
+      {showLabBanner && labResults && labResults.trim() && (
         <div
           className={`rounded-xl border p-3 text-sm ${
             labAbnormal
@@ -395,11 +411,13 @@ export function PendingDictationCard({
         </div>
       )}
 
+      {!isReview && (
       <p className="text-sm text-muted-foreground">
         Dictate or type the whole visit here — tap the mic and speak, no clicking field to
         field. Expand structured fields only if you want to fill sections individually.
         Sign when the note is complete.
       </p>
+      )}
 
       {/* Unified dictation area (note #7a) — matches the Android single-flow feel. */}
       <div className="space-y-1.5">
@@ -419,11 +437,13 @@ export function PendingDictationCard({
           onChange={(e) => setSections((prev) => ({ ...prev, additionalNote: e.target.value }))}
           onFocus={() => setFocusedSection('AdditionalNote')}
           placeholder="Dictate the visit: complaint, history, exam, diagnosis, plan…"
-          className={`min-h-[220px] leading-relaxed ${
+          className={`leading-relaxed ${
+            isReview ? 'min-h-[100px]' : 'min-h-[220px]'
+          } ${
             recordingSection === 'AdditionalNote' && isRecording ? 'border-amber ring-1 ring-amber/30' : ''
           }`}
           disabled={pending || (isRecording && recordingSection !== 'AdditionalNote') || isTranscribing}
-          rows={9}
+          rows={isReview ? 5 : 9}
         />
       </div>
 

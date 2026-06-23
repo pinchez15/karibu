@@ -36,6 +36,8 @@ export type ReviewPanelVisit = {
     transcript: string | null
     structured_data: Record<string, unknown> | null
   } | null
+  /** Signed receipt-of-record when documentation is complete. */
+  clinician_note_content: string | null
   initialNoteSections: ReturnType<typeof parseClinicalNoteSections>
   initialNoteId: string | null
 }
@@ -56,7 +58,8 @@ export async function loadReviewVisitPanel(
       tests_ordered, follow_up_instructions, lab_results, lab_abnormal, lab_status,
       pharmacy_order_submitted_at, patient_id,
       patient:patients(id, display_name, sex, dob_precision, date_of_birth, birth_year, approximate_age),
-      provider_notes(id, transcript, structured_data)
+      provider_notes(id, transcript, structured_data),
+      patient_notes(content, source)
     `)
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
@@ -73,6 +76,14 @@ export async function loadReviewVisitPanel(
 
   const patientRaw = visit.patient as unknown
   const patient = (Array.isArray(patientRaw) ? patientRaw[0] : patientRaw) as ReviewPanelVisit['patient']
+
+  const rawPatientNotes = visit.patient_notes as unknown
+  const notesArr = Array.isArray(rawPatientNotes)
+    ? (rawPatientNotes as Array<{ content?: string | null; source?: string }>)
+    : rawPatientNotes
+      ? [rawPatientNotes as { content?: string | null; source?: string }]
+      : []
+  const clinicianNote = notesArr.find((n) => n.source === 'clinician_fallback') ?? null
 
   const parsed = parseClinicalNoteSections(providerNote?.structured_data ?? null, {
     diagnosis: (visit.diagnosis as string | null) ?? '',
@@ -103,6 +114,7 @@ export async function loadReviewVisitPanel(
       patient_id: visit.patient_id as string,
       patient,
       provider_notes: providerNote,
+      clinician_note_content: clinicianNote?.content?.trim() ?? null,
       initialNoteSections,
       initialNoteId: providerNote?.id ?? null,
     },

@@ -8,6 +8,8 @@ import { PendingDictationCard } from '@/app/dashboard/visits/[id]/PendingDictati
 import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PatientSexEditor } from '@/app/dashboard/patients/[id]/PatientSexEditor'
 import { PatientAgeQuickSet } from './PatientAgeQuickSet'
+import { ReviewVisitContext } from './ReviewVisitContext'
+import { formatPatientDemographics, hasDiagnosis } from './visit-context'
 import {
   checkReviewVisitResolved,
   loadReviewVisitPanel,
@@ -15,12 +17,14 @@ import {
   type ReviewVisitKind,
 } from './load-visit'
 import type { StaffRole } from '@karibu/shared'
+import { cn } from '@/lib/utils'
 
 export function ReviewVisitPanel({
   visitId,
   kind,
   staffRole,
   positionLabel,
+  focusTags = [],
   onClose,
   onResolved,
   onDemographicsUpdated,
@@ -29,6 +33,7 @@ export function ReviewVisitPanel({
   kind: ReviewVisitKind
   staffRole: StaffRole
   positionLabel?: string
+  focusTags?: string[]
   onClose: () => void
   onResolved: () => void
   onDemographicsUpdated?: () => void
@@ -73,7 +78,7 @@ export function ReviewVisitPanel({
         onClose={onClose}
         visitId={visitId}
       >
-        <div className="flex flex-1 items-center justify-center p-8">
+        <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </PanelChrome>
@@ -83,7 +88,7 @@ export function ReviewVisitPanel({
   if (error || !visit) {
     return (
       <PanelChrome title="Error" positionLabel={positionLabel} onClose={onClose} visitId={visitId}>
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
           <p className="text-sm text-destructive">{error ?? 'Visit not found'}</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void reload()}>
             Retry
@@ -93,11 +98,12 @@ export function ReviewVisitPanel({
     )
   }
 
-  const missingSex = visit.patient.sex == null
-  const missingAge = visit.patient.dob_precision === 'unknown'
-  const showNoteEditor = !visit.documentation_complete
-  const showCoder =
-    kind === 'uncoded' || ['sent', 'completed', 'review'].includes(visit.status)
+  const demo = formatPatientDemographics(visit.patient)
+  const needsSign = !visit.documentation_complete
+  const needsHmis = kind === 'uncoded' || focusTags.some((t) => t.includes('HMIS'))
+  const needsDx = !hasDiagnosis(visit) || focusTags.some((t) => t.includes('diagnosis'))
+  const diagnosisText =
+    visit.diagnosis?.trim() || visit.initialNoteSections.diagnosis?.trim() || ''
 
   return (
     <PanelChrome
@@ -110,62 +116,103 @@ export function ReviewVisitPanel({
       positionLabel={positionLabel}
       onClose={onClose}
       visitId={visit.id}
+      footer={
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" className="gap-1.5" onClick={() => void tryResolve()}>
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button type="button" variant="outline" asChild>
+            <Link href={`/dashboard/visits/${visit.id}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+              Full chart
+            </Link>
+          </Button>
+        </div>
+      }
     >
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {(missingSex || missingAge) && (
-          <section className="rounded-lg border border-amber/40 bg-amber-soft/15 p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-amber-ink">Patient data for HMIS</h3>
-            {missingSex && (
+      <div className="space-y-3 p-4">
+        <ReviewVisitContext visit={visit} />
+
+        {(demo.missingSex || demo.missingAge) && (
+          <ActionCard title="Complete patient demographics" highlight>
+            <p className="text-xs text-muted-foreground mb-2">
+              HMIS reporting needs sex and age. Use the visit record above for context.
+            </p>
+            {demo.missingSex && (
               <PatientSexEditor
                 patientId={visit.patient.id}
                 currentSex={visit.patient.sex}
                 onSaved={handleDemographicsSaved}
               />
             )}
-            {missingAge && (
-              <PatientAgeQuickSet patientId={visit.patient.id} onSaved={handleDemographicsSaved} />
+            {demo.missingAge && (
+              <div className={demo.missingSex ? 'mt-3' : undefined}>
+                <PatientAgeQuickSet patientId={visit.patient.id} onSaved={handleDemographicsSaved} />
+              </div>
             )}
-          </section>
+          </ActionCard>
         )}
 
-        {showNoteEditor && (
-          <PendingDictationCard
-            visitId={visit.id}
-            initialSections={visit.initialNoteSections}
-            initialNoteId={visit.initialNoteId}
-            labResults={visit.lab_results}
-            labAbnormal={visit.lab_abnormal}
-            labStatus={visit.lab_status}
-            pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
-            staffRole={staffRole}
-            onClose={() => void tryResolve()}
-          />
+        {needsSign && (
+          <ActionCard title="Sign note to finalize" highlight={needsDx}>
+            <PendingDictationCard
+              visitId={visit.id}
+              initialSections={visit.initialNoteSections}
+              initialNoteId={visit.initialNoteId}
+              labResults={visit.lab_results}
+              labAbnormal={visit.lab_abnormal}
+              labStatus={visit.lab_status}
+              pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
+              staffRole={staffRole}
+              variant="review"
+              showLabBanner={false}
+              onClose={() => void tryResolve()}
+            />
+          </ActionCard>
         )}
 
-        {showCoder && (
-          <DiagnosisCoder visitId={visit.id} onCodesAssigned={() => void tryResolve()} />
+        {!needsSign && needsHmis && (
+          <ActionCard title="Add HMIS diagnosis code" highlight>
+            <p className="text-sm text-body mb-1">
+              Match this visit to an HMIS 105 code using the chart diagnosis and note above.
+            </p>
+            {diagnosisText ? (
+              <p className="mb-3 rounded-md border border-cobalt/30 bg-cobalt-soft/20 px-2.5 py-2 text-sm font-medium">
+                {diagnosisText}
+              </p>
+            ) : (
+              <p className="mb-3 text-sm text-amber-ink">
+                No diagnosis on the chart — add one in the full chart if needed before coding.
+              </p>
+            )}
+            <DiagnosisCoder visitId={visit.id} onCodesAssigned={() => void tryResolve()} />
+          </ActionCard>
         )}
-
-        {!showNoteEditor && !showCoder && (
-          <p className="text-sm text-muted-foreground">
-            This visit is ready. Use Next to continue, or open the full chart for more context.
-          </p>
-        )}
-      </div>
-
-      <div className="shrink-0 border-t border-border p-4 flex flex-wrap gap-2">
-        <Button type="button" className="gap-1.5" onClick={() => void tryResolve()}>
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button type="button" variant="outline" asChild>
-          <Link href={`/dashboard/visits/${visit.id}`} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-4 w-4 mr-1.5" />
-            Full chart
-          </Link>
-        </Button>
       </div>
     </PanelChrome>
+  )
+}
+
+function ActionCard({
+  title,
+  highlight,
+  children,
+}: {
+  title: string
+  highlight?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      className={cn(
+        'rounded-lg border p-3',
+        highlight ? 'border-amber/45 bg-amber-soft/10' : 'border-border bg-card',
+      )}
+    >
+      <h3 className="text-sm font-semibold text-amber-ink mb-2">{title}</h3>
+      {children}
+    </section>
   )
 }
 
@@ -175,6 +222,7 @@ function PanelChrome({
   positionLabel,
   onClose,
   visitId,
+  footer,
   children,
 }: {
   title: string
@@ -182,15 +230,14 @@ function PanelChrome({
   positionLabel?: string
   onClose: () => void
   visitId: string
+  footer?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-card" data-visit-id={visitId}>
       <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0">
-          {positionLabel && (
-            <p className="kh-meta text-cobalt mb-0.5">{positionLabel}</p>
-          )}
+          {positionLabel && <p className="kh-meta text-cobalt mb-0.5">{positionLabel}</p>}
           <h2 className="text-base font-semibold truncate">{title}</h2>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
@@ -205,7 +252,10 @@ function PanelChrome({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      {children}
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      {footer && (
+        <div className="shrink-0 border-t border-border p-4">{footer}</div>
+      )}
     </div>
   )
 }

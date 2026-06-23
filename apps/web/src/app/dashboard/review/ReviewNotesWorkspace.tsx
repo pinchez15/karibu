@@ -167,6 +167,7 @@ export function ReviewNotesWorkspace({
         onClose={closePanel}
         onResolved={handleResolved}
         onDemographicsUpdated={() => handleDemographicsUpdated(selected.visitId)}
+        focusTags={selected.tags}
       />
     ) : null
 
@@ -190,7 +191,7 @@ export function ReviewNotesWorkspace({
       {/* Desktop: inline right panel — no modal overlay */}
       {selected && !narrow && (
         <aside
-          className="flex min-h-0 w-[min(520px,48vw)] shrink-0 flex-col border-l border-border shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.08)] animate-in slide-in-from-right-4 duration-200"
+          className="flex h-full min-h-0 w-[min(520px,48vw)] shrink-0 flex-col overflow-hidden border-l border-border shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.08)] animate-in slide-in-from-right-4 duration-200"
         >
           {panel}
         </aside>
