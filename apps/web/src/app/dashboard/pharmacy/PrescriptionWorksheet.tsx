@@ -227,76 +227,63 @@ export function PrescriptionWorksheet({
               return (
                 <div
                   key={line.id}
-                  className="rounded-xl border border-line-soft bg-card p-4"
+                  className="rounded-lg border border-line-soft bg-card p-3"
                   data-testid={`rx-line-${line.id}`}
                 >
-                  <div className="mb-3">
+                  {/* Compact per-med row so the tech doesn't scroll to find all
+                      meds + the dispense controls (note #13). */}
+                  <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
                     <p className="font-medium text-foreground">{name}</p>
-                    {sig && <p className="text-sm text-muted-foreground">{sig}</p>}
                     {line.quantity_prescribed != null && (
-                      <p className="mt-1 text-sm text-body">
-                        Prescribed:{' '}
-                        <span className="font-medium">
-                          {line.quantity_prescribed} {line.quantity_unit ?? ''}
-                        </span>
+                      <p className="text-xs text-muted-foreground">
+                        Rx: {line.quantity_prescribed} {line.quantity_unit ?? ''}
                       </p>
                     )}
+                    {sig && <p className="w-full text-xs text-muted-foreground">{sig}</p>}
                   </div>
 
                   {!readOnly && draft && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block text-sm">
-                        <span className="mb-1 block text-muted-foreground">Dispense qty</span>
+                    <div className="grid gap-2 sm:grid-cols-[140px_84px_72px_minmax(0,1fr)] sm:items-end">
+                      <label className="block text-xs">
+                        <span className="mb-1 block text-muted-foreground">Status</span>
+                        <select
+                          className="w-full rounded-md border border-line-soft px-2 py-1.5 text-sm"
+                          value={draft.line_status}
+                          onChange={(e) =>
+                            updateDraft(line.id, { line_status: e.target.value as DispenseLineStatus })
+                          }
+                          disabled={pending}
+                        >
+                          <option value="dispensed">Dispensed</option>
+                          <option value="partially_dispensed">Partial</option>
+                          <option value="out_of_stock">Out of stock</option>
+                        </select>
+                      </label>
+                      <label className="block text-xs">
+                        <span className="mb-1 block text-muted-foreground">Qty</span>
                         <input
                           type="number"
                           min={0}
                           step="any"
-                          className="w-full rounded-md border border-line-soft px-3 py-2 text-sm"
+                          className="w-full rounded-md border border-line-soft px-2 py-1.5 text-sm"
                           value={draft.quantity_dispensed}
-                          onChange={(e) =>
-                            updateDraft(line.id, { quantity_dispensed: e.target.value })
-                          }
+                          onChange={(e) => updateDraft(line.id, { quantity_dispensed: e.target.value })}
                           disabled={pending}
                         />
                       </label>
-                      <label className="block text-sm">
+                      <label className="block text-xs">
                         <span className="mb-1 block text-muted-foreground">Unit</span>
                         <input
-                          className="w-full rounded-md border border-line-soft px-3 py-2 text-sm"
+                          className="w-full rounded-md border border-line-soft px-2 py-1.5 text-sm"
                           value={draft.quantity_unit}
                           onChange={(e) => updateDraft(line.id, { quantity_unit: e.target.value })}
                           disabled={pending}
                         />
                       </label>
-                      <fieldset className="sm:col-span-2">
-                        <legend className="mb-2 text-sm text-muted-foreground">Status</legend>
-                        <div className="flex flex-wrap gap-3">
-                          {(
-                            [
-                              ['dispensed', 'Dispensed'],
-                              ['partially_dispensed', 'Partial'],
-                              ['out_of_stock', 'Out of stock'],
-                            ] as const
-                          ).map(([value, label]) => (
-                            <label key={value} className="inline-flex items-center gap-2 text-sm">
-                              <input
-                                type="radio"
-                                name={`status-${line.id}`}
-                                checked={draft.line_status === value}
-                                onChange={() => updateDraft(line.id, { line_status: value })}
-                                disabled={pending || readOnly}
-                              />
-                              {label}
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                      <label className="block text-sm sm:col-span-2">
-                        <span className="mb-1 block text-muted-foreground">
-                          Stock item (optional — decrements inventory)
-                        </span>
+                      <label className="block text-xs">
+                        <span className="mb-1 block text-muted-foreground">Stock (decrements)</span>
                         <select
-                          className="w-full rounded-md border border-line-soft px-3 py-2 text-sm"
+                          className="w-full rounded-md border border-line-soft px-2 py-1.5 text-sm"
                           value={draft.stock_item_id || suggestStockItem(line, draft)}
                           onChange={(e) =>
                             updateDraft(line.id, {
@@ -306,7 +293,7 @@ export function PrescriptionWorksheet({
                           }
                           disabled={pending}
                         >
-                          <option value="">— Skip stock —</option>
+                          <option value="">— Skip —</option>
                           {stock.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.drug_name} {s.strength ?? ''} ({s.quantity_on_hand} {s.unit})

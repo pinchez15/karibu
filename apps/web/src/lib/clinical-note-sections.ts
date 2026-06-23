@@ -176,6 +176,8 @@ export function sectionText(
   sections: ClinicalNoteSections,
   key: NoteSectionKey,
 ): string {
+  // AdditionalNote is the unified free-dictation surface — not in NOTE_SECTION_META.
+  if (key === 'AdditionalNote') return String(sections.additionalNote ?? '')
   const field = NOTE_SECTION_META.find((m) => m.key === key)?.field
   if (!field || field === 'followUpTasks') return ''
   return String(sections[field] ?? '')
@@ -186,6 +188,10 @@ export function appendToSection(
   key: NoteSectionKey,
   chunk: string,
 ): ClinicalNoteSections {
+  if (key === 'AdditionalNote') {
+    const prev = String(sections.additionalNote ?? '').trimEnd()
+    return { ...sections, additionalNote: prev.length === 0 ? chunk : `${prev} ${chunk}` }
+  }
   const field = NOTE_SECTION_META.find((m) => m.key === key)?.field
   if (!field || field === 'followUpTasks') return sections
   const prev = String(sections[field] ?? '').trimEnd()
