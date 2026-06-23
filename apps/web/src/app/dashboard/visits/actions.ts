@@ -367,6 +367,35 @@ export async function updatePatientSex(patientId: string, sex: 'M' | 'F') {
   return { success: true }
 }
 
+/** Quick age capture for HMIS disaggregation (age estimate). */
+export async function updatePatientAgeEstimate(patientId: string, approximateAge: number) {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+  if (!Number.isFinite(approximateAge) || approximateAge < 0 || approximateAge > 120) {
+    return { error: 'Enter a valid age between 0 and 120' }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('patients')
+    .update({
+      approximate_age: Math.round(approximateAge),
+      age_recorded_at: new Date().toISOString().slice(0, 10),
+      dob_precision: 'age_estimate',
+      date_of_birth: null,
+      birth_year: null,
+    })
+    .eq('id', patientId)
+    .eq('clinic_id', staff.clinic_id)
+
+  if (error) {
+    console.error('Failed to update patient age:', error)
+    return { error: 'Failed to update patient age' }
+  }
+
+  return { success: true }
+}
+
 // retryVisitProcessing removed in the dictation pivot. The old behavior
 // (set status='processing' + POST /functions/v1/transcribe) targeted the
 // deleted ambient pipeline, both of which are gone. The new "retry an

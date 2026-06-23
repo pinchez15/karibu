@@ -7,9 +7,11 @@ import { updatePatientSex } from '../../visits/actions'
 export function PatientSexEditor({
   patientId,
   currentSex,
+  onSaved,
 }: {
   patientId: string
   currentSex: 'M' | 'F' | null
+  onSaved?: () => void
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -20,7 +22,8 @@ export function PatientSexEditor({
       const result = await updatePatientSex(patientId, sex)
       if (!result.error) {
         setEditing(false)
-        router.refresh()
+        onSaved?.()
+        if (!onSaved) router.refresh()
       }
     })
   }

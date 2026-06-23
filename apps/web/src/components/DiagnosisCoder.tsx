@@ -15,9 +15,10 @@ import {
 
 interface DiagnosisCoderProps {
   visitId: string
+  onCodesAssigned?: () => void
 }
 
-export function DiagnosisCoder({ visitId }: DiagnosisCoderProps) {
+export function DiagnosisCoder({ visitId, onCodesAssigned }: DiagnosisCoderProps) {
   const router = useRouter()
   const [codes, setCodes] = useState<VisitDiagnosisCode[]>([])
   const [allCodes, setAllCodes] = useState<HmisDiagnosisCode[]>([])
@@ -50,6 +51,7 @@ export function DiagnosisCoder({ visitId }: DiagnosisCoderProps) {
       const result = await saveVisitDiagnosisCode(visitId, code.hmis_code_id, 'ai_confirmed')
       if (!result.error) {
         await loadData()
+        onCodesAssigned?.()
       }
     })
   }
@@ -70,6 +72,7 @@ export function DiagnosisCoder({ visitId }: DiagnosisCoderProps) {
         setShowSearch(false)
         setSearch('')
         await loadData()
+        onCodesAssigned?.()
       }
     })
   }
