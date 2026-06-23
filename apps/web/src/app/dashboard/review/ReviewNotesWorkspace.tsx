@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ReviewNotesList } from './ReviewNotesList'
 import { ReviewVisitPanel } from './ReviewVisitPanel'
@@ -9,6 +9,25 @@ import type { ReviewVisitKind } from './load-visit'
 import { loadReviewVisitPanel } from './load-visit'
 import type { StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
+
+/** Match Tailwind `lg` — below this width we use a Sheet; at/above we use inline panel. */
+const NARROW_QUERY = '(max-width: 1023px)'
+
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(NARROW_QUERY).matches,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW_QUERY)
+    const update = () => setNarrow(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  return narrow
+}
 
 export type ReviewQueueItem = {
   visitId: string
@@ -68,6 +87,11 @@ export function ReviewNotesWorkspace({
   const [uncoded, setUncoded] = useState(initialUncoded)
   const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null)
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
+  const narrow = useNarrowViewport()
+
+  useEffect(() => {
+    if (!narrow) setMobileSheetOpen(false)
+  }, [narrow])
 
   const queue = useMemo(() => buildQueue(unfinalized, uncoded), [unfinalized, uncoded])
 
@@ -76,7 +100,9 @@ export function ReviewNotesWorkspace({
 
   const openVisit = useCallback((visitId: string) => {
     setSelectedVisitId(visitId)
-    setMobileSheetOpen(true)
+    if (window.matchMedia(NARROW_QUERY).matches) {
+      setMobileSheetOpen(true)
+    }
   }, [])
 
   const closePanel = useCallback(() => {
@@ -145,11 +171,11 @@ export function ReviewNotesWorkspace({
     ) : null
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <div className={cn('flex min-h-0 flex-1', narrow ? 'flex-col' : 'flex-row')}>
       <div
         className={cn(
           'min-h-0 flex-1 overflow-auto px-8 py-6',
-          selected && 'lg:max-w-[min(100%,52%)] lg:border-r lg:border-border',
+          selected && !narrow && 'max-w-[min(100%,52%)] border-r border-border',
         )}
       >
         <ReviewNotesList
@@ -161,27 +187,29 @@ export function ReviewNotesWorkspace({
         />
       </div>
 
-      {/* Desktop: fixed right panel — list stays visible, no full-page navigation */}
-      {selected && (
+      {/* Desktop: inline right panel — no modal overlay */}
+      {selected && !narrow && (
         <aside
-          className="hidden lg:flex min-h-0 w-[min(520px,48vw)] shrink-0 flex-col border-l border-border shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.08)] animate-in slide-in-from-right-4 duration-200"
+          className="flex min-h-0 w-[min(520px,48vw)] shrink-0 flex-col border-l border-border shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.08)] animate-in slide-in-from-right-4 duration-200"
         >
           {panel}
         </aside>
       )}
 
-      {/* Mobile / narrow: sheet overlay */}
-      <Sheet open={mobileSheetOpen && !!selected} onOpenChange={(open) => !open && closePanel()}>
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-lg md:max-w-xl lg:hidden"
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Review visit</SheetTitle>
-          </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-2">{panel}</div>
-        </SheetContent>
-      </Sheet>
+      {/* Narrow viewports only — Sheet mounts its own overlay */}
+      {narrow && (
+        <Sheet open={mobileSheetOpen && !!selected} onOpenChange={(open) => !open && closePanel()}>
+          <SheetContent
+            side="right"
+            className="flex w-full flex-col gap-0 p-0 sm:max-w-lg md:max-w-xl"
+          >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Review visit</SheetTitle>
+            </SheetHeader>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-2">{panel}</div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }
