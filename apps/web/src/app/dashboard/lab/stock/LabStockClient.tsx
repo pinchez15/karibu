@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Plus, X, Loader2, AlertTriangle, Upload } from 'lucide-react'
+import { Plus, X, Loader2, Upload, ClipboardPlus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +30,16 @@ export type LabStockRow = {
   active: boolean
 }
 
+type StockFilter = 'in_stock' | 'low' | 'out' | 'all'
+type StockStatus = 'in_stock' | 'low' | 'out'
+
+const FILTERS: { id: StockFilter; label: string }[] = [
+  { id: 'in_stock', label: 'In stock' },
+  { id: 'low', label: 'Low' },
+  { id: 'out', label: 'Out' },
+  { id: 'all', label: 'All' },
+]
+
 const CATEGORIES = [
   { value: 'rdt_kit', label: 'RDT kit' },
   { value: 'reagent', label: 'Reagent' },
@@ -37,6 +47,14 @@ const CATEGORIES = [
   { value: 'slide_stain', label: 'Slide / stain' },
   { value: 'other', label: 'Other' },
 ]
+
+const CATEGORY_LABELS: Record<string, string> = {
+  rdt_kit: 'RDT kit',
+  reagent: 'Reagent',
+  consumable: 'Consumable',
+  slide_stain: 'Slide / stain',
+  other: 'Other',
+}
 
 const MOVEMENT_TYPES = [
   { value: 'received', label: 'Received (+)' },
@@ -47,66 +65,166 @@ const MOVEMENT_TYPES = [
   { value: 'transferred_out', label: 'Transferred out (−)' },
 ] as const
 
+function getStockStatus(row: LabStockRow): StockStatus {
+  if (row.quantity_on_hand <= 0) return 'out'
+  if (row.low_stock_threshold != null && row.quantity_on_hand <= row.low_stock_threshold) return 'low'
+  return 'in_stock'
+}
+
+function matchesFilter(row: LabStockRow, filter: StockFilter): boolean {
+  const status = getStockStatus(row)
+  switch (filter) {
+    case 'in_stock':
+      return status === 'in_stock'
+    case 'low':
+      return status === 'low'
+    case 'out':
+      return status === 'out'
+    default:
+      return true
+  }
+}
+
+function matchesQuery(row: LabStockRow, q: string): boolean {
+  if (!q) return true
+  const haystack = [row.test_name, row.test_code ?? '', row.category, row.unit]
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(q)
+}
+
+const STATUS_STYLES: Record<StockStatus, string> = {
+  in_stock: 'bg-green-500/15 text-green-800',
+  low: 'bg-amber-soft text-amber-ink',
+  out: 'bg-destructive/10 text-destructive',
+}
+
+const STATUS_LABELS: Record<StockStatus, string> = {
+  in_stock: 'OK',
+  low: 'Low',
+  out: 'Out',
+}
+
 export function LabStockClient({ initialRows }: { initialRows: LabStockRow[] }) {
   const [rows] = useState(initialRows)
   const [showAdd, setShowAdd] = useState(false)
   const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<StockFilter>('in_stock')
+
+  const activeRows = useMemo(() => rows.filter((r) => r.active), [rows])
+
+  const filterCounts = useMemo(() => {
+    const counts: Record<StockFilter, number> = { in_stock: 0, low: 0, out: 0, all: 0 }
+    counts.all = activeRows.length
+    for (const row of activeRows) {
+      const status = getStockStatus(row)
+      if (status === 'in_stock') counts.in_stock++
+      if (status === 'low') counts.low++
+      if (status === 'out') counts.out++
+    }
+    return counts
+  }, [activeRows])
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return rows
-      .filter(r => r.active)
-      .filter(r => !q || r.test_name.toLowerCase().includes(q) || (r.test_code ?? '').toLowerCase().includes(q))
-  }, [rows, query])
-
-  const lowStockCount = visible.filter(r =>
-    r.low_stock_threshold != null && r.quantity_on_hand <= r.low_stock_threshold,
-  ).length
+    return activeRows
+      .filter((r) => matchesFilter(r, filter))
+      .filter((r) => matchesQuery(r, q))
+      .sort((a, b) => a.test_name.localeCompare(b.test_name))
+  }, [activeRows, filter, query])
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Search tests / reagents…"
+          placeholder="Search name, code, category…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="max-w-sm"
+          className="max-w-xs h-9"
         />
-        <Button onClick={() => setShowAdd(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Add stock item
+        <Button size="sm" onClick={() => setShowAdd(true)}>
+          <Plus className="h-4 w-4 mr-1" /> Add
         </Button>
-        <Button variant="outline" asChild>
+        <Button size="sm" variant="outline" asChild>
           <Link href="/dashboard/admin/stock-import?tab=lab">
-            <Upload className="h-4 w-4 mr-1" /> Bulk import
+            <Upload className="h-4 w-4 mr-1" /> Import
           </Link>
         </Button>
-        <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{visible.length} active</span>
-          {lowStockCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-amber-ink bg-amber-soft px-2 py-0.5 rounded-full">
-              <AlertTriangle className="h-3 w-3" /> {lowStockCount} low
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => setFilter(f.id)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors',
+              filter === f.id
+                ? 'bg-cobalt text-white'
+                : 'bg-muted/60 text-muted-foreground hover:bg-muted',
+            )}
+          >
+            {f.label}
+            <span
+              className={cn(
+                'tabular-nums rounded-full px-1.5 py-px text-[10px]',
+                filter === f.id ? 'bg-white/20' : 'bg-background',
+              )}
+            >
+              {filterCounts[f.id]}
             </span>
-          )}
-        </div>
+          </button>
+        ))}
       </div>
 
       {showAdd && <AddLabStockForm onDone={() => setShowAdd(false)} />}
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[2fr_140px_100px_140px_140px_180px] gap-3 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
-          <span>ITEM</span>
-          <span>CATEGORY</span>
-          <span className="text-right">UNIT PRICE</span>
-          <span>ON HAND</span>
-          <span>EXPIRY</span>
-          <span>ACTIONS</span>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-xs table-fixed border-collapse">
+            <colgroup>
+              <col className="w-[28%]" />
+              <col className="w-[14%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+            </colgroup>
+            <thead>
+              <tr className="kh-meta border-b border-line-soft bg-muted/40 text-[10px]">
+                <th className="text-left font-semibold px-3 py-2">Item</th>
+                <th className="text-left font-semibold px-2 py-2">Category</th>
+                <th className="text-right font-semibold px-2 py-2">On hand</th>
+                <th className="text-right font-semibold px-2 py-2">Unit price</th>
+                <th className="text-left font-semibold px-2 py-2">Expiry</th>
+                <th className="text-center font-semibold px-2 py-2">Status</th>
+                <th className="text-right font-semibold px-2 py-2 pr-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {visible.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    {query
+                      ? 'No matches — try another search or filter.'
+                      : filter === 'in_stock'
+                        ? 'Nothing in stock right now. Check Low or Out filters.'
+                        : 'No items in this filter.'}
+                  </td>
+                </tr>
+              ) : (
+                visible.map((row) => <LabStockRowItem key={row.id} row={row} />)
+              )}
+            </tbody>
+          </table>
         </div>
-        {visible.length === 0 ? (
-          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-            {query ? 'No matching items.' : 'No stock items yet — tap "Add stock item" to start.'}
+        {visible.length > 0 && (
+          <div className="px-3 py-1.5 border-t border-border/60 text-[10px] text-muted-foreground">
+            Showing {visible.length} of {filterCounts[filter]}
+            {filter !== 'all' ? ` (${filterCounts.all} total)` : ''}
           </div>
-        ) : (
-          visible.map(row => <LabStockRowItem key={row.id} row={row} />)
         )}
       </div>
     </div>
@@ -115,64 +233,102 @@ export function LabStockClient({ initialRows }: { initialRows: LabStockRow[] }) 
 
 function LabStockRowItem({ row }: { row: LabStockRow }) {
   const [showMovement, setShowMovement] = useState(false)
-  const isLow = row.low_stock_threshold != null && row.quantity_on_hand <= row.low_stock_threshold
+  const status = getStockStatus(row)
+  const categoryLabel = CATEGORY_LABELS[row.category] ?? row.category.replace(/_/g, ' ')
 
   return (
-    <div className={cn('border-b border-border last:border-b-0', isLow && 'bg-amber-soft/30')}>
-      <div className="grid grid-cols-[2fr_140px_100px_140px_140px_180px] gap-3 px-4 py-3 items-center">
-        <div>
-          <div className="font-medium">{row.test_name}</div>
+    <>
+      <tr
+        className={cn(
+          'border-b border-border/50 last:border-b-0 hover:bg-muted/30',
+          status === 'low' && 'bg-amber-soft/20',
+          status === 'out' && 'bg-destructive/[0.03]',
+        )}
+      >
+        <td className="px-3 py-1.5 align-middle min-w-0">
+          <div className="font-medium text-[13px] truncate leading-tight">{row.test_name}</div>
           {row.test_code && (
-            <div className="text-[11px] text-muted-foreground font-mono">{row.test_code}</div>
+            <div className="text-[10px] text-muted-foreground font-mono truncate">{row.test_code}</div>
           )}
-        </div>
-        <div className="text-sm text-muted-foreground capitalize">
-          {row.category.replace('_', ' ')}
-        </div>
-        <div className="text-sm text-right font-mono tabular-nums">
-          {formatStockUnitPrice(row.unit_price_ugx)}
-        </div>
-        <div>
-          <div className={cn('text-sm font-semibold', isLow && 'text-amber-ink')}>
-            {row.quantity_on_hand} {row.unit}
-          </div>
+        </td>
+        <td className="px-2 py-1.5 align-middle text-muted-foreground truncate" title={categoryLabel}>
+          {categoryLabel}
+        </td>
+        <td className="px-2 py-1.5 align-middle text-right tabular-nums">
+          <span className={cn('font-semibold', status === 'low' && 'text-amber-ink')}>
+            {row.quantity_on_hand}
+          </span>
+          <span className="text-muted-foreground ml-0.5">{row.unit}</span>
           {row.low_stock_threshold != null && (
-            <div className="text-[11px] text-muted-foreground">
-              Low at {row.low_stock_threshold}
-            </div>
+            <div className="text-[10px] text-muted-foreground">≤{row.low_stock_threshold}</div>
           )}
-        </div>
-        <div className="text-sm text-muted-foreground">
+        </td>
+        <td className="px-2 py-1.5 align-middle text-right font-mono tabular-nums">
+          {formatStockUnitPrice(row.unit_price_ugx)}
+        </td>
+        <td className="px-2 py-1.5 align-middle text-muted-foreground whitespace-nowrap">
           {row.expires_at
-            ? new Date(row.expires_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            ? new Date(row.expires_at).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: '2-digit',
+              })
             : '—'}
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setShowMovement((s) => !s)}>
-            {showMovement ? 'Cancel' : 'Record'}
-          </Button>
-          <ToggleActiveButton id={row.id} />
-        </div>
-      </div>
-      {showMovement && <MovementForm row={row} onDone={() => setShowMovement(false)} />}
-    </div>
+        </td>
+        <td className="px-2 py-1.5 align-middle text-center">
+          <span
+            className={cn(
+              'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+              STATUS_STYLES[status],
+            )}
+          >
+            {STATUS_LABELS[status]}
+          </span>
+        </td>
+        <td className="px-2 py-1.5 pr-3 align-middle">
+          <div className="flex items-center justify-end gap-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 shrink-0"
+              aria-label={showMovement ? 'Cancel stock movement' : 'Record stock movement'}
+              onClick={() => setShowMovement((s) => !s)}
+            >
+              {showMovement ? <X className="h-3.5 w-3.5" /> : <ClipboardPlus className="h-3.5 w-3.5" />}
+            </Button>
+            <DeactivateButton id={row.id} name={row.test_name} />
+          </div>
+        </td>
+      </tr>
+      {showMovement && (
+        <tr className="bg-muted/20">
+          <td colSpan={7} className="px-3 py-2">
+            <MovementForm row={row} onDone={() => setShowMovement(false)} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
-function ToggleActiveButton({ id }: { id: string }) {
+function DeactivateButton({ id, name }: { id: string; name: string }) {
   const [pending, startTransition] = useTransition()
   return (
     <Button
-      size="sm"
+      type="button"
+      size="icon"
       variant="ghost"
       disabled={pending}
+      className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+      aria-label={`Remove ${name} from active stock`}
       onClick={() =>
         startTransition(async () => {
           await setLabStockActive(id, false)
         })
       }
     >
-      <X className="h-3.5 w-3.5" />
+      {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
     </Button>
   )
 }
@@ -192,36 +348,45 @@ function MovementForm({ row, onDone }: { row: LabStockRow; onDone: () => void })
   }
 
   return (
-    <form action={handleSubmit} className="px-4 pb-4 pt-1 grid grid-cols-1 md:grid-cols-[160px_120px_140px_140px_1fr_auto] gap-2 items-end bg-card/50">
+    <form
+      action={handleSubmit}
+      className="grid grid-cols-2 sm:grid-cols-[140px_100px_120px_120px_1fr_auto] gap-2 items-end"
+    >
       <div>
-        <Label className="text-[11px]">Type</Label>
-        <select name="movement_type" defaultValue="received" className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background">
-          {MOVEMENT_TYPES.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+        <Label className="text-[10px]">Type</Label>
+        <select
+          name="movement_type"
+          defaultValue="received"
+          className="w-full h-8 text-xs border border-border rounded-md px-2 bg-background"
+        >
+          {MOVEMENT_TYPES.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
         </select>
       </div>
       <div>
-        <Label className="text-[11px]">Quantity</Label>
-        <Input name="quantity" type="number" step="any" required placeholder={`${row.unit}`} />
+        <Label className="text-[10px]">Qty</Label>
+        <Input name="quantity" type="number" step="any" required className="h-8 text-xs" />
       </div>
       <div>
-        <Label className="text-[11px]">Batch</Label>
-        <Input name="batch_number" placeholder="Optional" />
+        <Label className="text-[10px]">Batch</Label>
+        <Input name="batch_number" className="h-8 text-xs" placeholder="Optional" />
       </div>
       <div>
-        <Label className="text-[11px]">Expires</Label>
-        <Input name="expires_at" type="date" />
+        <Label className="text-[10px]">Expires</Label>
+        <Input name="expires_at" type="date" className="h-8 text-xs" />
       </div>
       <div>
-        <Label className="text-[11px]">Notes</Label>
-        <Input name="notes" placeholder="Optional" />
+        <Label className="text-[10px]">Notes</Label>
+        <Input name="notes" className="h-8 text-xs" placeholder="Optional" />
       </div>
       <div className="flex flex-col gap-1">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button type="submit" size="sm" className="h-8" disabled={pending}>
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save'}
         </Button>
-        {error && <div className="text-[11px] text-destructive">{error}</div>}
+        {error && <div className="text-[10px] text-destructive">{error}</div>}
       </div>
     </form>
   )
@@ -241,10 +406,7 @@ function AddLabStockForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form
-      action={handleSubmit}
-      className="bg-card border border-border rounded-xl p-4 space-y-3"
-    >
+    <form action={handleSubmit} className="bg-card border border-border rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">Add stock item</h3>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>
@@ -269,8 +431,10 @@ function AddLabStockForm({ onDone }: { onDone: () => void }) {
             defaultValue="rdt_kit"
             className="w-full text-sm border border-border rounded-md px-2 py-1.5 bg-background"
           >
-            {CATEGORIES.map(c => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
           </select>
         </div>
