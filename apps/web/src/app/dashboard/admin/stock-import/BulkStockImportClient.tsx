@@ -16,10 +16,12 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import {
+  CLINICAL_CSV_COLUMNS,
   LAB_CSV_COLUMNS,
   LAB_COLUMN_MAP,
   PHARMACY_CSV_COLUMNS,
   PHARMACY_COLUMN_MAP,
+  type ColumnDef,
   downloadCsv,
   labTemplateCsv,
   mapRowsByHeader,
@@ -36,54 +38,15 @@ import {
 
 type StockTab = 'pharmacy' | 'lab' | 'clinical'
 
-type GridColumn = {
-  key: string
-  label: string
-  placeholder?: string
-  required?: boolean
-  width?: string
-}
+const PHARMACY_COLUMNS = PHARMACY_CSV_COLUMNS
+const LAB_COLUMNS = LAB_CSV_COLUMNS
+const CLINICAL_COLUMNS = CLINICAL_CSV_COLUMNS
 
-const PHARMACY_COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Drug name', placeholder: 'Amoxicillin', required: true, width: 'min-w-[160px]' },
-  { key: 'code', label: 'Code', placeholder: 'AMOX', width: 'min-w-[80px]' },
-  { key: 'strength', label: 'Strength', placeholder: '500mg', width: 'min-w-[90px]' },
-  { key: 'formulation', label: 'Form', placeholder: 'tablet', width: 'min-w-[90px]' },
-  { key: 'unit', label: 'Unit', placeholder: 'tablets', required: true, width: 'min-w-[80px]' },
-  { key: 'quantity', label: 'Qty', placeholder: '0', width: 'min-w-[70px]' },
-  { key: 'low_at', label: 'Low at', placeholder: '10', width: 'min-w-[70px]' },
-  { key: 'batch', label: 'Batch', width: 'min-w-[90px]' },
-  { key: 'expires', label: 'Expires', placeholder: 'YYYY-MM-DD', width: 'min-w-[110px]' },
-  { key: 'supplier', label: 'Supplier', width: 'min-w-[100px]' },
-  { key: 'notes', label: 'Notes', width: 'min-w-[120px]' },
-]
-
-const LAB_COLUMNS: GridColumn[] = [
-  { key: 'name', label: 'Item name', placeholder: 'Malaria RDT kit', required: true, width: 'min-w-[160px]' },
-  { key: 'code', label: 'Code', placeholder: 'MAL_RDT', width: 'min-w-[80px]' },
-  { key: 'category', label: 'Category', placeholder: 'rdt_kit', width: 'min-w-[100px]' },
-  { key: 'unit', label: 'Unit', placeholder: 'kits', required: true, width: 'min-w-[80px]' },
-  { key: 'quantity', label: 'Qty', placeholder: '0', width: 'min-w-[70px]' },
-  { key: 'low_at', label: 'Low at', placeholder: '5', width: 'min-w-[70px]' },
-  { key: 'batch', label: 'Batch', width: 'min-w-[90px]' },
-  { key: 'expires', label: 'Expires', placeholder: 'YYYY-MM-DD', width: 'min-w-[110px]' },
-  { key: 'supplier', label: 'Supplier', width: 'min-w-[100px]' },
-  { key: 'notes', label: 'Notes', width: 'min-w-[120px]' },
-]
-
-const CLINICAL_COLUMNS: GridColumn[] = LAB_COLUMNS.map((c) =>
-  c.key === 'category'
-    ? { ...c, placeholder: 'consumable', label: 'Category (optional)' }
-    : c.key === 'name'
-      ? { ...c, placeholder: 'Examination gloves' }
-      : c,
-)
-
-function emptyRow(columns: GridColumn[]): Record<string, string> {
+function emptyRow(columns: ColumnDef[]): Record<string, string> {
   return Object.fromEntries(columns.map((c) => [c.key, '']))
 }
 
-function blankRows(columns: GridColumn[], count = 8): Record<string, string>[] {
+function blankRows(columns: ColumnDef[], count = 8): Record<string, string>[] {
   return Array.from({ length: count }, () => emptyRow(columns))
 }
 
@@ -91,12 +54,14 @@ interface BulkStockImportClientProps {
   initialTab: StockTab
   canPharmacy: boolean
   canLab: boolean
+  pharmacyMarkupPercent?: number
 }
 
 export function BulkStockImportClient({
   initialTab,
   canPharmacy,
   canLab,
+  pharmacyMarkupPercent = 10,
 }: BulkStockImportClientProps) {
   const defaultTab: StockTab = canPharmacy
     ? initialTab === 'pharmacy' || !canLab
@@ -219,11 +184,11 @@ export function BulkStockImportClient({
 
   function downloadTemplate() {
     if (tab === 'pharmacy') {
-      downloadCsv(pharmacyTemplateCsv(), 'pharmacy-stock-template.csv')
+      downloadCsv(pharmacyTemplateCsv(), 'pharmacy-stock.csv')
     } else if (tab === 'clinical') {
-      downloadCsv(labTemplateCsv('clinical'), 'clinical-supplies-template.csv')
+      downloadCsv(labTemplateCsv('clinical'), 'clinical-supplies.csv')
     } else {
-      downloadCsv(labTemplateCsv('lab'), 'lab-stock-template.csv')
+      downloadCsv(labTemplateCsv('lab'), 'lab-stock.csv')
     }
   }
 
@@ -280,7 +245,11 @@ export function BulkStockImportClient({
       <p className="text-sm text-muted-foreground max-w-3xl">
         Type rows below, paste from Excel or Google Sheets, or upload a CSV. Matching items
         (same drug code + strength + form, or same lab item + batch) get their quantity added
-        rather than duplicated.
+        rather than duplicated.{' '}
+        <span className="text-foreground/80">
+          Pharmacy <span className="font-mono tabular-nums">unit_price</span> is stock cost;
+          patients are billed at +{pharmacyMarkupPercent}% on dispense.
+        </span>
       </p>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as StockTab)}>
@@ -354,30 +323,34 @@ function SpreadsheetGrid({
   onPaste,
   readOnly,
 }: {
-  columns: GridColumn[]
+  columns: ColumnDef[]
   rows: Record<string, string>[]
   onUpdate: (rowIndex: number, key: string, value: string) => void
   onRemove: (rowIndex: number) => void
   onPaste?: (e: React.ClipboardEvent) => void
   readOnly?: boolean
 }) {
+  const numericKeys = new Set(['quantity', 'unit_price', 'low_at'])
+
   return (
     <div
       className="border border-border rounded-xl overflow-auto bg-card"
       onPaste={readOnly ? undefined : onPaste}
     >
-      <table className="w-full text-sm border-collapse min-w-[900px]">
+      <table className="w-full text-sm border-collapse min-w-[1100px]">
         <thead>
           <tr className="bg-muted/50 border-b border-border">
-            <th className="w-10 px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-10 px-2 py-2 text-left text-[11px] font-semibold text-muted-foreground">
               #
             </th>
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  'px-2 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground',
-                  col.width,
+                  'px-2 py-2 text-[11px] font-semibold text-muted-foreground whitespace-nowrap',
+                  col.align === 'right' ? 'text-right' : 'text-left',
+                  col.key === 'name' && 'min-w-[140px]',
+                  col.key === 'notes' && 'min-w-[160px]',
                 )}
               >
                 {col.label}
@@ -397,14 +370,17 @@ function SpreadsheetGrid({
                 <td key={col.key} className="px-1 py-0.5 align-middle">
                   <input
                     type="text"
+                    inputMode={numericKeys.has(col.key) ? 'numeric' : 'text'}
                     value={row[col.key] ?? ''}
                     onChange={(e) => onUpdate(rowIndex, col.key, e.target.value)}
                     placeholder={col.placeholder}
                     readOnly={readOnly}
                     className={cn(
-                      'w-full text-sm border border-transparent rounded px-2 py-1.5 bg-transparent',
+                      'w-full text-sm border border-transparent rounded px-2 py-1.5 bg-transparent font-mono tabular-nums',
                       'hover:border-border focus:border-ring focus:bg-background focus:outline-none focus:ring-1 focus:ring-ring',
+                      col.align === 'right' && 'text-right',
                       readOnly && 'pointer-events-none opacity-60',
+                      !numericKeys.has(col.key) && 'font-sans',
                     )}
                   />
                 </td>

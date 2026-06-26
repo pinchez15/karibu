@@ -23,6 +23,8 @@ export async function createLabStockItem(formData: FormData): Promise<ActionResu
   const unit = String(formData.get('unit') ?? '').trim()
   const initialQty = Number(formData.get('initial_quantity') ?? 0)
   const lowThreshold = Number(formData.get('low_stock_threshold') ?? 5)
+  const unitPriceRaw = String(formData.get('unit_price_ugx') ?? '').trim()
+  const unitPriceUgx = unitPriceRaw ? Number(unitPriceRaw) : null
   const batchNumber = String(formData.get('batch_number') ?? '').trim() || null
   const expiresAt = String(formData.get('expires_at') ?? '').trim() || null
   const supplier = String(formData.get('supplier') ?? '').trim() || null
@@ -44,6 +46,7 @@ export async function createLabStockItem(formData: FormData): Promise<ActionResu
       unit,
       quantity_on_hand: 0,
       low_stock_threshold: lowThreshold,
+      unit_price_ugx: unitPriceUgx != null && Number.isFinite(unitPriceUgx) ? Math.round(unitPriceUgx) : null,
       batch_number: batchNumber,
       expires_at: expiresAt,
       supplier,

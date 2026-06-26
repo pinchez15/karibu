@@ -61,6 +61,26 @@ describe('pharmacyImportRowSchema', () => {
     expect(parsed.formulation).toBe('tablet')
     expect(parsed.quantity).toBe(0)
     expect(parsed.low_at).toBe(10)
+    expect(parsed.unit_price_ugx).toBeNull()
+  })
+
+  it('parses unit_price as UGX integer', () => {
+    const parsed = pharmacyImportRowSchema.parse({
+      name: 'Metronidazole',
+      unit: 'vials',
+      unit_price: '5000',
+    })
+    expect(parsed.unit_price_ugx).toBe(5000)
+  })
+
+  it('merges brand_generic into notes', () => {
+    const parsed = pharmacyImportRowSchema.parse({
+      name: 'Metronidazole',
+      unit: 'vials',
+      brand_generic: 'Flagyl',
+      notes: 'Injectable',
+    })
+    expect(parsed.notes).toBe('Brand: Flagyl\nInjectable')
   })
 
   it('normalizes DD/MM/YYYY dates', () => {
@@ -81,5 +101,35 @@ describe('labImportRowSchema', () => {
       category: 'supplies',
     })
     expect(parsed.category).toBe('consumable')
+  })
+
+  it('maps test_kit and lab_test categories', () => {
+    expect(
+      labImportRowSchema.parse({ name: 'PyloKit', unit: 'kits', category: 'test_kit' }).category,
+    ).toBe('rdt_kit')
+    expect(
+      labImportRowSchema.parse({ name: 'CBC', unit: 'tests', category: 'lab_test' }).category,
+    ).toBe('other')
+  })
+
+  it('parses unit_price', () => {
+    const parsed = labImportRowSchema.parse({
+      name: 'Malaria RDT',
+      unit: 'tests',
+      unit_price: '2,000',
+    })
+    expect(parsed.unit_price_ugx).toBe(2000)
+  })
+})
+
+describe('mapRowsByHeader brand_generi alias', () => {
+  it('maps truncated Excel header', () => {
+    const rows = [
+      ['name', 'brand_generi', 'unit_price'],
+      ['Metronidazole', 'Flagyl', '5000'],
+    ]
+    const mapped = mapRowsByHeader(rows, PHARMACY_COLUMN_MAP)
+    expect(mapped[0].brand_generic).toBe('Flagyl')
+    expect(mapped[0].unit_price).toBe('5000')
   })
 })

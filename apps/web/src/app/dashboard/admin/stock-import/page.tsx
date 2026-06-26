@@ -2,9 +2,20 @@ import { redirect } from 'next/navigation'
 import { getStaff, isAdmin } from '@/lib/auth'
 import { WebTopBar } from '@/components/web-shell'
 import { BulkStockImportClient } from './BulkStockImportClient'
+import { createServiceClient } from '@/lib/supabase'
 
 type PageProps = {
   searchParams: Promise<{ tab?: string }>
+}
+
+async function getPharmacyMarkupPercent(clinicId: string): Promise<number> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('clinic_billing_rates')
+    .select('pharmacy_markup_percent')
+    .eq('clinic_id', clinicId)
+    .maybeSingle()
+  return Number(data?.pharmacy_markup_percent ?? 10)
 }
 
 export default async function StockImportPage({ searchParams }: PageProps) {
@@ -28,6 +39,8 @@ export default async function StockImportPage({ searchParams }: PageProps) {
         ? 'pharmacy'
         : 'lab'
 
+  const pharmacyMarkupPercent = await getPharmacyMarkupPercent(staff.clinic_id)
+
   return (
     <>
       <WebTopBar
@@ -39,6 +52,7 @@ export default async function StockImportPage({ searchParams }: PageProps) {
           initialTab={initialTab}
           canPharmacy={canPharmacy}
           canLab={canLab}
+          pharmacyMarkupPercent={pharmacyMarkupPercent}
         />
       </div>
     </>

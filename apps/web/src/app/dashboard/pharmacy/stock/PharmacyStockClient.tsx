@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { formatStockUnitPrice, patientUnitPriceFromStock } from '@/lib/money'
 import {
   createPharmacyStockItem,
   recordPharmacyStockMovement,
@@ -71,7 +72,13 @@ const MOVEMENT_TYPES = [
   { value: 'transferred_out', label: 'Transferred out (−)' },
 ] as const
 
-export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStockRow[] }) {
+export function PharmacyStockClient({
+  initialRows,
+  pharmacyMarkupPercent = 10,
+}: {
+  initialRows: PharmacyStockRow[]
+  pharmacyMarkupPercent?: number
+}) {
   const [rows] = useState(initialRows)
   const [showAdd, setShowAdd] = useState(false)
   const [query, setQuery] = useState('')
@@ -114,6 +121,7 @@ export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStoc
         </Button>
         <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
           <span>{visible.length} active</span>
+          <span>Bill +{pharmacyMarkupPercent}% on unit price</span>
           {lowStockCount > 0 && (
             <span className="inline-flex items-center gap-1 text-amber-ink bg-amber-soft px-2 py-0.5 rounded-full">
               <AlertTriangle className="h-3 w-3" /> {lowStockCount} low
@@ -146,10 +154,12 @@ export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStoc
       )}
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_120px_120px_150px] gap-2 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
+        <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_100px_100px_120px_120px_150px] gap-2 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
           <span>DRUG</span>
           <span>STRENGTH</span>
           <span>FORMULATION</span>
+          <span className="text-right">UNIT PRICE</span>
+          <span className="text-right">BILL PRICE</span>
           <span>ON HAND</span>
           <span>EXPIRY</span>
           <span>ACTIONS</span>
@@ -159,25 +169,40 @@ export function PharmacyStockClient({ initialRows }: { initialRows: PharmacyStoc
             {query ? 'No matching stock items.' : 'No stock items yet — tap "Add stock item" to start.'}
           </div>
         ) : (
-          visible.map(row => <StockRow key={row.id} row={row} />)
+          visible.map(row => (
+            <StockRow key={row.id} row={row} pharmacyMarkupPercent={pharmacyMarkupPercent} />
+          ))
         )}
       </div>
     </div>
   )
 }
 
-function StockRow({ row }: { row: PharmacyStockRow }) {
+function StockRow({
+  row,
+  pharmacyMarkupPercent,
+}: {
+  row: PharmacyStockRow
+  pharmacyMarkupPercent: number
+}) {
   const [showMovement, setShowMovement] = useState(false)
   const isLow = row.low_stock_threshold != null && row.quantity_on_hand <= row.low_stock_threshold
+  const billUnit = patientUnitPriceFromStock(row.unit_price_ugx, pharmacyMarkupPercent)
 
   return (
     <div className={cn('border-b border-border last:border-b-0', isLow && 'bg-amber-soft/30')}>
-      <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_120px_120px_150px] gap-2 px-4 py-2 items-center">
+      <div className="grid grid-cols-[minmax(0,1.5fr)_110px_120px_100px_100px_120px_120px_150px] gap-2 px-4 py-2 items-center">
         <div className="min-w-0">
           <div className="font-medium truncate">{toSentenceCase(row.drug_name)}</div>
         </div>
         <div className="text-sm">{row.strength ?? '—'}</div>
         <div className="text-sm text-muted-foreground">{row.formulation}</div>
+        <div className="text-sm text-right font-mono tabular-nums">
+          {formatStockUnitPrice(row.unit_price_ugx)}
+        </div>
+        <div className="text-sm text-right font-mono tabular-nums text-muted-foreground">
+          {formatStockUnitPrice(billUnit)}
+        </div>
         <div>
           <div className={cn('text-sm font-semibold', isLow && 'text-amber-ink')}>
             {row.quantity_on_hand} {row.unit}

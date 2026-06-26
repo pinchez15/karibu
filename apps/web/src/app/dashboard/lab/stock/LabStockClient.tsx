@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { formatStockUnitPrice } from '@/lib/money'
 import {
   createLabStockItem,
   recordLabStockMovement,
@@ -21,6 +22,7 @@ export type LabStockRow = {
   unit: string
   quantity_on_hand: number
   low_stock_threshold: number | null
+  unit_price_ugx: number | null
   expires_at: string | null
   batch_number: string | null
   supplier: string | null
@@ -91,9 +93,10 @@ export function LabStockClient({ initialRows }: { initialRows: LabStockRow[] }) 
       {showAdd && <AddLabStockForm onDone={() => setShowAdd(false)} />}
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[2fr_140px_140px_140px_180px] gap-3 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
+        <div className="grid grid-cols-[2fr_140px_100px_140px_140px_180px] gap-3 px-4 py-2.5 kh-meta border-b border-line-soft bg-muted/40">
           <span>ITEM</span>
           <span>CATEGORY</span>
+          <span className="text-right">UNIT PRICE</span>
           <span>ON HAND</span>
           <span>EXPIRY</span>
           <span>ACTIONS</span>
@@ -116,7 +119,7 @@ function LabStockRowItem({ row }: { row: LabStockRow }) {
 
   return (
     <div className={cn('border-b border-border last:border-b-0', isLow && 'bg-amber-soft/30')}>
-      <div className="grid grid-cols-[2fr_140px_140px_140px_180px] gap-3 px-4 py-3 items-center">
+      <div className="grid grid-cols-[2fr_140px_100px_140px_140px_180px] gap-3 px-4 py-3 items-center">
         <div>
           <div className="font-medium">{row.test_name}</div>
           {row.test_code && (
@@ -125,6 +128,9 @@ function LabStockRowItem({ row }: { row: LabStockRow }) {
         </div>
         <div className="text-sm text-muted-foreground capitalize">
           {row.category.replace('_', ' ')}
+        </div>
+        <div className="text-sm text-right font-mono tabular-nums">
+          {formatStockUnitPrice(row.unit_price_ugx)}
         </div>
         <div>
           <div className={cn('text-sm font-semibold', isLow && 'text-amber-ink')}>
@@ -279,6 +285,10 @@ function AddLabStockForm({ onDone }: { onDone: () => void }) {
         <div className="space-y-1">
           <Label htmlFor="low_stock_threshold">Low at</Label>
           <Input id="low_stock_threshold" name="low_stock_threshold" type="number" step="any" defaultValue={5} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="unit_price_ugx">Unit price (UGX)</Label>
+          <Input id="unit_price_ugx" name="unit_price_ugx" type="number" step="1" placeholder="2000" />
         </div>
         <div className="space-y-1">
           <Label htmlFor="batch_number">Batch</Label>

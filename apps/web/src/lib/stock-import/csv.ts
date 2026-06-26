@@ -1,90 +1,174 @@
 /**
- * Lightweight CSV helpers for stock bulk import (RFC 4180-ish).
- * No external dependency — clinic staff may upload exports from Excel/Sheets.
+ * CSV / TSV parsing for bulk stock import.
+ * Column order matches clinic spreadsheet templates (name … unit_price … notes).
  */
 
-export function escapeCsvField(value: string | number): string {
-  if (typeof value === 'number') return String(value)
-  if (!value.includes(',') && !value.includes('"') && !value.includes('\n')) return value
-  return `"${value.replace(/"/g, '""')}"`
+export type ColumnDef = {
+  key: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  /** Right-align numeric price column like a spreadsheet. */
+  align?: 'left' | 'right'
 }
 
-export function rowToCsv(fields: (string | number)[]): string {
-  return fields.map(escapeCsvField).join(',')
+/** Pharmacy stock CSV columns (matches clinic pharmacy-stock template). */
+export const PHARMACY_CSV_COLUMNS: ColumnDef[] = [
+  { key: 'name', label: 'name', required: true, placeholder: 'Amoxicillin' },
+  { key: 'brand_generic', label: 'brand_generic', placeholder: 'Flagyl' },
+  { key: 'code', label: 'code', placeholder: 'AMOX' },
+  { key: 'strength', label: 'strength', placeholder: '500mg' },
+  { key: 'formulation', label: 'formulation', placeholder: 'tablet' },
+  { key: 'unit', label: 'unit', required: true, placeholder: 'tablets' },
+  { key: 'quantity', label: 'quantity', placeholder: '0' },
+  { key: 'unit_price', label: 'unit_price', placeholder: '3000', align: 'right' },
+  { key: 'low_at', label: 'low_at', placeholder: '10' },
+  { key: 'batch', label: 'batch', placeholder: '' },
+  { key: 'expires', label: 'expires', placeholder: 'YYYY-MM-DD' },
+  { key: 'supplier', label: 'supplier', placeholder: '' },
+  { key: 'notes', label: 'notes', placeholder: '' },
+]
+
+/** Lab materials CSV columns. */
+export const LAB_CSV_COLUMNS: ColumnDef[] = [
+  { key: 'name', label: 'name', required: true, placeholder: 'Malaria RDT' },
+  { key: 'brand_generic', label: 'brand_generic', placeholder: '' },
+  { key: 'code', label: 'code', placeholder: 'MAL_RDT' },
+  { key: 'category', label: 'category', placeholder: 'rdt_kit' },
+  { key: 'unit', label: 'unit', required: true, placeholder: 'tests' },
+  { key: 'quantity', label: 'quantity', placeholder: '0' },
+  { key: 'unit_price', label: 'unit_price', placeholder: '2000', align: 'right' },
+  { key: 'low_at', label: 'low_at', placeholder: '5' },
+  { key: 'batch', label: 'batch', placeholder: '' },
+  { key: 'expires', label: 'expires', placeholder: 'YYYY-MM-DD' },
+  { key: 'supplier', label: 'supplier', placeholder: '' },
+  { key: 'notes', label: 'notes', placeholder: '' },
+]
+
+/** Clinical supplies — same shape as lab; category defaults to consumable on import. */
+export const CLINICAL_CSV_COLUMNS: ColumnDef[] = LAB_CSV_COLUMNS
+
+export const PHARMACY_COLUMN_MAP: Record<string, string> = {
+  name: 'name',
+  drug: 'name',
+  drug_name: 'name',
+  medication: 'name',
+  medicine: 'name',
+  brand: 'brand_generic',
+  brand_generic: 'brand_generic',
+  brand_generi: 'brand_generic',
+  brand_name: 'brand_generic',
+  code: 'code',
+  drug_code: 'code',
+  strength: 'strength',
+  dose: 'strength',
+  formulation: 'formulation',
+  form: 'formulation',
+  unit: 'unit',
+  units: 'unit',
+  qty: 'quantity',
+  quantity: 'quantity',
+  qoh: 'quantity',
+  count: 'quantity',
+  stock: 'quantity',
+  unit_price: 'unit_price',
+  price: 'unit_price',
+  unit_price_ugx: 'unit_price',
+  price_ugx: 'unit_price',
+  low_at: 'low_at',
+  low: 'low_at',
+  threshold: 'low_at',
+  low_stock: 'low_at',
+  batch: 'batch',
+  batch_number: 'batch',
+  expires: 'expires',
+  expiry: 'expires',
+  expires_at: 'expires',
+  exp: 'expires',
+  supplier: 'supplier',
+  vendor: 'supplier',
+  notes: 'notes',
+  note: 'notes',
 }
 
-/** Parse a single CSV line respecting quoted fields. */
+export const LAB_COLUMN_MAP: Record<string, string> = {
+  name: 'name',
+  test: 'name',
+  test_name: 'name',
+  item: 'name',
+  brand: 'brand_generic',
+  brand_generic: 'brand_generic',
+  brand_generi: 'brand_generic',
+  code: 'code',
+  test_code: 'code',
+  category: 'category',
+  type: 'category',
+  unit: 'unit',
+  units: 'unit',
+  qty: 'quantity',
+  quantity: 'quantity',
+  qoh: 'quantity',
+  count: 'quantity',
+  stock: 'quantity',
+  unit_price: 'unit_price',
+  price: 'unit_price',
+  unit_price_ugx: 'unit_price',
+  price_ugx: 'unit_price',
+  low_at: 'low_at',
+  low: 'low_at',
+  threshold: 'low_at',
+  batch: 'batch',
+  batch_number: 'batch',
+  expires: 'expires',
+  expiry: 'expires',
+  expires_at: 'expires',
+  supplier: 'supplier',
+  notes: 'notes',
+  note: 'notes',
+}
+
 export function parseCsvLine(line: string): string[] {
-  const fields: string[] = []
-  let current = ''
+  const out: string[] = []
+  let cur = ''
   let inQuotes = false
-
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (inQuotes) {
-      if (ch === '"') {
-        if (line[i + 1] === '"') {
-          current += '"'
-          i++
-        } else {
-          inQuotes = false
-        }
+    const c = line[i]
+    if (c === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"'
+        i++
       } else {
-        current += ch
+        inQuotes = !inQuotes
       }
-    } else if (ch === '"') {
-      inQuotes = true
-    } else if (ch === ',') {
-      fields.push(current.trim())
-      current = ''
+    } else if ((c === ',' && !inQuotes) || c === '\r') {
+      out.push(cur.trim())
+      cur = ''
     } else {
-      current += ch
+      cur += c
     }
   }
-  fields.push(current.trim())
-  return fields
+  out.push(cur.trim())
+  return out
 }
 
 export function parseCsv(text: string): string[][] {
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
-  if (!normalized) return []
-
-  const rows: string[][] = []
-  let currentLine = ''
-  let inQuotes = false
-
-  for (let i = 0; i < normalized.length; i++) {
-    const ch = normalized[i]
-    if (ch === '"') {
-      inQuotes = !inQuotes
-      currentLine += ch
-    } else if (ch === '\n' && !inQuotes) {
-      if (currentLine.trim()) rows.push(parseCsvLine(currentLine))
-      currentLine = ''
-    } else {
-      currentLine += ch
-    }
-  }
-  if (currentLine.trim()) rows.push(parseCsvLine(currentLine))
-  return rows
+  const lines = text.split(/\n/).filter((l) => l.trim().length > 0)
+  return lines.map(parseCsvLine)
 }
 
-/** Parse tab-separated paste from Excel / Google Sheets. */
 export function parseTsv(text: string): string[][] {
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
-  if (!normalized) return []
-  return normalized
-    .split('\n')
-    .map((line) => line.split('\t').map((cell) => cell.trim()))
-    .filter((row) => row.some((cell) => cell.length > 0))
+  return text
+    .split(/\n/)
+    .filter((l) => l.trim().length > 0)
+    .map((line) => line.split('\t').map((c) => c.trim()))
 }
 
-export function normalizeHeader(h: string): string {
+function normalizeHeader(h: string): string {
   return h
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_|_$/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '')
 }
 
 export function mapRowsByHeader(
@@ -93,138 +177,174 @@ export function mapRowsByHeader(
 ): Record<string, string>[] {
   if (rows.length === 0) return []
 
-  const [headerRow, ...dataRows] = rows
-  const headers = headerRow.map(normalizeHeader)
+  const headerRow = rows[0]
+  const normalized = headerRow.map(normalizeHeader)
+  const hasHeader = normalized.some((h) => h in columnMap)
 
-  const indexByField: Record<string, number> = {}
-  for (const [canonical, aliases] of Object.entries(columnMap)) {
-    const aliasList = aliases.split('|').map(normalizeHeader)
-    const idx = headers.findIndex((h) => aliasList.includes(h) || h === canonical)
-    if (idx >= 0) indexByField[canonical] = idx
-  }
+  const dataRows = hasHeader ? rows.slice(1) : rows
+  const fieldKeys = hasHeader
+    ? normalized.map((h) => columnMap[h] ?? h)
+    : null
 
   return dataRows
-    .filter((row) => row.some((cell) => cell.trim().length > 0))
+    .filter((row) => row.some((c) => c.trim().length > 0))
     .map((row) => {
       const obj: Record<string, string> = {}
-      for (const [field, idx] of Object.entries(indexByField)) {
-        obj[field] = (row[idx] ?? '').trim()
+      if (fieldKeys) {
+        fieldKeys.forEach((key, i) => {
+          if (key && row[i] !== undefined) obj[key] = row[i]
+        })
+      } else {
+        row.forEach((val, i) => {
+          obj[`col_${i}`] = val
+        })
       }
       return obj
     })
 }
 
-export const PHARMACY_CSV_COLUMNS = [
-  'name',
-  'code',
-  'strength',
-  'formulation',
-  'unit',
-  'quantity',
-  'low_at',
-  'batch',
-  'expires',
-  'supplier',
-  'notes',
-] as const
-
-export const LAB_CSV_COLUMNS = [
-  'name',
-  'code',
-  'category',
-  'unit',
-  'quantity',
-  'low_at',
-  'batch',
-  'expires',
-  'supplier',
-  'notes',
-] as const
-
-export const PHARMACY_COLUMN_MAP: Record<string, string> = {
-  name: 'name|drug_name|drug|item|medicine|medication',
-  code: 'code|drug_code|sku',
-  strength: 'strength|dose|dosage',
-  formulation: 'formulation|form|type',
-  unit: 'unit|units|uom',
-  quantity: 'quantity|qty|amount|on_hand|opening_qty|opening_quantity|stock',
-  low_at: 'low_at|low_stock|low_threshold|reorder',
-  batch: 'batch|batch_number|lot',
-  expires: 'expires|expiry|expires_at|exp_date',
-  supplier: 'supplier|vendor',
-  notes: 'notes|comment|remarks',
+export function rowsToCsv(columns: ColumnDef[], dataRows: Record<string, string>[]): string {
+  const header = columns.map((c) => c.key).join(',')
+  const lines = dataRows.map((row) =>
+    columns
+      .map((c) => {
+        const v = row[c.key] ?? ''
+        if (v.includes(',') || v.includes('"') || v.includes('\n')) {
+          return `"${v.replace(/"/g, '""')}"`
+        }
+        return v
+      })
+      .join(','),
+  )
+  return [header, ...lines].join('\n')
 }
 
-export const LAB_COLUMN_MAP: Record<string, string> = {
-  name: 'name|test_name|item|test|material',
-  code: 'code|test_code|sku',
-  category: 'category|type',
-  unit: 'unit|units|uom',
-  quantity: 'quantity|qty|amount|on_hand|opening_qty|opening_quantity|stock',
-  low_at: 'low_at|low_stock|low_threshold|reorder',
-  batch: 'batch|batch_number|lot',
-  expires: 'expires|expiry|expires_at|exp_date',
-  supplier: 'supplier|vendor',
-  notes: 'notes|comment|remarks',
+export function downloadCsv(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
+
+/** Sample rows for template download — mirrors clinic spreadsheet examples. */
+export const PHARMACY_TEMPLATE_ROWS: Record<string, string>[] = [
+  {
+    name: 'Vitamin B Complex',
+    brand_generic: '',
+    code: 'VITB_INJ',
+    strength: '100mls',
+    formulation: 'injection',
+    unit: 'vials',
+    quantity: '40',
+    unit_price: '3000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: '',
+  },
+  {
+    name: 'Metronidazole',
+    brand_generic: 'Flagyl',
+    code: 'METR_INJ',
+    strength: '',
+    formulation: 'injection',
+    unit: 'vials',
+    quantity: '22',
+    unit_price: '5000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: '',
+  },
+  {
+    name: 'Paracetamol',
+    brand_generic: '',
+    code: 'PARA_100ML',
+    strength: '100ml',
+    formulation: 'liquid',
+    unit: 'bottles',
+    quantity: '30',
+    unit_price: '6000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: '',
+  },
+]
+
+export const LAB_TEMPLATE_ROWS: Record<string, string>[] = [
+  {
+    name: 'Malaria RDT',
+    brand_generic: '',
+    code: 'MAL_RDT',
+    category: 'rdt_kit',
+    unit: 'tests',
+    quantity: '5425',
+    unit_price: '2000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: '',
+  },
+  {
+    name: 'Blood Slide (BS)',
+    brand_generic: '',
+    code: 'BLOODSLI',
+    category: 'slide_stain',
+    unit: 'tests',
+    quantity: '50',
+    unit_price: '2000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: 'Added from price list (lab service)',
+  },
+]
+
+export const CLINICAL_TEMPLATE_ROWS: Record<string, string>[] = [
+  {
+    name: 'Syringes 2mls',
+    brand_generic: '',
+    code: 'SYR_2ML',
+    category: 'consumable',
+    unit: 'pieces',
+    quantity: '4',
+    unit_price: '500',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: '',
+  },
+  {
+    name: 'GIV set',
+    brand_generic: '',
+    code: 'GIVSET',
+    category: 'consumable',
+    unit: 'pieces',
+    quantity: '2',
+    unit_price: '1000',
+    low_at: '',
+    batch: '',
+    expires: '',
+    supplier: '',
+    notes: 'Added from price list',
+  },
+]
 
 export function pharmacyTemplateCsv(): string {
-  const header = rowToCsv([...PHARMACY_CSV_COLUMNS])
-  const example = rowToCsv([
-    'Amoxicillin',
-    'AMOX',
-    '500mg',
-    'tablet',
-    'tablets',
-    120,
-    20,
-    'BATCH-001',
-    '2026-12-31',
-    'NMS',
-    'Opening stock from paper list',
-  ])
-  return `${header}\n${example}\n`
+  return rowsToCsv(PHARMACY_CSV_COLUMNS, PHARMACY_TEMPLATE_ROWS)
 }
 
 export function labTemplateCsv(kind: 'lab' | 'clinical'): string {
-  const header = rowToCsv([...LAB_CSV_COLUMNS])
-  const example =
-    kind === 'clinical'
-      ? rowToCsv([
-          'Examination gloves (medium)',
-          '',
-          'consumable',
-          'boxes',
-          5,
-          2,
-          '',
-          '',
-          'Joint Medical Stores',
-          '',
-        ])
-      : rowToCsv([
-          'Malaria RDT (25-test kit)',
-          'MAL_RDT',
-          'rdt_kit',
-          'kits',
-          3,
-          1,
-          'LOT-4421',
-          '2026-06-30',
-          'SD Bioline',
-          '',
-        ])
-  return `${header}\n${example}\n`
-}
-
-export function downloadCsv(csv: string, filename: string) {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  const rows = kind === 'clinical' ? CLINICAL_TEMPLATE_ROWS : LAB_TEMPLATE_ROWS
+  return rowsToCsv(LAB_CSV_COLUMNS, rows)
 }
