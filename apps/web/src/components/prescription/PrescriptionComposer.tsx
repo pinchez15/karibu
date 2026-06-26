@@ -8,7 +8,7 @@ import {
   PHARMACY_FREQUENCIES,
   PHARMACY_ROUTES,
   formatPrescriptionSig,
-  pharmacyDrugsByCategory,
+  type PharmacyCatalogDrug,
 } from '@karibu/shared'
 import type { PrescriptionLineInput } from '@/lib/validators/prescription'
 
@@ -41,17 +41,29 @@ export function PrescriptionComposer({
   initialLines,
   disabled,
   onChange,
+  catalog,
 }: {
   initialLines?: DraftPrescriptionLine[]
   disabled?: boolean
   onChange: (lines: DraftPrescriptionLine[], summary: string) => void
+  /** Clinic formulary from medication_catalog; falls back to bundled seed list. */
+  catalog?: PharmacyCatalogDrug[]
 }) {
+  const drugs = catalog && catalog.length > 0 ? catalog : PHARMACY_CATALOG_DRUGS
   const [lines, setLines] = useState<DraftPrescriptionLine[]>(
     initialLines?.length ? initialLines : [emptyLine()],
   )
   const [, startTransition] = useTransition()
 
-  const categories = useMemo(() => pharmacyDrugsByCategory(), [])
+  const categories = useMemo(() => {
+    const grouped = new Map<string, PharmacyCatalogDrug[]>()
+    for (const drug of drugs) {
+      const list = grouped.get(drug.category) ?? []
+      list.push(drug)
+      grouped.set(drug.category, list)
+    }
+    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b))
+  }, [drugs])
 
   function emit(next: DraftPrescriptionLine[]) {
     setLines(next)
@@ -65,7 +77,7 @@ export function PrescriptionComposer({
   }
 
   function lineToSummary(line: DraftPrescriptionLine): string {
-    const drug = PHARMACY_CATALOG_DRUGS.find((d) => d.code === line.drugCode)
+    const drug = drugs.find((d) => d.code === line.drugCode)
     const name = drug?.name ?? line.free_text_name ?? ''
     if (!name.trim()) return ''
     return formatPrescriptionSig({
@@ -87,7 +99,7 @@ export function PrescriptionComposer({
   }
 
   function selectDrug(id: string, code: string) {
-    const drug = PHARMACY_CATALOG_DRUGS.find((d) => d.code === code)
+    const drug = drugs.find((d) => d.code === code)
     updateLine(id, {
       drugCode: code,
       medication_code: code,
@@ -170,7 +182,7 @@ export function PrescriptionComposer({
                 list={`strengths-${line.id}`}
               />
               <datalist id={`strengths-${line.id}`}>
-                {(PHARMACY_CATALOG_DRUGS.find((d) => d.code === line.drugCode)?.strengths ?? []).map(
+                {(drugs.find((d) => d.code === line.drugCode)?.strengths ?? []).map(
                   (s) => (
                     <option key={s} value={s} />
                   ),

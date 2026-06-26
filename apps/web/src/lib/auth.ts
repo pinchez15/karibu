@@ -1,12 +1,16 @@
+import { cache } from 'react'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { createServiceClient } from './supabase'
 import type { Staff } from '@karibu/shared'
 
 /**
  * Get the current staff member from Clerk auth
- * Must be called from a Server Component or API route
+ * Must be called from a Server Component or API route.
+ *
+ * Wrapped in React cache() so layout + page + sibling server components
+ * share one Clerk + Supabase lookup per request.
  */
-export async function getStaff(): Promise<Staff | null> {
+export const getStaff = cache(async (): Promise<Staff | null> => {
   const { userId } = await auth()
 
   if (!userId) {
@@ -27,7 +31,7 @@ export async function getStaff(): Promise<Staff | null> {
   }
 
   return data as Staff
-}
+})
 
 /**
  * Get the current staff member, throwing if not authenticated
@@ -71,7 +75,7 @@ export async function isAdmin(): Promise<boolean> {
   return staff?.role === 'admin'
 }
 
-export async function isSuperadmin(): Promise<boolean> {
+export const isSuperadmin = cache(async (): Promise<boolean> => {
   const { userId } = await auth()
   if (!userId) return false
 
@@ -84,7 +88,7 @@ export async function isSuperadmin(): Promise<boolean> {
     .maybeSingle()
 
   return Boolean(data)
-}
+})
 
 export async function hasProvisioningAccess(): Promise<boolean> {
   if (await isSuperadmin()) {

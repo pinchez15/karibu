@@ -58,8 +58,19 @@ export async function countUnfinalizedVisits(clinicId: string): Promise<number> 
 
 /** Unfinalized + uncoded visits this month — drives Today dashboard stat. */
 export async function countReviewNotesItems(clinicId: string): Promise<number> {
-  const { unfinalized, uncoded } = await fetchReviewNotesData(clinicId)
-  return unfinalized.length + uncoded.length
+  const { from, to } = monthToDateRange()
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc('rpc_count_review_items', {
+    p_clinic_id: clinicId,
+    p_from: from,
+    p_to: to,
+  })
+  if (error) {
+    console.error('review-notes: count', error)
+    const { unfinalized, uncoded } = await fetchReviewNotesData(clinicId)
+    return unfinalized.length + uncoded.length
+  }
+  return (data as number) ?? 0
 }
 
 async function enrichWithDemographics(

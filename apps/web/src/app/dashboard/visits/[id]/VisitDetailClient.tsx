@@ -14,7 +14,7 @@ import {
   VisitCriticalAlertBanner,
   type VisitCriticalAlert,
 } from './VisitCriticalAlertBanner'
-import type { Visit, ProviderNote, PatientNote, StaffRole } from '@karibu/shared'
+import type { Visit, ProviderNote, PatientNote, StaffRole, PharmacyCatalogDrug } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
 import {
@@ -109,6 +109,7 @@ interface VisitDetailClientProps {
   visit: VisitWithRelations
   staffId: string
   staffRole?: StaffRole
+  prescribingCatalog?: PharmacyCatalogDrug[]
   payment?: PaymentData | null
   addendums?: AddendumView[]
   amendments?: AmendmentView[]
@@ -118,6 +119,7 @@ export function VisitDetailClient({
   visit,
   staffId,
   staffRole,
+  prescribingCatalog,
   payment,
   addendums = [],
   amendments = [],
@@ -277,6 +279,7 @@ export function VisitDetailClient({
                   visitId={visit.id}
                   alreadySubmitted={!!visit.pharmacy_order_submitted_at}
                   staffRole={staffRole ?? null}
+                  prescribingCatalog={prescribingCatalog}
                 />
               </div>
             )}

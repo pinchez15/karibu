@@ -1,4 +1,4 @@
-/** HC III formulary — mirrors Android HcDrugCatalog for cross-platform Rx UX. */
+/** HC III formulary — offline fallback when DB catalog is unavailable. */
 
 export const PHARMACY_FREQUENCIES = [
   { code: 'OD', label: 'OD — once daily' },

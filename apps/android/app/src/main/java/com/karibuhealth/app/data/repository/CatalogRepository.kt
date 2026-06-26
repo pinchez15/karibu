@@ -8,6 +8,8 @@ import com.karibuhealth.app.data.remote.dto.GetClinicCatalogRequest
 import com.karibuhealth.app.util.NetworkMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,6 +62,13 @@ class CatalogRepository @Inject constructor(
                             displayOrder = item.displayOrder,
                             isAvailable = item.isAvailable,
                             notes = item.notes,
+                            strengthsJson = item.strengths.takeIf { it.isNotEmpty() }
+                                ?.let { Json.encodeToString(it) },
+                            aliasesJson = item.aliases.takeIf { it.isNotEmpty() }
+                                ?.let { Json.encodeToString(it) },
+                            defaultFrequency = item.defaultFrequency,
+                            defaultRoute = item.defaultRoute,
+                            warningText = item.warningText,
                         )
                     },
                 )

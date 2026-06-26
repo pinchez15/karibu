@@ -1,5 +1,6 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicPrescribingCatalog } from '@/lib/clinic-catalog'
 import { filterTimelineAiNotes } from '@/lib/ai-review-helpers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -144,7 +145,10 @@ export default async function VisitDetailPage({
   }
 
   const { id } = await params
-  const visit = await getVisitDetails(id, staff.clinic_id)
+  const [visit, prescribingCatalog] = await Promise.all([
+    getVisitDetails(id, staff.clinic_id),
+    getClinicPrescribingCatalog(staff.clinic_id),
+  ])
 
   if (!visit) {
     notFound()
@@ -245,6 +249,7 @@ export default async function VisitDetailPage({
           visit={visit}
           staffId={staff.id}
           staffRole={staff.role}
+          prescribingCatalog={prescribingCatalog}
           payment={payment}
           addendums={addendums}
           amendments={amendments}

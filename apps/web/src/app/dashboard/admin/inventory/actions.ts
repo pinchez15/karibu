@@ -1,8 +1,9 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff, isAdmin } from '@/lib/auth'
+import { clinicCatalogTag } from '@/lib/clinic-catalog'
 
 /**
  * Inventory management — what labs + drugs are available at this clinic.
@@ -52,6 +53,7 @@ export async function setLabAvailability(
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/dashboard/admin/inventory')
+  revalidateTag(clinicCatalogTag(staff.clinic_id), 'max')
   return { success: true }
 }
 
@@ -84,6 +86,7 @@ export async function setDrugAvailability(
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/dashboard/admin/inventory')
+  revalidateTag(clinicCatalogTag(staff.clinic_id), 'max')
   return { success: true }
 }
 
@@ -158,6 +161,7 @@ export async function updateDrugCatalogFields(
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/dashboard/admin/inventory')
+  revalidateTag(clinicCatalogTag(staff.clinic_id), 'max')
   return { success: true }
 }
 

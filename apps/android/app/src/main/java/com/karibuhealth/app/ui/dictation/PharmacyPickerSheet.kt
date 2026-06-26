@@ -87,8 +87,24 @@ fun PharmacyPickerSheet(
 
     val categories = remember(catalogState.formularyCategories) {
         val hcByCategory = HcDrugCatalog.drugsByCategory()
-        val allHcDrugs = hcByCategory.flatMap { it.second }
         fun drugFromRef(ref: FormularyDrugRef): HcDrugCatalog.Drug {
+            if (ref.strengths.isNotEmpty() || ref.defaultFrequency != null) {
+                return HcDrugCatalog.Drug(
+                    code = ref.code ?: ref.name.uppercase().replace(" ", "_").take(32),
+                    name = ref.name,
+                    aliases = ref.aliases,
+                    strengths = ref.strengths,
+                    defaultFrequency = ref.defaultFrequency?.let { code ->
+                        HcDrugCatalog.Frequency.entries.find { it.code.equals(code, ignoreCase = true) }
+                    },
+                    defaultRoute = ref.defaultRoute?.let { code ->
+                        HcDrugCatalog.Route.entries.find { it.code.equals(code, ignoreCase = true) }
+                    } ?: HcDrugCatalog.Route.PO,
+                    category = ref.category,
+                    warning = ref.warning,
+                )
+            }
+            val allHcDrugs = hcByCategory.flatMap { it.second }
             val byCode = ref.code?.let { code ->
                 allHcDrugs.find { it.code.equals(code, ignoreCase = true) }
             }
@@ -99,7 +115,7 @@ fun PharmacyPickerSheet(
             } ?: HcDrugCatalog.Drug(
                 code = ref.code ?: ref.name.uppercase().replace(" ", "_").take(32),
                 name = ref.name,
-                category = "Clinic formulary",
+                category = ref.category,
             )
         }
 

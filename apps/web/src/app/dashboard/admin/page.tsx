@@ -222,7 +222,24 @@ export default async function AdminPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <Link
+          href="/dashboard/admin/stock-import"
+          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold">Bulk stock import</h4>
+              <p className="text-sm text-muted-foreground">Spreadsheet or CSV upload for meds, lab, and supplies</p>
+            </div>
+          </div>
+        </Link>
+
         <Link
           href="/dashboard/admin/inventory"
           className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"

@@ -13,6 +13,17 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+// v27 -> v28: enriched formulary from medication_catalog (migration 080 mirror).
+val MIGRATION_27_28 = object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE clinic_formulary_catalog ADD COLUMN strengths_json TEXT")
+        db.execSQL("ALTER TABLE clinic_formulary_catalog ADD COLUMN aliases_json TEXT")
+        db.execSQL("ALTER TABLE clinic_formulary_catalog ADD COLUMN default_frequency TEXT")
+        db.execSQL("ALTER TABLE clinic_formulary_catalog ADD COLUMN default_route TEXT")
+        db.execSQL("ALTER TABLE clinic_formulary_catalog ADD COLUMN warning_text TEXT")
+    }
+}
+
 // v26 -> v27: staff onboarding completion timestamp (migration 079 mirror).
 val MIGRATION_26_27 = object : Migration(26, 27) {
     override fun migrate(db: SupportSQLiteDatabase) {

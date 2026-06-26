@@ -8,17 +8,20 @@ import {
   type DraftPrescriptionLine,
 } from '@/components/prescription/PrescriptionComposer'
 import { submitPharmacyOrder } from '@/app/dashboard/visits/actions'
+import type { PharmacyCatalogDrug } from '@karibu/shared'
 import type { StaffRole } from '@karibu/shared'
 
 export function VisitPharmacyPanel({
   visitId,
   alreadySubmitted,
   staffRole,
+  prescribingCatalog,
   onSubmitted,
 }: {
   visitId: string
   alreadySubmitted: boolean
   staffRole: StaffRole | null
+  prescribingCatalog?: PharmacyCatalogDrug[]
   onSubmitted?: () => void
 }) {
   const [drafts, setDrafts] = useState<DraftPrescriptionLine[]>([])
@@ -47,6 +50,7 @@ export function VisitPharmacyPanel({
       </div>
 
       <PrescriptionComposer
+        catalog={prescribingCatalog}
         disabled={pending}
         onChange={(lines, textSummary) => {
           setDrafts(lines)

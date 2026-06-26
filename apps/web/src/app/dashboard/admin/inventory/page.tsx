@@ -3,18 +3,13 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getStaff, isAdmin } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicInventoryDrugs } from '@/lib/clinic-catalog'
 import { WebTopBar } from '@/components/web-shell'
 import { InventoryClient, type InventoryItem } from './InventoryClient'
 
 /**
- * Per-clinic inventory: which labs and drugs this clinic actually offers /
- * stocks. Admin-only. Shipped seeded with the HC III standard menu in
- * migration 033; admins can toggle items off if they don't have them, or
- * add custom items they do.
- *
- * The same data drives the AI review function's suggestions (constrains
- * "Suggest only tests on this list, prefix others with 'If available'") —
- * but the page is framed purely as inventory. Staff don't need to know.
+ * Per-clinic inventory: which labs and drugs this clinic actually offers.
+ * Drugs are sourced from medication_catalog (global) with a per-clinic overlay.
  */
 
 async function getInventory(clinicId: string): Promise<{
@@ -23,19 +18,15 @@ async function getInventory(clinicId: string): Promise<{
 }> {
   const supabase = createServiceClient()
 
-  const { data: labs } = await supabase
-    .from('clinic_lab_capabilities')
-    .select('test_name, is_available, notes, code, category, display_order, active, updated_at')
-    .eq('clinic_id', clinicId)
-    .order('display_order')
-    .order('test_name')
-
-  const { data: drugs } = await supabase
-    .from('clinic_pharmacy_formulary')
-    .select('drug_name, in_stock, notes, code, category, display_order, active, updated_at')
-    .eq('clinic_id', clinicId)
-    .order('display_order')
-    .order('drug_name')
+  const [{ data: labs }, drugs] = await Promise.all([
+    supabase
+      .from('clinic_lab_capabilities')
+      .select('test_name, is_available, notes, code, category, display_order, active, updated_at')
+      .eq('clinic_id', clinicId)
+      .order('display_order')
+      .order('test_name'),
+    getClinicInventoryDrugs(clinicId),
+  ])
 
   return {
     labs: (labs ?? []).map((l) => ({
@@ -47,15 +38,7 @@ async function getInventory(clinicId: string): Promise<{
       display_order: l.display_order ?? 0,
       active: l.active ?? true,
     })),
-    drugs: (drugs ?? []).map((d) => ({
-      name: d.drug_name,
-      enabled: d.in_stock,
-      notes: d.notes,
-      code: d.code,
-      category: d.category,
-      display_order: d.display_order ?? 0,
-      active: d.active ?? true,
-    })),
+    drugs,
   }
 }
 
@@ -91,8 +74,8 @@ export default async function InventoryPage() {
             your clinic actually has on hand.
           </p>
           <p className="text-xs text-muted-foreground">
-            Defaults seeded from the Uganda Health Centre III service standard. Add custom items
-            below each section if you offer something outside the standard list.
+            Drug list is maintained nationally in the formulary catalog; your clinic toggles
+            which items are available here.
           </p>
         </div>
 

@@ -570,6 +570,13 @@ export interface ClinicCatalogFormularyItem {
   display_order: number;
   is_available: boolean;
   notes: string | null;
+  aliases?: string[];
+  strengths?: string[];
+  default_frequency?: string | null;
+  default_route?: string | null;
+  warning_text?: string | null;
+  formulation?: string | null;
+  quantity_unit?: string | null;
 }
 
 export interface ClinicCatalog {

@@ -1049,6 +1049,11 @@ data class ClinicFormularyItemDto(
     @SerialName("display_order") val displayOrder: Int = 0,
     @SerialName("is_available") val isAvailable: Boolean = true,
     val notes: String? = null,
+    val aliases: List<String> = emptyList(),
+    val strengths: List<String> = emptyList(),
+    @SerialName("default_frequency") val defaultFrequency: String? = null,
+    @SerialName("default_route") val defaultRoute: String? = null,
+    @SerialName("warning_text") val warningText: String? = null,
 )
 
 @Serializable

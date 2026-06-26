@@ -16,13 +16,7 @@ import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { Badge } from '@/components/ui/badge'
 import type { CareTaskStatus, CareTaskType, StaffRole } from '@karibu/shared'
 import {
-  getCareTasks,
-  getMyDrafts,
-  getNeedsClinician,
-  getNeedsLab,
-  getNeedsPayment,
-  getNeedsPharmacy,
-  getNeedsVitals,
+  getAllWorklists,
   type CareTaskRow,
   type MyDraftRow,
   type NeedsClinicianRow,
@@ -429,7 +423,7 @@ export default async function WorklistsPage() {
 
   // All 7 worklists are independent — fetch in parallel. Errors inside each
   // action are logged + degraded to [], so Promise.all never rejects.
-  const [
+  const {
     needsVitals,
     needsClinician,
     needsLab,
@@ -437,15 +431,7 @@ export default async function WorklistsPage() {
     needsPayment,
     myDrafts,
     careTasks,
-  ] = await Promise.all([
-    getNeedsVitals(),
-    getNeedsClinician(),
-    getNeedsLab(),
-    getNeedsPharmacy(),
-    getNeedsPayment(),
-    getMyDrafts(),
-    getCareTasks(),
-  ])
+  } = await getAllWorklists()
 
   return (
     <>

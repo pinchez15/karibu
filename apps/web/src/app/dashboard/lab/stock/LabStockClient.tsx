@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { Plus, X, Loader2, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, X, Loader2, AlertTriangle, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -71,6 +72,11 @@ export function LabStockClient({ initialRows }: { initialRows: LabStockRow[] }) 
         />
         <Button onClick={() => setShowAdd(true)}>
           <Plus className="h-4 w-4 mr-1" /> Add stock item
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard/admin/stock-import?tab=lab">
+            <Upload className="h-4 w-4 mr-1" /> Bulk import
+          </Link>
         </Button>
         <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
           <span>{visible.length} active</span>

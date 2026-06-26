@@ -328,6 +328,11 @@ data class ClinicFormularyCatalogEntity(
     @ColumnInfo(name = "display_order") val displayOrder: Int = 0,
     @ColumnInfo(name = "is_available") val isAvailable: Boolean = true,
     val notes: String? = null,
+    @ColumnInfo(name = "strengths_json") val strengthsJson: String? = null,
+    @ColumnInfo(name = "aliases_json") val aliasesJson: String? = null,
+    @ColumnInfo(name = "default_frequency") val defaultFrequency: String? = null,
+    @ColumnInfo(name = "default_route") val defaultRoute: String? = null,
+    @ColumnInfo(name = "warning_text") val warningText: String? = null,
 )
 
 @Entity(tableName = "sync_queue")

@@ -114,8 +114,84 @@ export interface CareTaskFilters {
   task_type?: CareTaskType | null
 }
 
+export interface AllWorklistsResult {
+  needsVitals: NeedsVitalsRow[]
+  needsClinician: NeedsClinicianRow[]
+  needsLab: NeedsLabRow[]
+  needsPharmacy: NeedsPharmacyRow[]
+  needsPayment: NeedsPaymentRow[]
+  myDrafts: MyDraftRow[]
+  careTasks: CareTaskRow[]
+}
+
+/** Fetch all worklists with a single auth lookup + parallel RPCs. */
+export async function getAllWorklists(
+  department: string = 'opd',
+): Promise<AllWorklistsResult> {
+  const staff = await getStaff()
+  if (!staff) {
+    return {
+      needsVitals: [],
+      needsClinician: [],
+      needsLab: [],
+      needsPharmacy: [],
+      needsPayment: [],
+      myDrafts: [],
+      careTasks: [],
+    }
+  }
+
+  const supabase = createServiceClient()
+  const clinicId = staff.clinic_id
+  const staffId = staff.id
+
+  const [
+    needsVitalsRes,
+    needsClinicianRes,
+    needsLabRes,
+    needsPharmacyRes,
+    needsPaymentRes,
+    myDraftsRes,
+    careTasksRes,
+  ] = await Promise.all([
+    supabase.rpc('rpc_worklist_needs_vitals', { p_clinic_id: clinicId, p_department: department }),
+    supabase.rpc('rpc_worklist_needs_clinician', { p_clinic_id: clinicId, p_department: department }),
+    supabase.rpc('rpc_worklist_needs_lab', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_worklist_needs_pharmacy', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_worklist_needs_payment', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_worklist_my_drafts', { p_clinic_id: clinicId, p_staff_id: staffId }),
+    supabase.rpc('rpc_worklist_care_tasks', {
+      p_clinic_id: clinicId,
+      p_assignee_role: null,
+      p_assignee_id: null,
+      p_task_type: null,
+    }),
+  ])
+
+  const log = (name: string, error: { message: string } | null) => {
+    if (error) console.error(`${name} failed:`, error)
+  }
+  log('rpc_worklist_needs_vitals', needsVitalsRes.error)
+  log('rpc_worklist_needs_clinician', needsClinicianRes.error)
+  log('rpc_worklist_needs_lab', needsLabRes.error)
+  log('rpc_worklist_needs_pharmacy', needsPharmacyRes.error)
+  log('rpc_worklist_needs_payment', needsPaymentRes.error)
+  log('rpc_worklist_my_drafts', myDraftsRes.error)
+  log('rpc_worklist_care_tasks', careTasksRes.error)
+
+  return {
+    needsVitals: (needsVitalsRes.data ?? []) as NeedsVitalsRow[],
+    needsClinician: (needsClinicianRes.data ?? []) as NeedsClinicianRow[],
+    needsLab: (needsLabRes.data ?? []) as NeedsLabRow[],
+    needsPharmacy: (needsPharmacyRes.data ?? []) as NeedsPharmacyRow[],
+    needsPayment: (needsPaymentRes.data ?? []) as NeedsPaymentRow[],
+    myDrafts: (myDraftsRes.data ?? []) as MyDraftRow[],
+    careTasks: (careTasksRes.data ?? []) as CareTaskRow[],
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Worklist fetchers
+// Worklist fetchers (legacy — prefer getAllWorklists on index pages)
 // ---------------------------------------------------------------------------
 
 export async function getNeedsVitals(
