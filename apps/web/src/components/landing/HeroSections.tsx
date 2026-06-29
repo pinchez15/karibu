@@ -10,7 +10,7 @@ export function Hero() {
       <div className="pointer-events-none absolute -right-40 -top-[260px] size-[720px] rounded-full bg-[radial-gradient(circle,rgba(31,54,199,0.1),transparent_60%)]" />
       <div className="pointer-events-none absolute -left-[200px] -top-[120px] size-[560px] rounded-full bg-[radial-gradient(circle,rgba(251,77,91,0.06),transparent_62%)]" />
 
-      <Container className="relative pb-24 pt-[72px]">
+      <Container className="relative pb-16 pt-12 sm:pb-24 sm:pt-[72px]">
         <div className="grid items-center gap-12 max-[920px]:grid-cols-1 min-[921px]:grid-cols-[1.05fr_0.95fr]">
           <div className="max-[920px]:order-2">
             <Reveal>
@@ -23,7 +23,7 @@ export function Hero() {
             </Reveal>
 
             <Reveal delay={70}>
-              <h1 className="mt-6 text-[clamp(40px,5vw,64px)] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
+              <h1 className="landing-heading mt-6 text-[clamp(40px,5vw,64px)] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
                 Clinical software for Uganda, built from the&nbsp;first&nbsp;step.
               </h1>
             </Reveal>
@@ -176,7 +176,7 @@ function ProductCard({
 
 export function ProductSplit() {
   return (
-    <section className="py-[88px]">
+    <section className="py-16 sm:py-[88px]">
       <Container>
         <Reveal className="mx-auto mb-12 max-w-[640px] text-center">
           <Eyebrow>Two apps, one roof</Eyebrow>

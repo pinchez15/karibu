@@ -35,7 +35,7 @@ const COLS = [
 
 export function Footer() {
   return (
-    <footer id="about" className="bg-cobalt-ink pb-9 pt-16 text-white">
+    <footer id="about" className="landing-dark bg-cobalt-ink pb-9 pt-12 text-white sm:pt-16">
       <Container>
         <div className="grid gap-10 border-b border-white/10 pb-12 max-[920px]:grid-cols-2 min-[921px]:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div className="max-[920px]:col-span-2">

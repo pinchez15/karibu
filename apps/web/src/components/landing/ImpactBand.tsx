@@ -102,7 +102,7 @@ export function ImpactBand() {
   ] as const
 
   return (
-    <section id="impact" className="py-24">
+    <section id="impact" className="py-16 sm:py-24">
       <Container>
         <div className="grid items-start gap-14 max-[920px]:grid-cols-1 min-[921px]:grid-cols-[0.95fr_1.05fr]">
           <Reveal>

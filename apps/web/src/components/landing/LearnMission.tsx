@@ -6,7 +6,7 @@ import { PhoneLearn } from './visuals'
 
 export function LearnSection() {
   return (
-    <section id="learn" className="relative overflow-hidden py-[92px]">
+    <section id="learn" className="relative overflow-hidden py-16 sm:py-[92px]">
       <div className="pointer-events-none absolute -right-[180px] top-[10%] size-[520px] rounded-full bg-[radial-gradient(circle,rgba(251,77,91,0.07),transparent_62%)]" />
 
       <Container className="relative">
@@ -25,7 +25,7 @@ export function LearnSection() {
                 COMING SOON
               </span>
             </div>
-            <h2 className="text-[clamp(30px,3.4vw,42px)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
+            <h2 className="landing-heading text-[clamp(30px,3.4vw,42px)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
               Practice the real thing — for free.
             </h2>
             <p className="mt-[18px] max-w-[460px] text-[17px] leading-relaxed text-body">
@@ -72,7 +72,7 @@ export function MissionBand() {
   ] as const
 
   return (
-    <section id="why" className="relative overflow-hidden bg-cobalt-ink py-24 text-white">
+    <section id="why" className="landing-dark relative overflow-hidden bg-cobalt-ink py-16 text-white sm:py-24">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -87,7 +87,7 @@ export function MissionBand() {
       <Container className="relative">
         <Reveal className="max-w-[760px]">
           <Eyebrow colorClassName="text-white/55">Built in Uganda</Eyebrow>
-          <h2 className="mt-4 text-[clamp(32px,4vw,50px)] font-semibold leading-[1.08] tracking-[-0.03em]">
+          <h2 className="landing-heading mt-4 text-[clamp(32px,4vw,50px)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
             Made for Ugandan clinics from the very first step — not adapted to them after the fact.
           </h2>
           <p className="mt-5 max-w-[620px] text-lg leading-relaxed text-white/75">

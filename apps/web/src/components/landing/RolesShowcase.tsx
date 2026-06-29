@@ -446,7 +446,7 @@ export function RolesShowcase() {
   return (
     <section
       id="platform"
-      className="border-y border-line bg-page py-24"
+      className="border-y border-line bg-page py-16 sm:py-24"
     >
       <Container>
         <Reveal className="mb-10 max-w-[680px]">

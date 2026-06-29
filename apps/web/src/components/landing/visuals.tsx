@@ -1,5 +1,6 @@
 import { Check, GraduationCap, Mic, Sparkles } from 'lucide-react'
 import { KLockup, KMark } from './brand'
+import { AndroidPatientScreen, WebDashboardScreen, WebQueueScreen } from './device-screens'
 
 export function Waveform({
   color = 'rgba(255,255,255,0.9)',
@@ -35,67 +36,99 @@ export function Waveform({
 
 function Phone({
   children,
-  w = 300,
+  w = 280,
   statusInk = 'rgb(var(--kh-ink))',
   statusBg = '#fff',
+  showStatusBar = true,
 }: {
   children: React.ReactNode
   w?: number
   statusInk?: string
   statusBg?: string
+  showStatusBar?: boolean
 }) {
-  const h = Math.round(w * 2.06)
+  const bezel = 7
+  const screenH = Math.round(w * 2.05)
+  const outerRadius = Math.round(w * 0.145)
+  const screenRadius = Math.round(w * 0.118)
+
   return (
     <div
-      className="relative shrink-0 rounded-[12%] bg-[#0d1326] p-[2.5%]"
+      className="relative shrink-0 bg-[#12151f]"
       style={{
-        width: w,
-        height: h,
-        boxShadow: `0 2px 4px rgba(11,20,82,.18), 0 30px 70px rgba(11,20,82,.28), inset 0 0 0 ${w * 0.012}px #20294a`,
+        width: w + bezel * 2,
+        height: screenH + bezel * 2,
+        borderRadius: outerRadius,
+        padding: bezel,
+        boxShadow:
+          '0 2px 4px rgba(11,20,82,.15), 0 24px 56px rgba(11,20,82,.22), inset 0 0 0 1px rgba(255,255,255,.06)',
       }}
     >
+      {/* Power button */}
       <div
-        className="relative flex h-full w-full flex-col overflow-hidden rounded-[9.7%]"
-        style={{ background: statusBg }}
+        className="absolute rounded-l-sm bg-[#2a2f3d]"
+        style={{ right: -2, top: '22%', width: 3, height: w * 0.14 }}
+      />
+      {/* Volume buttons */}
+      <div
+        className="absolute rounded-r-sm bg-[#2a2f3d]"
+        style={{ left: -2, top: '18%', width: 3, height: w * 0.07 }}
+      />
+      <div
+        className="absolute rounded-r-sm bg-[#2a2f3d]"
+        style={{ left: -2, top: '28%', width: 3, height: w * 0.07 }}
+      />
+
+      <div
+        className="relative flex h-full w-full flex-col overflow-hidden bg-black"
+        style={{ borderRadius: screenRadius }}
       >
+        {/* Dynamic island */}
         <div
-          className="flex shrink-0 items-center justify-between"
-          style={{
-            height: w * 0.105,
-            padding: `0 ${w * 0.055}px`,
-            color: statusInk,
-          }}
-        >
-          <span className="font-mono font-semibold" style={{ fontSize: w * 0.043 }}>
-            9:41
-          </span>
-          <span className="flex items-center opacity-80" style={{ gap: w * 0.018 }}>
-            <span className="font-mono" style={{ fontSize: w * 0.034 }}>
-              4G
+          className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded-full bg-black"
+          style={{ top: 8, width: w * 0.32, height: Math.max(18, w * 0.075) }}
+        />
+
+        {showStatusBar && (
+          <div
+            className="relative z-10 flex shrink-0 items-center justify-between"
+            style={{
+              height: w * 0.11,
+              padding: `${w * 0.04}px ${w * 0.06}px 0`,
+              color: statusInk,
+              background: statusBg,
+            }}
+          >
+            <span className="font-mono font-semibold" style={{ fontSize: w * 0.038 }}>
+              9:41
             </span>
-            <span
-              className="relative rounded-sm border-[1.4px]"
-              style={{
-                width: w * 0.05,
-                height: w * 0.028,
-                borderColor: statusInk,
-              }}
-            >
+            <span className="flex items-center opacity-80" style={{ gap: w * 0.016 }}>
+              <span className="font-mono" style={{ fontSize: w * 0.032 }}>
+                4G
+              </span>
               <span
-                className="absolute inset-[1.4px] rounded-[1px]"
-                style={{ right: w * 0.018, background: statusInk }}
-              />
+                className="relative rounded-sm border-[1.4px]"
+                style={{
+                  width: w * 0.048,
+                  height: w * 0.026,
+                  borderColor: statusInk,
+                }}
+              >
+                <span
+                  className="absolute inset-[1.4px] rounded-[1px]"
+                  style={{ right: w * 0.016, background: statusInk }}
+                />
+              </span>
             </span>
-          </span>
-        </div>
-        <div className="flex-1 overflow-hidden">{children}</div>
+          </div>
+        )}
+
+        <div className="relative flex-1 overflow-hidden">{children}</div>
+
+        {/* Home indicator */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 rounded-full bg-[#20294a]"
-          style={{
-            top: w * 0.045,
-            width: w * 0.022,
-            height: w * 0.022,
-          }}
+          className="pointer-events-none absolute bottom-1.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/25"
+          style={{ width: w * 0.28, height: 4 }}
         />
       </div>
     </div>
@@ -104,8 +137,8 @@ function Phone({
 
 export function HeroEHR() {
   return (
-    <div className="relative mx-auto w-[332px]">
-      <Phone w={300}>
+    <div className="relative mx-auto w-full max-w-[320px] max-[920px]:max-w-[280px]">
+      <Phone w={280}>
         <div className="flex h-full flex-col bg-[rgb(var(--kh-bg))]">
           <div className="bg-cobalt-ink px-3.5 py-[11px] text-white">
             <div className="flex items-center gap-2">
@@ -178,7 +211,7 @@ export function HeroEHR() {
         </div>
       </Phone>
 
-      <div className="kh-float-a absolute left-[-70px] top-[120px] w-[196px] rounded-xl border border-line bg-white p-[11px_13px] shadow-[0_16px_40px_rgba(11,20,82,0.16)]">
+      <div className="kh-float-a absolute left-0 top-[100px] w-[min(196px,42vw)] rounded-xl border border-line bg-white p-[11px_13px] shadow-[0_16px_40px_rgba(11,20,82,0.16)] max-[920px]:hidden min-[921px]:left-[-70px]">
         <div className="mb-1 flex items-center gap-[7px] text-amber">
           <Sparkles size={14} aria-hidden />
           <span className="whitespace-nowrap font-mono text-[9.5px] font-bold tracking-wider">
@@ -190,7 +223,7 @@ export function HeroEHR() {
         </p>
       </div>
 
-      <div className="kh-float-b absolute bottom-[86px] right-[-56px] w-[170px] rounded-xl border border-line bg-white p-[11px_13px] shadow-[0_16px_40px_rgba(11,20,82,0.16)]">
+      <div className="kh-float-b absolute bottom-[72px] right-0 w-[min(170px,38vw)] rounded-xl border border-line bg-white p-[11px_13px] shadow-[0_16px_40px_rgba(11,20,82,0.16)] max-[920px]:hidden min-[921px]:right-[-56px]">
         <div className="flex items-center gap-2">
           <span className="flex size-[26px] shrink-0 items-center justify-center rounded-lg bg-green-soft text-green">
             <Check size={15} aria-hidden />
@@ -266,76 +299,86 @@ export function DictationFlow() {
 }
 
 export function DeviceScale() {
-  const rows = (n: number) => (
-    <div className="flex flex-col gap-1 p-1.5">
-      {Array.from({ length: n }).map((_, i) => (
-        <div key={i} className="flex items-center gap-1">
-          <span className="size-3.5 shrink-0 rounded bg-cobalt-soft" />
-          <span
-            className="h-[5px] flex-1 rounded-sm bg-line"
-            style={{ maxWidth: `${70 - i * 8}%` }}
-          />
-        </div>
-      ))}
-    </div>
-  )
+  const phoneW = 92
+  const tabletW = 168
+  const laptopW = 280
 
-  const MiniHeader = ({ small }: { small?: boolean }) => (
-    <div
-      className="flex items-center gap-1 bg-cobalt-ink text-white"
-      style={{ padding: small ? '5px 7px' : '7px 10px' }}
-    >
-      <KMark size={small ? 11 : 14} color="#fff" fg="rgb(var(--kh-cobalt))" />
-      <span className="font-bold" style={{ fontSize: small ? 8 : 10 }}>
-        Karibu<span className="font-medium opacity-60">.health</span>
-      </span>
-    </div>
-  )
+  function DeviceFrame({
+    children,
+    w,
+    h,
+    label,
+    sub,
+    className = '',
+  }: {
+    children: React.ReactNode
+    w: number
+    h: number
+    label: string
+    sub: string
+    className?: string
+  }) {
+    const bezel = 5
+    const radius = Math.round(w * 0.12)
+    const screenRadius = Math.round(w * 0.09)
+    return (
+      <div className={`shrink-0 text-center ${className}`}>
+        <div
+          className="mx-auto bg-[#12151f]"
+          style={{
+            width: w + bezel * 2,
+            height: h + bezel * 2,
+            borderRadius: radius,
+            padding: bezel,
+            boxShadow: '0 12px 32px rgba(11,20,82,.18)',
+          }}
+        >
+          <div
+            className="h-full w-full overflow-hidden bg-white"
+            style={{ borderRadius: screenRadius }}
+          >
+            {children}
+          </div>
+        </div>
+        <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">{label}</div>
+        <div className="text-xs font-medium text-body">{sub}</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex items-end justify-center gap-[26px]">
-      <div className="text-center">
-        <div className="h-[172px] w-[84px] rounded-[14px] bg-[#0d1326] p-[5px] shadow-[0_16px_36px_rgba(11,20,82,0.2)]">
-          <div className="h-full w-full overflow-hidden rounded-[10px] bg-white">
-            <MiniHeader small />
-            {rows(5)}
-          </div>
-        </div>
-        <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">PHONE</div>
-        <div className="text-xs font-medium text-body">Any Android</div>
-      </div>
-      <div className="text-center">
-        <div className="h-[200px] w-[150px] rounded-[14px] bg-[#0d1326] p-1.5 shadow-[0_16px_36px_rgba(11,20,82,0.2)]">
-          <div className="h-full w-full overflow-hidden rounded-[9px] bg-white">
-            <MiniHeader />
-            <div className="grid grid-cols-2 gap-1 p-[7px]">
-              {rows(3)}
-              {rows(3)}
-            </div>
-          </div>
-        </div>
-        <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">TABLET</div>
-        <div className="text-xs font-medium text-body">Triage & front desk</div>
-      </div>
-      <div className="text-center">
+    <div className="-mx-2 flex items-end justify-center gap-4 overflow-x-auto px-2 pb-2 max-[920px]:snap-x max-[920px]:snap-mandatory sm:gap-6 min-[921px]:gap-[26px]">
+      <DeviceFrame w={phoneW} h={188} label="PHONE" sub="Android app" className="max-[920px]:snap-center">
+        <AndroidPatientScreen scale={0.85} />
+      </DeviceFrame>
+
+      <DeviceFrame w={tabletW} h={220} label="TABLET" sub="Queue & check-in" className="max-[920px]:snap-center">
+        <WebQueueScreen scale={1.05} />
+      </DeviceFrame>
+
+      <div className="shrink-0 text-center max-[920px]:snap-center">
         <div>
-          <div className="h-[158px] w-64 rounded-t-[10px] bg-[#0d1326] p-1.5 shadow-[0_16px_36px_rgba(11,20,82,0.2)]">
-            <div className="flex h-full w-full overflow-hidden rounded-[5px] bg-white">
-              <div className="w-[54px] bg-cobalt-ink" />
-              <div className="flex-1">
-                <MiniHeader />
-                <div className="grid grid-cols-3 gap-1 p-[7px]">
-                  {rows(2)}
-                  {rows(2)}
-                  {rows(2)}
-                </div>
-              </div>
+          <div
+            className="mx-auto bg-[#12151f]"
+            style={{
+              width: laptopW + 10,
+              height: 168,
+              borderRadius: 10,
+              padding: 5,
+              boxShadow: '0 12px 32px rgba(11,20,82,.18)',
+            }}
+          >
+            <div className="h-full w-full overflow-hidden rounded-[5px] bg-white">
+              <WebDashboardScreen scale={1.15} />
             </div>
           </div>
-          <div className="-ml-[17px] h-[9px] w-[290px] rounded-b-lg bg-gradient-to-b from-[#cbd2e6] to-[#aeb7d4]" />
+          <div
+            className="mx-auto bg-gradient-to-b from-[#cbd2e6] to-[#aeb7d4]"
+            style={{ width: laptopW + 44, height: 8, borderRadius: '0 0 8px 8px', marginTop: -1 }}
+          />
         </div>
         <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">LAPTOP</div>
-        <div className="text-xs font-medium text-body">Full clinic dashboard</div>
+        <div className="text-xs font-medium text-body">Web dashboard</div>
       </div>
     </div>
   )

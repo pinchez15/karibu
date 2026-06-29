@@ -57,7 +57,7 @@ function FeatureRow({
 
 export function EHRSection() {
   return (
-    <section id="ehr" className="border-t border-line bg-page py-[92px]">
+    <section id="ehr" className="border-t border-line bg-page py-16 sm:py-[92px]">
       <Container>
         <Reveal className="mb-16 max-w-[680px]">
           <div className="mb-[18px] inline-flex items-center gap-2">
