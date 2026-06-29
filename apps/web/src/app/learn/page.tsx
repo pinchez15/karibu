@@ -1,6 +1,5 @@
-import { KaribuLearnApp } from './components/KaribuLearnApp';
+import { LearnComingSoon } from './components/LearnComingSoon'
 
-// KaribuLearn — the free CME web app (mirror of the Android lead surface).
 export default function LearnPage() {
-  return <KaribuLearnApp />;
+  return <LearnComingSoon />
 }

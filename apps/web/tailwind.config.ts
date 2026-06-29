@@ -72,6 +72,13 @@ const config: Config = {
           DEFAULT: 'rgb(var(--kh-line) / <alpha-value>)',
           soft: 'rgb(var(--kh-line-soft) / <alpha-value>)',
         },
+        page: 'rgb(var(--kh-page) / <alpha-value>)',
+        coral: {
+          DEFAULT: 'rgb(var(--kh-coral) / <alpha-value>)',
+          deep: 'rgb(var(--kh-coral-deep) / <alpha-value>)',
+          soft: 'rgb(var(--kh-coral-soft) / <alpha-value>)',
+          wash: 'rgb(var(--kh-coral-wash) / <alpha-value>)',
+        },
 
         // Status / signal colors — direct hex
         'status-synced': '#0E8A5F',

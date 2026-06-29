@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Karibu Health — Clinical software for Uganda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: #FBFCFE; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-feature-settings: 'cv11','ss01'; color: #0E1530; }
+  a { color: inherit; }
+  ::selection { background: #1F36C726; }
+  ::-webkit-scrollbar { width: 12px; }
+  ::-webkit-scrollbar-thumb { background: #d7dbe8; border-radius: 999px; border: 3px solid #FBFCFE; background-clip: padding-box; }
+
+  /* waveform */
+  @keyframes kh-wave { 0%,100% { transform: scaleY(0.32); } 50% { transform: scaleY(1); } }
+  .kh-wave { animation: kh-wave 0.9s ease-in-out infinite; }
+  /* recording dot */
+  @keyframes kh-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .kh-rec-dot { animation: kh-blink 1.1s ease-in-out infinite; }
+  /* mic ring pulse */
+  @keyframes kh-ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.7); opacity: 0; } }
+  .kh-mic-ring { animation: kh-ring 1.8s ease-out infinite; }
+  /* floating cards */
+  @keyframes kh-float-a { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  @keyframes kh-float-b { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+  .kh-float-a { animation: kh-float-a 5s ease-in-out infinite; }
+  .kh-float-b { animation: kh-float-b 6s ease-in-out infinite 0.6s; }
+  /* roles flow line + auto-advance bar + role copy */
+  @keyframes kh-comet { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
+  .kh-flow-comet { animation: kh-comet 3.4s linear infinite; }
+  @keyframes kh-rolebar { from { width: 0; } to { width: 100%; } }
+  .kh-rolebar { animation: kh-rolebar 4.2s linear forwards; }
+  @keyframes kh-rolecopy-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .kh-rolecopy { animation: kh-rolecopy-in 460ms cubic-bezier(.16,.84,.44,1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kh-wave, .kh-rec-dot, .kh-mic-ring, .kh-float-a, .kh-float-b, .kh-flow-comet, .kh-rolebar, .kh-rolecopy { animation: none !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* responsive */
+  @media (max-width: 920px) {
+    .kh-hero-grid, .kh-split-grid, .kh-feat-row, .kh-apply-grid, .kh-roles-detail, .kh-impact-grid { grid-template-columns: 1fr !important; }
+    .kh-hero-grid > div:last-child { order: -1; }
+    .kh-feat-copy-flip { order: 2 !important; }
+    .kh-trust-grid, .kh-stat-grid, .kh-mini-grid, .kh-foot-grid { grid-template-columns: 1fr 1fr !important; }
+    .kh-mini-grid > div { border-left: none !important; padding-left: 0 !important; }
+    .kh-navlinks, .kh-signin { display: none !important; }
+    .kh-roles-detail { gap: 28px !important; }
+  }
+  @media (max-width: 560px) {
+    .kh-trust-grid, .kh-stat-grid, .kh-mini-grid, .kh-foot-grid { grid-template-columns: 1fr !important; }
+    .kh-trust-grid > div { border-left: none !important; padding-left: 0 !important; }
+  }
+</style>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#1F36C7"/><rect x="22" y="22" width="11" height="56" rx="2" fill="#fff"/><path d="M33 50 L55 28 L68 28 L46 50 L68 78 L55 78 L33 56 Z" fill="#fff"/><rect x="68" y="18" width="8" height="22" rx="1.5" fill="#fff"/><rect x="61" y="25" width="22" height="8" rx="1.5" fill="#fff"/></svg>
+</template>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="kh-brand.jsx"></script>
+<script type="text/babel" src="kh-ui.jsx"></script>
+<script type="text/babel" src="kh-visuals.jsx"></script>
+<script type="text/babel" src="kh-visuals2.jsx"></script>
+<script type="text/babel" src="kh-nav.jsx"></script>
+<script type="text/babel" src="kh-hero.jsx"></script>
+<script type="text/babel" src="kh-roles.jsx"></script>
+<script type="text/babel" src="kh-impact.jsx"></script>
+<script type="text/babel" src="kh-features.jsx"></script>
+
+<script type="text/babel">
+function App() {
+  return (
+    <div>
+      <Nav />
+      <Hero />
+      <TrustStrip />
+      <ProductSplit />
+      <EHRSection />
+      <RolesShowcase />
+      <ImpactBand />
+      <LearnSection />
+      <MissionBand />
+      <FinalCTA />
+      <Footer />
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 // KaribuLearn is a distinct, public, free product — no dashboard chrome, no
 // auth. It fills the viewport and supplies its own coral chrome.
 export const metadata: Metadata = {
-  title: 'KaribuLearn — free clinical CME for Uganda',
-  description: 'Realistic HC III cases with guideline-backed feedback. Free, no login, generated cases only.',
+  title: 'Karibu Learn — coming soon',
+  description: 'Free clinical CME for Uganda. Try the demo case while we finish the full app.',
 };
 
 export default function LearnLayout({ children }: { children: React.ReactNode }) {
