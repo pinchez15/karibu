@@ -47,7 +47,7 @@ function FeatureRow({
       </Reveal>
       <Reveal
         delay={120}
-        className={`flex justify-center max-[920px]:order-2 ${flip ? 'min-[921px]:order-1' : 'min-[921px]:order-2'}`}
+        className={`flex min-w-0 justify-center overflow-visible max-[920px]:order-2 ${flip ? 'min-[921px]:order-1' : 'min-[921px]:order-2'}`}
       >
         {visual}
       </Reveal>
@@ -98,7 +98,7 @@ export function EHRSection() {
               'Designed for low bandwidth and basic data plans.',
             ]}
             visual={
-              <div className="flex w-full justify-center py-2">
+              <div className="w-full min-w-0 overflow-x-auto overflow-y-visible py-2">
                 <DeviceScale />
               </div>
             }

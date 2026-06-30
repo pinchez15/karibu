@@ -86,7 +86,7 @@ export function MissionBand() {
 
       <Container className="relative">
         <Reveal className="max-w-[760px]">
-          <Eyebrow colorClassName="text-white/55">Built in Uganda</Eyebrow>
+          <Eyebrow colorClassName="text-white/75">Built in Uganda</Eyebrow>
           <h2 className="landing-heading mt-4 text-[clamp(32px,4vw,50px)] font-semibold leading-[1.08] tracking-[-0.03em] text-white">
             Made for Ugandan clinics from the very first step — not adapted to them after the fact.
           </h2>

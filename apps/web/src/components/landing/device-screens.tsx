@@ -32,15 +32,15 @@ export function AndroidPatientScreen({ scale = 1 }: { scale?: number }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold text-ink" style={{ fontSize: 10 * s }}>
-            Nakato Sarah <span className="font-normal text-muted">34F</span>
+            Nakato Sarah <span className="font-normal text-slate">34F</span>
           </div>
-          <div className="font-mono text-muted" style={{ fontSize: 7 * s }}>
+          <div className="font-mono text-slate" style={{ fontSize: 7 * s }}>
             PT-100015
           </div>
         </div>
       </div>
       <div className="flex-1 overflow-hidden" style={{ padding: `${6 * s}px ${8 * s}px` }}>
-        <div className="font-mono font-semibold uppercase tracking-wide text-muted" style={{ fontSize: 7 * s, marginBottom: 4 * s }}>
+        <div className="font-mono font-semibold uppercase tracking-wide text-slate" style={{ fontSize: 7 * s, marginBottom: 4 * s }}>
           Vitals
         </div>
         <div className="grid grid-cols-3 gap-1" style={{ marginBottom: 6 * s }}>
@@ -50,12 +50,12 @@ export function AndroidPatientScreen({ scale = 1 }: { scale?: number }) {
             ['SpO₂', '98%'],
           ].map(([k, v]) => (
             <div key={k} className="rounded border border-line bg-white text-center" style={{ padding: `${3 * s}px` }}>
-              <div className="font-mono text-muted" style={{ fontSize: 6 * s }}>{k}</div>
+              <div className="font-mono text-slate" style={{ fontSize: 6 * s }}>{k}</div>
               <div className="font-semibold text-ink" style={{ fontSize: 8 * s }}>{v}</div>
             </div>
           ))}
         </div>
-        <div className="font-mono font-semibold uppercase tracking-wide text-muted" style={{ fontSize: 7 * s, marginBottom: 4 * s }}>
+        <div className="font-mono font-semibold uppercase tracking-wide text-slate" style={{ fontSize: 7 * s, marginBottom: 4 * s }}>
           Timeline
         </div>
         {[
@@ -63,7 +63,7 @@ export function AndroidPatientScreen({ scale = 1 }: { scale?: number }) {
           ['07 May', 'Malaria · B54'],
         ].map(([d, t]) => (
           <div key={d} className="flex gap-1 border-b border-line-soft" style={{ padding: `${3 * s}px 0` }}>
-            <span className="shrink-0 font-mono text-muted" style={{ fontSize: 7 * s, width: 28 * s }}>{d}</span>
+            <span className="shrink-0 font-mono font-semibold text-slate" style={{ fontSize: 7 * s, width: 28 * s }}>{d}</span>
             <span className="truncate text-ink" style={{ fontSize: 8 * s }}>{t}</span>
           </div>
         ))}

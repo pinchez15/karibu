@@ -299,9 +299,9 @@ export function DictationFlow() {
 }
 
 export function DeviceScale() {
-  const phoneW = 92
-  const tabletW = 168
-  const laptopW = 280
+  const phoneW = 76
+  const tabletW = 128
+  const laptopW = 200
 
   function DeviceFrame({
     children,
@@ -340,45 +340,47 @@ export function DeviceScale() {
             {children}
           </div>
         </div>
-        <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">{label}</div>
+        <div className="mt-3 font-mono text-[10px] font-semibold tracking-wide text-slate">{label}</div>
         <div className="text-xs font-medium text-body">{sub}</div>
       </div>
     )
   }
 
   return (
-    <div className="-mx-2 flex items-end justify-center gap-4 overflow-x-auto px-2 pb-2 max-[920px]:snap-x max-[920px]:snap-mandatory sm:gap-6 min-[921px]:gap-[26px]">
-      <DeviceFrame w={phoneW} h={188} label="PHONE" sub="Android app" className="max-[920px]:snap-center">
-        <AndroidPatientScreen scale={0.85} />
+    <div className="w-full overflow-x-auto overflow-y-visible pb-1">
+      <div className="mx-auto flex w-max min-w-0 items-end justify-center gap-3 px-1 sm:gap-5 min-[921px]:gap-4 min-[921px]:origin-center min-[921px]:scale-[0.92] min-[1100px]:scale-100">
+      <DeviceFrame w={phoneW} h={168} label="PHONE" sub="Android app">
+        <AndroidPatientScreen scale={0.82} />
       </DeviceFrame>
 
-      <DeviceFrame w={tabletW} h={220} label="TABLET" sub="Queue & check-in" className="max-[920px]:snap-center">
-        <WebQueueScreen scale={1.05} />
+      <DeviceFrame w={tabletW} h={200} label="TABLET" sub="Queue & check-in">
+        <WebQueueScreen scale={0.95} />
       </DeviceFrame>
 
-      <div className="shrink-0 text-center max-[920px]:snap-center">
+      <div className="shrink-0 text-center">
         <div>
           <div
             className="mx-auto bg-[#12151f]"
             style={{
               width: laptopW + 10,
-              height: 168,
+              height: 152,
               borderRadius: 10,
               padding: 5,
               boxShadow: '0 12px 32px rgba(11,20,82,.18)',
             }}
           >
             <div className="h-full w-full overflow-hidden rounded-[5px] bg-white">
-              <WebDashboardScreen scale={1.15} />
+              <WebDashboardScreen scale={1.05} />
             </div>
           </div>
           <div
             className="mx-auto bg-gradient-to-b from-[#cbd2e6] to-[#aeb7d4]"
-            style={{ width: laptopW + 44, height: 8, borderRadius: '0 0 8px 8px', marginTop: -1 }}
+            style={{ width: laptopW + 32, height: 8, borderRadius: '0 0 8px 8px', marginTop: -1 }}
           />
         </div>
-        <div className="mt-3 font-mono text-[10px] tracking-wide text-muted">LAPTOP</div>
+        <div className="mt-3 font-mono text-[10px] font-semibold tracking-wide text-slate">LAPTOP</div>
         <div className="text-xs font-medium text-body">Web dashboard</div>
+      </div>
       </div>
     </div>
   )
@@ -399,7 +401,7 @@ export function RecordTimeline() {
         </div>
         <div>
           <div className="text-[15px] font-bold text-ink">Nakato Sarah</div>
-          <div className="font-mono text-[11px] text-muted">PT-100015 · 34F · 3 visits</div>
+          <div className="font-mono text-[11px] font-medium text-body">PT-100015 · 34F · 3 visits</div>
         </div>
         <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-soft px-2.5 py-1 text-[11px] font-semibold text-green">
           <Check size={12} aria-hidden />
@@ -416,11 +418,11 @@ export function RecordTimeline() {
                 className="absolute -left-[22px] top-[3px] size-3 rounded-full border-[3px] bg-white"
                 style={{ borderColor: c }}
               />
-              <div className="flex items-baseline gap-2">
-                <span className="w-12 shrink-0 font-mono text-[11px] text-muted">{v.d}</span>
-                <div>
+              <div className="flex items-start gap-3">
+                <span className="w-14 shrink-0 font-mono text-[11px] font-semibold text-slate">{v.d}</span>
+                <div className="min-w-0">
                   <div className="text-[13.5px] font-semibold text-ink">{v.t}</div>
-                  <div className="mt-px text-xs text-muted">{v.meta}</div>
+                  <div className="mt-0.5 text-xs font-medium text-body">{v.meta}</div>
                 </div>
               </div>
             </div>

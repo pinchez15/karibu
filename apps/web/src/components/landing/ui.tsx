@@ -30,7 +30,7 @@ type EyebrowProps = {
 export function Eyebrow({
   children,
   className = '',
-  colorClassName = 'text-muted',
+  colorClassName = 'text-cobalt',
 }: EyebrowProps) {
   return (
     <div

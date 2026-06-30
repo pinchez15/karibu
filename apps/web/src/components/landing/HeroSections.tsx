@@ -98,7 +98,9 @@ export function TrustStrip() {
               key={a}
               className={i > 0 ? 'max-[920px]:border-l-0 min-[921px]:border-l min-[921px]:border-line-soft min-[921px]:pl-6' : ''}
             >
-              <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{a}</div>
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-slate">
+                {a}
+              </div>
               <div className="mt-1 text-base font-semibold tracking-[-0.01em] text-ink">{b}</div>
             </div>
           ))}
