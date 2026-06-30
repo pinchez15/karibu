@@ -1,0 +1,192 @@
+{
+  "canonicalCaseId": "hc3-malnutrition-oedema-child-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Nabwire Joan",
+      "id": "PT-CH-240303",
+      "age": "3F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Recognize bilateral pitting oedema as severe acute malnutrition.",
+      "Screen for appetite and medical complications before deciding disposition.",
+      "Prioritize urgent referral-level care rather than routine outpatient nutrition advice."
+    ],
+    "takeaways": [
+      "Oedema in both feet is a severe malnutrition sign until proven otherwise.",
+      "Quiet behavior, poor appetite, and recurrent illness increase complication risk.",
+      "HC III should stabilize and refer when severe acute malnutrition criteria are met."
+    ],
+    "blurb": "A 3-year-old with swollen feet and poor appetite may have severe acute malnutrition requiring urgent escalation.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Swollen feet and reduced appetite",
+            "chips": [
+              "Child nutrition",
+              "High risk"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver history",
+            "text": "Swelling started 1 week ago. Child is less playful and has eaten very little for 2 days."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Joan appears quiet and thin",
+        "body": "This is not a vitamins-only visit. First, classify risk using malnutrition danger signs."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.3 C"
+              },
+              {
+                "label": "HR",
+                "value": "112"
+              },
+              {
+                "label": "RESP",
+                "value": "28/min"
+              },
+              {
+                "label": "WT",
+                "value": "10.5 kg"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Nutritional exam",
+            "text": "Bilateral pitting oedema of both feet and visibly wasted upper arms.",
+            "emphasis": "Appetite test is poor."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · classification",
+        "title": "What is the most important classification?",
+        "body": "Choose the diagnosis that changes urgency immediately."
+      },
+      "question": {
+        "prompt": "How should bilateral foot oedema be interpreted here?",
+        "options": [
+          {
+            "text": "Severe acute malnutrition with complications; urgent referral pathway needed",
+            "correct": true
+          },
+          {
+            "text": "Mild nutrition issue; routine follow-up in one month",
+            "correct": false
+          },
+          {
+            "text": "Likely simple edema from excess salt intake only",
+            "correct": false
+          },
+          {
+            "text": "Treat as uncomplicated malaria first because weight is low",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Bilateral pitting oedema in a child is a severe acute malnutrition sign and requires urgent escalation according to IMNCI/UCG framing.",
+        "wrong": "Both-feet oedema is a red flag for severe acute malnutrition, not a routine finding. Delayed escalation can be dangerous."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "dangerScreen",
+            "title": "Complication screen",
+            "danger_signs": [
+              "Poor appetite",
+              "Lethargy",
+              "Hypoglycemia risk",
+              "Concurrent infection"
+            ],
+            "reveal_note": "Poor appetite confirmed; child fatigued."
+          },
+          {
+            "type": "prescription",
+            "title": "Disposition",
+            "drug": "Stabilize and refer",
+            "detail": "Warmth, hypoglycemia prevention, infection screen, urgent transfer"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "Which next action is safest at HC III?",
+        "body": "Select the option that addresses severe malnutrition complications."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Start stabilization steps and arrange urgent referral for severe acute malnutrition care",
+            "correct": true
+          },
+          {
+            "text": "Send home with appetite stimulant and multivitamins only",
+            "correct": false
+          },
+          {
+            "text": "Delay referral until child gains weight over two weeks",
+            "correct": false
+          },
+          {
+            "text": "Treat edema with a diuretic and review later",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Severe malnutrition with oedema and poor appetite needs urgent higher-level nutrition and medical management.",
+        "wrong": "Outpatient-only approaches are unsafe in oedematous severe malnutrition with poor appetite."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You recognized severe acute malnutrition and escalated care promptly.",
+            "emphasis": "Bilateral oedema changed the urgency and disposition."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "In child nutrition triage, bilateral pitting oedema is a severe sign. Joan required stabilization and urgent referral rather than routine outpatient advice."
+      }
+    }
+  ]
+}

@@ -1,0 +1,1510 @@
+{
+  "id": "neonatal-emergency-care-l2",
+  "title": "Neonatal and Emergency Care — Level 2 · Guided reasoning",
+  "cases": [
+    {
+      "id": "newborn-not-breathing-001-L2",
+      "ready": true,
+      "title": "Newborn not breathing well",
+      "topic": "Neonatal",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated neonate",
+        "id": "PT-0012",
+        "age": "6 days old, 3.1 kg",
+        "sex": null
+      },
+      "blurb": "A baby is delivered at night after a long labour.",
+      "objectives": [
+        "Recognize failure to breathe as an immediate emergency.",
+        "Start appropriate newborn resuscitation steps and call for help."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Recognize failure to breathe as an immediate emergency.",
+        "Start appropriate newborn resuscitation steps and call for help."
+      ],
+      "citations": [
+        "Neonatal resuscitation initial response"
+      ],
+      "share": {
+        "share_title": "Newborn not breathing well",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/newborn-not-breathing-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.76,
+        "clinical_correctness_score": 0.9,
+        "hc3_reality_score": 0.87,
+        "learning_value_score": 0.94,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "newborn-not-breathing-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Newborn not crying after birth",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated neonate",
+            "body": "A baby is delivered at night after a long labour.",
+            "quote": "“Newborn not crying after birth.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Newborn not crying after birth",
+                "danger_signs": [
+                  "Not breathing",
+                  "Poor tone",
+                  "Slow heart rate"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BREA",
+                    "value": "Gasps irregularly",
+                    "hot": false
+                  },
+                  {
+                    "label": "HEAR",
+                    "value": "Slow by quick assessment",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "Not yet measured",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Newborn requiring immediate resuscitation assessment",
+                "emphasis": "Newborn requiring immediate resuscitation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Newborn requiring immediate resuscitation assessment",
+                "emphasis": "Newborn requiring immediate resuscitation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Newborn requiring immediate resuscitation assessment",
+                "emphasis": "Newborn requiring immediate resuscitation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Newborn requiring immediate resuscitation assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Recognize failure to breathe as an immediate emergency. Start appropriate newborn resuscitation steps and call for help.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "neonate-fever-sepsis-001-L2",
+      "ready": true,
+      "title": "Newborn with fever and poor feeding",
+      "topic": "Neonatal",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated neonate",
+        "id": "PT-0012",
+        "age": "6 days old, 3.1 kg",
+        "sex": null
+      },
+      "blurb": "A grandmother brings a 9-day-old baby wrapped tightly in a blanket.",
+      "objectives": [
+        "Treat fever and poor feeding in a neonate as high risk.",
+        "Stabilize and arrange urgent referral according to neonatal guidance."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Treat fever and poor feeding in a neonate as high risk.",
+        "Stabilize and arrange urgent referral according to neonatal guidance."
+      ],
+      "citations": [
+        "Young infant fever and possible serious bacterial infection"
+      ],
+      "share": {
+        "share_title": "Newborn with fever and poor feeding",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/neonate-fever-sepsis-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.64,
+        "clinical_correctness_score": 0.89,
+        "hc3_reality_score": 0.88,
+        "learning_value_score": 0.9,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "who-imnci-chart-booklet"
+        ],
+        "review_status": "needs_review",
+        "case_version": "neonate-fever-sepsis-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Newborn fever and poor feeding",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated neonate",
+            "body": "A grandmother brings a 9-day-old baby wrapped tightly in a blanket.",
+            "quote": "“Newborn fever and poor feeding.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Newborn fever and poor feeding",
+                "danger_signs": [
+                  "Poor feeding",
+                  "Fever",
+                  "Fast breathing",
+                  "Lethargy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "168 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "62/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "3.1 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal sepsis",
+                "emphasis": "Possible neonatal sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal sepsis",
+                "emphasis": "Possible neonatal sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal sepsis",
+                "emphasis": "Possible neonatal sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible neonatal sepsis",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Treat fever and poor feeding in a neonate as high risk. Stabilize and arrange urgent referral according to neonatal guidance.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "neonate-jaundice-001-L2",
+      "ready": true,
+      "title": "Yellow newborn",
+      "topic": "Neonatal",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated neonate",
+        "id": "PT-0012",
+        "age": "6 days old, 3.1 kg",
+        "sex": null
+      },
+      "blurb": "A mother notices her newborn's eyes are yellow.",
+      "objectives": [
+        "Assess feeding and activity, not just skin colour.",
+        "Refer urgently if severe or early jaundice signs are present."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Assess feeding and activity, not just skin colour.",
+        "Refer urgently if severe or early jaundice signs are present."
+      ],
+      "citations": [
+        "Yellow newborn"
+      ],
+      "share": {
+        "share_title": "Yellow newborn",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/neonate-jaundice-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "neonate-jaundice-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Yellow eyes in newborn",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated neonate",
+            "body": "A mother notices her newborn's eyes are yellow.",
+            "quote": "“Yellow eyes in newborn.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Yellow eyes in newborn",
+                "danger_signs": [
+                  "Poor feeding",
+                  "Lethargy",
+                  "Deep jaundice"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "158 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "56/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "35.8 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "3.1 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal jaundice with danger assessment",
+                "emphasis": "Neonatal jaundice with danger assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal jaundice with danger assessment",
+                "emphasis": "Neonatal jaundice with danger assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal jaundice with danger assessment",
+                "emphasis": "Neonatal jaundice with danger assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Neonatal jaundice with danger assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Assess feeding and activity, not just skin colour. Refer urgently if severe or early jaundice signs are present.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "neonate-hypothermia-001-L2",
+      "ready": true,
+      "title": "Cold newborn after transport",
+      "topic": "Neonatal",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated neonate",
+        "id": "PT-0012",
+        "age": "6 days old, 3.1 kg",
+        "sex": null
+      },
+      "blurb": "A newborn arrives after a long boda ride wrapped in thin cloth.",
+      "objectives": [
+        "Temperature protection is urgent neonatal care.",
+        "Assess for infection and feeding difficulty."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Temperature protection is urgent neonatal care.",
+        "Assess for infection and feeding difficulty."
+      ],
+      "citations": [
+        "Cold newborn after transport"
+      ],
+      "share": {
+        "share_title": "Cold newborn after transport",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/neonate-hypothermia-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "neonate-hypothermia-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cold newborn",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated neonate",
+            "body": "A newborn arrives after a long boda ride wrapped in thin cloth.",
+            "quote": "“Cold newborn.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Cold newborn",
+                "danger_signs": [
+                  "Very low temperature",
+                  "Poor feeding",
+                  "Lethargy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "158 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "56/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "35.8 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "3.1 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal hypothermia risk",
+                "emphasis": "Neonatal hypothermia risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal hypothermia risk",
+                "emphasis": "Neonatal hypothermia risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Neonatal hypothermia risk",
+                "emphasis": "Neonatal hypothermia risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Neonatal hypothermia risk",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Temperature protection is urgent neonatal care. Assess for infection and feeding difficulty.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-choking-001-L2",
+      "ready": true,
+      "title": "Child choking on groundnut",
+      "topic": "Emergency",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A caregiver runs in carrying a toddler who suddenly started choking while eating groundnuts.",
+      "objectives": [
+        "Recognize airway obstruction immediately.",
+        "Use age-appropriate emergency response and referral after stabilization."
+      ],
+      "skills": [
+        "Emergency",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Recognize airway obstruction immediately.",
+        "Use age-appropriate emergency response and referral after stabilization."
+      ],
+      "citations": [
+        "Child choking on groundnut"
+      ],
+      "share": {
+        "share_title": "Child choking on groundnut",
+        "share_prompt": "What would you do first for this emergency presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-choking-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-choking-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Choking episode",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A caregiver runs in carrying a toddler who suddenly started choking while eating groundnuts.",
+            "quote": "“Choking episode.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Choking episode",
+                "danger_signs": [
+                  "Unable to cry",
+                  "Cyanosis",
+                  "Unconsciousness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Airway emergency",
+                "emphasis": "Airway emergency"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Airway emergency",
+                "emphasis": "Airway emergency"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Airway emergency",
+                "emphasis": "Airway emergency"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Airway emergency",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Recognize airway obstruction immediately. Use age-appropriate emergency response and referral after stabilization.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

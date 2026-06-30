@@ -1,0 +1,263 @@
+{
+  "canonicalCaseId": "hc3-fever-negative-malaria-test-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Achieng Mercy",
+      "id": "PT-240216",
+      "age": "16F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Avoid reflex antimalarial retreatment when malaria testing is negative.",
+      "Use focused history and exam to broaden differential diagnosis in persistent fever.",
+      "Choose targeted management and clear safety-net advice based on available findings."
+    ],
+    "takeaways": [
+      "A negative RDT in a stable teen should trigger broader assessment, not repeat AL.",
+      "Recent incomplete response to antimalarials is a clue to reconsider the working diagnosis.",
+      "Match treatment to evidence and document return precautions clearly."
+    ],
+    "blurb": "A teenager has persistent fever despite prior antimalarials and a negative RDT today. Decide how to avoid anchoring and treat what the chart supports.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Fever for 5 days despite antimalarials from a drug shop",
+            "chips": [
+              "Teen",
+              "HC III OPD"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Triage note",
+            "text": "Family requests 'strong malaria medicine again' because fever returned."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Mercy has persistent fever",
+        "body": "She is alert, drinking, and speaking normally, but still febrile after treatment she received elsewhere.",
+        "quote": "“She took malaria tablets already, but fever is still there.”",
+        "teach": {
+          "label": "Clinical framing",
+          "text": "When the current malaria test is negative, avoid anchoring and actively search for another source of fever."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.3 C",
+                "hot": true
+              },
+              {
+                "label": "BP",
+                "value": "104/66"
+              },
+              {
+                "label": "HR",
+                "value": "108"
+              },
+              {
+                "label": "RESP",
+                "value": "22"
+              },
+              {
+                "label": "SpO2",
+                "value": "98%"
+              }
+            ]
+          },
+          {
+            "type": "result",
+            "title": "Malaria RDT",
+            "result_label": "RDT",
+            "result_value": "Negative",
+            "badge": "NEGATIVE"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · interpretation",
+        "title": "How do you respond to this result?",
+        "body": "She is stable but still febrile. Pick the action that avoids common overtreatment errors."
+      },
+      "question": {
+        "prompt": "What is the best next step now?",
+        "options": [
+          {
+            "text": "Broaden the workup for other causes of fever and do a focused re-exam",
+            "correct": true
+          },
+          {
+            "text": "Repeat artemether-lumefantrine immediately because she still has fever",
+            "correct": false
+          },
+          {
+            "text": "Give injectable antimalarial to be extra safe",
+            "correct": false
+          },
+          {
+            "text": "Discharge without further assessment because malaria is ruled out",
+            "correct": false
+          }
+        ],
+        "right": "Correct. With RDT negative and no danger signs on this chart, Uganda Clinical Guidelines 2023 support investigating non-malarial fever causes rather than automatic antimalarial retreatment.",
+        "wrong": "This chart already shows a negative RDT today. Repeating antimalarials without new evidence risks missing the real cause of Mercy's fever."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "subjective",
+            "title": "Focused history reveal",
+            "text": "No convulsions, no confusion, no neck stiffness. Dysuria and suprapubic discomfort started 2 days ago."
+          },
+          {
+            "type": "investigations",
+            "title": "Investigations",
+            "orders": [
+              {
+                "name": "Urine dipstick",
+                "status": "resulted",
+                "sub": "Leukocyte esterase positive, nitrites positive"
+              },
+              {
+                "name": "Repeat malaria RDT",
+                "status": "not_indicated",
+                "sub": "Already negative today"
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · focused workup",
+        "title": "Which action best fits these findings?",
+        "body": "You now have urinary symptoms and supportive urine results."
+      },
+      "question": {
+        "prompt": "What should you do next?",
+        "options": [
+          {
+            "text": "Treat likely urinary tract infection per local guideline and provide fever follow-up advice",
+            "correct": true
+          },
+          {
+            "text": "Ignore urine findings and give another malaria course anyway",
+            "correct": false
+          },
+          {
+            "text": "Start dual antimalarial and antibiotic treatment without documenting rationale",
+            "correct": false
+          },
+          {
+            "text": "Withhold all treatment and ask family to buy medicines privately",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Dysuria plus nitrite-positive urine supports a non-malarial source of fever; targeted treatment and review planning are safer than reflex malaria retreatment.",
+        "wrong": "These findings point away from malaria and toward urinary infection. Ignoring them repeats the same anchoring error that delayed improvement."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Plan",
+            "drug": "Targeted outpatient management",
+            "detail": "Likely UTI treatment + antipyretic + hydration advice"
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Safety-net before discharge",
+            "danger_signs": [
+              "Persistent fever beyond 48 hours",
+              "Vomiting/inability to take oral medicines",
+              "Confusion or severe weakness",
+              "Breathing difficulty"
+            ],
+            "reveal_note": "Caregiver understands when to return urgently."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · counseling",
+        "title": "What discharge counseling is essential?",
+        "body": "Even stable patients need explicit return precautions."
+      },
+      "question": {
+        "prompt": "Which counseling plan is best?",
+        "options": [
+          {
+            "text": "Explain likely non-malarial cause, review danger signs, and schedule prompt follow-up if not improving",
+            "correct": true
+          },
+          {
+            "text": "Tell family any recurrent fever is definitely malaria next time",
+            "correct": false
+          },
+          {
+            "text": "Provide treatment but no warning signs to avoid alarming them",
+            "correct": false
+          },
+          {
+            "text": "Advise stopping treatment once fever falls on day 1",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Mercy is stable now, but persistent fever needs clear safety-netting and planned reassessment if she does not improve.",
+        "wrong": "Without explicit return guidance, persistent or worsening fever can be missed. Counseling is part of safe febrile illness management."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You avoided repeat antimalarial treatment after a negative RDT and managed based on new evidence.",
+            "emphasis": "Persistent fever requires structured reassessment, not automatic retreatment."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "This case tests anchoring bias. Mercy's negative malaria test, stable vitals, and urinary findings justified broadening the differential and choosing targeted treatment. Uganda Clinical Guidelines 2023 support test-guided malaria care and clear follow-up safety-netting.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "In persistent fever, the best next step is often a better question and focused exam, not another empiric malaria course."
+        }
+      }
+    }
+  ]
+}

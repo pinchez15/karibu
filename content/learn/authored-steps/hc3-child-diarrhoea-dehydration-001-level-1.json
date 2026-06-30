@@ -1,0 +1,239 @@
+{
+  "canonicalCaseId": "hc3-child-diarrhoea-dehydration-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Okello Brian",
+      "id": "PT-CH-240302",
+      "age": "18M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Classify dehydration using IMNCI signs before prescribing medicines.",
+      "Calculate and start ORS Plan B correctly for a 10 kg child.",
+      "Provide zinc and caregiver counseling with a 4-hour reassessment plan."
+    ],
+    "takeaways": [
+      "Restlessness, sunken eyes, eager drinking, and slow skin pinch indicate some dehydration.",
+      "Plan B for 10 kg child is 75 ml/kg over 4 hours (750 ml total).",
+      "Zinc 20 mg daily for 10-14 days should be paired with feeding and return advice."
+    ],
+    "blurb": "An 18-month-old with watery diarrhoea needs rapid dehydration classification and practical ORS planning.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Watery diarrhoea for 2 days",
+            "chips": [
+              "Child",
+              "Possible dehydration"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver report",
+            "text": "Mother says stool is frequent and child drinks quickly but remains thirsty."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Brian looks irritable and thirsty",
+        "body": "Your first task is dehydration classification, not automatic medicine selection."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals and weight",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.8 C"
+              },
+              {
+                "label": "HR",
+                "value": "126"
+              },
+              {
+                "label": "RESP",
+                "value": "30/min"
+              },
+              {
+                "label": "WT",
+                "value": "10 kg"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Hydration signs",
+            "text": "Restless/irritable, sunken eyes, drinks eagerly, skin pinch returns slowly.",
+            "emphasis": "No lethargy and not unable to drink."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · classification",
+        "title": "Which dehydration class fits best?",
+        "body": "Use signs exactly as IMNCI describes."
+      },
+      "question": {
+        "prompt": "How should this child be classified?",
+        "options": [
+          {
+            "text": "Some dehydration",
+            "correct": true
+          },
+          {
+            "text": "Severe dehydration",
+            "correct": false
+          },
+          {
+            "text": "No dehydration",
+            "correct": false
+          },
+          {
+            "text": "Dysentery only",
+            "correct": false
+          }
+        ],
+        "right": "Correct. These signs support some dehydration, not severe dehydration, because the child is not lethargic and can drink.",
+        "wrong": "The sign pattern matches some dehydration. Severe dehydration requires more dangerous findings like lethargy/unconsciousness or inability to drink."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Rehydration plan",
+            "drug": "ORS Plan B",
+            "detail": "75 ml/kg over 4 hours = 750 ml for 10 kg child"
+          },
+          {
+            "type": "investigations",
+            "title": "Required follow-up",
+            "orders": [
+              {
+                "name": "4-hour reassessment",
+                "status": "pending",
+                "sub": "Reclassify hydration status"
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · treatment",
+        "title": "Choose the correct immediate treatment",
+        "body": "Avoid common arithmetic and dosing mistakes."
+      },
+      "question": {
+        "prompt": "What is the best next action?",
+        "options": [
+          {
+            "text": "Start ORS 750 ml over 4 hours and give zinc 20 mg daily for 10-14 days",
+            "correct": true
+          },
+          {
+            "text": "Give antidiarrhoeal syrup only, no ORS required",
+            "correct": false
+          },
+          {
+            "text": "Give IV fluids immediately to all diarrhoea cases",
+            "correct": false
+          },
+          {
+            "text": "Send home first, then start ORS only if still sick tomorrow",
+            "correct": false
+          }
+        ],
+        "right": "Correct. For some dehydration at 10 kg, Plan B is 750 ml ORS over 4 hours plus zinc 20 mg daily.",
+        "wrong": "This child already has dehydration signs. Delaying ORS or using non-IMNCI shortcuts risks progression to severe dehydration."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "COUNSEL",
+        "sections": [
+          {
+            "type": "dangerScreen",
+            "title": "Return urgently if",
+            "danger_signs": [
+              "Unable to drink or breastfeed",
+              "Repeated vomiting",
+              "Blood in stool",
+              "Becomes lethargic or very sleepy"
+            ],
+            "reveal_note": "Caregiver demonstrates ORS mixing correctly."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · discharge safety",
+        "title": "What counseling should accompany treatment?",
+        "body": "Counseling is part of the intervention, not optional."
+      },
+      "question": {
+        "prompt": "Which counseling package is best?",
+        "options": [
+          {
+            "text": "Teach ORS mixing/use, continue feeding, give zinc daily, and explain danger signs",
+            "correct": true
+          },
+          {
+            "text": "Stop feeds until diarrhoea fully resolves",
+            "correct": false
+          },
+          {
+            "text": "Avoid ORS at home to prevent overhydration",
+            "correct": false
+          },
+          {
+            "text": "Use antibiotics first for all watery diarrhoea",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Continued fluids/feeding and clear return precautions prevent deterioration after discharge.",
+        "wrong": "Stopping feeds or avoiding home ORS worsens recovery. IMNCI emphasizes caregiver-led oral rehydration and danger-sign recognition."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You classified some dehydration correctly and initiated Plan B with zinc and caregiver teaching.",
+            "emphasis": "Classification before treatment prevented both under- and over-treatment."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "In IMNCI diarrhoea care, the hydration signs drive treatment. Brian's exam matched some dehydration, so ORS Plan B and zinc with reassessment was the right HC III plan."
+      }
+    }
+  ]
+}

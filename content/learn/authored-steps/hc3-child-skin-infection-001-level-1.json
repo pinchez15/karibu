@@ -1,0 +1,191 @@
+{
+  "canonicalCaseId": "hc3-child-skin-infection-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Atim Ruth",
+      "id": "PT-CH-240311",
+      "age": "5F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Classify common bacterial skin infection and screen for systemic spread.",
+      "Choose between local care only vs added oral antibiotics based on severity signs.",
+      "Provide hygiene counseling and follow-up instructions that reduce recurrence."
+    ],
+    "takeaways": [
+      "Honey-colored crusted sores suggest impetigo; warmth and extension suggest deeper infection risk.",
+      "Fever, rapid spread, severe pain, or systemic illness raise urgency for broader treatment/referral.",
+      "Daily cleaning, hand hygiene, and early review are part of effective skin infection care."
+    ],
+    "blurb": "A child with spreading crusted skin sores needs careful severity assessment and practical treatment planning.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Crusted skin sores on legs, now spreading",
+            "chips": [
+              "Child skin infection",
+              "Possible impetigo"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver note",
+            "text": "Lesions started as small blisters and became yellow crusts. One area is now tender."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Ruth is uncomfortable but alert",
+        "body": "Your goal is to identify whether this is localized impetigo or a more serious spreading infection."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.9 C"
+              },
+              {
+                "label": "HR",
+                "value": "110"
+              },
+              {
+                "label": "RESP",
+                "value": "24/min"
+              },
+              {
+                "label": "WT",
+                "value": "17 kg"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Skin exam",
+            "text": "Multiple honey-crusted lesions on lower legs; one surrounding area mildly warm and erythematous, no abscess."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · severity",
+        "title": "What is the best working diagnosis?",
+        "body": "Use lesion pattern and systemic status."
+      },
+      "question": {
+        "prompt": "Which interpretation best fits?",
+        "options": [
+          {
+            "text": "Impetigo/skin bacterial infection with limited spread, currently stable",
+            "correct": true
+          },
+          {
+            "text": "Necrotizing fasciitis requiring immediate surgery",
+            "correct": false
+          },
+          {
+            "text": "Fungal rash only, no bacterial component",
+            "correct": false
+          },
+          {
+            "text": "No infection because fever is not high",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Classic crusted lesions with mild local spread fit bacterial skin infection; no severe systemic signs are present now.",
+        "wrong": "Lesion morphology matters. Dismissing infection because fever is modest can delay proper treatment."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Treatment plan",
+            "drug": "Local wound care + consider oral antibiotic for spreading lesions",
+            "detail": "Daily cleansing, topical therapy, and oral therapy if cellulitic extension is present"
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Escalate urgently if",
+            "danger_signs": [
+              "Rapid extension of redness/swelling",
+              "High fever",
+              "Severe pain or lethargy",
+              "Failure to improve in 48 hours"
+            ],
+            "reveal_note": "Caregiver understands hygiene and review timing."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "What is the best practical HC III approach?",
+        "body": "Select the option that balances treatment and stewardship."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Start local cleansing/treatment and add oral antibiotic when signs of spreading bacterial infection are present",
+            "correct": true
+          },
+          {
+            "text": "Use steroids only to reduce redness quickly",
+            "correct": false
+          },
+          {
+            "text": "No treatment; wait until lesions become painful",
+            "correct": false
+          },
+          {
+            "text": "Give injectable antibiotics for every impetigo case",
+            "correct": false
+          }
+        ],
+        "right": "Correct. This approach treats likely bacterial infection while reserving escalation for worsening signs.",
+        "wrong": "Either undertreatment or routine overtreatment can both harm care quality. Severity-guided treatment is key."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You managed likely impetigo/skin infection with appropriate severity-based treatment and hygiene counseling.",
+            "emphasis": "Lesion pattern plus systemic review guided safe prescribing."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Child skin infections are common at HC III. Good outcomes rely on lesion assessment, practical hygiene education, and clear criteria for return or escalation."
+      }
+    }
+  ]
+}

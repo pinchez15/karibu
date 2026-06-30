@@ -1,0 +1,2583 @@
+{
+  "id": "child-health-imnci-l1",
+  "title": "Child Health and IMNCI Reasoning — Level 1 · Core practice",
+  "cases": [
+    {
+      "id": "child-cough-fast-breathing-001",
+      "ready": true,
+      "title": "Child with cough and fast breathing",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Achan Amina",
+        "id": "PT-CH-240301",
+        "age": "2F",
+        "sex": "Female"
+      },
+      "blurb": "A 2-year-old with cough and fever arrives at a busy HC III. Decide whether this is routine cough, pneumonia, or referral-level danger.",
+      "objectives": [
+        "Use age-based respiratory rate thresholds when assessing cough and difficult breathing.",
+        "Screen danger signs before deciding outpatient treatment at HC III.",
+        "Classify and manage likely pneumonia using IMNCI and Uganda Clinical Guidelines 2023."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "A child aged 12-59 months with RR 48/min has fast breathing.",
+        "No chest indrawing, no stridor at rest, and ability to drink support outpatient pneumonia care.",
+        "Caregiver counseling on danger signs and 2-day review is essential."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with cough and fast breathing",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-cough-fast-breathing-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.5,
+        "clinical_correctness_score": 0.89,
+        "hc3_reality_score": 0.9,
+        "learning_value_score": 0.86,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-cough-fast-breathing-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cough for 4 days with fever since yesterday",
+                "chips": [
+                  "Child",
+                  "HC III OPD"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver concern",
+                "text": "Mother says breathing seems faster at night but child is still breastfeeding and drinking."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Amina arrives coughing and warm",
+            "body": "You must decide quickly if this is severe respiratory illness or manageable pneumonia.",
+            "quote": "\"She coughs all night and breathes quickly.\"",
+            "teach": {
+              "label": "IMNCI framing",
+              "text": "In children, age and respiratory rate determine classification. Count breaths before labeling severity."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Initial vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "38.2 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "HR",
+                    "value": "118"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "48/min"
+                  },
+                  {
+                    "label": "SpO2",
+                    "value": "95%"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "11.2 kg"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Danger signs screen",
+                "danger_signs": [
+                  "Unable to drink",
+                  "Convulsions",
+                  "Lethargic/unconscious",
+                  "Chest indrawing",
+                  "Stridor at rest"
+                ],
+                "reveal_note": "None present on exam."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · assessment",
+            "title": "What is the best classification now?",
+            "body": "Use age-specific fast-breathing cutoffs and danger signs."
+          },
+          "question": {
+            "prompt": "For this 2-year-old, what is the safest interpretation?",
+            "options": [
+              {
+                "text": "Fast breathing pneumonia without danger signs; manage as outpatient and review closely",
+                "correct": true
+              },
+              {
+                "text": "No pneumonia because oxygen saturation is above 90%",
+                "correct": false
+              },
+              {
+                "text": "Severe pneumonia needing immediate referral because any fever with cough is severe",
+                "correct": false
+              },
+              {
+                "text": "Asthma only, so skip IMNCI classification",
+                "correct": false
+              }
+            ],
+            "right": "Correct. At age 2 years (12-59 months), RR 48/min is fast breathing, and no chest indrawing/stridor/danger signs are documented. IMNCI supports pneumonia management at HC III with close follow-up.",
+            "wrong": "This child meets fast-breathing criteria for age (RR 48/min). Fever plus cough still requires IMNCI classification; oxygen alone does not exclude pneumonia."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Management choice",
+                "drug": "Likely non-severe pneumonia package",
+                "detail": "Oral antibiotic per guideline, antipyretic, fluids, and feeding support"
+              },
+              {
+                "type": "assessment",
+                "title": "Respiratory exam",
+                "text": "No chest indrawing, no stridor at rest, alert, taking fluids."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · treatment",
+            "title": "Choose the most appropriate first plan",
+            "body": "Pick the option that matches findings and avoids overtreatment."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Start oral pneumonia treatment per IMNCI/UCG, then schedule 2-day follow-up",
+                "correct": true
+              },
+              {
+                "text": "Give only cough syrup and vitamins because child is playful",
+                "correct": false
+              },
+              {
+                "text": "Start injectable broad-spectrum antibiotics for all cough with fever",
+                "correct": false
+              },
+              {
+                "text": "Discharge without counseling because no danger signs are present",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Child is stable but meets fast-breathing pneumonia criteria. Guideline-based oral treatment and short follow-up reduce progression risk.",
+            "wrong": "RR 48/min at 2 years is not simple cough. Under-treating or skipping follow-up can miss deterioration in the next 24-48 hours."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "COUNSEL",
+            "sections": [
+              {
+                "type": "dangerScreen",
+                "title": "Return immediately if",
+                "danger_signs": [
+                  "Breathing becomes difficult or very fast",
+                  "Child cannot drink/breastfeed",
+                  "Chest indrawing appears",
+                  "Convulsions or unusual sleepiness"
+                ],
+                "reveal_note": "Mother repeats warning signs correctly."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · caregiver advice",
+            "title": "What counseling is essential before discharge?",
+            "body": "Choose the message that prevents delayed return."
+          },
+          "question": {
+            "prompt": "Best discharge counseling?",
+            "options": [
+              {
+                "text": "Explain danger signs clearly and set a strict 2-day review even if slightly improved",
+                "correct": true
+              },
+              {
+                "text": "Tell caregiver to return only after 1 week if cough remains",
+                "correct": false
+              },
+              {
+                "text": "Stop antibiotics once fever reduces on day 1",
+                "correct": false
+              },
+              {
+                "text": "No follow-up needed because pulse oximetry is acceptable",
+                "correct": false
+              }
+            ],
+            "right": "Correct. For child pneumonia, practical counseling and early review are core IMNCI actions to catch worsening breathing.",
+            "wrong": "A child can worsen quickly. Delayed review or incomplete treatment increases risk of severe disease."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You correctly identified fast-breathing pneumonia and avoided both undertreatment and unnecessary referral.",
+                "emphasis": "Age-based RR interpretation changed the decision."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Amina's RR 48/min at age 2 years meets fast-breathing criteria. With no chest indrawing, stridor, or general danger signs, outpatient pneumonia management with close review is appropriate under IMNCI and Uganda Clinical Guidelines 2023."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-diarrhoea-dehydration-001",
+      "ready": true,
+      "title": "Child with diarrhoea and dehydration assessment",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Okello Brian",
+        "id": "PT-CH-240302",
+        "age": "18M",
+        "sex": "Male"
+      },
+      "blurb": "An 18-month-old with watery diarrhoea needs rapid dehydration classification and practical ORS planning.",
+      "objectives": [
+        "Classify dehydration using IMNCI signs before prescribing medicines.",
+        "Calculate and start ORS Plan B correctly for a 10 kg child.",
+        "Provide zinc and caregiver counseling with a 4-hour reassessment plan."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Restlessness, sunken eyes, eager drinking, and slow skin pinch indicate some dehydration.",
+        "Plan B for 10 kg child is 75 ml/kg over 4 hours (750 ml total).",
+        "Zinc 20 mg daily for 10-14 days should be paired with feeding and return advice."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with diarrhoea and dehydration assessment",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-diarrhoea-dehydration-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.46,
+        "clinical_correctness_score": 0.88,
+        "hc3_reality_score": 0.91,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-diarrhoea-dehydration-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Watery diarrhoea for 2 days",
+                "chips": [
+                  "Child",
+                  "Possible dehydration"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver report",
+                "text": "Mother says stool is frequent and child drinks quickly but remains thirsty."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Brian looks irritable and thirsty",
+            "body": "Your first task is dehydration classification, not automatic medicine selection."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals and weight",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "126"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "10 kg"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Hydration signs",
+                "text": "Restless/irritable, sunken eyes, drinks eagerly, skin pinch returns slowly.",
+                "emphasis": "No lethargy and not unable to drink."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · classification",
+            "title": "Which dehydration class fits best?",
+            "body": "Use signs exactly as IMNCI describes."
+          },
+          "question": {
+            "prompt": "How should this child be classified?",
+            "options": [
+              {
+                "text": "Some dehydration",
+                "correct": true
+              },
+              {
+                "text": "Severe dehydration",
+                "correct": false
+              },
+              {
+                "text": "No dehydration",
+                "correct": false
+              },
+              {
+                "text": "Dysentery only",
+                "correct": false
+              }
+            ],
+            "right": "Correct. These signs support some dehydration, not severe dehydration, because the child is not lethargic and can drink.",
+            "wrong": "The sign pattern matches some dehydration. Severe dehydration requires more dangerous findings like lethargy/unconsciousness or inability to drink."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Rehydration plan",
+                "drug": "ORS Plan B",
+                "detail": "75 ml/kg over 4 hours = 750 ml for 10 kg child"
+              },
+              {
+                "type": "investigations",
+                "title": "Required follow-up",
+                "orders": [
+                  {
+                    "name": "4-hour reassessment",
+                    "status": "pending",
+                    "sub": "Reclassify hydration status"
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · treatment",
+            "title": "Choose the correct immediate treatment",
+            "body": "Avoid common arithmetic and dosing mistakes."
+          },
+          "question": {
+            "prompt": "What is the best next action?",
+            "options": [
+              {
+                "text": "Start ORS 750 ml over 4 hours and give zinc 20 mg daily for 10-14 days",
+                "correct": true
+              },
+              {
+                "text": "Give antidiarrhoeal syrup only, no ORS required",
+                "correct": false
+              },
+              {
+                "text": "Give IV fluids immediately to all diarrhoea cases",
+                "correct": false
+              },
+              {
+                "text": "Send home first, then start ORS only if still sick tomorrow",
+                "correct": false
+              }
+            ],
+            "right": "Correct. For some dehydration at 10 kg, Plan B is 750 ml ORS over 4 hours plus zinc 20 mg daily.",
+            "wrong": "This child already has dehydration signs. Delaying ORS or using non-IMNCI shortcuts risks progression to severe dehydration."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "COUNSEL",
+            "sections": [
+              {
+                "type": "dangerScreen",
+                "title": "Return urgently if",
+                "danger_signs": [
+                  "Unable to drink or breastfeed",
+                  "Repeated vomiting",
+                  "Blood in stool",
+                  "Becomes lethargic or very sleepy"
+                ],
+                "reveal_note": "Caregiver demonstrates ORS mixing correctly."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · discharge safety",
+            "title": "What counseling should accompany treatment?",
+            "body": "Counseling is part of the intervention, not optional."
+          },
+          "question": {
+            "prompt": "Which counseling package is best?",
+            "options": [
+              {
+                "text": "Teach ORS mixing/use, continue feeding, give zinc daily, and explain danger signs",
+                "correct": true
+              },
+              {
+                "text": "Stop feeds until diarrhoea fully resolves",
+                "correct": false
+              },
+              {
+                "text": "Avoid ORS at home to prevent overhydration",
+                "correct": false
+              },
+              {
+                "text": "Use antibiotics first for all watery diarrhoea",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Continued fluids/feeding and clear return precautions prevent deterioration after discharge.",
+            "wrong": "Stopping feeds or avoiding home ORS worsens recovery. IMNCI emphasizes caregiver-led oral rehydration and danger-sign recognition."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You classified some dehydration correctly and initiated Plan B with zinc and caregiver teaching.",
+                "emphasis": "Classification before treatment prevented both under- and over-treatment."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "In IMNCI diarrhoea care, the hydration signs drive treatment. Brian's exam matched some dehydration, so ORS Plan B and zinc with reassessment was the right HC III plan."
+          }
+        }
+      ]
+    },
+    {
+      "id": "malnutrition-oedema-child-001",
+      "ready": true,
+      "title": "Child with swollen feet",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Nabwire Joan",
+        "id": "PT-CH-240303",
+        "age": "3F",
+        "sex": "Female"
+      },
+      "blurb": "A 3-year-old with swollen feet and poor appetite may have severe acute malnutrition requiring urgent escalation.",
+      "objectives": [
+        "Recognize bilateral pitting oedema as severe acute malnutrition.",
+        "Screen for appetite and medical complications before deciding disposition.",
+        "Prioritize urgent referral-level care rather than routine outpatient nutrition advice."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Oedema in both feet is a severe malnutrition sign until proven otherwise.",
+        "Quiet behavior, poor appetite, and recurrent illness increase complication risk.",
+        "HC III should stabilize and refer when severe acute malnutrition criteria are met."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with swollen feet",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/malnutrition-oedema-child-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.88,
+        "learning_value_score": 0.86,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "malnutrition-oedema-child-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Swollen feet and reduced appetite",
+                "chips": [
+                  "Child nutrition",
+                  "High risk"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver history",
+                "text": "Swelling started 1 week ago. Child is less playful and has eaten very little for 2 days."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Joan appears quiet and thin",
+            "body": "This is not a vitamins-only visit. First, classify risk using malnutrition danger signs."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.3 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "112"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "28/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "10.5 kg"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Nutritional exam",
+                "text": "Bilateral pitting oedema of both feet and visibly wasted upper arms.",
+                "emphasis": "Appetite test is poor."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · classification",
+            "title": "What is the most important classification?",
+            "body": "Choose the diagnosis that changes urgency immediately."
+          },
+          "question": {
+            "prompt": "How should bilateral foot oedema be interpreted here?",
+            "options": [
+              {
+                "text": "Severe acute malnutrition with complications; urgent referral pathway needed",
+                "correct": true
+              },
+              {
+                "text": "Mild nutrition issue; routine follow-up in one month",
+                "correct": false
+              },
+              {
+                "text": "Likely simple edema from excess salt intake only",
+                "correct": false
+              },
+              {
+                "text": "Treat as uncomplicated malaria first because weight is low",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Bilateral pitting oedema in a child is a severe acute malnutrition sign and requires urgent escalation according to IMNCI/UCG framing.",
+            "wrong": "Both-feet oedema is a red flag for severe acute malnutrition, not a routine finding. Delayed escalation can be dangerous."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "dangerScreen",
+                "title": "Complication screen",
+                "danger_signs": [
+                  "Poor appetite",
+                  "Lethargy",
+                  "Hypoglycemia risk",
+                  "Concurrent infection"
+                ],
+                "reveal_note": "Poor appetite confirmed; child fatigued."
+              },
+              {
+                "type": "prescription",
+                "title": "Disposition",
+                "drug": "Stabilize and refer",
+                "detail": "Warmth, hypoglycemia prevention, infection screen, urgent transfer"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "Which next action is safest at HC III?",
+            "body": "Select the option that addresses severe malnutrition complications."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Start stabilization steps and arrange urgent referral for severe acute malnutrition care",
+                "correct": true
+              },
+              {
+                "text": "Send home with appetite stimulant and multivitamins only",
+                "correct": false
+              },
+              {
+                "text": "Delay referral until child gains weight over two weeks",
+                "correct": false
+              },
+              {
+                "text": "Treat edema with a diuretic and review later",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Severe malnutrition with oedema and poor appetite needs urgent higher-level nutrition and medical management.",
+            "wrong": "Outpatient-only approaches are unsafe in oedematous severe malnutrition with poor appetite."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You recognized severe acute malnutrition and escalated care promptly.",
+                "emphasis": "Bilateral oedema changed the urgency and disposition."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "In child nutrition triage, bilateral pitting oedema is a severe sign. Joan required stabilization and urgent referral rather than routine outpatient advice."
+          }
+        }
+      ]
+    },
+    {
+      "id": "measles-suspected-rash-fever-001",
+      "ready": true,
+      "title": "Fever with rash in an unimmunized child",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Namata Gloria",
+        "id": "PT-CH-240304",
+        "age": "2F",
+        "sex": "Female"
+      },
+      "blurb": "A febrile child with rash and uncertain immunization status presents during a busy clinic day.",
+      "objectives": [
+        "Identify suspected measles in a child with fever, rash, cough, and red eyes.",
+        "Screen for complications and danger signs that require referral.",
+        "Apply infection prevention, vitamin A support, and counseling in HC III workflow."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Fever preceding generalized rash with conjunctivitis raises measles suspicion.",
+        "Check feeding, breathing, hydration, and neurologic danger signs before outpatient plan.",
+        "Unimmunized children need both acute management and catch-up vaccine counseling after recovery."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Fever with rash in an unimmunized child",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/measles-suspected-rash-fever-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.6,
+        "clinical_correctness_score": 0.8,
+        "hc3_reality_score": 0.86,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "who-imnci-chart-booklet"
+        ],
+        "review_status": "needs_review",
+        "case_version": "measles-suspected-rash-fever-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever, cough, red eyes, and body rash",
+                "chips": [
+                  "Child rash illness",
+                  "Infection control"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Immunization history",
+                "text": "Caregiver is unsure if measles vaccine was received."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Gloria has classic febrile rash features",
+            "body": "Use a structured approach: danger signs first, then likely measles complications."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "38.7 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "HR",
+                    "value": "120"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "14 kg"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Focused findings",
+                "text": "Generalized maculopapular rash, cough, conjunctival redness, no severe respiratory distress."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · interpretation",
+            "title": "What is the best working diagnosis now?",
+            "body": "Pick the action-oriented label that guides management."
+          },
+          "question": {
+            "prompt": "Which classification is most appropriate?",
+            "options": [
+              {
+                "text": "Suspected measles with complication screen needed",
+                "correct": true
+              },
+              {
+                "text": "Simple skin allergy, no infectious concern",
+                "correct": false
+              },
+              {
+                "text": "Malaria only because fever is present",
+                "correct": false
+              },
+              {
+                "text": "Typhoid confirmed without further assessment",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Fever before rash plus cough and conjunctivitis in an under-immunized child should be managed as suspected measles until proven otherwise.",
+            "wrong": "This pattern is not routine allergy. Missing measles suspicion delays IPC measures and complication screening."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "dangerScreen",
+                "title": "Complication check",
+                "danger_signs": [
+                  "Unable to drink",
+                  "Fast/difficult breathing",
+                  "Lethargy or convulsions",
+                  "Eye complications or corneal changes"
+                ],
+                "reveal_note": "No danger signs currently, child drinking."
+              },
+              {
+                "type": "prescription",
+                "title": "Initial management",
+                "drug": "Supportive measles care",
+                "detail": "Vitamin A, fever control, fluids, infection prevention counseling"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "Choose the best HC III plan",
+            "body": "Balance acute support with close follow-up and public-health awareness."
+          },
+          "question": {
+            "prompt": "What is the safest immediate plan?",
+            "options": [
+              {
+                "text": "Provide supportive care (including vitamin A per age), counsel caregiver, and review closely for complications",
+                "correct": true
+              },
+              {
+                "text": "Give only antibiotic eye drops and no further advice",
+                "correct": false
+              },
+              {
+                "text": "Send home without warning signs because child is still active",
+                "correct": false
+              },
+              {
+                "text": "Start injectable antimalarial as first-line for all febrile rash illnesses",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Child is currently stable but measles complications can develop quickly, so supportive care plus explicit warning signs is key.",
+            "wrong": "Narrow or no counseling misses early complications such as pneumonia, dehydration, or neurologic deterioration."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You identified suspected measles, applied supportive care, and prepared caregiver for danger signs.",
+                "emphasis": "Structured complication screening prevented false reassurance."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "For febrile rash illness in children, combine clinical measles suspicion, danger-sign screening, and caregiver counseling. Immunization catch-up should be discussed after acute illness."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-ear-pain-fever-001",
+      "ready": true,
+      "title": "Child with ear pain and fever",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Kato Ivan",
+        "id": "PT-CH-240305",
+        "age": "2M",
+        "sex": "Male"
+      },
+      "blurb": "A toddler with ear pain and fever needs careful ear exam and practical outpatient planning.",
+      "objectives": [
+        "Differentiate uncomplicated acute otitis media from dangerous ear infection signs.",
+        "Use fever, ear findings, and child behavior to choose treatment intensity.",
+        "Counsel caregivers on pain control, antibiotics adherence when indicated, and return signs."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "A bulging or inflamed tympanic membrane with fever and ear pain supports acute otitis media.",
+        "No mastoid swelling or systemic danger signs supports HC III outpatient care.",
+        "Follow-up and return precautions are essential because ear infection can progress."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with ear pain and fever",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-ear-pain-fever-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-ear-pain-fever-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Right ear pain with fever for 2 days",
+                "chips": [
+                  "Child ENT",
+                  "Painful ear"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver concern",
+                "text": "Child cries when lying on the right side and pulls the ear repeatedly."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Ivan is crying but still drinking fluids",
+            "body": "First rule out severe disease, then treat likely acute otitis media appropriately."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "HR",
+                    "value": "132"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "32/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "11 kg"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Ear findings",
+                "text": "Right tympanic membrane is red and bulging; no mastoid tenderness or swelling."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · diagnosis",
+            "title": "Which diagnosis fits best?",
+            "body": "Use the ear exam and danger-sign findings together."
+          },
+          "question": {
+            "prompt": "What is the most likely classification?",
+            "options": [
+              {
+                "text": "Acute otitis media without mastoiditis signs",
+                "correct": true
+              },
+              {
+                "text": "Severe mastoiditis requiring immediate surgery",
+                "correct": false
+              },
+              {
+                "text": "No ear disease because child has fever",
+                "correct": false
+              },
+              {
+                "text": "Primary pneumonia diagnosis only",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Bulging inflamed tympanic membrane with ear pain and fever supports AOM; no mastoid swelling lowers immediate referral urgency.",
+            "wrong": "Ignoring clear ear findings can miss treatable AOM. Severe referral signs like mastoid swelling are absent here."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Treatment bundle",
+                "drug": "AOM outpatient care",
+                "detail": "Analgesia +/- oral antibiotic per guideline, hydration, fever care"
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Escalate if",
+                "danger_signs": [
+                  "Mastoid swelling/tenderness",
+                  "Persistent high fever",
+                  "Lethargy or vomiting",
+                  "No improvement after 48 hours"
+                ],
+                "reveal_note": "Caregiver agrees to return if danger signs appear."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "What is the safest next action?",
+            "body": "Choose a realistic HC III plan."
+          },
+          "question": {
+            "prompt": "How should you manage this child now?",
+            "options": [
+              {
+                "text": "Treat likely AOM with pain control and guideline-based oral therapy, then review in 2 days",
+                "correct": true
+              },
+              {
+                "text": "Use ear candling and reassure only",
+                "correct": false
+              },
+              {
+                "text": "Start IV antibiotics immediately for every ear infection",
+                "correct": false
+              },
+              {
+                "text": "Discharge without return precautions once pain improves",
+                "correct": false
+              }
+            ],
+            "right": "Correct. This child is stable and fits uncomplicated AOM, so outpatient treatment and close review are appropriate.",
+            "wrong": "Either overtreatment or absent follow-up can harm outcomes. AOM needs practical treatment plus explicit return instructions."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You diagnosed probable acute otitis media and provided safe outpatient management with warning signs.",
+                "emphasis": "Ear exam details changed treatment confidence."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "For febrile ear pain in children, combine otoscopic findings with danger-sign screening. Most stable AOM can be managed at HC III with close follow-up."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-fever-convulsion-001",
+      "ready": true,
+      "title": "Child after a convulsion",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Aol Grace",
+        "id": "PT-CH-240306",
+        "age": "2F",
+        "sex": "Female"
+      },
+      "blurb": "A mother brings her 2-year-old after a fever-related convulsion at home. Decide rapidly between safe observation and urgent escalation.",
+      "objectives": [
+        "Perform immediate post-convulsion danger-sign assessment in a febrile child.",
+        "Differentiate likely simple febrile convulsion from meningitis danger pattern.",
+        "Choose stabilization, investigation, and referral actions appropriate to findings."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "History of convulsion is a high-risk signal until danger signs are excluded.",
+        "Alert child with no neck stiffness, no repeated convulsions, and good oral intake may be managed with close observation.",
+        "Any persistent altered consciousness, recurrent seizure, or meningeal signs needs urgent referral."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child after a convulsion",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-fever-convulsion-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-fever-convulsion-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever with convulsion at home",
+                "chips": [
+                  "Emergency child",
+                  "Neurologic risk"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Event history",
+                "text": "Seizure lasted about 2 minutes, stopped spontaneously before arrival."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Grace is sleepy but arousable",
+            "body": "Immediate danger-sign reassessment is more important than routine queue workflow."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Arrival vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "38.6 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "HR",
+                    "value": "136"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "34/min"
+                  },
+                  {
+                    "label": "SpO2",
+                    "value": "97%"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Neurologic danger signs",
+                "danger_signs": [
+                  "Repeated convulsions",
+                  "Unconsciousness",
+                  "Neck stiffness",
+                  "Unable to drink"
+                ],
+                "reveal_note": "None currently present; child now responsive and drinking."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · risk sorting",
+            "title": "How should you interpret this status?",
+            "body": "Choose the safest classification after current exam."
+          },
+          "question": {
+            "prompt": "What is the best immediate interpretation?",
+            "options": [
+              {
+                "text": "Post-febrile convulsion, currently stable but requires close monitoring and cause evaluation",
+                "correct": true
+              },
+              {
+                "text": "Definite meningitis; skip further assessment",
+                "correct": false
+              },
+              {
+                "text": "Completely low risk; discharge immediately",
+                "correct": false
+              },
+              {
+                "text": "Psychogenic event, no fever management needed",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Child had a convulsion, so careful observation and fever source assessment are still required even if danger signs are absent now.",
+            "wrong": "Either overcalling without evidence or early discharge is unsafe. Post-seizure children need structured reassessment."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "investigations",
+                "title": "Focused workup",
+                "orders": [
+                  {
+                    "name": "Malaria RDT",
+                    "status": "resulted",
+                    "sub": "Positive"
+                  },
+                  {
+                    "name": "Blood glucose",
+                    "status": "resulted",
+                    "sub": "5.1 mmol/L"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Current neuro exam",
+                "text": "Alert, no neck stiffness, no repeat convulsion in facility."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "Choose the most appropriate next action",
+            "body": "Combine positive findings with current stability."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Treat confirmed febrile illness per guideline, observe closely, and counsel immediate return if seizure recurs",
+                "correct": true
+              },
+              {
+                "text": "Ignore fever source since seizure already stopped",
+                "correct": false
+              },
+              {
+                "text": "Discharge without counseling once child is awake",
+                "correct": false
+              },
+              {
+                "text": "Give sedatives for home use to prevent all future convulsions",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Current exam does not show meningitis danger signs, so treat identified febrile cause, observe, and provide strict seizure return precautions.",
+            "wrong": "Stopping at seizure cessation misses ongoing risk. Care must include cause-directed treatment and caregiver safety-netting."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You stabilized and reassessed a post-convulsion child, then matched management to current danger-sign status.",
+                "emphasis": "Structured neurologic screening prevented unsafe assumptions."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Fever with convulsion demands high vigilance. When repeat seizures, neck stiffness, persistent altered consciousness, or inability to drink appear, urgent referral is required."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-very-low-weight-001",
+      "ready": true,
+      "title": "Small child not gaining weight",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Akello Maria",
+        "id": "PT-CH-240307",
+        "age": "20F",
+        "sex": "Female"
+      },
+      "blurb": "A toddler with poor growth and recurrent diarrhoea needs structured nutrition assessment and follow-up planning.",
+      "objectives": [
+        "Assess growth faltering with nutrition-focused history and exam.",
+        "Screen for severe malnutrition danger signs before routine counseling.",
+        "Build a practical feeding and follow-up plan for HC III caregivers."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Very low weight needs trend interpretation and feeding assessment, not vitamins alone.",
+        "Check bilateral oedema, appetite, lethargy, and recurrent infections to identify severe risk.",
+        "Counseling should include meal frequency, feeding during illness, and scheduled re-weighing."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Small child not gaining weight",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-very-low-weight-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-very-low-weight-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Poor weight gain and frequent illness",
+                "chips": [
+                  "Growth concern",
+                  "Child nutrition"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver statement",
+                "text": "Grandmother says child eats small amounts and has had recurrent diarrhoea episodes."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Maria is visibly underweight",
+            "body": "Start with danger signs, then move to feeding quality and illness contributors."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals and anthropometry",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.1 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "118"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "7.4 kg"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Severe malnutrition screen",
+                "danger_signs": [
+                  "Bilateral oedema",
+                  "Poor appetite",
+                  "Lethargy",
+                  "Unable to drink"
+                ],
+                "reveal_note": "No oedema; appetite reduced but still taking food."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · classification",
+            "title": "What is the best immediate approach?",
+            "body": "Choose an action that avoids both neglect and over-referral."
+          },
+          "question": {
+            "prompt": "What should guide your next step?",
+            "options": [
+              {
+                "text": "Perform full feeding assessment and growth counseling, with close weight follow-up",
+                "correct": true
+              },
+              {
+                "text": "Give appetite stimulant only and no counseling",
+                "correct": false
+              },
+              {
+                "text": "Ignore nutrition and treat only intermittent fever complaints",
+                "correct": false
+              },
+              {
+                "text": "Declare severe oedematous malnutrition despite absent oedema",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Growth faltering requires feeding assessment, infection review, and structured follow-up when severe danger signs are absent.",
+            "wrong": "Quick-fix medication without feeding review misses the root problem and delays recovery."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Feeding history reveal",
+                "text": "Child gets thin porridge twice daily, minimal protein foods, and feeding is reduced during illness."
+              },
+              {
+                "type": "prescription",
+                "title": "Nutrition plan",
+                "drug": "Intensified feeding counseling",
+                "detail": "Energy-dense local foods, frequent meals, continued feeding during illness, deworming review as age-appropriate"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · practical care",
+            "title": "Which plan is best for this family?",
+            "body": "Select realistic recommendations for HC III follow-up."
+          },
+          "question": {
+            "prompt": "What is the best management plan now?",
+            "options": [
+              {
+                "text": "Provide specific feeding plan, treat intercurrent illness, and re-weigh in 2 weeks",
+                "correct": true
+              },
+              {
+                "text": "Advise fasting during diarrhoea episodes",
+                "correct": false
+              },
+              {
+                "text": "Delay any follow-up until three months later",
+                "correct": false
+              },
+              {
+                "text": "Stop breastfeeding immediately to encourage solid foods",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Practical food counseling with short-interval recheck is central to growth-faltering management.",
+            "wrong": "Delaying follow-up or restricting feeding worsens undernutrition and illness vulnerability."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You identified growth faltering and created a realistic caregiver-centered nutrition plan.",
+                "emphasis": "Structured feeding review is the core intervention."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Very low weight in toddlers demands careful nutrition history, danger-sign screening, and short-interval follow-up. Counseling quality strongly affects outcomes."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-eye-discharge-newborn-001",
+      "ready": true,
+      "title": "Newborn with eye discharge",
+      "topic": "Neonatal",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Baby Nambi",
+        "id": "PT-NN-240308",
+        "age": "6D",
+        "sex": "Female"
+      },
+      "blurb": "A 6-day-old newborn presents with sticky eye discharge. Decide if this is local infection or a wider neonatal danger pattern.",
+      "objectives": [
+        "Assess neonatal eye discharge with systemic danger-sign screening.",
+        "Differentiate local conjunctival infection from neonatal sepsis risk.",
+        "Start appropriate local care including erythromycin eye ointment and referral when severe signs appear."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "In neonates, poor feeding, fever/hypothermia, and lethargy can signal systemic infection.",
+        "Purulent eye discharge with swollen lids may need both local treatment and close follow-up.",
+        "Erythromycin eye ointment and hygienic eye care are practical first-line actions when stable."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Newborn with eye discharge",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-eye-discharge-newborn-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-eye-discharge-newborn-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Eye discharge and eyelid swelling in newborn",
+                "chips": [
+                  "Neonate",
+                  "Infection risk"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Mother's report",
+                "text": "Discharge started yesterday. Baby still breastfeeds but less vigorously."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Baby Nambi is only 6 days old",
+            "body": "Neonates can deteriorate quickly. Always screen systemic danger signs before local treatment."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Neonatal vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "36.1 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "154"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "52/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "3.1 kg"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Neonatal danger signs",
+                "danger_signs": [
+                  "Poor feeding",
+                  "Fever or low temperature",
+                  "Lethargy",
+                  "Convulsions",
+                  "Severe chest indrawing"
+                ],
+                "reveal_note": "No convulsions or chest indrawing; feeding slightly reduced."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · neonatal risk",
+            "title": "What is your best immediate interpretation?",
+            "body": "Use both local eye findings and systemic neonatal signs."
+          },
+          "question": {
+            "prompt": "How should you classify this presentation now?",
+            "options": [
+              {
+                "text": "Possible neonatal conjunctivitis; treat locally and monitor closely for systemic illness",
+                "correct": true
+              },
+              {
+                "text": "Harmless blocked tear duct only, no follow-up required",
+                "correct": false
+              },
+              {
+                "text": "Meningitis confirmed from eye discharge alone",
+                "correct": false
+              },
+              {
+                "text": "No treatment needed in neonates with eye pus",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Current findings support localized neonatal eye infection, but age 6 days requires strict safety-net and close review.",
+            "wrong": "In neonates, minimizing infection signs is risky. Eye discharge can be local now but can progress if follow-up is poor."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Initial treatment",
+                "drug": "Erythromycin eye ointment",
+                "detail": "Apply to affected eye(s) per protocol with gentle saline cleansing"
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Urgent return triggers",
+                "danger_signs": [
+                  "Poor or no breastfeeding",
+                  "Fever or low temperature",
+                  "Increasing eyelid swelling/redness",
+                  "Lethargy or convulsions"
+                ],
+                "reveal_note": "Mother demonstrates cleaning technique and return plan."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "Choose the safest newborn care plan",
+            "body": "Pick the action that balances treatment and escalation vigilance."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Start erythromycin eye ointment, teach eye hygiene, and arrange very early review",
+                "correct": true
+              },
+              {
+                "text": "Give only herbal eye wash and wait one week",
+                "correct": false
+              },
+              {
+                "text": "Delay all treatment until lab culture is available",
+                "correct": false
+              },
+              {
+                "text": "Use steroid eye drops as first-line therapy",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Early topical therapy plus strict neonatal follow-up is appropriate when systemic danger signs are not yet present.",
+            "wrong": "Delaying treatment or using inappropriate drops can worsen neonatal eye infection and risk systemic spread."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You treated likely neonatal conjunctivitis and gave high-quality newborn safety-net counseling.",
+                "emphasis": "Neonatal age itself increases risk and follow-up urgency."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "In newborn eye complaints, always pair local treatment with systemic danger-sign screening. Erythromycin ointment and caregiver coaching are practical first actions when the infant is currently stable."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-immunization-missed-001",
+      "ready": true,
+      "title": "Missed immunization opportunity",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Ouma Denis",
+        "id": "PT-CH-240309",
+        "age": "15M",
+        "sex": "Male"
+      },
+      "blurb": "A child presents with mild cough, but the immunization card shows missed vaccines.",
+      "objectives": [
+        "Use sick-child visits to identify missed immunization opportunities.",
+        "Distinguish true contraindications from mild illness that still allows vaccination.",
+        "Plan catch-up immunization with clear caregiver communication."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Mild cough/coryza without severe illness is usually not a contraindication to vaccination.",
+        "Checking the child health card during every visit prevents missed opportunities.",
+        "Catch-up schedules should be practical, documented, and explained in plain language."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Missed immunization opportunity",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-immunization-missed-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-immunization-missed-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Mild cough for 3 days",
+                "chips": [
+                  "Sick-child visit",
+                  "Prevention opportunity"
+                ]
+              },
+              {
+                "type": "keyValues",
+                "title": "Card review",
+                "rows": [
+                  {
+                    "label": "Age",
+                    "value": "15 months"
+                  },
+                  {
+                    "label": "Missed doses",
+                    "value": "Measles and booster not yet given"
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Denis came for cough, but card tells a bigger story",
+            "body": "The clinical task includes both acute care and prevention."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Current status",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.6 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "116"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min"
+                  },
+                  {
+                    "label": "SpO2",
+                    "value": "98%"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Contraindication check",
+                "danger_signs": [
+                  "Severe acute illness",
+                  "Anaphylaxis history to vaccine component",
+                  "Current severe respiratory distress"
+                ],
+                "reveal_note": "No severe illness signs identified."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · eligibility",
+            "title": "Should immunization be deferred?",
+            "body": "Use true contraindications, not fear-based assumptions."
+          },
+          "question": {
+            "prompt": "What is the best decision now?",
+            "options": [
+              {
+                "text": "Proceed with catch-up vaccination if eligible while managing mild cough",
+                "correct": true
+              },
+              {
+                "text": "Defer all vaccines until child has zero cough symptoms for a month",
+                "correct": false
+              },
+              {
+                "text": "Ignore immunization card during sick-child visits",
+                "correct": false
+              },
+              {
+                "text": "Start antibiotics first, then decide about vaccines next year",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Mild illness without danger signs is not usually a reason to miss scheduled catch-up vaccination.",
+            "wrong": "Automatic deferral creates missed opportunities and prolongs vulnerability to vaccine-preventable disease."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Visit plan",
+                "drug": "Integrated acute + preventive care",
+                "detail": "Treat mild cough supportively and give due immunizations per schedule"
+              },
+              {
+                "type": "assessment",
+                "title": "Counseling points",
+                "text": "Discuss expected post-vaccine reactions and next appointment date."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · counseling",
+            "title": "What should you tell the caregiver?",
+            "body": "Select clear and practical advice."
+          },
+          "question": {
+            "prompt": "Best caregiver communication?",
+            "options": [
+              {
+                "text": "Explain why vaccines are still safe today, document next doses, and give return advice",
+                "correct": true
+              },
+              {
+                "text": "Tell caregiver vaccination is optional since child is older now",
+                "correct": false
+              },
+              {
+                "text": "Give vaccines but avoid discussing possible minor side effects",
+                "correct": false
+              },
+              {
+                "text": "Focus only on cough and omit immunization documentation",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Confidence and clarity improve adherence to catch-up schedules and reduce future missed opportunities.",
+            "wrong": "Incomplete counseling and poor documentation lead to repeated gaps in immunization coverage."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You addressed mild acute illness and closed a missed immunization gap in the same visit.",
+                "emphasis": "Every child visit is also a prevention checkpoint."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "HC III sick-child care should routinely include card review and catch-up action when no contraindication exists. This prevents avoidable outbreaks and delayed protection."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-abdominal-pain-worms-001",
+      "ready": true,
+      "title": "Child with abdominal pain and poor appetite",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Mugisha Paul",
+        "id": "PT-CH-240310",
+        "age": "6M",
+        "sex": "Male"
+      },
+      "blurb": "A school-age child with abdominal pain and poor appetite is brought for 'worm medicine'. Avoid reflex treatment without screening.",
+      "objectives": [
+        "Evaluate abdominal pain with danger-sign screening before presumptive deworming.",
+        "Identify when empiric helminth treatment is appropriate by age and symptom pattern.",
+        "Provide hygiene and follow-up advice to reduce reinfection and missed severe disease."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Most worm-related abdominal pain is outpatient-manageable when severe danger signs are absent.",
+        "Albendazole use should match age eligibility and local deworming guidance.",
+        "Counseling on hand hygiene, footwear, and sanitation is part of treatment."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with abdominal pain and poor appetite",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-abdominal-pain-worms-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-abdominal-pain-worms-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Intermittent abdominal pain and reduced appetite",
+                "chips": [
+                  "School-age child",
+                  "Possible helminths"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver request",
+                "text": "Parent asks directly for deworming tablets after seeing worms in stool once."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Paul is uncomfortable but active",
+            "body": "First confirm there are no red flags that require referral-level workup."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.4 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "102"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "18 kg"
+                  }
+                ]
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Abdominal danger screen",
+                "danger_signs": [
+                  "Severe persistent pain",
+                  "Bilious or persistent vomiting",
+                  "Bloody stool",
+                  "Abdominal distension with toxicity"
+                ],
+                "reveal_note": "None present."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What does this allow you to do safely?",
+            "body": "Use findings to decide outpatient vs urgent referral."
+          },
+          "question": {
+            "prompt": "Best next interpretation?",
+            "options": [
+              {
+                "text": "Stable child with likely helminth-related symptoms; outpatient management is appropriate",
+                "correct": true
+              },
+              {
+                "text": "Immediate surgical abdomen requiring emergency transfer",
+                "correct": false
+              },
+              {
+                "text": "No need to examine because caregiver already diagnosed worms",
+                "correct": false
+              },
+              {
+                "text": "Treat as severe malaria despite no fever pattern",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Without red flags, this is suitable for outpatient management and age-appropriate deworming decisions.",
+            "wrong": "Skipping exam or over-escalating without danger signs leads to poor resource use and missed teaching."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Treatment option",
+                "drug": "Albendazole (age-appropriate)",
+                "detail": "Single-dose deworming per guideline plus dietary/hygiene counseling"
+              },
+              {
+                "type": "assessment",
+                "title": "Context",
+                "text": "Child is 6 years old, attends school barefoot at times, and has poor handwashing access."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · treatment",
+            "title": "Pick the most appropriate management package",
+            "body": "Avoid under-counseling and unnecessary antibiotics."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Give age-appropriate albendazole and reinforce sanitation, footwear, and hand hygiene",
+                "correct": true
+              },
+              {
+                "text": "Start broad-spectrum antibiotics for all abdominal pain",
+                "correct": false
+              },
+              {
+                "text": "Withhold all treatment because worms are always self-limiting",
+                "correct": false
+              },
+              {
+                "text": "Give repeated deworming doses daily for one week without indication",
+                "correct": false
+              }
+            ],
+            "right": "Correct. In a stable 6-year-old with compatible symptoms, guideline-based deworming and prevention counseling are appropriate.",
+            "wrong": "Non-targeted antibiotics or incorrect dosing strategies are common but avoidable errors in worm-related complaints."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You ruled out danger signs, used age-appropriate deworming, and gave prevention counseling.",
+                "emphasis": "Abdominal complaints need triage before presumptive treatment."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Caregiver expectations often push immediate deworming. Safe HC III practice still starts with danger-screening, then targeted treatment and hygiene counseling."
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-skin-infection-001",
+      "ready": true,
+      "title": "Child with spreading skin sores",
+      "topic": "Child Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Atim Ruth",
+        "id": "PT-CH-240311",
+        "age": "5F",
+        "sex": "Female"
+      },
+      "blurb": "A child with spreading crusted skin sores needs careful severity assessment and practical treatment planning.",
+      "objectives": [
+        "Classify common bacterial skin infection and screen for systemic spread.",
+        "Choose between local care only vs added oral antibiotics based on severity signs.",
+        "Provide hygiene counseling and follow-up instructions that reduce recurrence."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Honey-colored crusted sores suggest impetigo; warmth and extension suggest deeper infection risk.",
+        "Fever, rapid spread, severe pain, or systemic illness raise urgency for broader treatment/referral.",
+        "Daily cleaning, hand hygiene, and early review are part of effective skin infection care."
+      ],
+      "citations": [
+        "Uganda Clinical Guidelines 2023",
+        "WHO IMNCI chart booklet"
+      ],
+      "share": {
+        "share_title": "Child with spreading skin sores",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-skin-infection-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-skin-infection-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Crusted skin sores on legs, now spreading",
+                "chips": [
+                  "Child skin infection",
+                  "Possible impetigo"
+                ]
+              },
+              {
+                "type": "subjective",
+                "title": "Caregiver note",
+                "text": "Lesions started as small blisters and became yellow crusts. One area is now tender."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Ruth is uncomfortable but alert",
+            "body": "Your goal is to identify whether this is localized impetigo or a more serious spreading infection."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "EXAM",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals",
+                "vitals": [
+                  {
+                    "label": "TEMP",
+                    "value": "37.9 C"
+                  },
+                  {
+                    "label": "HR",
+                    "value": "110"
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min"
+                  },
+                  {
+                    "label": "WT",
+                    "value": "17 kg"
+                  }
+                ]
+              },
+              {
+                "type": "assessment",
+                "title": "Skin exam",
+                "text": "Multiple honey-crusted lesions on lower legs; one surrounding area mildly warm and erythematous, no abscess."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · severity",
+            "title": "What is the best working diagnosis?",
+            "body": "Use lesion pattern and systemic status."
+          },
+          "question": {
+            "prompt": "Which interpretation best fits?",
+            "options": [
+              {
+                "text": "Impetigo/skin bacterial infection with limited spread, currently stable",
+                "correct": true
+              },
+              {
+                "text": "Necrotizing fasciitis requiring immediate surgery",
+                "correct": false
+              },
+              {
+                "text": "Fungal rash only, no bacterial component",
+                "correct": false
+              },
+              {
+                "text": "No infection because fever is not high",
+                "correct": false
+              }
+            ],
+            "right": "Correct. Classic crusted lesions with mild local spread fit bacterial skin infection; no severe systemic signs are present now.",
+            "wrong": "Lesion morphology matters. Dismissing infection because fever is modest can delay proper treatment."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "prescription",
+                "title": "Treatment plan",
+                "drug": "Local wound care + consider oral antibiotic for spreading lesions",
+                "detail": "Daily cleansing, topical therapy, and oral therapy if cellulitic extension is present"
+              },
+              {
+                "type": "dangerScreen",
+                "title": "Escalate urgently if",
+                "danger_signs": [
+                  "Rapid extension of redness/swelling",
+                  "High fever",
+                  "Severe pain or lethargy",
+                  "Failure to improve in 48 hours"
+                ],
+                "reveal_note": "Caregiver understands hygiene and review timing."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · management",
+            "title": "What is the best practical HC III approach?",
+            "body": "Select the option that balances treatment and stewardship."
+          },
+          "question": {
+            "prompt": "What should you do now?",
+            "options": [
+              {
+                "text": "Start local cleansing/treatment and add oral antibiotic when signs of spreading bacterial infection are present",
+                "correct": true
+              },
+              {
+                "text": "Use steroids only to reduce redness quickly",
+                "correct": false
+              },
+              {
+                "text": "No treatment; wait until lesions become painful",
+                "correct": false
+              },
+              {
+                "text": "Give injectable antibiotics for every impetigo case",
+                "correct": false
+              }
+            ],
+            "right": "Correct. This approach treats likely bacterial infection while reserving escalation for worsening signs.",
+            "wrong": "Either undertreatment or routine overtreatment can both harm care quality. Severity-guided treatment is key."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Case outcome",
+                "text": "You managed likely impetigo/skin infection with appropriate severity-based treatment and hygiene counseling.",
+                "emphasis": "Lesion pattern plus systemic review guided safe prescribing."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Child skin infections are common at HC III. Good outcomes rely on lesion assessment, practical hygiene education, and clear criteria for return or escalation."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "canonicalCaseId": "hc3-measles-suspected-rash-fever-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Namata Gloria",
+      "id": "PT-CH-240304",
+      "age": "2F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Identify suspected measles in a child with fever, rash, cough, and red eyes.",
+      "Screen for complications and danger signs that require referral.",
+      "Apply infection prevention, vitamin A support, and counseling in HC III workflow."
+    ],
+    "takeaways": [
+      "Fever preceding generalized rash with conjunctivitis raises measles suspicion.",
+      "Check feeding, breathing, hydration, and neurologic danger signs before outpatient plan.",
+      "Unimmunized children need both acute management and catch-up vaccine counseling after recovery."
+    ],
+    "blurb": "A febrile child with rash and uncertain immunization status presents during a busy clinic day.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Fever, cough, red eyes, and body rash",
+            "chips": [
+              "Child rash illness",
+              "Infection control"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Immunization history",
+            "text": "Caregiver is unsure if measles vaccine was received."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Gloria has classic febrile rash features",
+        "body": "Use a structured approach: danger signs first, then likely measles complications."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.7 C",
+                "hot": true
+              },
+              {
+                "label": "HR",
+                "value": "120"
+              },
+              {
+                "label": "RESP",
+                "value": "30/min"
+              },
+              {
+                "label": "WT",
+                "value": "14 kg"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Focused findings",
+            "text": "Generalized maculopapular rash, cough, conjunctival redness, no severe respiratory distress."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · interpretation",
+        "title": "What is the best working diagnosis now?",
+        "body": "Pick the action-oriented label that guides management."
+      },
+      "question": {
+        "prompt": "Which classification is most appropriate?",
+        "options": [
+          {
+            "text": "Suspected measles with complication screen needed",
+            "correct": true
+          },
+          {
+            "text": "Simple skin allergy, no infectious concern",
+            "correct": false
+          },
+          {
+            "text": "Malaria only because fever is present",
+            "correct": false
+          },
+          {
+            "text": "Typhoid confirmed without further assessment",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Fever before rash plus cough and conjunctivitis in an under-immunized child should be managed as suspected measles until proven otherwise.",
+        "wrong": "This pattern is not routine allergy. Missing measles suspicion delays IPC measures and complication screening."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "dangerScreen",
+            "title": "Complication check",
+            "danger_signs": [
+              "Unable to drink",
+              "Fast/difficult breathing",
+              "Lethargy or convulsions",
+              "Eye complications or corneal changes"
+            ],
+            "reveal_note": "No danger signs currently, child drinking."
+          },
+          {
+            "type": "prescription",
+            "title": "Initial management",
+            "drug": "Supportive measles care",
+            "detail": "Vitamin A, fever control, fluids, infection prevention counseling"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "Choose the best HC III plan",
+        "body": "Balance acute support with close follow-up and public-health awareness."
+      },
+      "question": {
+        "prompt": "What is the safest immediate plan?",
+        "options": [
+          {
+            "text": "Provide supportive care (including vitamin A per age), counsel caregiver, and review closely for complications",
+            "correct": true
+          },
+          {
+            "text": "Give only antibiotic eye drops and no further advice",
+            "correct": false
+          },
+          {
+            "text": "Send home without warning signs because child is still active",
+            "correct": false
+          },
+          {
+            "text": "Start injectable antimalarial as first-line for all febrile rash illnesses",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Child is currently stable but measles complications can develop quickly, so supportive care plus explicit warning signs is key.",
+        "wrong": "Narrow or no counseling misses early complications such as pneumonia, dehydration, or neurologic deterioration."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You identified suspected measles, applied supportive care, and prepared caregiver for danger signs.",
+            "emphasis": "Structured complication screening prevented false reassurance."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "For febrile rash illness in children, combine clinical measles suspicion, danger-sign screening, and caregiver counseling. Immunization catch-up should be discussed after acute illness."
+      }
+    }
+  ]
+}

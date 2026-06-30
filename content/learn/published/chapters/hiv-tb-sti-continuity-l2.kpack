@@ -1,0 +1,3028 @@
+{
+  "id": "hiv-tb-sti-continuity-l2",
+  "title": "HIV, TB, STI, and Continuity of Care — Level 2 · Guided reasoning",
+  "cases": [
+    {
+      "id": "adult-cough-tb-screen-001-L2",
+      "ready": true,
+      "title": "Adult cough requiring TB screen",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0012",
+        "age": "42 years",
+        "sex": "Male"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "Duration of cough changes the clinical path from viral cough to TB screening.",
+        "Smoking history may distract, but TB symptoms must not be missed."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Duration of cough changes the clinical path from viral cough to TB screening.",
+        "Smoking history may distract, but TB symptoms must not be missed."
+      ],
+      "citations": [
+        "TB symptom screening and HIV/TB integration"
+      ],
+      "share": {
+        "share_title": "Adult cough requiring TB screen",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/adult-cough-tb-screen-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.66,
+        "clinical_correctness_score": 0.86,
+        "hc3_reality_score": 0.89,
+        "learning_value_score": 0.88,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "adult-cough-tb-screen-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cough for three weeks",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Cough for three weeks.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Cough for three weeks",
+                "danger_signs": [
+                  "Severe respiratory distress",
+                  "Haemoptysis",
+                  "Very ill appearance",
+                  "Unable to drink/eat"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "118/76 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "92 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "22/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.6 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Presumptive pulmonary TB requiring same-day diagnostic evaluation",
+                "emphasis": "Presumptive pulmonary TB requiring same-day diagnostic evaluation."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Viral cough",
+                "correct": false
+              },
+              {
+                "text": "Do not give only cough syrup or antibiotics and send away.",
+                "correct": false
+              },
+              {
+                "text": "Ask duration of cough and constitutional symptoms.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Ask duration of cough and constitutional symptoms.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Presumptive pulmonary TB requiring same-day diagnostic evaluation",
+                "emphasis": "Presumptive pulmonary TB requiring same-day diagnostic evaluation."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not start TB treatment casually without following the diagnostic pathway.",
+                "correct": false
+              },
+              {
+                "text": "Viral cough",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Move patient out of crowded indoor queue, use cough etiquette, and assess in a well-ventilated area.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Move patient out of crowded indoor queue, use cough etiquette, and assess in a well-ventilated area.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Presumptive pulmonary TB requiring same-day diagnostic evaluation",
+                "emphasis": "Presumptive pulmonary TB requiring same-day diagnostic evaluation."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Do not give only cough syrup or antibiotics and send away.",
+                "correct": false
+              },
+              {
+                "text": "Collect sputum today for district GeneXpert via sample transport.",
+                "correct": true
+              },
+              {
+                "text": "Do not start TB treatment casually without following the diagnostic pathway.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Collect sputum today for district GeneXpert via sample transport.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Presumptive pulmonary TB requiring same-day diagnostic evaluation.",
+                "emphasis": "Severe respiratory distress, danger signs, or inability to complete evaluation safely require urgent referral."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Duration of cough changes the clinical path from viral cough to TB screening. Smoking history may distract, but TB symptoms must not be missed.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hiv-art-continuity-001-L2",
+      "ready": true,
+      "title": "ART continuity after missed refill",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0012",
+        "age": "36 years",
+        "sex": "Female"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "ART continuity cases require adherence support and TB symptom screening.",
+        "The clinician should avoid punitive counseling and identify barriers."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "ART continuity cases require adherence support and TB symptom screening.",
+        "The clinician should avoid punitive counseling and identify barriers."
+      ],
+      "citations": [
+        "ART continuity and adherence support"
+      ],
+      "share": {
+        "share_title": "ART continuity after missed refill",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/hiv-art-continuity-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.45,
+        "clinical_correctness_score": 0.86,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.82,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "hiv-art-continuity-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Missed ART refill",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Missed ART refill.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Missed ART refill",
+                "danger_signs": [
+                  "Severe illness",
+                  "Severe adverse drug reaction",
+                  "TB danger symptoms",
+                  "Pregnancy-related complications if relevant"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "110/72 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "84 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "18/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "36.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "HIV on ART with treatment interruption risk",
+                "emphasis": "HIV on ART with treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Access barrier",
+                "correct": false
+              },
+              {
+                "text": "TB symptoms if screen positive",
+                "correct": false
+              },
+              {
+                "text": "Assess adherence barriers without blame.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess adherence barriers without blame.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "HIV on ART with treatment interruption risk",
+                "emphasis": "HIV on ART with treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Treatment interruption",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Access barrier",
+                "correct": false
+              },
+              {
+                "text": "Screen for TB symptoms and side effects.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Screen for TB symptoms and side effects.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "HIV on ART with treatment interruption risk",
+                "emphasis": "HIV on ART with treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Treatment interruption",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Access barrier",
+                "correct": false
+              },
+              {
+                "text": "Restart/continue ART according to national guidance and local clinic protocol.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Restart/continue ART according to national guidance and local clinic protocol.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "HIV on ART with treatment interruption risk",
+                "emphasis": "Refer or escalate if severely ill, suspected treatment failure, severe adverse reaction, or complicated opportunistic infection."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "ART continuity cases require adherence support and TB symptom screening. The clinician should avoid punitive counseling and identify barriers.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "adolescent-confidentiality-sti-001-L2",
+      "ready": true,
+      "title": "Adolescent asks for private advice",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A 17-year-old waits until her aunt leaves the room and then quietly asks if she can talk privately about discharge and pain during urination.",
+      "objectives": [
+        "Create a private, respectful space.",
+        "Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Create a private, respectful space.",
+        "Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care."
+      ],
+      "citations": [
+        "Adolescent STI care and respectful communication"
+      ],
+      "share": {
+        "share_title": "Adolescent asks for private advice",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/adolescent-confidentiality-sti-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.62,
+        "clinical_correctness_score": 0.8,
+        "hc3_reality_score": 0.85,
+        "learning_value_score": 0.88,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "uganda-hiv-aids-consolidated-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "adolescent-confidentiality-sti-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Genital symptoms and request for privacy",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A 17-year-old waits until her aunt leaves the room and then quietly asks if she can talk privately about discharge and pain during urination.",
+            "quote": "“Genital symptoms and request for privacy.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Genital symptoms and request for privacy",
+                "danger_signs": [
+                  "Sexual violence",
+                  "Pregnancy danger signs",
+                  "Severe pelvic pain",
+                  "Fever"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "108/70 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "86 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "16/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "36.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible STI with confidentiality and safeguarding needs",
+                "emphasis": "Possible STI with confidentiality and safeguarding needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible STI with confidentiality and safeguarding needs",
+                "emphasis": "Possible STI with confidentiality and safeguarding needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible STI with confidentiality and safeguarding needs",
+                "emphasis": "Possible STI with confidentiality and safeguarding needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible STI with confidentiality and safeguarding needs",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Create a private, respectful space. Assess STI symptoms, pregnancy risk, coercion/safety, and offer appropriate testing/care.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tb-contact-child-001-L2",
+      "ready": true,
+      "title": "Child living with TB contact",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A caregiver with known TB brings a child for cough.",
+      "objectives": [
+        "Ask household contact history.",
+        "Follow TB contact screening and referral/prevention pathways."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Ask household contact history.",
+        "Follow TB contact screening and referral/prevention pathways."
+      ],
+      "citations": [
+        "Child living with TB contact"
+      ],
+      "share": {
+        "share_title": "Child living with TB contact",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/tb-contact-child-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "tb-contact-child-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Child cough with TB contact",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A caregiver with known TB brings a child for cough.",
+            "quote": "“Child cough with TB contact.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Child cough with TB contact",
+                "danger_signs": [
+                  "Weight loss",
+                  "Persistent fever",
+                  "Lethargy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB exposure requiring screening pathway",
+                "emphasis": "TB exposure requiring screening pathway"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB exposure requiring screening pathway",
+                "emphasis": "TB exposure requiring screening pathway"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB exposure requiring screening pathway",
+                "emphasis": "TB exposure requiring screening pathway"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "TB exposure requiring screening pathway",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Ask household contact history. Follow TB contact screening and referral/prevention pathways.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hiv-new-positive-counsel-001-L2",
+      "ready": true,
+      "title": "New positive HIV test",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient receives a positive HIV test result and becomes silent.",
+      "objectives": [
+        "Privacy and counseling quality matter.",
+        "Link to care and screen for TB/safety concerns."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Privacy and counseling quality matter.",
+        "Link to care and screen for TB/safety concerns."
+      ],
+      "citations": [
+        "New positive HIV test"
+      ],
+      "share": {
+        "share_title": "New positive HIV test",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/hiv-new-positive-counsel-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "hiv-new-positive-counsel-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "New HIV diagnosis",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient receives a positive HIV test result and becomes silent.",
+            "quote": "“New HIV diagnosis.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "New HIV diagnosis",
+                "danger_signs": [
+                  "Severe distress",
+                  "TB symptoms",
+                  "Pregnancy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Post-test counseling and linkage challenge",
+                "emphasis": "Post-test counseling and linkage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Post-test counseling and linkage challenge",
+                "emphasis": "Post-test counseling and linkage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Post-test counseling and linkage challenge",
+                "emphasis": "Post-test counseling and linkage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Post-test counseling and linkage challenge",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Privacy and counseling quality matter. Link to care and screen for TB/safety concerns.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "art-side-effects-001-L2",
+      "ready": true,
+      "title": "Nausea after starting ART",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient started ART recently and now wants to stop because of nausea and dizziness.",
+      "objectives": [
+        "Assess severity and adherence barriers.",
+        "Support continuation or escalation according to guidance."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Assess severity and adherence barriers.",
+        "Support continuation or escalation according to guidance."
+      ],
+      "citations": [
+        "Nausea after starting ART"
+      ],
+      "share": {
+        "share_title": "Nausea after starting ART",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/art-side-effects-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "art-side-effects-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "ART side effects",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient started ART recently and now wants to stop because of nausea and dizziness.",
+            "quote": "“ART side effects.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "ART side effects",
+                "danger_signs": [
+                  "Severe rash",
+                  "Jaundice",
+                  "Severe weakness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Adherence support and side-effect assessment",
+                "emphasis": "Adherence support and side-effect assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Adherence support and side-effect assessment",
+                "emphasis": "Adherence support and side-effect assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Adherence support and side-effect assessment",
+                "emphasis": "Adherence support and side-effect assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Adherence support and side-effect assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Assess severity and adherence barriers. Support continuation or escalation according to guidance.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tb-treatment-interruption-001-L2",
+      "ready": true,
+      "title": "Missed TB treatment doses",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A TB patient missed several doses after travelling for a burial and is afraid the clinic will be angry.",
+      "objectives": [
+        "Respond without blame.",
+        "Assess symptoms, adherence barrier, and re-link to TB care."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Respond without blame.",
+        "Assess symptoms, adherence barrier, and re-link to TB care."
+      ],
+      "citations": [
+        "Missed TB treatment doses"
+      ],
+      "share": {
+        "share_title": "Missed TB treatment doses",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/tb-treatment-interruption-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "tb-treatment-interruption-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Missed TB doses",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A TB patient missed several doses after travelling for a burial and is afraid the clinic will be angry.",
+            "quote": "“Missed TB doses.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Missed TB doses",
+                "danger_signs": [
+                  "Severe illness",
+                  "Haemoptysis",
+                  "Breathlessness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB treatment interruption risk",
+                "emphasis": "TB treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB treatment interruption risk",
+                "emphasis": "TB treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB treatment interruption risk",
+                "emphasis": "TB treatment interruption risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "TB treatment interruption risk",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Respond without blame. Assess symptoms, adherence barrier, and re-link to TB care.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "pmtct-first-anc-001-L2",
+      "ready": true,
+      "title": "First ANC visit and HIV testing",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A pregnant woman attends her first ANC visit with her partner waiting outside and is nervous about testing.",
+      "objectives": [
+        "Offer respectful testing and counseling.",
+        "Support confidentiality and linkage to PMTCT care."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Offer respectful testing and counseling.",
+        "Support confidentiality and linkage to PMTCT care."
+      ],
+      "citations": [
+        "First ANC visit and HIV testing"
+      ],
+      "share": {
+        "share_title": "First ANC visit and HIV testing",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/pmtct-first-anc-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "pmtct-first-anc-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "First ANC HIV testing discussion",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A pregnant woman attends her first ANC visit with her partner waiting outside and is nervous about testing.",
+            "quote": "“First ANC HIV testing discussion.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "First ANC HIV testing discussion",
+                "danger_signs": [
+                  "Partner violence risk",
+                  "Positive test distress",
+                  "Pregnancy danger signs"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "PMTCT counseling and consent",
+                "emphasis": "PMTCT counseling and consent"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "PMTCT counseling and consent",
+                "emphasis": "PMTCT counseling and consent"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "PMTCT counseling and consent",
+                "emphasis": "PMTCT counseling and consent"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "PMTCT counseling and consent",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Offer respectful testing and counseling. Support confidentiality and linkage to PMTCT care.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "genital-ulcer-001-L2",
+      "ready": true,
+      "title": "Painful genital ulcer",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient asks for a private consultation because of a painful genital sore and fear of being recognized.",
+      "objectives": [
+        "Protect confidentiality.",
+        "Use syndromic assessment and offer HIV/syphilis testing where available."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Protect confidentiality.",
+        "Use syndromic assessment and offer HIV/syphilis testing where available."
+      ],
+      "citations": [
+        "Painful genital ulcer"
+      ],
+      "share": {
+        "share_title": "Painful genital ulcer",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/genital-ulcer-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "genital-ulcer-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Genital ulcer",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient asks for a private consultation because of a painful genital sore and fear of being recognized.",
+            "quote": "“Genital ulcer.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Genital ulcer",
+                "danger_signs": [
+                  "Severe systemic illness",
+                  "Sexual violence",
+                  "Pregnancy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "STI syndrome requiring privacy and HIV risk assessment",
+                "emphasis": "STI syndrome requiring privacy and HIV risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "STI syndrome requiring privacy and HIV risk assessment",
+                "emphasis": "STI syndrome requiring privacy and HIV risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "STI syndrome requiring privacy and HIV risk assessment",
+                "emphasis": "STI syndrome requiring privacy and HIV risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "STI syndrome requiring privacy and HIV risk assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Protect confidentiality. Use syndromic assessment and offer HIV/syphilis testing where available.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "cough-hiv-positive-001-L2",
+      "ready": true,
+      "title": "Cough in patient living with HIV",
+      "topic": "Hiv Tb",
+      "difficulty": "Intermediate",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 2,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0012",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient on ART reports cough, fever, and weight loss but says they came only for refill.",
+      "objectives": [
+        "Every ART contact is a chance to screen TB symptoms.",
+        "Do not make refill the only task."
+      ],
+      "skills": [
+        "Hiv Tb",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Every ART contact is a chance to screen TB symptoms.",
+        "Do not make refill the only task."
+      ],
+      "citations": [
+        "Cough in patient living with HIV"
+      ],
+      "share": {
+        "share_title": "Cough in patient living with HIV",
+        "share_prompt": "What would you do first for this hiv tb presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/cough-hiv-positive-001-L2",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-hiv-aids-consolidated-guidelines-2023",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "cough-hiv-positive-001-L2"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cough in HIV-positive patient",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient on ART reports cough, fever, and weight loss but says they came only for refill.",
+            "quote": "“Cough in HIV-positive patient.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Cough in HIV-positive patient",
+                "danger_signs": [
+                  "Severe breathlessness",
+                  "Haemoptysis",
+                  "Very ill appearance"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB screen during ART refill",
+                "emphasis": "TB screen during ART refill"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB screen during ART refill",
+                "emphasis": "TB screen during ART refill"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pulmonary TB",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "TB screen during ART refill",
+                "emphasis": "TB screen during ART refill"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "HIV-related opportunistic infection",
+                "correct": false
+              },
+              {
+                "text": "Bacterial pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "TB screen during ART refill",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Every ART contact is a chance to screen TB symptoms. Do not make refill the only task.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

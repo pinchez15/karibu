@@ -1,0 +1,2725 @@
+{
+  "id": "outbreak-ipc-ebola-vhf-l3",
+  "title": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever — Level 3 · Challenge",
+  "cases": [
+    {
+      "id": "fever-returning-traveller-001-L3",
+      "ready": true,
+      "title": "Fever after travel to border district",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A trader returns from a border district and develops fever.",
+      "objectives": [
+        "Ask travel and contact history during outbreaks.",
+        "Separate and notify according to outbreak protocol when risk criteria are met."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Ask travel and contact history during outbreaks.",
+        "Separate and notify according to outbreak protocol when risk criteria are met."
+      ],
+      "citations": [
+        "Fever after travel to border district"
+      ],
+      "share": {
+        "share_title": "Fever after travel to border district",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-returning-traveller-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-returning-traveller-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever after travel",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A trader returns from a border district and develops fever.",
+            "quote": "“Fever after travel.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever after travel",
+                "danger_signs": [
+                  "Bleeding",
+                  "Known Ebola contact",
+                  "Severe weakness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Outbreak-aware febrile illness requiring IPC screening",
+                "emphasis": "Outbreak-aware febrile illness requiring IPC screening"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Outbreak-aware febrile illness requiring IPC screening",
+                "emphasis": "Outbreak-aware febrile illness requiring IPC screening"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Outbreak-aware febrile illness requiring IPC screening",
+                "emphasis": "Outbreak-aware febrile illness requiring IPC screening"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Outbreak-aware febrile illness requiring IPC screening",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Ask travel and contact history during outbreaks. Separate and notify according to outbreak protocol when risk criteria are met.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fever-health-worker-exposure-001-L3",
+      "ready": true,
+      "title": "Fever in a health worker after exposure",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A health worker from another facility presents with fever after caring for a patient later reported as a suspected Ebola case.",
+      "objectives": [
+        "Protect staff and other patients first.",
+        "Use isolation, notification, and referral pathways."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Protect staff and other patients first.",
+        "Use isolation, notification, and referral pathways."
+      ],
+      "citations": [
+        "Fever in a health worker after exposure"
+      ],
+      "share": {
+        "share_title": "Fever in a health worker after exposure",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-health-worker-exposure-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-health-worker-exposure-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever after healthcare exposure",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A health worker from another facility presents with fever after caring for a patient later reported as a suspected Ebola case.",
+            "quote": "“Fever after healthcare exposure.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever after healthcare exposure",
+                "danger_signs": [
+                  "Known contact",
+                  "Vomiting",
+                  "Bleeding"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible viral haemorrhagic fever exposure",
+                "emphasis": "Possible viral haemorrhagic fever exposure"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible viral haemorrhagic fever exposure",
+                "emphasis": "Possible viral haemorrhagic fever exposure"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible viral haemorrhagic fever exposure",
+                "emphasis": "Possible viral haemorrhagic fever exposure"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible viral haemorrhagic fever exposure",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Protect staff and other patients first. Use isolation, notification, and referral pathways.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-fever-bleeding-travel-001-L3",
+      "ready": true,
+      "title": "Fever, bleeding, and travel history",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "During the current Ebola alert, a patient with fever reports travel from a border area and later mentions bleeding gums.",
+      "objectives": [
+        "Separate safely and use IPC immediately.",
+        "Notify according to outbreak protocol and avoid routine waiting-room flow."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Separate safely and use IPC immediately.",
+        "Notify according to outbreak protocol and avoid routine waiting-room flow."
+      ],
+      "citations": [
+        "Fever, bleeding, and travel history"
+      ],
+      "share": {
+        "share_title": "Fever, bleeding, and travel history",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-fever-bleeding-travel-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-fever-bleeding-travel-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever with bleeding and travel",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "During the current Ebola alert, a patient with fever reports travel from a border area and later mentions bleeding gums.",
+            "quote": "“Fever with bleeding and travel.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever with bleeding and travel",
+                "danger_signs": [
+                  "Bleeding",
+                  "Travel/contact history",
+                  "Vomiting",
+                  "Health worker exposure"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected viral haemorrhagic fever requiring isolation/notification",
+                "emphasis": "Suspected Ebola or viral haemorrhagic fever at screening."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not sit with the patient for a normal consultation.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Do not send the patient through routine outpatient lab flow.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected viral haemorrhagic fever requiring isolation/notification",
+                "emphasis": "Suspected Ebola or viral haemorrhagic fever at screening."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Do not perform unnecessary physical examination before IPC is in place.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected viral haemorrhagic fever requiring isolation/notification",
+                "emphasis": "Suspected Ebola or viral haemorrhagic fever at screening."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not sit with the patient for a normal consultation.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Suspected Ebola or viral haemorrhagic fever at screening.",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Separate safely and use IPC immediately. Notify according to outbreak protocol and avoid routine waiting-room flow.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-funeral-contact-001-L3",
+      "ready": true,
+      "title": "Fever after funeral contact",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A trader has fever and weakness after attending a burial where the deceased had an unexplained illness.",
+      "objectives": [
+        "Funeral exposure matters in Ebola risk assessment.",
+        "Isolation and notification are the clinical action."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Funeral exposure matters in Ebola risk assessment.",
+        "Isolation and notification are the clinical action."
+      ],
+      "citations": [
+        "Fever after funeral contact"
+      ],
+      "share": {
+        "share_title": "Fever after funeral contact",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-funeral-contact-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-funeral-contact-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever after funeral contact",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A trader has fever and weakness after attending a burial where the deceased had an unexplained illness.",
+            "quote": "“Fever after funeral contact.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever after funeral contact",
+                "danger_signs": [
+                  "Known contact",
+                  "Bleeding",
+                  "Severe weakness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible Ebola exposure through funeral contact",
+                "emphasis": "Possible Ebola exposure through funeral contact"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible Ebola exposure through funeral contact",
+                "emphasis": "Possible Ebola exposure through funeral contact"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible Ebola exposure through funeral contact",
+                "emphasis": "Possible Ebola exposure through funeral contact"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible Ebola exposure through funeral contact",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Funeral exposure matters in Ebola risk assessment. Isolation and notification are the clinical action.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-health-worker-ppe-breach-001-L3",
+      "ready": true,
+      "title": "PPE breach after suspected case",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A cleaner helped move a vomiting patient before anyone suspected Ebola.",
+      "objectives": [
+        "Protect health workers through exposure reporting.",
+        "Do not hide or punish exposure disclosure."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Protect health workers through exposure reporting.",
+        "Do not hide or punish exposure disclosure."
+      ],
+      "citations": [
+        "PPE breach after suspected case"
+      ],
+      "share": {
+        "share_title": "PPE breach after suspected case",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-health-worker-ppe-breach-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-health-worker-ppe-breach-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Possible occupational Ebola exposure",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A cleaner helped move a vomiting patient before anyone suspected Ebola.",
+            "quote": "“Possible occupational Ebola exposure.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Possible occupational Ebola exposure",
+                "danger_signs": [
+                  "Direct fluid contact",
+                  "Fever",
+                  "PPE breach"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Health worker exposure requiring reporting/monitoring",
+                "emphasis": "Health worker exposure requiring reporting/monitoring"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Health worker exposure requiring reporting/monitoring",
+                "emphasis": "Health worker exposure requiring reporting/monitoring"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Health worker exposure requiring reporting/monitoring",
+                "emphasis": "Health worker exposure requiring reporting/monitoring"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Health worker exposure requiring reporting/monitoring",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Protect health workers through exposure reporting. Do not hide or punish exposure disclosure.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-child-fever-contact-001-L3",
+      "ready": true,
+      "title": "Child with fever and contact history",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A child with fever arrives with an aunt who says a neighbour was taken by the outbreak team last week.",
+      "objectives": [
+        "Apply outbreak screening to children too.",
+        "Use isolation and notification while maintaining caregiver communication."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Apply outbreak screening to children too.",
+        "Use isolation and notification while maintaining caregiver communication."
+      ],
+      "citations": [
+        "Child with fever and contact history"
+      ],
+      "share": {
+        "share_title": "Child with fever and contact history",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-child-fever-contact-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-child-fever-contact-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Child fever with contact concern",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A child with fever arrives with an aunt who says a neighbour was taken by the outbreak team last week.",
+            "quote": "“Child fever with contact concern.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Child fever with contact concern",
+                "danger_signs": [
+                  "Known contact",
+                  "Vomiting",
+                  "Bleeding"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Paediatric suspected VHF triage",
+                "emphasis": "Paediatric suspected VHF triage"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Paediatric suspected VHF triage",
+                "emphasis": "Paediatric suspected VHF triage"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Paediatric suspected VHF triage",
+                "emphasis": "Paediatric suspected VHF triage"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Paediatric suspected VHF triage",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Apply outbreak screening to children too. Use isolation and notification while maintaining caregiver communication.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-vomiting-at-triage-001-L3",
+      "ready": true,
+      "title": "Vomiting patient at triage",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient vomits near the triage bench before being registered.",
+      "objectives": [
+        "Control the environment quickly.",
+        "Separate, protect staff, manage contaminated area, and notify."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Control the environment quickly.",
+        "Separate, protect staff, manage contaminated area, and notify."
+      ],
+      "citations": [
+        "Vomiting patient at triage"
+      ],
+      "share": {
+        "share_title": "Vomiting patient at triage",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-vomiting-at-triage-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-vomiting-at-triage-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Vomiting during Ebola alert",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient vomits near the triage bench before being registered.",
+            "quote": "“Vomiting during Ebola alert.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Vomiting during Ebola alert",
+                "danger_signs": [
+                  "Vomiting",
+                  "Travel/contact risk",
+                  "Unprotected exposure"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "IPC exposure control at facility entrance",
+                "emphasis": "IPC exposure control at facility entrance"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "IPC exposure control at facility entrance",
+                "emphasis": "IPC exposure control at facility entrance"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "IPC exposure control at facility entrance",
+                "emphasis": "IPC exposure control at facility entrance"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "IPC exposure control at facility entrance",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Control the environment quickly. Separate, protect staff, manage contaminated area, and notify.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-rumour-community-fear-001-L3",
+      "ready": true,
+      "title": "Rumour and fear at the clinic gate",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "Several people gather outside saying the clinic is hiding Ebola.",
+      "objectives": [
+        "Clear communication supports outbreak control.",
+        "Do not let fear disrupt safe triage and IPC."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Clear communication supports outbreak control.",
+        "Do not let fear disrupt safe triage and IPC."
+      ],
+      "citations": [
+        "Rumour and fear at the clinic gate"
+      ],
+      "share": {
+        "share_title": "Rumour and fear at the clinic gate",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-rumour-community-fear-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-rumour-community-fear-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Community fear during outbreak",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "Several people gather outside saying the clinic is hiding Ebola.",
+            "quote": "“Community fear during outbreak.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Community fear during outbreak",
+                "danger_signs": [
+                  "Suspected case",
+                  "Crowding",
+                  "Staff panic"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Risk communication and safe triage challenge",
+                "emphasis": "Risk communication and safe triage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Risk communication and safe triage challenge",
+                "emphasis": "Risk communication and safe triage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Risk communication and safe triage challenge",
+                "emphasis": "Risk communication and safe triage challenge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Risk communication and safe triage challenge",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Clear communication supports outbreak control. Do not let fear disrupt safe triage and IPC.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ebola-death-at-home-report-001-L3",
+      "ready": true,
+      "title": "Report of unexplained death at home",
+      "topic": "Outbreak",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A village health worker calls about an unexplained death after fever and bleeding.",
+      "objectives": [
+        "Unsafe burial practices can spread Ebola.",
+        "Notify response teams and advise against direct body handling."
+      ],
+      "skills": [
+        "Outbreak",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Unsafe burial practices can spread Ebola.",
+        "Notify response teams and advise against direct body handling."
+      ],
+      "citations": [
+        "Report of unexplained death at home"
+      ],
+      "share": {
+        "share_title": "Report of unexplained death at home",
+        "share_prompt": "What would you do first for this outbreak presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/ebola-death-at-home-report-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-ebola-bundibugyo-2026",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "ebola-death-at-home-report-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Unexplained death with bleeding",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A village health worker calls about an unexplained death after fever and bleeding.",
+            "quote": "“Unexplained death with bleeding.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Unexplained death with bleeding",
+                "danger_signs": [
+                  "Bleeding before death",
+                  "Multiple sick contacts",
+                  "Body handling"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "102/66 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "24/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Community death requiring outbreak notification",
+                "emphasis": "Community death requiring outbreak notification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Viral haemorrhagic fever",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Community death requiring outbreak notification",
+                "emphasis": "Community death requiring outbreak notification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Community death requiring outbreak notification",
+                "emphasis": "Community death requiring outbreak notification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Community death requiring outbreak notification",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Unsafe burial practices can spread Ebola. Notify response teams and advise against direct body handling.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "canonicalCaseId": "hc3-child-cough-fast-breathing-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Achan Amina",
+      "id": "PT-CH-240301",
+      "age": "2F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Use age-based respiratory rate thresholds when assessing cough and difficult breathing.",
+      "Screen danger signs before deciding outpatient treatment at HC III.",
+      "Classify and manage likely pneumonia using IMNCI and Uganda Clinical Guidelines 2023."
+    ],
+    "takeaways": [
+      "A child aged 12-59 months with RR 48/min has fast breathing.",
+      "No chest indrawing, no stridor at rest, and ability to drink support outpatient pneumonia care.",
+      "Caregiver counseling on danger signs and 2-day review is essential."
+    ],
+    "blurb": "A 2-year-old with cough and fever arrives at a busy HC III. Decide whether this is routine cough, pneumonia, or referral-level danger.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Cough for 4 days with fever since yesterday",
+            "chips": [
+              "Child",
+              "HC III OPD"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver concern",
+            "text": "Mother says breathing seems faster at night but child is still breastfeeding and drinking."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Amina arrives coughing and warm",
+        "body": "You must decide quickly if this is severe respiratory illness or manageable pneumonia.",
+        "quote": "\"She coughs all night and breathes quickly.\"",
+        "teach": {
+          "label": "IMNCI framing",
+          "text": "In children, age and respiratory rate determine classification. Count breaths before labeling severity."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Initial vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.2 C",
+                "hot": true
+              },
+              {
+                "label": "HR",
+                "value": "118"
+              },
+              {
+                "label": "RESP",
+                "value": "48/min"
+              },
+              {
+                "label": "SpO2",
+                "value": "95%"
+              },
+              {
+                "label": "WT",
+                "value": "11.2 kg"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Danger signs screen",
+            "danger_signs": [
+              "Unable to drink",
+              "Convulsions",
+              "Lethargic/unconscious",
+              "Chest indrawing",
+              "Stridor at rest"
+            ],
+            "reveal_note": "None present on exam."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · assessment",
+        "title": "What is the best classification now?",
+        "body": "Use age-specific fast-breathing cutoffs and danger signs."
+      },
+      "question": {
+        "prompt": "For this 2-year-old, what is the safest interpretation?",
+        "options": [
+          {
+            "text": "Fast breathing pneumonia without danger signs; manage as outpatient and review closely",
+            "correct": true
+          },
+          {
+            "text": "No pneumonia because oxygen saturation is above 90%",
+            "correct": false
+          },
+          {
+            "text": "Severe pneumonia needing immediate referral because any fever with cough is severe",
+            "correct": false
+          },
+          {
+            "text": "Asthma only, so skip IMNCI classification",
+            "correct": false
+          }
+        ],
+        "right": "Correct. At age 2 years (12-59 months), RR 48/min is fast breathing, and no chest indrawing/stridor/danger signs are documented. IMNCI supports pneumonia management at HC III with close follow-up.",
+        "wrong": "This child meets fast-breathing criteria for age (RR 48/min). Fever plus cough still requires IMNCI classification; oxygen alone does not exclude pneumonia."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Management choice",
+            "drug": "Likely non-severe pneumonia package",
+            "detail": "Oral antibiotic per guideline, antipyretic, fluids, and feeding support"
+          },
+          {
+            "type": "assessment",
+            "title": "Respiratory exam",
+            "text": "No chest indrawing, no stridor at rest, alert, taking fluids."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · treatment",
+        "title": "Choose the most appropriate first plan",
+        "body": "Pick the option that matches findings and avoids overtreatment."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Start oral pneumonia treatment per IMNCI/UCG, then schedule 2-day follow-up",
+            "correct": true
+          },
+          {
+            "text": "Give only cough syrup and vitamins because child is playful",
+            "correct": false
+          },
+          {
+            "text": "Start injectable broad-spectrum antibiotics for all cough with fever",
+            "correct": false
+          },
+          {
+            "text": "Discharge without counseling because no danger signs are present",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Child is stable but meets fast-breathing pneumonia criteria. Guideline-based oral treatment and short follow-up reduce progression risk.",
+        "wrong": "RR 48/min at 2 years is not simple cough. Under-treating or skipping follow-up can miss deterioration in the next 24-48 hours."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "COUNSEL",
+        "sections": [
+          {
+            "type": "dangerScreen",
+            "title": "Return immediately if",
+            "danger_signs": [
+              "Breathing becomes difficult or very fast",
+              "Child cannot drink/breastfeed",
+              "Chest indrawing appears",
+              "Convulsions or unusual sleepiness"
+            ],
+            "reveal_note": "Mother repeats warning signs correctly."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · caregiver advice",
+        "title": "What counseling is essential before discharge?",
+        "body": "Choose the message that prevents delayed return."
+      },
+      "question": {
+        "prompt": "Best discharge counseling?",
+        "options": [
+          {
+            "text": "Explain danger signs clearly and set a strict 2-day review even if slightly improved",
+            "correct": true
+          },
+          {
+            "text": "Tell caregiver to return only after 1 week if cough remains",
+            "correct": false
+          },
+          {
+            "text": "Stop antibiotics once fever reduces on day 1",
+            "correct": false
+          },
+          {
+            "text": "No follow-up needed because pulse oximetry is acceptable",
+            "correct": false
+          }
+        ],
+        "right": "Correct. For child pneumonia, practical counseling and early review are core IMNCI actions to catch worsening breathing.",
+        "wrong": "A child can worsen quickly. Delayed review or incomplete treatment increases risk of severe disease."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You correctly identified fast-breathing pneumonia and avoided both undertreatment and unnecessary referral.",
+            "emphasis": "Age-based RR interpretation changed the decision."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Amina's RR 48/min at age 2 years meets fast-breathing criteria. With no chest indrawing, stridor, or general danger signs, outpatient pneumonia management with close review is appropriate under IMNCI and Uganda Clinical Guidelines 2023."
+      }
+    }
+  ]
+}

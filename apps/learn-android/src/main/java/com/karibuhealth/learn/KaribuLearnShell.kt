@@ -118,7 +118,9 @@ fun CaseCard(case: LearnCase, onOpen: (LearnCase) -> Unit) {
     val kl = LocalKl.current
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(kl.surface)
-            .border(1.dp, kl.line, RoundedCornerShape(14.dp)).clickable { onOpen(case) }.padding(12.dp),
+            .border(1.dp, kl.line, RoundedCornerShape(14.dp))
+            .then(if (case.ready) Modifier.clickable { onOpen(case) } else Modifier)
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(

@@ -23,6 +23,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,8 +80,22 @@ fun ChartFragment(
     revealed: Boolean,
     modifier: Modifier = Modifier,
     onCalc: (() -> Unit)? = null,
+    orderedTests: Set<String>? = null,
+    onOrderTest: ((String) -> Unit)? = null,
+    selectedCodes: Set<String>? = null,
+    onSelectCode: ((String) -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(14.dp)
+    val internalOrdered = remember(spec) { mutableStateOf(mutableSetOf<String>()) }
+    val internalSelected = remember(spec) { mutableStateOf(mutableSetOf<String>()) }
+    val tests = orderedTests ?: internalOrdered.value
+    val codes = selectedCodes ?: internalSelected.value
+    val orderHandler: (String) -> Unit = onOrderTest ?: { name ->
+        internalOrdered.value = internalOrdered.value.toMutableSet().apply { add(name) }
+    }
+    val selectHandler: (String) -> Unit = onSelectCode ?: { code ->
+        internalSelected.value = internalSelected.value.toMutableSet().apply { add(code) }
+    }
     Column(
         modifier
             .clip(shape)
@@ -90,7 +107,15 @@ fun ChartFragment(
         Column(Modifier.padding(12.dp)) {
             spec.sections.forEachIndexed { i, section ->
                 if (i > 0) Spacer(Modifier.height(10.dp))
-                ChartSectionView(section, revealed, onCalc)
+                ChartSectionView(
+                    section = section,
+                    revealed = revealed,
+                    onCalc = onCalc,
+                    orderedTests = tests,
+                    selectedCodes = codes,
+                    onOrderTest = orderHandler,
+                    onSelectCode = selectHandler,
+                )
             }
         }
     }
@@ -165,7 +190,16 @@ private fun SectionLabel(title: String?, right: (@Composable () -> Unit)? = null
 }
 
 @Composable
-private fun ChartSectionView(s: ChartSection, revealed: Boolean, onCalc: (() -> Unit)?) {
+private fun ChartSectionView(
+    section: ChartSection,
+    revealed: Boolean,
+    onCalc: (() -> Unit)?,
+    orderedTests: Set<String>,
+    selectedCodes: Set<String>,
+    onOrderTest: (String) -> Unit,
+    onSelectCode: (String) -> Unit,
+) {
+    val s = section
     when (s.type) {
         "chiefComplaint" -> {
             SectionLabel(s.title ?: "CHIEF COMPLAINT")
@@ -225,7 +259,14 @@ private fun ChartSectionView(s: ChartSection, revealed: Boolean, onCalc: (() -> 
         "investigations" -> {
             SectionLabel(s.title ?: "INVESTIGATIONS")
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                s.orders.forEach { OrderRowView(it, revealed) }
+                s.orders.forEach { order ->
+                    OrderRowView(
+                        o = order,
+                        revealed = revealed,
+                        locallyOrdered = orderedTests.contains(order.name),
+                        onOrder = { if (!revealed && order.status == "order") onOrderTest(order.name) },
+                    )
+                }
             }
         }
         "result" -> {
@@ -257,7 +298,14 @@ private fun ChartSectionView(s: ChartSection, revealed: Boolean, onCalc: (() -> 
         "diagnosis" -> {
             SectionLabel(s.title ?: "HMIS CODES")
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                s.codes.forEach { HmisCodeView(it, revealed) }
+                s.codes.forEach { code ->
+                    HmisCodeView(
+                        c = code,
+                        revealed = revealed,
+                        selected = selectedCodes.contains(code.code),
+                        onSelect = { if (!revealed) onSelectCode(code.code) },
+                    )
+                }
             }
             if (revealed && s.receipt != null) {
                 Spacer(Modifier.height(10.dp))
@@ -359,14 +407,25 @@ private fun DangerScreen(items: List<String>, revealed: Boolean) {
 }
 
 @Composable
-private fun OrderRowView(o: OrderRow, revealed: Boolean) {
-    val status = if (revealed) (o.revealStatus ?: o.status) else o.status
+private fun OrderRowView(
+    o: OrderRow,
+    revealed: Boolean,
+    locallyOrdered: Boolean = false,
+    onOrder: (() -> Unit)? = null,
+) {
+    val status = when {
+        revealed -> o.revealStatus ?: o.status
+        locallyOrdered || o.status == "pending" -> "pending"
+        else -> o.status
+    }
     val sub = if (revealed) (o.revealSub ?: o.sub) else o.sub
     val active = revealed && o.revealStatus != null
+    val isOrderButton = !revealed && o.status == "order" && !locallyOrdered
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-            .background(if (active) CobaltSoft.copy(alpha = 0.44f) else Surface)
-            .border(1.dp, if (active) Cobalt else Line, RoundedCornerShape(8.dp))
+            .background(if (active || locallyOrdered) CobaltSoft.copy(alpha = 0.44f) else Surface)
+            .border(1.dp, if (active || locallyOrdered || isOrderButton) Cobalt else Line, RoundedCornerShape(8.dp))
+            .then(if (isOrderButton && onOrder != null) Modifier.clickable(onClick = onOrder) else Modifier)
             .padding(horizontal = 11.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,16 +434,25 @@ private fun OrderRowView(o: OrderRow, revealed: Boolean) {
             Text(o.name, color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 12.5f.sp)
             sub?.let { MonoMeta(it, color = Muted, size = 9) }
         }
-        when (status) {
-            "pending" -> StatusPill("Pending", Amber, AmberSoft)
-            "done" -> StatusPill("Done", Green, GreenSoft)
-            else -> Text(
-                "Order", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clip(RoundedCornerShape(6.dp)).border(1.dp, Line, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 3.dp),
-            )
+        when {
+            isOrderButton -> OrderActionButton("Order test")
+            status == "pending" -> StatusPill("Pending", Amber, AmberSoft)
+            status == "done" -> StatusPill("Done", Green, GreenSoft)
+            else -> StatusPill("Ordered", Cobalt, CobaltSoft)
         }
     }
+}
+
+@Composable
+private fun OrderActionButton(label: String) {
+    Text(
+        label,
+        color = Color.White,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Cobalt)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    )
 }
 
 @Composable
@@ -485,22 +553,34 @@ private fun PrescriptionView(s: ChartSection, revealed: Boolean) {
 }
 
 @Composable
-private fun HmisCodeView(c: HmisCode, revealed: Boolean) {
-    val on = revealed && c.primary
+private fun HmisCodeView(
+    c: HmisCode,
+    revealed: Boolean,
+    selected: Boolean = false,
+    onSelect: (() -> Unit)? = null,
+) {
+    val on = (revealed && c.primary) || selected
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
             .background(if (on) CobaltSoft.copy(alpha = 0.4f) else Surface)
-            .border(1.dp, if (on) Cobalt else Line, RoundedCornerShape(8.dp)).padding(10.dp),
+            .border(1.dp, if (on) Cobalt else Line, RoundedCornerShape(8.dp))
+            .then(if (!revealed && onSelect != null) Modifier.clickable(onClick = onSelect) else Modifier)
+            .padding(10.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween) {
             Text(c.code, fontFamily = MonoFamily, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Cobalt)
+            if (!revealed && !selected) {
+                Text("Select", color = Cobalt, fontSize = 10.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(CobaltSoft)
+                        .padding(horizontal = 8.dp, vertical = 3.dp))
+            }
             c.confidence?.let {
                 Text("AI $it", fontFamily = MonoFamily, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = Amber,
                     modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(AmberSoft).padding(horizontal = 6.dp, vertical = 2.dp))
             }
         }
         Text(c.name, color = Body, fontSize = 12.sp)
-        if (on) Text("Primary diagnosis", color = Cobalt, fontSize = 10.5f.sp, fontWeight = FontWeight.SemiBold)
+        if (on) Text(if (revealed && c.primary) "Primary diagnosis" else "Selected", color = Cobalt, fontSize = 10.5f.sp, fontWeight = FontWeight.SemiBold)
     }
 }

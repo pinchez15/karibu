@@ -1,0 +1,191 @@
+{
+  "canonicalCaseId": "hc3-child-very-low-weight-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Akello Maria",
+      "id": "PT-CH-240307",
+      "age": "20F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Assess growth faltering with nutrition-focused history and exam.",
+      "Screen for severe malnutrition danger signs before routine counseling.",
+      "Build a practical feeding and follow-up plan for HC III caregivers."
+    ],
+    "takeaways": [
+      "Very low weight needs trend interpretation and feeding assessment, not vitamins alone.",
+      "Check bilateral oedema, appetite, lethargy, and recurrent infections to identify severe risk.",
+      "Counseling should include meal frequency, feeding during illness, and scheduled re-weighing."
+    ],
+    "blurb": "A toddler with poor growth and recurrent diarrhoea needs structured nutrition assessment and follow-up planning.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Poor weight gain and frequent illness",
+            "chips": [
+              "Growth concern",
+              "Child nutrition"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver statement",
+            "text": "Grandmother says child eats small amounts and has had recurrent diarrhoea episodes."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Maria is visibly underweight",
+        "body": "Start with danger signs, then move to feeding quality and illness contributors."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals and anthropometry",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.1 C"
+              },
+              {
+                "label": "HR",
+                "value": "118"
+              },
+              {
+                "label": "RESP",
+                "value": "30/min"
+              },
+              {
+                "label": "WT",
+                "value": "7.4 kg"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Severe malnutrition screen",
+            "danger_signs": [
+              "Bilateral oedema",
+              "Poor appetite",
+              "Lethargy",
+              "Unable to drink"
+            ],
+            "reveal_note": "No oedema; appetite reduced but still taking food."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · classification",
+        "title": "What is the best immediate approach?",
+        "body": "Choose an action that avoids both neglect and over-referral."
+      },
+      "question": {
+        "prompt": "What should guide your next step?",
+        "options": [
+          {
+            "text": "Perform full feeding assessment and growth counseling, with close weight follow-up",
+            "correct": true
+          },
+          {
+            "text": "Give appetite stimulant only and no counseling",
+            "correct": false
+          },
+          {
+            "text": "Ignore nutrition and treat only intermittent fever complaints",
+            "correct": false
+          },
+          {
+            "text": "Declare severe oedematous malnutrition despite absent oedema",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Growth faltering requires feeding assessment, infection review, and structured follow-up when severe danger signs are absent.",
+        "wrong": "Quick-fix medication without feeding review misses the root problem and delays recovery."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Feeding history reveal",
+            "text": "Child gets thin porridge twice daily, minimal protein foods, and feeding is reduced during illness."
+          },
+          {
+            "type": "prescription",
+            "title": "Nutrition plan",
+            "drug": "Intensified feeding counseling",
+            "detail": "Energy-dense local foods, frequent meals, continued feeding during illness, deworming review as age-appropriate"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · practical care",
+        "title": "Which plan is best for this family?",
+        "body": "Select realistic recommendations for HC III follow-up."
+      },
+      "question": {
+        "prompt": "What is the best management plan now?",
+        "options": [
+          {
+            "text": "Provide specific feeding plan, treat intercurrent illness, and re-weigh in 2 weeks",
+            "correct": true
+          },
+          {
+            "text": "Advise fasting during diarrhoea episodes",
+            "correct": false
+          },
+          {
+            "text": "Delay any follow-up until three months later",
+            "correct": false
+          },
+          {
+            "text": "Stop breastfeeding immediately to encourage solid foods",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Practical food counseling with short-interval recheck is central to growth-faltering management.",
+        "wrong": "Delaying follow-up or restricting feeding worsens undernutrition and illness vulnerability."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You identified growth faltering and created a realistic caregiver-centered nutrition plan.",
+            "emphasis": "Structured feeding review is the core intervention."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Very low weight in toddlers demands careful nutrition history, danger-sign screening, and short-interval follow-up. Counseling quality strongly affects outcomes."
+      }
+    }
+  ]
+}

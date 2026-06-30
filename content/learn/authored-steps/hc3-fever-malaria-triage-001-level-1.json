@@ -1,0 +1,324 @@
+{
+  "canonicalCaseId": "hc3-fever-malaria-triage-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Nakiyemba Grace",
+      "id": "PT-100024",
+      "age": "24F",
+      "sex": "Female"
+    },
+    "blurb": "A young woman walks in with three days of fever and headache. Decide what to ask, what to test, and what to treat — the way you would on a busy morning.",
+    "objectives": [
+      "Recognise danger signs that change a febrile presentation from routine to urgent",
+      "Apply the test-before-treat rule for suspected malaria (Uganda Clinical Guidelines 2023)",
+      "Dose artemether-lumefantrine by weight, and counsel on completing the course",
+      "Choose the correct HMIS diagnosis after a positive RDT"
+    ],
+    "skills": ["History taking", "Malaria", "Rational prescribing", "HMIS coding"],
+    "takeaways": [
+      "Fever ≥ 38 °C with headache earns a deliberate danger-sign screen first.",
+      "Test before you treat — a positive RDT comes before antimalarials.",
+      "AL at ≥ 35 kg: 4 tablets twice daily for 3 days. Finish the course.",
+      "Code the confirmed diagnosis (B54), not the presenting symptom."
+    ],
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "Uganda Essential Medicines List 2023"
+    ],
+    "dose_calc": {
+      "drug": "Artemether-Lumefantrine 20/120",
+      "drug_sub": "AL · BD × 3 days",
+      "source_label": "Uganda Clinical Guidelines 2023",
+      "start_weight": 56.0,
+      "min_weight": 5.0,
+      "doses_per_day": 2,
+      "days": 3,
+      "bands": [
+        { "lo": 5.0, "hi": 14.0, "tabs": 1, "label": "5–14" },
+        { "lo": 15.0, "hi": 24.0, "tabs": 2, "label": "15–24" },
+        { "lo": 25.0, "hi": 34.0, "tabs": 3, "label": "25–34" },
+        { "lo": 35.0, "hi": null, "tabs": 4, "label": "≥35" }
+      ]
+    }
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Fever and headache — 3 days",
+            "chips": ["Walk-in", "HC III · OPD"]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Grace is next in the queue",
+        "body": "Nakiyemba Grace, 24, has waited while staff finish immunizations. She looks tired but is walking and talking normally.",
+        "quote": "“I have had fever for three days, nurse. My head is paining me.”",
+        "teach": {
+          "label": "Before you anchor on malaria",
+          "text": "Fever for three days is common — your first job is to decide how sick she is. Let the vitals and a quick danger-sign screen answer that before you treat."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "right_label": "Triage",
+            "vitals": [
+              { "label": "TEMP", "value": "38.8°", "hot": true },
+              { "label": "BP", "value": "112/70" },
+              { "label": "HR", "value": "104", "hot": true },
+              { "label": "RESP", "value": "20" },
+              { "label": "WT", "value": "56.0" }
+            ],
+            "critical": {
+              "title": "Fever ≥ 38 °C with headache · screen for danger signs",
+              "body": "Tachycardia may reflect fever. Re-check temperature and mental status."
+            }
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · triage",
+        "title": "Her vitals are in. What concerns you most?",
+        "body": "Read the strip on the left before you choose."
+      },
+      "question": {
+        "prompt": "Which single finding most changes your urgency?",
+        "options": [
+          { "text": "Temperature 38.8 °C with headache", "correct": true },
+          { "text": "Heart rate 104 — likely fever-related only", "correct": false },
+          { "text": "BP 112/70 — normal", "correct": false },
+          { "text": "Respiratory rate 20 — reassuring", "correct": false }
+        ],
+        "right": "Fever ≥ 38 °C together with headache is the combination that should trigger a malaria danger-sign screen. HR 104 is likely from fever; BP and RR are reassuring.",
+        "wrong": "HR, BP, and RR are not your main concern here. It is the fever (38.8 °C) paired with headache that should raise urgency — that pair is when you actively look for severe malaria features."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "HISTORY",
+        "sections": [
+          {
+            "type": "subjective",
+            "title": "Subjective",
+            "text": "24F · 3-day intermittent fever and headache. Paracetamol at home with little relief.",
+            "reveal_text": "No vomiting everything, no convulsions, no confusion. Drinking normally. Denies pregnancy."
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Danger-sign screen",
+            "danger_signs": [
+              "Convulsions",
+              "Altered mental status",
+              "Unable to drink",
+              "Persistent vomiting",
+              "Respiratory distress"
+            ],
+            "reveal_note": "No danger signs — safe for outpatient assessment"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · history",
+        "title": "You have one focused question first. Make it count.",
+        "body": "You will take a fuller history, but the first question should be the one that could change your plan fastest."
+      },
+      "question": {
+        "prompt": "What do you ask first?",
+        "options": [
+          {
+            "text": "Screen for danger signs — convulsions, confusion, inability to drink, persistent vomiting",
+            "correct": true
+          },
+          { "text": "Ask which herbal medicines she has tried", "correct": false },
+          { "text": "Ask about family history of headache", "correct": false },
+          { "text": "Ask for her NHIS membership number", "correct": false }
+        ],
+        "right": "In a febrile adult, danger signs decide the setting of care — manage here, or stabilise and refer. Everything else can follow once you know she is safe to treat as an outpatient.",
+        "wrong": "Those can wait. With fever and headache, your first question should rule danger signs in or out — they decide whether she stays or is referred. The others do not change your immediate plan."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Assessment",
+            "text": "Febrile illness, no danger signs.",
+            "emphasis": "Suspect uncomplicated malaria."
+          },
+          {
+            "type": "investigations",
+            "title": "Investigations",
+            "orders": [
+              {
+                "name": "Malaria RDT",
+                "sub": "Not ordered",
+                "reveal_sub": "SENT · LAB pending",
+                "status": "order",
+                "reveal_status": "pending"
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · investigation",
+        "title": "No danger signs. She is safe to manage here. Next?",
+        "body": "She is alert, drinking, not vomiting, and has no respiratory distress. Malaria is high on your list in this setting."
+      },
+      "question": {
+        "prompt": "How do you proceed?",
+        "ehr_order": "Malaria RDT",
+        "options": [
+          { "text": "Order a malaria RDT and wait for the result before treating", "correct": true },
+          { "text": "Start artemether-lumefantrine now — it is almost certainly malaria", "correct": false },
+          { "text": "Give a broad-spectrum antibiotic to be safe", "correct": false },
+          { "text": "Send her home with paracetamol and review in 3 days", "correct": false }
+        ],
+        "right": "Test before you treat. Uganda Clinical Guidelines 2023 require parasitological confirmation (RDT or microscopy) before antimalarials where testing is available. It also protects against missing a non-malarial cause.",
+        "wrong": "Presumptive treatment is what the test-before-treat rule exists to stop. Order the RDT first — antimalarials without a positive test waste medicine and can mask another diagnosis. Antibiotics are not indicated yet, and sending her home misses a treatable cause."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "RESULT",
+        "sections": [
+          {
+            "type": "result",
+            "title": "Lab result",
+            "right_label": "Result back",
+            "result_label": "Malaria RDT",
+            "result_value": "Positive · P. falciparum",
+            "badge": "POSITIVE",
+            "ai": {
+              "headline": "Confirmed malaria · weight 56 kg → AL 4 tabs/dose",
+              "sub": "Suggests AL 20/120, 4 tabs twice daily × 3 days. Confirm to prescribe."
+            }
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The result is back",
+        "title": "RDT: positive for P. falciparum",
+        "body": "The lab sends the result to the visit. Check the weight-based dose before you confirm the prescription.",
+        "teach": {
+          "label": "Who is deciding here",
+          "text": "The assistant proposes; you dispose. The prescription is only real once you confirm the dose band."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PRESCRIBE",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Prescription",
+            "calculator": true,
+            "drug": "Artemether-Lumefantrine 20/120",
+            "detail": "Dose pending confirmation",
+            "reveal_detail": "4 tablets twice daily × 3 days · 24 total",
+            "confirmed_on_reveal": true,
+            "counselling": [
+              "Finish all 6 doses, even when better",
+              "Return if vomiting, confusion, or fever persists > 48 h",
+              "Take with fatty food · keep fluids up"
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · prescribe",
+        "title": "Confirm the artemether-lumefantrine dose",
+        "body": "Grace weighs 56 kg. AL is dosed by weight band. Check before you confirm."
+      },
+      "question": {
+        "prompt": "Which AL regimen is correct for a 56 kg adult?",
+        "calculator": true,
+        "options": [
+          { "text": "4 tablets (80/480 mg) twice daily for 3 days", "correct": true },
+          { "text": "1 tablet twice daily for 3 days", "correct": false },
+          { "text": "2 tablets twice daily for 5 days", "correct": false },
+          { "text": "4 tablets once daily for 3 days", "correct": false }
+        ],
+        "right": "For ≥ 35 kg, AL 20/120 is 4 tablets per dose, twice daily, for 3 days (24 tablets total). Counsel her to take it with fatty food and finish every dose even when she feels better.",
+        "wrong": "Check the weight band. At ≥ 35 kg the dose is 4 tablets twice daily for 3 days — 24 tablets total. Under-dosing risks treatment failure; the course is always 3 days, twice daily."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "DIAGNOSIS",
+        "sections": [
+          {
+            "type": "diagnosis",
+            "title": "HMIS codes",
+            "codes": [
+              { "code": "B54", "name": "Malaria, unspecified", "confidence": "0.94", "primary": true },
+              { "code": "R50.9", "name": "Fever, unspecified", "confidence": "0.41", "primary": false }
+            ],
+            "receipt": "HC III\nNAKIYEMBA GRACE · PT-100024\nDX: MALARIA (B54)\nRX: AL 20/120 · 4 TABS BD × 3D"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · coding",
+        "title": "One last step: the diagnosis code",
+        "body": "Choose the HMIS code that will appear on the receipt and in the monthly 105 report."
+      },
+      "question": {
+        "prompt": "Which is the primary HMIS diagnosis?",
+        "options": [
+          { "text": "B54 — Malaria, unspecified", "correct": true },
+          { "text": "R50.9 — Fever, unspecified", "correct": false },
+          { "text": "R51 — Headache", "correct": false },
+          { "text": "J06.9 — Acute upper respiratory infection", "correct": false }
+        ],
+        "right": "With a positive RDT, the confirmed diagnosis is malaria — B54. Fever and headache were symptoms, not the diagnosis; coding them instead would understate malaria burden in the HMIS 105 report.",
+        "wrong": "Once the RDT is positive, the diagnosis is malaria (B54) — not the symptoms that brought her in. Accurate coding is what makes the clinic's malaria numbers real in the monthly report."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Visit summary",
+            "text": "Uncomplicated malaria after positive RDT, absent danger signs.",
+            "emphasis": "Refer urgently if severe malaria features develop."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Danger-sign screen first, test before treat, weight-based AL, and code B54 after confirmation.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+        }
+      }
+    }
+  ]
+}

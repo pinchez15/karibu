@@ -1,0 +1,2113 @@
+{
+  "id": "ncd-mental-health-l1",
+  "title": "NCD and Mental Health Reasoning — Level 1 · Core practice",
+  "cases": [
+    {
+      "id": "hypertension-followup-poor-control-001",
+      "ready": true,
+      "title": "High BP at refill visit",
+      "topic": "Guidelines General",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A teacher comes for a refill and says he feels fine, but the BP reading is very high.",
+      "objectives": [
+        "Asymptomatic high BP still needs action.",
+        "Look for danger symptoms and adherence barriers."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Asymptomatic high BP still needs action.",
+        "Look for danger symptoms and adherence barriers."
+      ],
+      "citations": [
+        "High BP at refill visit"
+      ],
+      "share": {
+        "share_title": "High BP at refill visit",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/hypertension-followup-poor-control-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "hypertension-followup-poor-control-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "High blood pressure at refill",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A teacher comes for a refill and says he feels fine, but the BP reading is very high.",
+            "quote": "“High blood pressure at refill.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "High blood pressure at refill",
+                "danger_signs": [
+                  "Chest pain",
+                  "Severe headache",
+                  "Neurologic deficit"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Poorly controlled hypertension requiring risk assessment",
+                "emphasis": "Poorly controlled hypertension requiring risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Poorly controlled hypertension requiring risk assessment",
+                "emphasis": "Poorly controlled hypertension requiring risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Poorly controlled hypertension requiring risk assessment",
+                "emphasis": "Poorly controlled hypertension requiring risk assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Poorly controlled hypertension requiring risk assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Asymptomatic high BP still needs action. Look for danger symptoms and adherence barriers.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "diabetes-foot-sore-001",
+      "ready": true,
+      "title": "Small foot sore in diabetes",
+      "topic": "Guidelines General",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient with diabetes has a small foot wound and wants only pain tablets because market day is busy.",
+      "objectives": [
+        "Small wounds can be high risk in diabetes.",
+        "Assess infection, sensation, perfusion, and referral need."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Small wounds can be high risk in diabetes.",
+        "Assess infection, sensation, perfusion, and referral need."
+      ],
+      "citations": [
+        "Small foot sore in diabetes"
+      ],
+      "share": {
+        "share_title": "Small foot sore in diabetes",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/diabetes-foot-sore-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "diabetes-foot-sore-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Foot sore in diabetes",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient with diabetes has a small foot wound and wants only pain tablets because market day is busy.",
+            "quote": "“Foot sore in diabetes.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Foot sore in diabetes",
+                "danger_signs": [
+                  "Spreading infection",
+                  "Black tissue",
+                  "Fever"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diabetic foot risk",
+                "emphasis": "Diabetic foot risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diabetic foot risk",
+                "emphasis": "Diabetic foot risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diabetic foot risk",
+                "emphasis": "Diabetic foot risk"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Diabetic foot risk",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Small wounds can be high risk in diabetes. Assess infection, sensation, perfusion, and referral need.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "epilepsy-missed-medicine-001",
+      "ready": true,
+      "title": "Seizure after missed medicine",
+      "topic": "Guidelines General",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A patient with known epilepsy had a seizure after running out of medicine for a week.",
+      "objectives": [
+        "Assess injury and triggers.",
+        "Support continuity and safety counseling."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Assess injury and triggers.",
+        "Support continuity and safety counseling."
+      ],
+      "citations": [
+        "Seizure after missed medicine"
+      ],
+      "share": {
+        "share_title": "Seizure after missed medicine",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/epilepsy-missed-medicine-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "epilepsy-missed-medicine-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Seizure after missed medicine",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A patient with known epilepsy had a seizure after running out of medicine for a week.",
+            "quote": "“Seizure after missed medicine.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Seizure after missed medicine",
+                "danger_signs": [
+                  "Repeated seizures",
+                  "Head injury",
+                  "Pregnancy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Epilepsy adherence and safety assessment",
+                "emphasis": "Epilepsy adherence and safety assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Epilepsy adherence and safety assessment",
+                "emphasis": "Epilepsy adherence and safety assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Epilepsy adherence and safety assessment",
+                "emphasis": "Epilepsy adherence and safety assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Epilepsy adherence and safety assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Assess injury and triggers. Support continuity and safety counseling.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "alcohol-withdrawal-agitation-001",
+      "ready": true,
+      "title": "Agitation after stopping alcohol",
+      "topic": "Mental Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A man is shaking, sweating, and agitated after abruptly stopping heavy alcohol use.",
+      "objectives": [
+        "Substance-related presentations can be medical emergencies.",
+        "Assess safety, hydration, and referral threshold."
+      ],
+      "skills": [
+        "Mental Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Substance-related presentations can be medical emergencies.",
+        "Assess safety, hydration, and referral threshold."
+      ],
+      "citations": [
+        "Agitation after stopping alcohol"
+      ],
+      "share": {
+        "share_title": "Agitation after stopping alcohol",
+        "share_prompt": "What would you do first for this mental health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/alcohol-withdrawal-agitation-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "alcohol-withdrawal-agitation-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Agitation and tremor",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A man is shaking, sweating, and agitated after abruptly stopping heavy alcohol use.",
+            "quote": "“Agitation and tremor.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Agitation and tremor",
+                "danger_signs": [
+                  "Seizure",
+                  "Confusion",
+                  "Severe agitation"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible alcohol withdrawal requiring escalation assessment",
+                "emphasis": "Possible alcohol withdrawal requiring escalation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible alcohol withdrawal requiring escalation assessment",
+                "emphasis": "Possible alcohol withdrawal requiring escalation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible alcohol withdrawal requiring escalation assessment",
+                "emphasis": "Possible alcohol withdrawal requiring escalation assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible alcohol withdrawal requiring escalation assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Substance-related presentations can be medical emergencies. Assess safety, hydration, and referral threshold.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "psychosis-family-restraint-001",
+      "ready": true,
+      "title": "Family brings restrained patient",
+      "topic": "Mental Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A family brings a young man tied with cloths because he has been shouting and not sleeping.",
+      "objectives": [
+        "Protect dignity while ensuring safety.",
+        "Assess medical causes and urgent mental health referral need."
+      ],
+      "skills": [
+        "Mental Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Protect dignity while ensuring safety.",
+        "Assess medical causes and urgent mental health referral need."
+      ],
+      "citations": [
+        "Family brings restrained patient"
+      ],
+      "share": {
+        "share_title": "Family brings restrained patient",
+        "share_prompt": "What would you do first for this mental health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/psychosis-family-restraint-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "psychosis-family-restraint-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Agitation and possible psychosis",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A family brings a young man tied with cloths because he has been shouting and not sleeping.",
+            "quote": "“Agitation and possible psychosis.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Agitation and possible psychosis",
+                "danger_signs": [
+                  "Violence risk",
+                  "Suicidal risk",
+                  "Medical instability"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute mental health crisis with dignity/safety needs",
+                "emphasis": "Acute mental health crisis with dignity/safety needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute mental health crisis with dignity/safety needs",
+                "emphasis": "Acute mental health crisis with dignity/safety needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute mental health crisis with dignity/safety needs",
+                "emphasis": "Acute mental health crisis with dignity/safety needs"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Acute mental health crisis with dignity/safety needs",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Protect dignity while ensuring safety. Assess medical causes and urgent mental health referral need.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "palliative-pain-counseling-001",
+      "ready": true,
+      "title": "Cancer pain and family distress",
+      "topic": "Mental Health",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A family asks why their relative with known cancer is crying at night and whether more pain medicine is allowed.",
+      "objectives": [
+        "Pain relief and communication are clinical priorities.",
+        "Assess severity, red flags, and referral/support options."
+      ],
+      "skills": [
+        "Mental Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Pain relief and communication are clinical priorities.",
+        "Assess severity, red flags, and referral/support options."
+      ],
+      "citations": [
+        "Cancer pain and family distress"
+      ],
+      "share": {
+        "share_title": "Cancer pain and family distress",
+        "share_prompt": "What would you do first for this mental health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/palliative-pain-counseling-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "palliative-pain-counseling-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Severe chronic pain",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A family asks why their relative with known cancer is crying at night and whether more pain medicine is allowed.",
+            "quote": "“Severe chronic pain.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Severe chronic pain",
+                "danger_signs": [
+                  "Severe uncontrolled pain",
+                  "Confusion",
+                  "Respiratory distress"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Palliative symptom support and communication",
+                "emphasis": "Palliative symptom support and communication"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Palliative symptom support and communication",
+                "emphasis": "Palliative symptom support and communication"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Palliative symptom support and communication",
+                "emphasis": "Palliative symptom support and communication"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Palliative symptom support and communication",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Pain relief and communication are clinical priorities. Assess severity, red flags, and referral/support options.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "elder-fall-confusion-001",
+      "ready": true,
+      "title": "Older adult confused after fall",
+      "topic": "Emergency",
+      "difficulty": "Core",
+      "source_type": "Guideline Practice",
+      "mode": "Core Practice",
+      "level": 1,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-001",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "An older woman fell yesterday and is now confused.",
+      "objectives": [
+        "New confusion is not normal ageing.",
+        "Assess trauma, infection, glucose, and referral need."
+      ],
+      "skills": [
+        "Emergency",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "New confusion is not normal ageing.",
+        "Assess trauma, infection, glucose, and referral need."
+      ],
+      "citations": [
+        "Older adult confused after fall"
+      ],
+      "share": {
+        "share_title": "Older adult confused after fall",
+        "share_prompt": "What would you do first for this emergency presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/elder-fall-confusion-001",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "elder-fall-confusion-001-L1"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Confusion after fall",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "An older woman fell yesterday and is now confused.",
+            "quote": "“Confusion after fall.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Confusion after fall",
+                "danger_signs": [
+                  "Altered mental status",
+                  "Head injury",
+                  "Hypotension"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible head injury or delirium",
+                "emphasis": "Possible head injury or delirium"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible head injury or delirium",
+                "emphasis": "Possible head injury or delirium"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible head injury or delirium",
+                "emphasis": "Possible head injury or delirium"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible head injury or delirium",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "New confusion is not normal ageing. Assess trauma, infection, glucose, and referral need.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

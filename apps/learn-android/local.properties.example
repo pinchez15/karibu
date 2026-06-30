@@ -1,0 +1,7 @@
+# Copy to local.properties (gitignored). Do not commit.
+sdk.dir=/path/to/Android/sdk
+
+# Supabase → Project Settings → API (KaribuLearn project only)
+LEARN_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+# Anon / publishable key (sb_publishable_… or legacy eyJ… JWT both work)
+LEARN_SUPABASE_ANON_KEY=your-anon-or-publishable-key

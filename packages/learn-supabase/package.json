@@ -1,0 +1,20 @@
+{
+  "name": "@karibu/learn-supabase",
+  "version": "0.1.0",
+  "private": true,
+    "scripts": {
+    "export-packs": "PYTHONPATH=../../pipelines/case-generation/src python3 -m karibu_case_generation.cli export-chapter-packs",
+    "sync-manifest": "tsx scripts/sync-app-manifest.ts",
+    "upload-packs": "tsx scripts/upload-packs.ts",
+    "publish-packs": "pnpm export-packs && pnpm sync-manifest && pnpm upload-packs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

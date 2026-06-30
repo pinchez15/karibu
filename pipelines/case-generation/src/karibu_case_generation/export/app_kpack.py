@@ -39,6 +39,18 @@ def load_directory_pack(pack_dir: Path) -> tuple[dict[str, Any], list[dict[str, 
     return manifest, cases, variants
 
 
+def authored_steps_dir(input_dir: Path) -> Path:
+    """Sibling of generated corpus: content/learn/authored-steps/."""
+    return input_dir.parent.parent / "authored-steps"
+
+
+def load_authored_playable(input_dir: Path, case_id: str, difficulty_level: int) -> dict[str, Any] | None:
+    path = authored_steps_dir(input_dir) / f"{case_id}-level-{difficulty_level}.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text())
+
+
 def export_app_kpack_file(
     *,
     input_dir: Path,
@@ -49,15 +61,26 @@ def export_app_kpack_file(
     compile_walkable: bool = True,
     ready: bool | None = None,
     limit: int | None = None,
+    chapter_id: str | None = None,
     seed: int = 42,
 ) -> dict[str, int]:
     """Convert a directory kpack (canonical + variants) into a single app `.kpack` file."""
-    _, cases, variants = load_directory_pack(input_dir)
+    manifest, cases, variants = load_directory_pack(input_dir)
     cases_by_id = {case["id"]: case for case in cases}
+    chapter_case_ids: set[str] | None = None
+    if chapter_id is not None:
+        chapter_case_ids = {
+            entry["id"]
+            for entry in manifest.get("cases", [])
+            if entry.get("chapterId") == chapter_id
+        }
+        if not chapter_case_ids:
+            raise ValueError(f"No canonical cases found for chapter {chapter_id!r}.")
     selected_variants = [
         variant
         for variant in variants
         if int(variant.get("difficultyLevel", 0)) == difficulty_level
+        and (chapter_case_ids is None or variant.get("canonicalCaseId") in chapter_case_ids)
     ]
     if limit is not None:
         selected_variants = selected_variants[:limit]
@@ -74,11 +97,13 @@ def export_app_kpack_file(
         steps: list[dict[str, Any]] = []
         is_ready = False
         if compile_walkable:
-            steps = compile_steps(canonical, variant, rng)
+            steps = compile_steps(canonical, variant, rng, input_dir=input_dir)
             is_ready = len(steps) >= 3
         if ready is not None:
             is_ready = ready
-        learn_case = canonical_to_learn_case(canonical, variant, steps=steps, ready=is_ready)
+        learn_case = canonical_to_learn_case(
+            canonical, variant, steps=steps, ready=is_ready, input_dir=input_dir
+        )
         learn_cases.append(learn_case)
         if is_ready:
             walkable += 1
@@ -97,6 +122,7 @@ def canonical_to_learn_case(
     *,
     steps: list[dict[str, Any]],
     ready: bool,
+    input_dir: Path | None = None,
 ) -> dict[str, Any]:
     patient = case["simulatedPatient"]
     truth = case["clinicalTruth"]
@@ -110,7 +136,12 @@ def canonical_to_learn_case(
         citations = [str(item) for item in case.get("sourceGuidelineIds", [])]
 
     learn_id = _learn_case_id(case["id"], variant["id"])
-    return {
+    authored = (
+        load_authored_playable(input_dir, case["id"], level) if input_dir is not None else None
+    )
+    overrides = (authored or {}).get("learnCaseOverrides", {})
+
+    learn_case: dict[str, Any] = {
         "id": learn_id,
         "ready": ready,
         "title": case["title"],
@@ -151,9 +182,23 @@ def canonical_to_learn_case(
         },
         "steps": steps,
     }
+    for key in ("patient", "dose_calc", "objectives", "takeaways", "blurb", "citations", "skills"):
+        if key in overrides:
+            learn_case[key] = overrides[key]
+    return learn_case
 
 
-def compile_steps(case: dict[str, Any], variant: dict[str, Any], rng: random.Random) -> list[dict[str, Any]]:
+def compile_steps(
+    case: dict[str, Any],
+    variant: dict[str, Any],
+    rng: random.Random,
+    *,
+    input_dir: Path,
+) -> list[dict[str, Any]]:
+    level = int(variant.get("difficultyLevel", 1))
+    authored = load_authored_playable(input_dir, case["id"], level)
+    if authored and authored.get("steps"):
+        return list(authored["steps"])
     truth = case["clinicalTruth"]
     patient = case["simulatedPatient"]
     facility = case.get("facilityLevel", "HC III")
@@ -223,8 +268,8 @@ def compile_steps(case: dict[str, Any], variant: dict[str, Any], rng: random.Ran
                 "title": "Key teaching points",
                 "body": " ".join(case.get("teachingPoints", [])[:2]) or "Review the guideline-linked actions you applied.",
                 "teach": {
-                    "label": "Draft case",
-                    "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use.",
+                    "label": "Clinician review",
+                    "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off.",
                 },
             },
         }

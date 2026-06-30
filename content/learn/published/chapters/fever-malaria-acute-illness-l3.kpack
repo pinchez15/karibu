@@ -1,0 +1,2117 @@
+{
+  "id": "fever-malaria-acute-illness-l3",
+  "title": "Fever, Malaria, and Acute Illness — Level 3 · Challenge",
+  "cases": [
+    {
+      "id": "fever-malaria-triage-001-L3",
+      "ready": true,
+      "title": "Fever with malaria triage",
+      "topic": "Malaria",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0013",
+        "age": "24 years",
+        "sex": "Female"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "Fever management starts with danger-sign screening, not automatic outpatient treatment.",
+        "Testing helps distinguish malaria from other common causes of fever."
+      ],
+      "skills": [
+        "Malaria",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Fever management starts with danger-sign screening, not automatic outpatient treatment.",
+        "Testing helps distinguish malaria from other common causes of fever."
+      ],
+      "citations": [
+        "Malaria assessment and treatment"
+      ],
+      "share": {
+        "share_title": "Fever with malaria triage",
+        "share_prompt": "What would you do first for this malaria presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-malaria-triage-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.34,
+        "clinical_correctness_score": 0.9,
+        "hc3_reality_score": 0.88,
+        "learning_value_score": 0.82,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "uganda-essential-medicines-list-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-malaria-triage-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever and headache for three days",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Fever and headache for three days.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever and headache for three days",
+                "danger_signs": [
+                  "Convulsions",
+                  "Altered mental status",
+                  "Unable to drink",
+                  "Persistent vomiting",
+                  "Respiratory distress"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "112/70 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "104 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Uncomplicated malaria after positive malaria RDT and absent danger signs",
+                "emphasis": "Uncomplicated malaria after positive RDT, absent danger signs, and no pregnancy concern."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not give antimalarial treatment before danger-sign screening.",
+                "correct": false
+              },
+              {
+                "text": "Urinary tract infection",
+                "correct": false
+              },
+              {
+                "text": "Viral febrile illness",
+                "correct": false
+              },
+              {
+                "text": "Assess for danger signs before outpatient treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess for danger signs before outpatient treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Uncomplicated malaria after positive malaria RDT and absent danger signs",
+                "emphasis": "Uncomplicated malaria after positive RDT, absent danger signs, and no pregnancy concern."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat a negative RDT as malaria without reassessing other causes.",
+                "correct": false
+              },
+              {
+                "text": "Urinary tract infection",
+                "correct": false
+              },
+              {
+                "text": "Viral febrile illness",
+                "correct": false
+              },
+              {
+                "text": "Perform malaria RDT before antimalarial treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Perform malaria RDT before antimalarial treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Uncomplicated malaria after positive malaria RDT and absent danger signs",
+                "emphasis": "Uncomplicated malaria after positive RDT, absent danger signs, and no pregnancy concern."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Viral febrile illness",
+                "correct": false
+              },
+              {
+                "text": "Do not give antimalarial treatment before danger-sign screening.",
+                "correct": false
+              },
+              {
+                "text": "If RDT is positive, treat this adult patient with artemether-lumefantrine 4 tablets twice daily for 3 days.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat a negative RDT as malaria without reassessing other causes.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: If RDT is positive, treat this adult patient with artemether-lumefantrine 4 tablets twice daily for 3 days.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Uncomplicated malaria after positive RDT, absent danger signs, and no pregnancy concern.",
+                "emphasis": "Refer urgently if severe malaria features or other danger signs are present."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Fever management starts with danger-sign screening, not automatic outpatient treatment. Testing helps distinguish malaria from other common causes of fever.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "severe-malaria-referral-001-L3",
+      "ready": true,
+      "title": "Fever with altered mental status",
+      "topic": "Malaria",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0013",
+        "age": "31 years",
+        "sex": "Male"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "Severe malaria is a referral emergency at HC III level.",
+        "The key decision is recognizing danger signs and not treating this as routine uncomplicated fever."
+      ],
+      "skills": [
+        "Malaria",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Severe malaria is a referral emergency at HC III level.",
+        "The key decision is recognizing danger signs and not treating this as routine uncomplicated fever."
+      ],
+      "citations": [
+        "Severe malaria danger signs and referral"
+      ],
+      "share": {
+        "share_title": "Fever with altered mental status",
+        "share_prompt": "What would you do first for this malaria presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/severe-malaria-referral-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.92,
+        "hc3_reality_score": 0.86,
+        "learning_value_score": 0.88,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "severe-malaria-referral-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "High fever with confusion",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“High fever with confusion.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "High fever with confusion",
+                "danger_signs": [
+                  "Altered mental status",
+                  "Unable to drink",
+                  "Hypotension",
+                  "Respiratory distress"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "96/60 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "122 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "28/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "39.6 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected severe malaria or other severe febrile illness",
+                "emphasis": "Suspected severe malaria or other severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Hypoglycaemia",
+                "correct": false
+              },
+              {
+                "text": "Severe malaria",
+                "correct": false
+              },
+              {
+                "text": "Recognize altered mental status as a danger sign.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Recognize altered mental status as a danger sign.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected severe malaria or other severe febrile illness",
+                "emphasis": "Suspected severe malaria or other severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Hypoglycaemia",
+                "correct": false
+              },
+              {
+                "text": "Stabilize according to local protocol and arrange urgent referral.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Stabilize according to local protocol and arrange urgent referral.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected severe malaria or other severe febrile illness",
+                "emphasis": "Suspected severe malaria or other severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Hypoglycaemia",
+                "correct": false
+              },
+              {
+                "text": "Check glucose if available and do not delay referral for advanced diagnostics.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Check glucose if available and do not delay referral for advanced diagnostics.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Suspected severe malaria or other severe febrile illness",
+                "emphasis": "Altered mental status, inability to drink, shock, convulsions, or respiratory distress require urgent referral."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Severe malaria is a referral emergency at HC III level. The key decision is recognizing danger signs and not treating this as routine uncomplicated fever.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fever-negative-malaria-test-001-L3",
+      "ready": true,
+      "title": "Fever after negative malaria test",
+      "topic": "Malaria",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A teenager returns from school with fever, but the malaria RDT done at triage is negative.",
+      "objectives": [
+        "Avoid anchoring on malaria when test and presentation suggest alternatives.",
+        "Safety-net and reassess for danger signs."
+      ],
+      "skills": [
+        "Malaria",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Avoid anchoring on malaria when test and presentation suggest alternatives.",
+        "Safety-net and reassess for danger signs."
+      ],
+      "citations": [
+        "Fever after negative malaria test"
+      ],
+      "share": {
+        "share_title": "Fever after negative malaria test",
+        "share_prompt": "What would you do first for this malaria presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-negative-malaria-test-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-negative-malaria-test-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever with negative malaria test",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A teenager returns from school with fever, but the malaria RDT done at triage is negative.",
+            "quote": "“Fever with negative malaria test.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever with negative malaria test",
+                "danger_signs": [
+                  "Persistent fever",
+                  "Confusion",
+                  "Respiratory distress"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile illness with malaria less likely after negative test",
+                "emphasis": "Febrile illness with malaria less likely after negative test"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile illness with malaria less likely after negative test",
+                "emphasis": "Febrile illness with malaria less likely after negative test"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile illness with malaria less likely after negative test",
+                "emphasis": "Febrile illness with malaria less likely after negative test"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Febrile illness with malaria less likely after negative test",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Avoid anchoring on malaria when test and presentation suggest alternatives. Safety-net and reassess for danger signs.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fever-neck-stiffness-001-L3",
+      "ready": true,
+      "title": "Fever with neck stiffness",
+      "topic": "Emergency",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A young adult with fever is brought in because he cannot bend his neck comfortably and keeps shielding his eyes from light.",
+      "objectives": [
+        "Recognize meningitis danger signs.",
+        "Stabilize and arrange urgent referral rather than routine outpatient treatment."
+      ],
+      "skills": [
+        "Emergency",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Recognize meningitis danger signs.",
+        "Stabilize and arrange urgent referral rather than routine outpatient treatment."
+      ],
+      "citations": [
+        "Fever with neck stiffness"
+      ],
+      "share": {
+        "share_title": "Fever with neck stiffness",
+        "share_prompt": "What would you do first for this emergency presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-neck-stiffness-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-neck-stiffness-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever and neck stiffness",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A young adult with fever is brought in because he cannot bend his neck comfortably and keeps shielding his eyes from light.",
+            "quote": "“Fever and neck stiffness.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever and neck stiffness",
+                "danger_signs": [
+                  "Neck stiffness",
+                  "Altered mental status",
+                  "Convulsions"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible meningitis or severe febrile illness",
+                "emphasis": "Possible meningitis or severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible meningitis or severe febrile illness",
+                "emphasis": "Possible meningitis or severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible meningitis or severe febrile illness",
+                "emphasis": "Possible meningitis or severe febrile illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible meningitis or severe febrile illness",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Recognize meningitis danger signs. Stabilize and arrange urgent referral rather than routine outpatient treatment.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fever-after-miscarriage-001-L3",
+      "ready": true,
+      "title": "Fever after miscarriage",
+      "topic": "Maternal Anc",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated mother",
+        "id": "PT-0013",
+        "age": "26 years",
+        "sex": "Female"
+      },
+      "blurb": "A woman comes quietly with fever and lower abdominal pain after bleeding heavily at home two days ago.",
+      "objectives": [
+        "Provide nonjudgmental emergency care.",
+        "Recognize post-pregnancy infection as potentially life-threatening."
+      ],
+      "skills": [
+        "Maternal Anc",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Provide nonjudgmental emergency care.",
+        "Recognize post-pregnancy infection as potentially life-threatening."
+      ],
+      "citations": [
+        "Fever after miscarriage"
+      ],
+      "share": {
+        "share_title": "Fever after miscarriage",
+        "share_prompt": "What would you do first for this maternal anc presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-after-miscarriage-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-after-miscarriage-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever after pregnancy loss",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated mother",
+            "body": "A woman comes quietly with fever and lower abdominal pain after bleeding heavily at home two days ago.",
+            "quote": "“Fever after pregnancy loss.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever after pregnancy loss",
+                "danger_signs": [
+                  "High fever",
+                  "Hypotension",
+                  "Heavy bleeding"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "148/96 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "104 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "22/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.4 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible post-abortion infection/sepsis",
+                "emphasis": "Possible post-abortion infection/sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Infection or obstetric emergency",
+                "correct": false
+              },
+              {
+                "text": "Anaemia",
+                "correct": false
+              },
+              {
+                "text": "Hypertensive disorder of pregnancy",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible post-abortion infection/sepsis",
+                "emphasis": "Possible post-abortion infection/sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Hypertensive disorder of pregnancy",
+                "correct": false
+              },
+              {
+                "text": "Anaemia",
+                "correct": false
+              },
+              {
+                "text": "Infection or obstetric emergency",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible post-abortion infection/sepsis",
+                "emphasis": "Possible post-abortion infection/sepsis"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Hypertensive disorder of pregnancy",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible post-abortion infection/sepsis",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Provide nonjudgmental emergency care. Recognize post-pregnancy infection as potentially life-threatening.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "typhoid-like-fever-001-L3",
+      "ready": true,
+      "title": "Long fever with abdominal symptoms",
+      "topic": "Guidelines General",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A shopkeeper has had fever for more than a week and now has abdominal discomfort.",
+      "objectives": [
+        "Do not repeat malaria treatment blindly.",
+        "Use duration and abdominal symptoms to broaden differential diagnosis."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Do not repeat malaria treatment blindly.",
+        "Use duration and abdominal symptoms to broaden differential diagnosis."
+      ],
+      "citations": [
+        "Long fever with abdominal symptoms"
+      ],
+      "share": {
+        "share_title": "Long fever with abdominal symptoms",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/typhoid-like-fever-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "typhoid-like-fever-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Prolonged fever with abdominal pain",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A shopkeeper has had fever for more than a week and now has abdominal discomfort.",
+            "quote": "“Prolonged fever with abdominal pain.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Prolonged fever with abdominal pain",
+                "danger_signs": [
+                  "Shock",
+                  "Confusion",
+                  "Severe dehydration"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Prolonged febrile illness requiring structured assessment",
+                "emphasis": "Prolonged febrile illness requiring structured assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Prolonged febrile illness requiring structured assessment",
+                "emphasis": "Prolonged febrile illness requiring structured assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Prolonged febrile illness requiring structured assessment",
+                "emphasis": "Prolonged febrile illness requiring structured assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Prolonged febrile illness requiring structured assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Do not repeat malaria treatment blindly. Use duration and abdominal symptoms to broaden differential diagnosis.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "fever-sickle-cell-child-001-L3",
+      "ready": true,
+      "title": "Fever in a child with sickle cell disease",
+      "topic": "Emergency",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated patient",
+        "id": "PT-0013",
+        "age": "34 years",
+        "sex": null
+      },
+      "blurb": "A caregiver says her child with sickle cell disease has fever and looks weaker than usual.",
+      "objectives": [
+        "Treat fever in sickle cell disease as higher risk.",
+        "Assess for severe anaemia, infection, and respiratory symptoms."
+      ],
+      "skills": [
+        "Emergency",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Treat fever in sickle cell disease as higher risk.",
+        "Assess for severe anaemia, infection, and respiratory symptoms."
+      ],
+      "citations": [
+        "Fever in a child with sickle cell disease"
+      ],
+      "share": {
+        "share_title": "Fever in a child with sickle cell disease",
+        "share_prompt": "What would you do first for this emergency presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/fever-sickle-cell-child-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "fever-sickle-cell-child-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever in known sickle cell disease",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated patient",
+            "body": "A caregiver says her child with sickle cell disease has fever and looks weaker than usual.",
+            "quote": "“Fever in known sickle cell disease.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever in known sickle cell disease",
+                "danger_signs": [
+                  "Severe pallor",
+                  "Respiratory distress",
+                  "Lethargy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "128/82 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "96 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "20/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "High-risk febrile illness in sickle cell disease",
+                "emphasis": "High-risk febrile illness in sickle cell disease"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "High-risk febrile illness in sickle cell disease",
+                "emphasis": "High-risk febrile illness in sickle cell disease"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Common outpatient condition",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "High-risk febrile illness in sickle cell disease",
+                "emphasis": "High-risk febrile illness in sickle cell disease"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Emergency presentation",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Referral-level condition",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "High-risk febrile illness in sickle cell disease",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Treat fever in sickle cell disease as higher risk. Assess for severe anaemia, infection, and respiratory symptoms.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

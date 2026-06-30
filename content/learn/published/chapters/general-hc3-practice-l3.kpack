@@ -1,0 +1,611 @@
+{
+  "id": "general-hc3-practice-l3",
+  "title": "General HC III Practice — Level 3 · Challenge",
+  "cases": [
+    {
+      "id": "adult-dysuria-pregnancy-check-001-L3",
+      "ready": true,
+      "title": "Dysuria with pregnancy consideration",
+      "topic": "Guidelines General",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0013",
+        "age": "22 years",
+        "sex": "Female"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "Pregnancy status can change safe management choices.",
+        "Simple symptoms still require danger-sign screening."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Pregnancy status can change safe management choices.",
+        "Simple symptoms still require danger-sign screening."
+      ],
+      "citations": [
+        "Urinary symptoms and medicine safety"
+      ],
+      "share": {
+        "share_title": "Dysuria with pregnancy consideration",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/adult-dysuria-pregnancy-check-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.44,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.86,
+        "learning_value_score": 0.8,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "uganda-essential-medicines-list-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "adult-dysuria-pregnancy-check-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Pain passing urine",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Pain passing urine.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Pain passing urine",
+                "danger_signs": [
+                  "Fever",
+                  "Flank pain",
+                  "Vomiting",
+                  "Pregnancy danger signs"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "106/68 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "82 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "16/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.1 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible urinary tract infection with pregnancy status needing clarification",
+                "emphasis": "Possible urinary tract infection with pregnancy status needing clarification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "STI",
+                "correct": false
+              },
+              {
+                "text": "Pregnancy-related urinary symptoms",
+                "correct": false
+              },
+              {
+                "text": "Ask pregnancy status and assess for fever or flank pain.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Ask pregnancy status and assess for fever or flank pain.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible urinary tract infection with pregnancy status needing clarification",
+                "emphasis": "Possible urinary tract infection with pregnancy status needing clarification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Lower UTI",
+                "correct": false
+              },
+              {
+                "text": "STI",
+                "correct": false
+              },
+              {
+                "text": "Pregnancy-related urinary symptoms",
+                "correct": false
+              },
+              {
+                "text": "Use urine testing if available.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Use urine testing if available.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible urinary tract infection with pregnancy status needing clarification",
+                "emphasis": "Possible urinary tract infection with pregnancy status needing clarification"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pregnancy-related urinary symptoms",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Choose treatment compatible with pregnancy status and national guidance.",
+                "correct": true
+              },
+              {
+                "text": "Lower UTI",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Choose treatment compatible with pregnancy status and national guidance.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible urinary tract infection with pregnancy status needing clarification",
+                "emphasis": "Fever, flank pain, systemic illness, pregnancy complications, or inability to tolerate oral treatment require escalation/referral."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Pregnancy status can change safe management choices. Simple symptoms still require danger-sign screening.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "suspected-sti-partner-management-001-L3",
+      "ready": true,
+      "title": "Urethral discharge and partner management",
+      "topic": "Guidelines General",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated adult patient",
+        "id": "PT-0013",
+        "age": "29 years",
+        "sex": "Male"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "STI care includes counseling, testing offer, and partner management, not only medication.",
+        "The case tests whether learners ask sensitive but clinically necessary questions."
+      ],
+      "skills": [
+        "Guidelines General",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "STI care includes counseling, testing offer, and partner management, not only medication.",
+        "The case tests whether learners ask sensitive but clinically necessary questions."
+      ],
+      "citations": [
+        "STI syndromic management and HIV testing"
+      ],
+      "share": {
+        "share_title": "Urethral discharge and partner management",
+        "share_prompt": "What would you do first for this guidelines general presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/suspected-sti-partner-management-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.52,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.85,
+        "learning_value_score": 0.82,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "uganda-hiv-aids-consolidated-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "suspected-sti-partner-management-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Urethral discharge",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated adult patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Urethral discharge.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Urethral discharge",
+                "danger_signs": [
+                  "Severe systemic illness",
+                  "Scrotal swelling",
+                  "Complicated genital findings"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "BP",
+                    "value": "124/78 mmHg",
+                    "hot": false
+                  },
+                  {
+                    "label": "PULS",
+                    "value": "78 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "16/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "36.9 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected sexually transmitted infection presenting with urethral discharge",
+                "emphasis": "Suspected sexually transmitted infection presenting with urethral discharge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Other STI syndrome",
+                "correct": false
+              },
+              {
+                "text": "Offer HIV testing and risk reduction counseling.",
+                "correct": false
+              },
+              {
+                "text": "Use syndromic STI assessment and treatment according to Uganda guidance.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Use syndromic STI assessment and treatment according to Uganda guidance.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected sexually transmitted infection presenting with urethral discharge",
+                "emphasis": "Suspected sexually transmitted infection presenting with urethral discharge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Gonococcal urethritis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Other STI syndrome",
+                "correct": false
+              },
+              {
+                "text": "Offer HIV testing and risk reduction counseling.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Offer HIV testing and risk reduction counseling.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected sexually transmitted infection presenting with urethral discharge",
+                "emphasis": "Suspected sexually transmitted infection presenting with urethral discharge"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Gonococcal urethritis",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Other STI syndrome",
+                "correct": false
+              },
+              {
+                "text": "Address partner notification/treatment according to clinic protocol.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Address partner notification/treatment according to clinic protocol.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Suspected sexually transmitted infection presenting with urethral discharge",
+                "emphasis": "Severe systemic illness, complicated genital findings, or suspected sexual violence requires escalation/referral."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "STI care includes counseling, testing offer, and partner management, not only medication. The case tests whether learners ask sensitive but clinically necessary questions.",
+            "teach": {
+              "label": "Draft case",
+              "text": "Auto-compiled from the HC III draft corpus for testing. Clinician review required before CPD use."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

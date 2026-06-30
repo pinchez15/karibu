@@ -19,7 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.karibuhealth.learn.data.PackEntry
+import com.karibuhealth.learn.data.supabase.CaseCompletionRow
 import com.karibuhealth.learn.data.PackStatus
 import com.karibuhealth.learn.model.LearnCase
 import com.karibuhealth.learn.model.PackInfo
@@ -46,7 +52,12 @@ import com.karibuhealth.learn.chart.MonoFamily
 
 // ── Welcome ──────────────────────────────────────────────────────────────────
 @Composable
-fun WelcomeScreen(caseCount: Int, topicCount: Int, onEnter: () -> Unit) {
+fun WelcomeScreen(
+    caseCount: Int,
+    topicCount: Int,
+    onBrowse: () -> Unit,
+    onSignIn: () -> Unit,
+) {
     val kl = LocalKl.current
     Box(Modifier.fillMaxSize().background(kl.gradient())) {
         Column(Modifier.fillMaxSize().padding(horizontal = 26.dp)) {
@@ -59,23 +70,15 @@ fun WelcomeScreen(caseCount: Int, topicCount: Int, onEnter: () -> Unit) {
                 Spacer(Modifier.height(14.dp))
                 Text("See the patient before the patient sees you.", color = Color.White, fontWeight = FontWeight.Bold,
                     fontSize = 34.sp, lineHeight = 37.sp, letterSpacing = (-0.03f).sp)
-                Spacer(Modifier.height(16.dp))
-                Text("Real HC III cases, written by Ugandan clinicians. Work each one like a live visit. No real patient data.",
-                    color = Color.White.copy(alpha = 0.92f), fontSize = 15.sp, lineHeight = 22.sp)
                 Spacer(Modifier.height(26.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
-                    WelcomeStat(if (caseCount > 0) "$caseCount" else "—", "cases")
+                    WelcomeStat(if (caseCount > 0) "$caseCount" else "—", "playable")
                     WelcomeStat(if (topicCount > 0) "$topicCount" else "—", "topics")
-                    WelcomeStat("CME", "credit")
                 }
             }
             Column(Modifier.padding(bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                KlButton("Browse cases", onEnter, Modifier.fillMaxWidth(), KlBtnKind.OnDark, trailingIcon = KlIcons.arrowRight)
-                KlButton("Continue with phone number", onEnter, Modifier.fillMaxWidth(), KlBtnKind.GhostDark)
-                Text("No account needed. Make one later for a CME certificate.",
-                    color = Color.White.copy(alpha = 0.78f), fontSize = 11.sp, lineHeight = 16.sp,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                KlButton("Browse cases", onBrowse, Modifier.fillMaxWidth(), KlBtnKind.OnDark, trailingIcon = KlIcons.arrowRight)
+                KlButton("Sign in for CME credit", onSignIn, Modifier.fillMaxWidth(), KlBtnKind.GhostDark)
             }
         }
     }
@@ -92,9 +95,20 @@ private fun WelcomeStat(value: String, label: String) {
 
 // ── Home ─────────────────────────────────────────────────────────────────────
 @Composable
-fun HomeScreen(cases: List<LearnCase>, onOpenCase: (LearnCase) -> Unit, onSeeAll: () -> Unit) {
+fun HomeScreen(
+    cases: List<LearnCase>,
+    progress: com.karibuhealth.learn.LearnProgressUiState,
+    installedPackCount: Int,
+    catalogCaseCount: Int,
+    catalogTopicCount: Int,
+    onOpenCase: (LearnCase) -> Unit,
+    onSeeAll: () -> Unit,
+) {
     val kl = LocalKl.current
-    val feature = cases.firstOrNull { it.ready } ?: cases.firstOrNull()
+    val feature = cases.firstOrNull { it.ready }
+    val installedPlayable = cases.count { it.ready }
+    val doneCount = progress.completions.size
+    val creditsLabel = fmtCredit(progress.creditsEarned)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp)) {
         feature?.let { f ->
             CoralHero(onClick = { onOpenCase(f) }) {
@@ -111,7 +125,7 @@ fun HomeScreen(cases: List<LearnCase>, onOpenCase: (LearnCase) -> Unit, onSeeAll
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Icon(KlIcons.play, null, tint = kl.deep, modifier = Modifier.size(14.dp))
-                            Text(if (f.ready) "Start" else "Preview", color = kl.deep, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Start", color = kl.deep, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         MonoMeta("${f.mins} min · CME ${fmtCredit(f.credit)}", color = Color.White.copy(alpha = 0.9f), size = 10)
                     }
@@ -121,9 +135,16 @@ fun HomeScreen(cases: List<LearnCase>, onOpenCase: (LearnCase) -> Unit, onSeeAll
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HomeStat("DONE", "0", Modifier.weight(1f))
-            HomeStat("CME", "0.00", Modifier.weight(1f))
-            HomeStat("PACKS", "${cases.map { it.packId }.distinct().count()}", Modifier.weight(1f))
+            HomeStat("CASES", if (installedPlayable > 0) "$installedPlayable" else "$catalogCaseCount", Modifier.weight(1f))
+            HomeStat("TOPICS", "$catalogTopicCount", Modifier.weight(1f))
+            HomeStat("DONE", if (progress.isSignedIn) "$doneCount" else "—", Modifier.weight(1f))
+        }
+        if (progress.isSignedIn) {
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HomeStat("CME", creditsLabel, Modifier.weight(1f))
+                HomeStat("PACKS", "$installedPackCount", Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(20.dp))
 
@@ -134,8 +155,8 @@ fun HomeScreen(cases: List<LearnCase>, onOpenCase: (LearnCase) -> Unit, onSeeAll
         }
         Spacer(Modifier.height(11.dp))
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            cases.take(4).forEach { CaseCard(it, onOpenCase) }
-            if (cases.isEmpty()) EmptyNote("No cases installed yet. Add a pack from the Cases tab.")
+            cases.filter { it.ready }.take(4).forEach { CaseCard(it, onOpenCase) }
+            if (cases.none { it.ready }) EmptyNote("No playable cases yet. Check Coming soon in Cases.")
         }
         Spacer(Modifier.height(8.dp))
     }
@@ -168,6 +189,9 @@ fun LibraryScreen(
     val shown = if (topic == "All") cases else cases.filter { it.topic == topic }
     val available = packs.filter { it.status == PackStatus.Available }
 
+    val playable = shown.filter { it.ready }
+    val upcoming = shown.filter { !it.ready }
+
     Column(Modifier.fillMaxSize()) {
         // Topic filter chips
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
@@ -185,9 +209,23 @@ fun LibraryScreen(
             }
         }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp).padding(bottom = 22.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                shown.forEach { CaseCard(it, onOpenCase) }
-                if (shown.isEmpty()) EmptyNote("No cases in this topic yet.")
+            if (playable.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    playable.forEach { CaseCard(it, onOpenCase) }
+                }
+            }
+            if (upcoming.isNotEmpty()) {
+                if (playable.isNotEmpty()) Spacer(Modifier.height(18.dp))
+                Text("Coming soon", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    upcoming.forEach { case ->
+                        ComingSoonRow(case)
+                    }
+                }
+            }
+            if (playable.isEmpty() && upcoming.isEmpty()) {
+                EmptyNote("No cases in this topic yet.")
             }
             if (available.isNotEmpty()) {
                 Spacer(Modifier.height(22.dp))
@@ -196,8 +234,7 @@ fun LibraryScreen(
                     Text("More case packs", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("Free to download — pulled in small packs so you choose how to spend your data.",
-                    color = kl.muted, fontSize = 12.sp, lineHeight = 17.sp)
+                Text("Small packs — download on your data plan.", color = kl.muted, fontSize = 12.sp)
                 Spacer(Modifier.height(11.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     available.forEach { entry ->
@@ -252,29 +289,52 @@ private fun PackCard(info: PackInfo, progress: Float?, onDownload: () -> Unit) {
 
 // ── Progress ─────────────────────────────────────────────────────────────────
 @Composable
-fun ProgressScreen(cases: List<LearnCase>) {
+fun ProgressScreen(
+    cases: List<LearnCase>,
+    progress: LearnProgressUiState,
+    onSignIn: () -> Unit,
+) {
     val kl = LocalKl.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 16.dp)) {
-        CoralHero {
-            Column(Modifier.padding(20.dp)) {
-                Text("CME THIS YEAR", fontFamily = MonoFamily, fontSize = 9.5f.sp, letterSpacing = 0.7.sp,
-                    color = Color.White.copy(alpha = 0.85f))
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("0.00", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.03f).sp)
-                    Text("credits", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
-                }
-                Spacer(Modifier.height(14.dp))
-                Row(
-                    Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Icon(KlIcons.award, null, tint = kl.deep, modifier = Modifier.size(16.dp))
-                    Text("Download certificate", color = kl.deep, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        if (!progress.isSignedIn) {
+            CoralHero {
+                Column(Modifier.padding(20.dp)) {
+                    Text("SIGN IN TO TRACK CME", fontFamily = MonoFamily, fontSize = 9.5f.sp, letterSpacing = 0.7.sp,
+                        color = Color.White.copy(alpha = 0.85f))
+                    Spacer(Modifier.height(10.dp))
+                    Text("Your scores and credits sync when you sign in with phone or email.",
+                        color = Color.White.copy(alpha = 0.93f), fontSize = 14.sp, lineHeight = 20.sp)
+                    Spacer(Modifier.height(14.dp))
+                    KlButton("Sign in", onSignIn, Modifier.fillMaxWidth(), KlBtnKind.OnDark)
                 }
             }
+            Spacer(Modifier.height(16.dp))
+        } else {
+            val creditsLabel = fmtCredit(progress.creditsEarned)
+            CoralHero {
+                Column(Modifier.padding(20.dp)) {
+                    Text("CME THIS YEAR", fontFamily = MonoFamily, fontSize = 9.5f.sp, letterSpacing = 0.7.sp,
+                        color = Color.White.copy(alpha = 0.85f))
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            if (progress.isLoading) "…" else creditsLabel,
+                            color = Color.White, fontWeight = FontWeight.Bold, fontSize = 40.sp, letterSpacing = (-0.03f).sp,
+                        )
+                        Text("credits", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Row(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        Icon(KlIcons.award, null, tint = kl.deep, modifier = Modifier.size(16.dp))
+                        Text("Download certificate", color = kl.deep, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
         }
-        Spacer(Modifier.height(16.dp))
 
         val topics = cases.map { it.topic }.distinct()
         if (topics.isNotEmpty()) {
@@ -296,12 +356,60 @@ fun ProgressScreen(cases: List<LearnCase>) {
 
         Text("Completed", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
         Spacer(Modifier.height(11.dp))
-        EmptyNote("Finish a case and it will appear here, with your score and CME credit.")
+        if (progress.isSignedIn && progress.completions.isNotEmpty()) {
+            progress.completions.forEach { row ->
+                CompletionRow(row, cases.firstOrNull { it.id == row.caseId })
+                Spacer(Modifier.height(8.dp))
+            }
+        } else if (progress.isSignedIn) {
+            EmptyNote("Finish a case and it will appear here, with your score and CME credit.")
+        } else {
+            EmptyNote("Sign in, then finish a case — your score and credit will show here.")
+        }
+        progress.error?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = kl.primary, fontSize = 12.sp)
+        }
         Spacer(Modifier.height(8.dp))
     }
 }
 
+@Composable
+private fun CompletionRow(row: CaseCompletionRow, case: LearnCase?) {
+    val kl = LocalKl.current
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(kl.surface)
+            .border(1.dp, kl.line, RoundedCornerShape(12.dp)).padding(14.dp),
+    ) {
+        Text(case?.title ?: row.caseId, color = kl.ink, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            MonoMeta("${row.score}/${row.total}", color = kl.muted, size = 11)
+            row.credit?.let { MonoMeta("CME ${fmtCredit(it)}", color = kl.deep, size = 11) }
+        }
+    }
+}
+
 // ── About ────────────────────────────────────────────────────────────────────
+@Composable
+private fun ComingSoonRow(case: LearnCase) {
+    val kl = LocalKl.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(kl.bg)
+            .border(1.dp, kl.lineSoft, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(case.title, color = kl.muted, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+            MonoMeta("${case.topic} · ${case.mins} min", color = kl.muted, size = 10)
+        }
+        Text("SOON", fontFamily = MonoFamily, fontSize = 9.sp, color = kl.muted,
+            modifier = Modifier.clip(RoundedCornerShape(4.dp)).border(1.dp, kl.line, RoundedCornerShape(4.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp))
+    }
+}
+
 @Composable
 fun AboutScreen() {
     val kl = LocalKl.current
@@ -311,42 +419,22 @@ fun AboutScreen() {
                 KlLockup(size = 22.dp, markColor = Color.White, markFg = kl.primary, textColor = Color.White,
                     suffixColor = Color.White.copy(alpha = 0.72f))
                 Spacer(Modifier.height(14.dp))
-                Text("Sharper clinical judgment, one case at a time.", color = Color.White, fontWeight = FontWeight.Bold,
-                    fontSize = 23.sp, lineHeight = 26.sp, letterSpacing = (-0.025f).sp)
-                Spacer(Modifier.height(10.dp))
-                Text("A free continuing-education tool for clinicians in Uganda's health centres. Work realistic cases the way you work a live clinic.",
-                    color = Color.White.copy(alpha = 0.93f), fontSize = 13.5f.sp, lineHeight = 20.sp)
+                Text("Free CME for HC III clinicians.", color = Color.White, fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp, lineHeight = 26.sp, letterSpacing = (-0.025f).sp)
             }
         }
 
         Column(Modifier.padding(18.dp)) {
-            Text("What you build here", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
+            Text("What you practice", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
             Spacer(Modifier.height(11.dp))
             val builds = listOf(
-                Triple(KlIcons.flag, "Danger-sign recognition", "Spot when a routine fever or cough is actually an emergency."),
-                Triple(KlIcons.flask, "Test-before-treat", "Order and read the right investigation before you treat."),
-                Triple(KlIcons.calc, "Weight-based dosing", "Get the mg/kg maths right, with the clinic's own dose calculator."),
-                Triple(KlIcons.chart, "Accurate HMIS coding", "Code the confirmed diagnosis — the number that makes reports true."),
+                Triple(KlIcons.flag, "Danger signs", "Spot emergencies early."),
+                Triple(KlIcons.flask, "Test before treat", "Order the right investigation."),
+                Triple(KlIcons.calc, "Weight-based dosing", "Get mg/kg right."),
+                Triple(KlIcons.chart, "HMIS coding", "Code the confirmed diagnosis."),
             )
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 builds.forEach { (icon, t, d) -> BuildRow(icon, t, d) }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            val facts = listOf(
-                "Free, forever" to "Every clinician, no clinic account, no cost.",
-                "Generated cases only" to "Every patient and result is invented for teaching. Never real PHI.",
-                "CME on completion" to "Each case earns logged, downloadable credit.",
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                facts.forEach { (t, d) ->
-                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp)).background(kl.wash)
-                        .border(1.dp, kl.lineSoft, RoundedCornerShape(11.dp)).padding(horizontal = 13.dp, vertical = 11.dp)) {
-                        Text(t, color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Spacer(Modifier.height(2.dp))
-                        Text(d, color = kl.body, fontSize = 12.sp, lineHeight = 17.sp)
-                    }
-                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -379,7 +467,13 @@ private fun BuildRow(icon: ImageVector, title: String, desc: String) {
 @Composable
 private fun PoweredByKaribuEhr() {
     val kl = LocalKl.current
+    val context = LocalContext.current
+    var facility by remember { mutableStateOf("") }
+    var district by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var sent by remember { mutableStateOf(false) }
+    val canSubmit = facility.isNotBlank() && district.isNotBlank() && phone.isNotBlank()
+
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(kl.surface)
             .border(1.dp, Cobalt.copy(alpha = 0.18f), RoundedCornerShape(14.dp)).padding(16.dp),
@@ -390,28 +484,56 @@ private fun PoweredByKaribuEhr() {
                 letterSpacing = 0.5.sp, color = Cobalt)
         }
         Spacer(Modifier.height(10.dp))
-        Text("These cases run on a real EHR.", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
+        Text("Want KaribuEHR at your facility?", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
         Spacer(Modifier.height(6.dp))
-        Text("The chart inside each case is KaribuEHR — the record system used in clinics for everyday documentation, dosing and reporting. If your facility wants it, apply below. It's provisioned per-clinic; KaribuLearn stays free regardless.",
-            color = kl.body, fontSize = 13.sp, lineHeight = 20.sp)
+        Text("The chart in each case is KaribuEHR. Apply below — KaribuLearn stays free.",
+            color = kl.body, fontSize = 13.sp, lineHeight = 18.sp)
         Spacer(Modifier.height(14.dp))
         if (!sent) {
+            val fieldColors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Cobalt,
+                focusedLabelColor = Cobalt,
+            )
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                listOf("Facility · Susunga HC III", "District · Mityana", "Phone · +256 7…").forEach { ph ->
-                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp)).background(kl.bg)
-                        .border(1.dp, kl.line, RoundedCornerShape(9.dp)).padding(horizontal = 12.dp, vertical = 11.dp)) {
-                        Text(ph, color = kl.muted, fontSize = 13.5f.sp)
-                    }
-                }
+                OutlinedTextField(
+                    value = facility, onValueChange = { facility = it },
+                    label = { Text("Facility name") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+                )
+                OutlinedTextField(
+                    value = district, onValueChange = { district = it },
+                    label = { Text("District") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+                )
+                OutlinedTextField(
+                    value = phone, onValueChange = { phone = it },
+                    label = { Text("Phone") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(), colors = fieldColors,
+                )
             }
             Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp)).background(Cobalt)
-                .clickable { sent = true }.padding(vertical = 13.dp), contentAlignment = Alignment.Center) {
-                Text("Apply for your clinic", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            }
-            Spacer(Modifier.height(10.dp))
-            Text("The Karibu team replies within two working days.", color = kl.muted, fontSize = 11.sp,
-                modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            KlButton(
+                text = "Apply for your clinic",
+                onClick = {
+                    val body = """
+                        Facility: $facility
+                        District: $district
+                        Phone: $phone
+                    """.trimIndent()
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:hello@karibu.health")
+                        putExtra(Intent.EXTRA_SUBJECT, "KaribuEHR clinic application — $facility")
+                        putExtra(Intent.EXTRA_TEXT, body)
+                    }
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        sent = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                kind = KlBtnKind.Deep,
+                enabled = canSubmit,
+            )
         } else {
             Column(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(Modifier.size(46.dp).clip(RoundedCornerShape(999.dp)).background(GreenSoft), contentAlignment = Alignment.Center) {
@@ -420,7 +542,7 @@ private fun PoweredByKaribuEhr() {
                 Spacer(Modifier.height(10.dp))
                 Text("Application sent", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.5f.sp)
                 Spacer(Modifier.height(4.dp))
-                Text("We'll be in touch within two working days.", color = kl.body, fontSize = 12.5f.sp,
+                Text("We'll reply within two working days.", color = kl.muted, fontSize = 12.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }

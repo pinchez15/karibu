@@ -1,0 +1,3333 @@
+{
+  "id": "child-health-imnci-l3",
+  "title": "Child Health and IMNCI Reasoning — Level 3 · Challenge",
+  "cases": [
+    {
+      "id": "child-cough-fast-breathing-001-L3",
+      "ready": true,
+      "title": "Child with cough and fast breathing",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child patient",
+        "id": "PT-0013",
+        "age": "2 years",
+        "sex": "Female"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "For children with cough, respiratory rate and danger signs drive classification.",
+        "A learner should ask age because fast-breathing thresholds are age-dependent."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "For children with cough, respiratory rate and danger signs drive classification.",
+        "A learner should ask age because fast-breathing thresholds are age-dependent."
+      ],
+      "citations": [
+        "IMNCI cough and difficult breathing"
+      ],
+      "share": {
+        "share_title": "Child with cough and fast breathing",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-cough-fast-breathing-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.5,
+        "clinical_correctness_score": 0.89,
+        "hc3_reality_score": 0.9,
+        "learning_value_score": 0.86,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-cough-fast-breathing-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cough and fever",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Cough and fever.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Cough and fever",
+                "danger_signs": [
+                  "Unable to drink",
+                  "Convulsions",
+                  "Lethargic or unconscious",
+                  "Chest indrawing",
+                  "Stridor at rest"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "118 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "48/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "SPO2",
+                    "value": "Not available",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.2 C",
+                    "hot": true
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible pneumonia classification requiring guideline-based management",
+                "emphasis": "Possible pneumonia classification requiring guideline-based management"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Malaria with cough",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess general danger signs.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess general danger signs.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible pneumonia classification requiring guideline-based management",
+                "emphasis": "Possible pneumonia classification requiring guideline-based management"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria with cough",
+                "correct": false
+              },
+              {
+                "text": "Count respiratory rate and assess chest indrawing.",
+                "correct": true
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Viral upper respiratory infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Count respiratory rate and assess chest indrawing.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible pneumonia classification requiring guideline-based management",
+                "emphasis": "Possible pneumonia classification requiring guideline-based management"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Classify using IMNCI approach and manage or refer according to severity.",
+                "correct": true
+              },
+              {
+                "text": "Count respiratory rate and assess chest indrawing.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify using IMNCI approach and manage or refer according to severity.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible pneumonia classification requiring guideline-based management",
+                "emphasis": "General danger signs, chest indrawing, stridor at rest, severe respiratory distress, or inability to drink require referral."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "For children with cough, respiratory rate and danger signs drive classification. A learner should ask age because fast-breathing thresholds are age-dependent.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-diarrhoea-dehydration-001-L3",
+      "ready": true,
+      "title": "Child with diarrhoea and dehydration assessment",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 7,
+      "credit": 0.15,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child patient",
+        "id": "PT-0013",
+        "age": "18 months",
+        "sex": "Male"
+      },
+      "blurb": "It is a busy morning at a rural HC III.",
+      "objectives": [
+        "The correct task is dehydration classification before treatment selection.",
+        "ORS and zinc counseling is part of practical HC III care."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "The correct task is dehydration classification before treatment selection.",
+        "ORS and zinc counseling is part of practical HC III care."
+      ],
+      "citations": [
+        "IMNCI diarrhoea dehydration classification"
+      ],
+      "share": {
+        "share_title": "Child with diarrhoea and dehydration assessment",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-diarrhoea-dehydration-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.46,
+        "clinical_correctness_score": 0.88,
+        "hc3_reality_score": 0.91,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-diarrhoea-dehydration-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Watery diarrhoea",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child patient",
+            "body": "It is a busy morning at a rural HC III.",
+            "quote": "“Watery diarrhoea.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Watery diarrhoea",
+                "danger_signs": [
+                  "Lethargic or unconscious",
+                  "Unable to drink",
+                  "Severe dehydration",
+                  "Blood in stool"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "126 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.8 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "10 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diarrhoea with dehydration requiring classification and rehydration plan",
+                "emphasis": "Diarrhoea with some dehydration."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Dysentery if blood present",
+                "correct": false
+              },
+              {
+                "text": "Sepsis if danger signs present",
+                "correct": false
+              },
+              {
+                "text": "Assess dehydration signs systematically.",
+                "correct": true
+              },
+              {
+                "text": "Do not prescribe only medicine without dehydration classification.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess dehydration signs systematically.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diarrhoea with dehydration requiring classification and rehydration plan",
+                "emphasis": "Diarrhoea with some dehydration."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not send home before the 4-hour Plan B reassessment.",
+                "correct": false
+              },
+              {
+                "text": "Do not prescribe only medicine without dehydration classification.",
+                "correct": false
+              },
+              {
+                "text": "Dysentery if blood present",
+                "correct": false
+              },
+              {
+                "text": "Classify as some dehydration.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify as some dehydration.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Diarrhoea with dehydration requiring classification and rehydration plan",
+                "emphasis": "Diarrhoea with some dehydration."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not send home before the 4-hour Plan B reassessment.",
+                "correct": false
+              },
+              {
+                "text": "Do not prescribe only medicine without dehydration classification.",
+                "correct": false
+              },
+              {
+                "text": "Dysentery if blood present",
+                "correct": false
+              },
+              {
+                "text": "Give ORS Plan B: 750 ml over 4 hours for this 10 kg child.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Give ORS Plan B: 750 ml over 4 hours for this 10 kg child.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Diarrhoea with some dehydration.",
+                "emphasis": "Severe dehydration, lethargy/unconsciousness, inability to drink, or shock require urgent referral or higher-level management."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "The correct task is dehydration classification before treatment selection. ORS and zinc counseling is part of practical HC III care.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "malnutrition-oedema-child-001-L3",
+      "ready": true,
+      "title": "Child with swollen feet",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A caregiver brings a quiet 3-year-old whose feet have become swollen.",
+      "objectives": [
+        "Recognize bilateral oedema as high-risk malnutrition sign.",
+        "Assess danger signs and refer/manage according to nutrition protocol availability."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Recognize bilateral oedema as high-risk malnutrition sign.",
+        "Assess danger signs and refer/manage according to nutrition protocol availability."
+      ],
+      "citations": [
+        "Child malnutrition danger signs"
+      ],
+      "share": {
+        "share_title": "Child with swollen feet",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/malnutrition-oedema-child-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.88,
+        "learning_value_score": 0.86,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "malnutrition-oedema-child-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Swollen feet and poor appetite",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A caregiver brings a quiet 3-year-old whose feet have become swollen.",
+            "quote": "“Swollen feet and poor appetite.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Swollen feet and poor appetite",
+                "danger_signs": [
+                  "Bilateral oedema",
+                  "Lethargy",
+                  "Poor appetite",
+                  "Severe wasting"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "112 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "28/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "37.3 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "10.5 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible severe acute malnutrition",
+                "emphasis": "Possible severe acute malnutrition"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible severe acute malnutrition",
+                "emphasis": "Possible severe acute malnutrition"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible severe acute malnutrition",
+                "emphasis": "Possible severe acute malnutrition"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible severe acute malnutrition",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Recognize bilateral oedema as high-risk malnutrition sign. Assess danger signs and refer/manage according to nutrition protocol availability.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "measles-suspected-rash-fever-001-L3",
+      "ready": true,
+      "title": "Fever with rash in an unimmunized child",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A child is brought during a busy immunization day with fever, cough, red eyes, and a spreading rash.",
+      "objectives": [
+        "Recognize possible measles and infection prevention implications.",
+        "Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Recognize possible measles and infection prevention implications.",
+        "Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe."
+      ],
+      "citations": [
+        "Fever with rash and immunization assessment"
+      ],
+      "share": {
+        "share_title": "Fever with rash in an unimmunized child",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/measles-suspected-rash-fever-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.6,
+        "clinical_correctness_score": 0.8,
+        "hc3_reality_score": 0.86,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "uganda-clinical-guidelines-2023",
+          "who-imnci-chart-booklet"
+        ],
+        "review_status": "needs_review",
+        "case_version": "measles-suspected-rash-fever-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever and rash",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A child is brought during a busy immunization day with fever, cough, red eyes, and a spreading rash.",
+            "quote": "“Fever and rash.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever and rash",
+                "danger_signs": [
+                  "Respiratory distress",
+                  "Dehydration",
+                  "Altered mental status",
+                  "Severe eye involvement"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "120 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "30/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.7 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "14 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected measles or other febrile rash illness",
+                "emphasis": "Suspected measles or other febrile rash illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected measles or other febrile rash illness",
+                "emphasis": "Suspected measles or other febrile rash illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Suspected measles or other febrile rash illness",
+                "emphasis": "Suspected measles or other febrile rash illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Suspected measles or other febrile rash illness",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Recognize possible measles and infection prevention implications. Assess complications, notify/escalate according to local surveillance and manage supportively/referral if severe.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-ear-pain-fever-001-L3",
+      "ready": true,
+      "title": "Child with ear pain and fever",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A caregiver brings a crying child who keeps pulling at one ear.",
+      "objectives": [
+        "Check danger signs before focusing on ear symptoms.",
+        "Counsel caregiver on follow-up and worsening signs."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Check danger signs before focusing on ear symptoms.",
+        "Counsel caregiver on follow-up and worsening signs."
+      ],
+      "citations": [
+        "Child with ear pain and fever"
+      ],
+      "share": {
+        "share_title": "Child with ear pain and fever",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-ear-pain-fever-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-ear-pain-fever-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Ear pain and fever",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A caregiver brings a crying child who keeps pulling at one ear.",
+            "quote": "“Ear pain and fever.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Ear pain and fever",
+                "danger_signs": [
+                  "Mastoid swelling",
+                  "Lethargy",
+                  "Unable to drink"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute ear problem requiring assessment",
+                "emphasis": "Acute ear problem requiring assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute ear problem requiring assessment",
+                "emphasis": "Acute ear problem requiring assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Acute ear problem requiring assessment",
+                "emphasis": "Acute ear problem requiring assessment"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Acute ear problem requiring assessment",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Check danger signs before focusing on ear symptoms. Counsel caregiver on follow-up and worsening signs.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-fever-convulsion-001-L3",
+      "ready": true,
+      "title": "Child after a convulsion",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A mother arrives frightened after her child convulsed at home during a fever.",
+      "objectives": [
+        "Post-convulsion assessment must look for serious causes.",
+        "Convulsion is a danger sign requiring careful escalation decisions."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Post-convulsion assessment must look for serious causes.",
+        "Convulsion is a danger sign requiring careful escalation decisions."
+      ],
+      "citations": [
+        "Child after a convulsion"
+      ],
+      "share": {
+        "share_title": "Child after a convulsion",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-fever-convulsion-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-fever-convulsion-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Fever with convulsion",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A mother arrives frightened after her child convulsed at home during a fever.",
+            "quote": "“Fever with convulsion.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Fever with convulsion",
+                "danger_signs": [
+                  "Repeated convulsions",
+                  "Unconsciousness",
+                  "Neck stiffness"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile convulsion vs serious illness",
+                "emphasis": "Febrile convulsion vs serious illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile convulsion vs serious illness",
+                "emphasis": "Febrile convulsion vs serious illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Febrile convulsion vs serious illness",
+                "emphasis": "Febrile convulsion vs serious illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Febrile convulsion vs serious illness",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Post-convulsion assessment must look for serious causes. Convulsion is a danger sign requiring careful escalation decisions.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-very-low-weight-001-L3",
+      "ready": true,
+      "title": "Small child not gaining weight",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A grandmother asks for vitamins for a child who is smaller than neighbours of the same age and often has diarrhoea.",
+      "objectives": [
+        "Growth concerns need structured nutrition and illness assessment.",
+        "Look for oedema and danger signs."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Growth concerns need structured nutrition and illness assessment.",
+        "Look for oedema and danger signs."
+      ],
+      "citations": [
+        "Small child not gaining weight"
+      ],
+      "share": {
+        "share_title": "Small child not gaining weight",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-very-low-weight-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-very-low-weight-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Poor growth",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A grandmother asks for vitamins for a child who is smaller than neighbours of the same age and often has diarrhoea.",
+            "quote": "“Poor growth.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Poor growth",
+                "danger_signs": [
+                  "Bilateral oedema",
+                  "Poor appetite",
+                  "Lethargy"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible undernutrition or chronic illness",
+                "emphasis": "Possible undernutrition or chronic illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible undernutrition or chronic illness",
+                "emphasis": "Possible undernutrition or chronic illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible undernutrition or chronic illness",
+                "emphasis": "Possible undernutrition or chronic illness"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible undernutrition or chronic illness",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Growth concerns need structured nutrition and illness assessment. Look for oedema and danger signs.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-eye-discharge-newborn-001-L3",
+      "ready": true,
+      "title": "Newborn with eye discharge",
+      "topic": "Neonatal",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated neonate",
+        "id": "PT-0013",
+        "age": "6 days old, 3.1 kg",
+        "sex": null
+      },
+      "blurb": "A two-week-old baby has swollen eyelids and discharge.",
+      "objectives": [
+        "Young infant problems can worsen quickly.",
+        "Assess feeding, fever, and systemic danger signs."
+      ],
+      "skills": [
+        "Neonatal",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Young infant problems can worsen quickly.",
+        "Assess feeding, fever, and systemic danger signs."
+      ],
+      "citations": [
+        "Newborn with eye discharge"
+      ],
+      "share": {
+        "share_title": "Newborn with eye discharge",
+        "share_prompt": "What would you do first for this neonatal presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-eye-discharge-newborn-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-eye-discharge-newborn-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Newborn eye discharge",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated neonate",
+            "body": "A two-week-old baby has swollen eyelids and discharge.",
+            "quote": "“Newborn eye discharge.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Newborn eye discharge",
+                "danger_signs": [
+                  "Poor feeding",
+                  "Fever",
+                  "Swollen eyelids"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "158 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "56/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "35.8 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "3.1 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal eye infection",
+                "emphasis": "Possible neonatal eye infection"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal eye infection",
+                "emphasis": "Possible neonatal eye infection"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Possible neonatal eye infection",
+                "emphasis": "Possible neonatal eye infection"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Possible neonatal eye infection",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Young infant problems can worsen quickly. Assess feeding, fever, and systemic danger signs.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-immunization-missed-001-L3",
+      "ready": true,
+      "title": "Missed immunization opportunity",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A child comes for cough, and the card shows missed vaccines.",
+      "objectives": [
+        "Use sick visits to check immunization status.",
+        "Balance acute care with prevention counseling."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Use sick visits to check immunization status.",
+        "Balance acute care with prevention counseling."
+      ],
+      "citations": [
+        "Missed immunization opportunity"
+      ],
+      "share": {
+        "share_title": "Missed immunization opportunity",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-immunization-missed-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-immunization-missed-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Cough with missed immunizations",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A child comes for cough, and the card shows missed vaccines.",
+            "quote": "“Cough with missed immunizations.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Cough with missed immunizations",
+                "danger_signs": [
+                  "Severe illness",
+                  "Respiratory distress",
+                  "Contraindication concern"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Missed preventive care opportunity",
+                "emphasis": "Missed preventive care opportunity"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Malaria",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Missed preventive care opportunity",
+                "emphasis": "Missed preventive care opportunity"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Missed preventive care opportunity",
+                "emphasis": "Missed preventive care opportunity"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Missed preventive care opportunity",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Use sick visits to check immunization status. Balance acute care with prevention counseling.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-abdominal-pain-worms-001-L3",
+      "ready": true,
+      "title": "Child with abdominal pain and poor appetite",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A school-age child complains of abdominal pain and poor appetite.",
+      "objectives": [
+        "Do not skip danger-sign assessment in common complaints.",
+        "Use age-appropriate prevention and follow-up counseling."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Do not skip danger-sign assessment in common complaints.",
+        "Use age-appropriate prevention and follow-up counseling."
+      ],
+      "citations": [
+        "Child with abdominal pain and poor appetite"
+      ],
+      "share": {
+        "share_title": "Child with abdominal pain and poor appetite",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-abdominal-pain-worms-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-abdominal-pain-worms-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Abdominal pain and poor appetite",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A school-age child complains of abdominal pain and poor appetite.",
+            "quote": "“Abdominal pain and poor appetite.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Abdominal pain and poor appetite",
+                "danger_signs": [
+                  "Severe pain",
+                  "Vomiting everything",
+                  "Bloody stool"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              },
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Common child abdominal complaint needing danger-sign screen",
+                "emphasis": "Common child abdominal complaint needing danger-sign screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Common child abdominal complaint needing danger-sign screen",
+                "emphasis": "Common child abdominal complaint needing danger-sign screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Malaria",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Common child abdominal complaint needing danger-sign screen",
+                "emphasis": "Common child abdominal complaint needing danger-sign screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Common child abdominal complaint needing danger-sign screen",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Do not skip danger-sign assessment in common complaints. Use age-appropriate prevention and follow-up counseling.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "child-skin-infection-001-L3",
+      "ready": true,
+      "title": "Child with spreading skin sores",
+      "topic": "Child Health",
+      "difficulty": "Advanced",
+      "source_type": "Guideline Practice",
+      "mode": "Challenge Cases",
+      "level": 3,
+      "mins": 10,
+      "credit": 0.21,
+      "setting": "HC III · OPD",
+      "patient": {
+        "name": "Simulated child",
+        "id": "PT-0013",
+        "age": "24 months, 11 kg",
+        "sex": null
+      },
+      "blurb": "A child has several crusted sores on the legs and now one area is warm and swollen.",
+      "objectives": [
+        "Assess extent and systemic symptoms.",
+        "Explain hygiene and return precautions."
+      ],
+      "skills": [
+        "Child Health",
+        "HC III workflow",
+        "Guideline application"
+      ],
+      "takeaways": [
+        "Assess extent and systemic symptoms.",
+        "Explain hygiene and return precautions."
+      ],
+      "citations": [
+        "Child with spreading skin sores"
+      ],
+      "share": {
+        "share_title": "Child with spreading skin sores",
+        "share_prompt": "What would you do first for this child health presentation?",
+        "share_summary": "A short HC III clinical reasoning challenge for Karibu Learn.",
+        "share_url": "https://learn.karibu.health/c/child-skin-infection-001-L3",
+        "discussion_question": "Which finding most changes your next step?"
+      },
+      "meta": {
+        "complexity_score": 0.58,
+        "clinical_correctness_score": 0.84,
+        "hc3_reality_score": 0.84,
+        "learning_value_score": 0.84,
+        "source_guideline_ids": [
+          "who-imnci-chart-booklet",
+          "uganda-clinical-guidelines-2023"
+        ],
+        "review_status": "needs_review",
+        "case_version": "child-skin-infection-001-L3"
+      },
+      "steps": [
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "TRIAGE",
+            "sections": [
+              {
+                "type": "chiefComplaint",
+                "title": "Chief complaint",
+                "text": "Spreading skin sores",
+                "chips": [
+                  "Walk-in",
+                  "HC III"
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "The visit begins",
+            "title": "Simulated child",
+            "body": "A child has several crusted sores on the legs and now one area is warm and swollen.",
+            "quote": "“Spreading skin sores.”",
+            "teach": {
+              "label": "Clinical framing",
+              "text": "Start with danger-sign screening."
+            }
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "VITALS",
+            "sections": [
+              {
+                "type": "vitals",
+                "title": "Vitals & first look",
+                "text": "Spreading skin sores",
+                "danger_signs": [
+                  "Fever",
+                  "Rapid spread",
+                  "Severe pain"
+                ],
+                "reveal_note": "Check each danger sign explicitly.",
+                "vitals": [
+                  {
+                    "label": "PULS",
+                    "value": "132 bpm",
+                    "hot": false
+                  },
+                  {
+                    "label": "RESP",
+                    "value": "42/min",
+                    "hot": false
+                  },
+                  {
+                    "label": "TEMP",
+                    "value": "38.4 C",
+                    "hot": true
+                  },
+                  {
+                    "label": "WEIG",
+                    "value": "11 kg",
+                    "hot": false
+                  }
+                ]
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · triage",
+            "title": "What is your first priority?",
+            "body": "Before tests or treatment, decide whether this patient is safe for outpatient care."
+          },
+          "question": {
+            "prompt": "What should you do first?",
+            "options": [
+              {
+                "text": "Send home with paracetamol and review next week.",
+                "correct": false
+              },
+              {
+                "text": "Order every available test before taking a history.",
+                "correct": false
+              },
+              {
+                "text": "Start treatment immediately without further assessment.",
+                "correct": false
+              },
+              {
+                "text": "Screen for danger signs before deciding outpatient care or referral.",
+                "correct": true
+              }
+            ],
+            "right": "Danger signs decide the setting of care — screen before you treat or refer.",
+            "wrong": "Start with danger-sign screening. Treatment or discharge without it risks missing urgent referral."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "HISTORY",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Skin infection with complication screen",
+                "emphasis": "Skin infection with complication screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 1",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": true
+              },
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Assess danger signs and immediate stability.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "ORDERS",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Skin infection with complication screen",
+                "emphasis": "Skin infection with complication screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 2",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Pneumonia",
+                "correct": false
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Classify the presentation using the case action bundle before treatment.",
+                "correct": true
+              }
+            ],
+            "right": "Correct: Classify the presentation using the case action bundle before treatment.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "decision",
+          "chart": {
+            "tag": "PLAN",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Working assessment",
+                "text": "Skin infection with complication screen",
+                "emphasis": "Skin infection with complication screen"
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Decision · step 3",
+            "title": "Choose the safest next action",
+            "body": "Use Uganda guideline logic for HC III — test, treat, refer, or counsel as appropriate."
+          },
+          "question": {
+            "prompt": "What is the best next step?",
+            "options": [
+              {
+                "text": "Assess danger signs and immediate stability.",
+                "correct": false
+              },
+              {
+                "text": "Sepsis or severe bacterial infection",
+                "correct": false
+              },
+              {
+                "text": "Document clearly and refer/escalate when threshold is met.",
+                "correct": true
+              },
+              {
+                "text": "Do not treat this as a routine case until danger signs and referral threshold are checked.",
+                "correct": false
+              }
+            ],
+            "right": "Correct: Document clearly and refer/escalate when threshold is met.",
+            "wrong": "Re-read the chart and choose the action that matches guideline-first HC III practice."
+          }
+        },
+        {
+          "kind": "story",
+          "chart": {
+            "tag": "COMPLETE",
+            "sections": [
+              {
+                "type": "assessment",
+                "title": "Visit summary",
+                "text": "Skin infection with complication screen",
+                "emphasis": "Refer or escalate if danger signs, instability, or care needs exceed HC III capacity."
+              }
+            ]
+          },
+          "coach": {
+            "eyebrow": "Case complete",
+            "title": "Key teaching points",
+            "body": "Assess extent and systemic symptoms. Explain hygiene and return precautions.",
+            "teach": {
+              "label": "Clinician review",
+              "text": "Use the corrections box below if any step, dose, or referral threshold needs updating before CPD sign-off."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

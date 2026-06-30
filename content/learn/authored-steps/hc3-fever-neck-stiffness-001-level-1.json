@@ -1,0 +1,284 @@
+{
+  "canonicalCaseId": "hc3-fever-neck-stiffness-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Kintu Moses",
+      "id": "PT-231904",
+      "age": "22M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Identify neck stiffness and photophobia as meningitis danger signs in febrile illness.",
+      "Choose urgent stabilization and referral rather than routine outpatient fever treatment.",
+      "Avoid delays from low-yield tests when clinical red flags are already present."
+    ],
+    "takeaways": [
+      "Neck stiffness plus fever should trigger emergency thinking at HC III.",
+      "Do not delay referral while waiting for routine outpatient investigations.",
+      "Early communication and documented pre-referral care improve safety."
+    ],
+    "blurb": "A young man with fever cannot flex his neck and avoids light. Decide whether this is routine fever or a referral emergency.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "High fever, severe headache, neck pain, and photophobia",
+            "chips": [
+              "Walk-in",
+              "Emergency lane"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Companion report",
+            "text": "Symptoms worsened overnight; he keeps eyes closed because light worsens headache."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Moses appears acutely ill",
+        "body": "He lies still, avoids bright light, and reports severe headache with neck pain. Your first decision is triage urgency.",
+        "quote": "“Please switch off that light; my head is too painful.”",
+        "teach": {
+          "label": "Clinical framing",
+          "text": "Fever with meningeal features should be treated as potentially life-threatening until proven otherwise."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "39.2 C",
+                "hot": true
+              },
+              {
+                "label": "BP",
+                "value": "98/62"
+              },
+              {
+                "label": "HR",
+                "value": "118"
+              },
+              {
+                "label": "RESP",
+                "value": "26"
+              },
+              {
+                "label": "SpO2",
+                "value": "95%"
+              }
+            ],
+            "critical": {
+              "title": "Meningeal red flags",
+              "body": "Fever with neck stiffness and photophobia indicates high-risk CNS infection."
+            }
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Danger-sign screen",
+            "danger_signs": [
+              "Neck stiffness",
+              "Photophobia",
+              "Severe headache",
+              "Possible altered sensorium"
+            ],
+            "reveal_note": "Danger signs are present."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · triage",
+        "title": "What is your priority?",
+        "body": "Pick the action that aligns with these danger signs."
+      },
+      "question": {
+        "prompt": "What is the best immediate plan?",
+        "options": [
+          {
+            "text": "Treat as suspected meningitis/severe febrile illness, stabilize, and arrange urgent referral",
+            "correct": true
+          },
+          {
+            "text": "Manage as outpatient migraine and review after oral analgesics",
+            "correct": false
+          },
+          {
+            "text": "Start oral AL only and reassess tomorrow",
+            "correct": false
+          },
+          {
+            "text": "Wait for full laboratory panel before deciding referral",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Fever 39.2 C with neck stiffness and photophobia is a danger-sign pattern that requires urgent referral-level management per Uganda Clinical Guidelines 2023.",
+        "wrong": "This is not routine headache care. Neck stiffness with high fever and photophobia must be escalated urgently; delaying referral can lead to rapid deterioration."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "investigations",
+            "title": "Immediate orders",
+            "orders": [
+              {
+                "name": "Random blood glucose",
+                "status": "resulted",
+                "sub": "4.9 mmol/L"
+              },
+              {
+                "name": "Malaria RDT",
+                "status": "resulted",
+                "sub": "Negative"
+              }
+            ]
+          },
+          {
+            "type": "prescription",
+            "title": "Pre-referral medication",
+            "drug": "Suspected meningitis pre-referral treatment",
+            "detail": "Select timely emergency intervention"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · pre-referral care",
+        "title": "What should happen before transport?",
+        "body": "You have enough evidence to act now."
+      },
+      "question": {
+        "prompt": "Which action is most appropriate now?",
+        "options": [
+          {
+            "text": "Give pre-referral empiric treatment per protocol and transfer urgently while monitoring airway and vitals",
+            "correct": true
+          },
+          {
+            "text": "Delay all treatment until lumbar puncture is done at HC III",
+            "correct": false
+          },
+          {
+            "text": "Because malaria RDT is negative, discharge with analgesics only",
+            "correct": false
+          },
+          {
+            "text": "Observe for 12 hours to see if fever settles before referral",
+            "correct": false
+          }
+        ],
+        "right": "Correct. A negative malaria RDT does not remove meningitis risk. Uganda Clinical Guidelines 2023 support urgent referral with prompt pre-referral treatment for suspected severe CNS infection.",
+        "wrong": "Waiting for additional outpatient procedures is unsafe in this pattern. Moses already has high-risk signs that require immediate escalation."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "REFERRAL",
+        "sections": [
+          {
+            "type": "keyValues",
+            "title": "Referral note essentials",
+            "rows": [
+              {
+                "label": "Red flags",
+                "value": "Neck stiffness, photophobia, fever 39.2 C"
+              },
+              {
+                "label": "Interventions",
+                "value": "Pre-referral treatment + monitoring initiated"
+              },
+              {
+                "label": "Destination",
+                "value": "District hospital emergency unit"
+              }
+            ]
+          },
+          {
+            "type": "diagnosis",
+            "title": "Working diagnosis",
+            "codes": [
+              {
+                "code": "Suspected meningitis / severe febrile illness",
+                "name": "Urgent referral",
+                "primary": true
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · communication",
+        "title": "How do you complete the transfer safely?",
+        "body": "Pick the handover approach that helps receiving clinicians act quickly."
+      },
+      "question": {
+        "prompt": "What is the best handover action?",
+        "options": [
+          {
+            "text": "Call ahead and send a written note with vitals, red flags, and pre-referral care given",
+            "correct": true
+          },
+          {
+            "text": "Send patient without documentation to avoid delaying departure",
+            "correct": false
+          },
+          {
+            "text": "Record only final diagnosis and omit unstable observations",
+            "correct": false
+          },
+          {
+            "text": "Keep patient until every possible cause is ruled out at HC III",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Fast transfer plus high-quality handover shortens time to definitive care and reduces repeated assessment delays.",
+        "wrong": "Poor referral communication can waste critical minutes. This case needs immediate, documented escalation."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You identified meningitis danger signs and prioritized emergency referral care.",
+            "emphasis": "Routine outpatient fever pathways were unsafe for this presentation."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Moses had classic meningeal warning features on arrival: neck stiffness, photophobia, severe headache, and high fever. Uganda Clinical Guidelines 2023 support urgent stabilization, pre-referral treatment, and immediate transfer instead of watchful outpatient management.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "When neurologic danger signs are present, avoid anchoring on common fever diagnoses and escalate early."
+        }
+      }
+    }
+  ]
+}

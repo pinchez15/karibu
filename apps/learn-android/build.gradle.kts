@@ -17,6 +17,10 @@ val localProperties = Properties().apply {
     }
 }
 
+// Publishable keys — safe in the APK; override via local.properties for other envs.
+val defaultLearnSupabaseUrl = "https://zvandlyuhhovvqovutyq.supabase.co"
+val defaultLearnSupabaseAnonKey = "sb_publishable_1gpXnZYLcaaNfdKXAp9zeg_IezZ6QGc"
+
 fun localProperty(name: String, defaultValue: String = ""): String {
     return localProperties.getProperty(name)?.trim()?.removeSurrounding("\"") ?: defaultValue
 }
@@ -29,13 +33,21 @@ android {
         applicationId = "com.karibuhealth.learn"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 3
+        versionName = "0.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "SUPABASE_URL", "\"${localProperty("LEARN_SUPABASE_URL", localProperty("SUPABASE_URL"))}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperty("LEARN_SUPABASE_ANON_KEY", localProperty("SUPABASE_ANON_KEY"))}\"")
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${localProperty("LEARN_SUPABASE_URL", localProperty("SUPABASE_URL", defaultLearnSupabaseUrl))}\"",
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_ANON_KEY",
+            "\"${localProperty("LEARN_SUPABASE_ANON_KEY", localProperty("SUPABASE_ANON_KEY", defaultLearnSupabaseAnonKey))}\"",
+        )
     }
 
     buildTypes {
@@ -67,6 +79,12 @@ android {
     }
 }
 
+firebaseAppDistribution {
+    // From google-services.json → client[0].client_info.mobilesdk_app_id
+    appId = "1:435967101910:android:e3719650542a19d2b33277"
+    releaseNotes = "Karibu Learn test build"
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -86,6 +104,13 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    val supabaseBom = "3.1.4"
+    val ktorVersion = "3.0.3"
+    implementation(platform("io.github.jan-tennert.supabase:bom:$supabaseBom"))
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)

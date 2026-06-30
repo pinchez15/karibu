@@ -1,0 +1,199 @@
+{
+  "canonicalCaseId": "hc3-child-immunization-missed-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Ouma Denis",
+      "id": "PT-CH-240309",
+      "age": "15M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Use sick-child visits to identify missed immunization opportunities.",
+      "Distinguish true contraindications from mild illness that still allows vaccination.",
+      "Plan catch-up immunization with clear caregiver communication."
+    ],
+    "takeaways": [
+      "Mild cough/coryza without severe illness is usually not a contraindication to vaccination.",
+      "Checking the child health card during every visit prevents missed opportunities.",
+      "Catch-up schedules should be practical, documented, and explained in plain language."
+    ],
+    "blurb": "A child presents with mild cough, but the immunization card shows missed vaccines.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Mild cough for 3 days",
+            "chips": [
+              "Sick-child visit",
+              "Prevention opportunity"
+            ]
+          },
+          {
+            "type": "keyValues",
+            "title": "Card review",
+            "rows": [
+              {
+                "label": "Age",
+                "value": "15 months"
+              },
+              {
+                "label": "Missed doses",
+                "value": "Measles and booster not yet given"
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Denis came for cough, but card tells a bigger story",
+        "body": "The clinical task includes both acute care and prevention."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Current status",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.6 C"
+              },
+              {
+                "label": "HR",
+                "value": "116"
+              },
+              {
+                "label": "RESP",
+                "value": "30/min"
+              },
+              {
+                "label": "SpO2",
+                "value": "98%"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Contraindication check",
+            "danger_signs": [
+              "Severe acute illness",
+              "Anaphylaxis history to vaccine component",
+              "Current severe respiratory distress"
+            ],
+            "reveal_note": "No severe illness signs identified."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · eligibility",
+        "title": "Should immunization be deferred?",
+        "body": "Use true contraindications, not fear-based assumptions."
+      },
+      "question": {
+        "prompt": "What is the best decision now?",
+        "options": [
+          {
+            "text": "Proceed with catch-up vaccination if eligible while managing mild cough",
+            "correct": true
+          },
+          {
+            "text": "Defer all vaccines until child has zero cough symptoms for a month",
+            "correct": false
+          },
+          {
+            "text": "Ignore immunization card during sick-child visits",
+            "correct": false
+          },
+          {
+            "text": "Start antibiotics first, then decide about vaccines next year",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Mild illness without danger signs is not usually a reason to miss scheduled catch-up vaccination.",
+        "wrong": "Automatic deferral creates missed opportunities and prolongs vulnerability to vaccine-preventable disease."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Visit plan",
+            "drug": "Integrated acute + preventive care",
+            "detail": "Treat mild cough supportively and give due immunizations per schedule"
+          },
+          {
+            "type": "assessment",
+            "title": "Counseling points",
+            "text": "Discuss expected post-vaccine reactions and next appointment date."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · counseling",
+        "title": "What should you tell the caregiver?",
+        "body": "Select clear and practical advice."
+      },
+      "question": {
+        "prompt": "Best caregiver communication?",
+        "options": [
+          {
+            "text": "Explain why vaccines are still safe today, document next doses, and give return advice",
+            "correct": true
+          },
+          {
+            "text": "Tell caregiver vaccination is optional since child is older now",
+            "correct": false
+          },
+          {
+            "text": "Give vaccines but avoid discussing possible minor side effects",
+            "correct": false
+          },
+          {
+            "text": "Focus only on cough and omit immunization documentation",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Confidence and clarity improve adherence to catch-up schedules and reduce future missed opportunities.",
+        "wrong": "Incomplete counseling and poor documentation lead to repeated gaps in immunization coverage."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You addressed mild acute illness and closed a missed immunization gap in the same visit.",
+            "emphasis": "Every child visit is also a prevention checkpoint."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "HC III sick-child care should routinely include card review and catch-up action when no contraindication exists. This prevents avoidable outbreaks and delayed protection."
+      }
+    }
+  ]
+}

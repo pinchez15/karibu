@@ -1,0 +1,289 @@
+{
+  "canonicalCaseId": "hc3-fever-sickle-cell-child-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Auma Brian",
+      "id": "PT-240044",
+      "age": "4M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Treat fever in a child with sickle cell disease as a high-risk emergency presentation.",
+      "Recognize danger signs such as lethargy, severe pallor, and hypoxia early.",
+      "Start immediate stabilization and urgent referral rather than delayed outpatient observation."
+    ],
+    "takeaways": [
+      "A 4-year-old with SCD and fever is never routine triage.",
+      "Lethargy, pallor, SpO2 93%, and tachycardia require urgent escalation.",
+      "Early referral and clear caregiver counseling reduce delays to definitive care."
+    ],
+    "blurb": "A caregiver brings a 4-year-old with sickle cell disease, fever, and lethargy. Decide how quickly to escalate and what to do before transfer.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Known sickle cell child with fever and reduced activity since morning",
+            "chips": [
+              "Pediatric emergency",
+              "SCD"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver report",
+            "text": "Child is unusually sleepy, drinking poorly, and breathing faster than usual."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Brian is high risk on arrival",
+        "body": "His caregiver asks if they can wait at home until tomorrow morning. Your first decision is urgency.",
+        "quote": "“He is very weak today and not playing at all.”",
+        "teach": {
+          "label": "Clinical framing",
+          "text": "Fever in sickle cell disease can deteriorate quickly from sepsis, severe anemia, or acute chest complications."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Pediatric vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.9 C",
+                "hot": true
+              },
+              {
+                "label": "HR",
+                "value": "148"
+              },
+              {
+                "label": "RESP",
+                "value": "34"
+              },
+              {
+                "label": "SpO2",
+                "value": "93%"
+              },
+              {
+                "label": "WT",
+                "value": "14.2 kg"
+              }
+            ],
+            "critical": {
+              "title": "High-risk SCD fever",
+              "body": "Lethargy + pallor + borderline hypoxia require urgent escalation."
+            }
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Danger signs",
+            "danger_signs": [
+              "Lethargy",
+              "Marked pallor",
+              "Poor oral intake",
+              "Fast breathing"
+            ],
+            "reveal_note": "Multiple pediatric red flags present."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · triage",
+        "title": "What is your immediate priority?",
+        "body": "Do not treat this as routine uncomplicated fever."
+      },
+      "question": {
+        "prompt": "Which action is best now?",
+        "options": [
+          {
+            "text": "Classify as high-risk febrile SCD emergency, begin stabilization, and arrange urgent referral",
+            "correct": true
+          },
+          {
+            "text": "Send home with oral antimalarials and return review tomorrow",
+            "correct": false
+          },
+          {
+            "text": "Wait for child to become fully alert before deciding referral",
+            "correct": false
+          },
+          {
+            "text": "Treat only fever with paracetamol because oxygen is above 90%",
+            "correct": false
+          }
+        ],
+        "right": "Correct. In a 4-year-old with SCD, lethargy, severe pallor, HR 148, RR 34, and SpO2 93% indicate high-risk illness requiring immediate escalation per Uganda Clinical Guidelines 2023.",
+        "wrong": "These vitals and exam findings are not low risk. Delayed outpatient care can miss rapid decompensation in SCD children."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "investigations",
+            "title": "Immediate checks",
+            "orders": [
+              {
+                "name": "Random blood glucose",
+                "status": "resulted",
+                "sub": "4.4 mmol/L"
+              },
+              {
+                "name": "Malaria RDT",
+                "status": "pending",
+                "sub": "Sample sent, referral should not wait"
+              },
+              {
+                "name": "Hemoglobin (if available)",
+                "status": "pending",
+                "sub": "Sample sent"
+              }
+            ]
+          },
+          {
+            "type": "prescription",
+            "title": "Pre-referral treatment",
+            "drug": "Emergency pediatric SCD fever bundle",
+            "detail": "Choose immediate interventions before transfer"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · immediate care",
+        "title": "How should you treat before transfer?",
+        "body": "Transport is being arranged and the child is still lethargic."
+      },
+      "question": {
+        "prompt": "Which pre-referral plan is most appropriate?",
+        "options": [
+          {
+            "text": "Give oxygen support if needed, start empiric parenteral antibiotics per protocol, treat fever, and transfer urgently",
+            "correct": true
+          },
+          {
+            "text": "Delay treatment until malaria RDT and Hb both return",
+            "correct": false
+          },
+          {
+            "text": "Give oral AL only and reassess in OPD after 6 hours",
+            "correct": false
+          },
+          {
+            "text": "Provide oral fluids only because BP is not recorded low",
+            "correct": false
+          }
+        ],
+        "right": "Correct. In high-risk febrile SCD children, urgent stabilization and empiric severe-infection coverage should not wait for full test completion.",
+        "wrong": "This child has lethargy and respiratory compromise signs now. Waiting for complete labs before treatment increases risk."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "REFERRAL",
+        "sections": [
+          {
+            "type": "keyValues",
+            "title": "Referral communication",
+            "rows": [
+              {
+                "label": "Risk context",
+                "value": "Known SCD, fever 38.9 C, lethargy, pallor, SpO2 93%"
+              },
+              {
+                "label": "Interventions given",
+                "value": "Pre-referral emergency care started"
+              },
+              {
+                "label": "Caregiver counseling",
+                "value": "Explained urgent need and danger signs in transit"
+              }
+            ]
+          },
+          {
+            "type": "diagnosis",
+            "title": "Working diagnosis",
+            "codes": [
+              {
+                "code": "High-risk febrile illness in child with SCD",
+                "name": "Urgent pediatric referral",
+                "primary": true
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · caregiver communication",
+        "title": "Caregiver asks to wait until morning",
+        "body": "Choose the response that best supports urgent transfer."
+      },
+      "question": {
+        "prompt": "How should you counsel now?",
+        "options": [
+          {
+            "text": "Explain immediate danger based on current lethargy and breathing signs, and proceed with urgent transfer now",
+            "correct": true
+          },
+          {
+            "text": "Agree to wait overnight since antipyretics may be enough",
+            "correct": false
+          },
+          {
+            "text": "Avoid explanation to prevent frightening the caregiver",
+            "correct": false
+          },
+          {
+            "text": "Cancel referral if child briefly opens eyes and drinks a sip",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Counseling should reference today's danger signs so the caregiver understands why same-day transfer is lifesaving.",
+        "wrong": "Temporary improvement does not remove high-risk status in this SCD child. Delaying referral can be dangerous."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You treated this as high-risk pediatric SCD fever and escalated early.",
+            "emphasis": "Early recognition and referral were the critical decisions."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Brian's age, known sickle cell disease, lethargy, pallor, and low oxygen reserve made this an emergency presentation. Uganda Clinical Guidelines 2023 supports rapid stabilization, empiric severe-infection management, and urgent referral rather than delayed outpatient treatment.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "In SCD children with fever, use a lower threshold for escalation and explain urgency clearly to caregivers."
+        }
+      }
+    }
+  ]
+}

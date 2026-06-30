@@ -210,6 +210,7 @@
           },
           "question": {
             "prompt": "How do you proceed?",
+            "ehr_order": "Malaria RDT",
             "options": [
               { "text": "Order a malaria RDT and wait for the result before treating", "correct": true },
               { "text": "Start antimalarials now — it’s almost certainly malaria", "correct": false },

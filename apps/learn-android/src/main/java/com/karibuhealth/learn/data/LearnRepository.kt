@@ -17,6 +17,11 @@ enum class PackStatus { Installed, Available }
 
 data class PackEntry(val info: PackInfo, val status: PackStatus)
 
+data class CatalogStats(
+    val playableCaseCount: Int,
+    val topicCount: Int,
+)
+
 /**
  * Loads KaribuLearn case packs.
  *
@@ -57,6 +62,15 @@ class LearnRepository(
     /** Manifest joined with on-device install state. */
     suspend fun listPacks(): List<PackEntry> = loadManifest().map {
         PackEntry(it, if (isInstalled(it)) PackStatus.Installed else PackStatus.Available)
+    }
+
+    /** Totals from the pack manifest (all bundled + downloadable packs). */
+    suspend fun loadCatalogStats(): CatalogStats = withContext(Dispatchers.IO) {
+        val packs = loadManifest()
+        CatalogStats(
+            playableCaseCount = packs.sumOf { it.caseCount },
+            topicCount = packs.mapNotNull { it.topic?.takeIf(String::isNotBlank) }.distinct().size,
+        )
     }
 
     /** Parse one installed pack's full content. */

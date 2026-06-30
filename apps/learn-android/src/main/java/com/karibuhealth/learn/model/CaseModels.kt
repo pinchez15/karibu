@@ -161,6 +161,11 @@ data class Question(
     val wrong: String = "",
     /** Surface the dose calculator on this decision. */
     val calculator: Boolean = false,
+    /**
+     * When the learner orders this investigation in the EHR chart, the correct
+     * option is auto-selected — no duplicate radio tap required.
+     */
+    @SerialName("ehr_order") val ehrOrder: String? = null,
 )
 
 @Serializable

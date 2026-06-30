@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -49,7 +50,7 @@ import com.karibuhealth.learn.chart.GreenSoft
 import com.karibuhealth.learn.chart.KaribuMark
 import com.karibuhealth.learn.chart.MonoFamily
 
-private data class Answer(val choice: Int, val correct: Boolean)
+private data class Answer(val choice: Int, val correct: Boolean, val fromEhr: Boolean = false)
 
 @Composable
 fun WalkthroughScreen(
@@ -65,6 +66,8 @@ fun WalkthroughScreen(
     var index by remember { mutableIntStateOf(0) }
     val answers = remember { mutableStateMapOf<Int, Answer>() }
     var calcOpen by remember { mutableStateOf(false) }
+    var orderedTests by remember(case.id) { mutableStateOf(setOf<String>()) }
+    var selectedCodes by remember(case.id) { mutableStateOf(setOf<String>()) }
     val scroll = rememberScrollState()
 
     val step = steps[index]
@@ -72,6 +75,20 @@ fun WalkthroughScreen(
     val decisionTotal = steps.count { it.kind == StepKind.decision }
     val answered = answers.containsKey(index)
     val revealed = step.kind == StepKind.story || answered
+    val ehrOrderPending = step.kind == StepKind.decision
+        && !answered
+        && step.question?.ehrOrder != null
+
+    LaunchedEffect(index, orderedTests) {
+        if (answers.containsKey(index)) return@LaunchedEffect
+        val q = steps[index].question ?: return@LaunchedEffect
+        val match = q.ehrOrder ?: return@LaunchedEffect
+        if (!orderedTests.contains(match)) return@LaunchedEffect
+        val correctIdx = q.options.indexOfFirst { it.correct }
+        if (correctIdx >= 0) {
+            answers[index] = Answer(correctIdx, q.options[correctIdx].correct, fromEhr = true)
+        }
+    }
 
     BackHandler { if (index > 0) index-- else onExit() }
 
@@ -110,28 +127,34 @@ fun WalkthroughScreen(
                 step.chart?.let {
                     ChartFragment(
                         spec = it, patient = case.patient, revealed = revealed,
+                        orderedTests = orderedTests,
+                        onOrderTest = { name -> orderedTests = orderedTests + name },
+                        selectedCodes = selectedCodes,
+                        onSelectCode = { code -> selectedCodes = selectedCodes + code },
                         onCalc = if (it.sections.any { s -> s.calculator } && case.doseCalc != null) { { calcOpen = true } } else null,
                     )
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // Coach badge
-                Row(
-                    Modifier.clip(RoundedCornerShape(999.dp)).background(kl.soft).padding(horizontal = 9.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(KlIcons.bulb, null, tint = kl.primary, modifier = Modifier.size(14.dp))
-                    Text("KARIBULEARN COACH", fontFamily = MonoFamily, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.6.sp, color = kl.deep)
+                // Coach — title only on decisions; body only on story beats
+                if (step.kind == StepKind.story) {
+                    Row(
+                        Modifier.clip(RoundedCornerShape(999.dp)).background(kl.soft).padding(horizontal = 9.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(KlIcons.bulb, null, tint = kl.primary, modifier = Modifier.size(14.dp))
+                        Text("COACH", fontFamily = MonoFamily, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.6.sp, color = kl.deep)
+                    }
+                    Spacer(Modifier.height(12.dp))
                 }
-                Spacer(Modifier.height(12.dp))
 
                 Text(step.coach.eyebrow.uppercase(), fontFamily = MonoFamily, fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold, letterSpacing = 0.6.sp, color = kl.primary)
                 Spacer(Modifier.height(6.dp))
                 Text(step.coach.title, color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 19.sp,
                     lineHeight = 23.sp, letterSpacing = (-0.02f).sp)
-                if (step.coach.body.isNotBlank()) {
+                if (step.kind == StepKind.story && step.coach.body.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Text(step.coach.body, color = kl.body, fontSize = 14.sp, lineHeight = 21.sp)
                 }
@@ -177,8 +200,12 @@ fun WalkthroughScreen(
             Box(Modifier.fillMaxWidth().height(1.dp).background(kl.line))
             Box(Modifier.fillMaxWidth().background(kl.surface).padding(horizontal = 16.dp, vertical = 12.dp)) {
                 if (step.kind == StepKind.decision && !answered) {
-                    Text("Choose an answer to continue", color = kl.muted, fontSize = 12.5f.sp,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), textAlign = TextAlign.Center)
+                    Text(
+                        if (ehrOrderPending) "Order in the chart above to continue"
+                        else "Choose an answer to continue",
+                        color = kl.muted, fontSize = 12.5f.sp,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), textAlign = TextAlign.Center,
+                    )
                 } else {
                     val label = when {
                         index == total - 1 -> "Finish case"
@@ -227,6 +254,22 @@ private fun DecisionBlock(
             Text("Open dose calculator", color = com.karibuhealth.learn.chart.Cobalt, fontSize = 12.5f.sp, fontWeight = FontWeight.SemiBold)
         }
     }
+    val ehrOnly = q.ehrOrder != null && !answered
+    if (ehrOnly) {
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp)).background(com.karibuhealth.learn.chart.CobaltSoft)
+                .border(1.dp, com.karibuhealth.learn.chart.Cobalt.copy(alpha = 0.2f), RoundedCornerShape(11.dp))
+                .padding(horizontal = 12.dp, vertical = 11.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(KlIcons.check, null, tint = com.karibuhealth.learn.chart.Cobalt, modifier = Modifier.size(16.dp))
+            Text(
+                "Use the EHR chart above — tap Order on ${q.ehrOrder}.",
+                color = com.karibuhealth.learn.chart.Cobalt, fontSize = 13.sp, lineHeight = 18.sp,
+            )
+        }
+    } else {
     Spacer(Modifier.height(10.dp))
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         q.options.forEachIndexed { oi, opt ->
@@ -247,17 +290,32 @@ private fun DecisionBlock(
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 Box(
-                    Modifier.padding(top = 1.dp).size(19.dp).clip(RoundedCornerShape(999.dp))
+                    Modifier.size(22.dp).clip(RoundedCornerShape(999.dp))
                         .border(1.5.dp, if (answered && (opt.correct || mine)) borderC else kl.line, RoundedCornerShape(999.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(badge ?: ('A' + oi).toString(), color = textC, fontSize = 10.5f.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        badge ?: ('A' + oi).toString(),
+                        color = textC,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 Text(opt.text, color = textC, fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
+    }
     if (answered && answer != null) {
+        if (answer.fromEhr) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Recorded in chart — ${q.ehrOrder ?: "action taken"}.",
+                color = kl.muted, fontSize = 12.sp,
+            )
+        }
         Spacer(Modifier.height(12.dp))
         val correct = answer.correct
         Column(

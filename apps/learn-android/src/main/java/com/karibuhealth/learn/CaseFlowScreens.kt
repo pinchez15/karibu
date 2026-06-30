@@ -20,8 +20,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +74,10 @@ fun CaseLandingScreen(case: LearnCase, onBegin: (LearnCase) -> Unit, onBack: () 
         }
 
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(18.dp)) {
+            if (!case.ready) {
+                Text("This case is being written. Check back in a future update.", color = kl.body, fontSize = 14.sp, lineHeight = 20.sp)
+                Spacer(Modifier.height(8.dp))
+            } else {
             if (case.blurb.isNotBlank()) {
                 Text(case.blurb, color = kl.body, fontSize = 14.sp, lineHeight = 22.sp)
                 Spacer(Modifier.height(20.dp))
@@ -86,34 +95,23 @@ fun CaseLandingScreen(case: LearnCase, onBegin: (LearnCase) -> Unit, onBack: () 
                     }
                     Column {
                         Text(case.patient.name, color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        MonoMeta("${case.patient.id?.let { "$it · " } ?: ""}${case.patient.age}", color = kl.muted, size = 11)
+                        MonoMeta(case.patient.age, color = kl.muted, size = 11)
                     }
-                }
-                Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp)).background(kl.wash).padding(horizontal = 11.dp, vertical = 9.dp)) {
-                    Text("Generated patient — invented for teaching, never a real record.", color = kl.muted, fontSize = 11.5f.sp, lineHeight = 16.sp)
                 }
             }
             Spacer(Modifier.height(20.dp))
 
             if (case.objectives.isNotEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Icon(KlIcons.target, null, tint = kl.primary, modifier = Modifier.size(18.dp))
-                    Text("You'll be able to…", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 14.5f.sp)
-                }
+                Text("Objectives", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 14.5f.sp)
                 Spacer(Modifier.height(12.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    case.objectives.forEachIndexed { i, o ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.size(20.dp).clip(RoundedCornerShape(999.dp)).background(kl.soft), contentAlignment = Alignment.Center) {
-                                Text("${i + 1}", fontFamily = MonoFamily, fontSize = 10.5f.sp, fontWeight = FontWeight.Bold, color = kl.deep)
-                            }
-                            Text(o, color = kl.body, fontSize = 13.5f.sp, lineHeight = 19.sp)
-                        }
+                    case.objectives.forEach { o ->
+                        Text("· $o", color = kl.body, fontSize = 13.5f.sp, lineHeight = 19.sp)
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
+            }
         }
 
         // Pinned CTA
@@ -142,9 +140,20 @@ private fun HeroTag(text: String) {
 }
 
 @Composable
-fun CaseCompleteScreen(case: LearnCase, score: Int, total: Int, onLibrary: () -> Unit) {
+fun CaseCompleteScreen(
+    case: LearnCase,
+    score: Int,
+    total: Int,
+    isSignedIn: Boolean,
+    onSubmitCorrection: (message: String, onResult: (Result<Unit>) -> Unit) -> Unit,
+    onLibrary: () -> Unit,
+) {
     val kl = LocalKl.current
     val pct = if (total > 0) (score * 100 / total) else 0
+    var correctionText by remember { mutableStateOf("") }
+    var correctionBusy by remember { mutableStateOf(false) }
+    var correctionSent by remember { mutableStateOf(false) }
+    var correctionError by remember { mutableStateOf<String?>(null) }
     BackHandler(onBack = onLibrary)
     Column(Modifier.fillMaxSize().background(kl.bg).verticalScroll(rememberScrollState())) {
         // Header
@@ -194,6 +203,64 @@ fun CaseCompleteScreen(case: LearnCase, score: Int, total: Int, onLibrary: () ->
                 Spacer(Modifier.height(8.dp))
                 Text(case.citations.joinToString("\n") { "· $it" }, fontFamily = MonoFamily, fontSize = 11.5f.sp,
                     color = kl.muted, lineHeight = 19.sp)
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(kl.surface)
+                    .border(1.dp, kl.line, RoundedCornerShape(12.dp)).padding(14.dp),
+            ) {
+                Text("Corrections", color = kl.ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Something wrong with this case? Tell us — we'll review before updating.",
+                    color = kl.body, fontSize = 13.sp, lineHeight = 19.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                if (!isSignedIn) {
+                    Text("Sign in to submit a correction.", color = kl.muted, fontSize = 12.5f.sp)
+                } else if (correctionSent) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(KlIcons.checkCircle, null, tint = Green, modifier = Modifier.size(16.dp))
+                        Text("Thanks — we'll review your note.", color = Green, fontSize = 13.sp)
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = correctionText,
+                        onValueChange = { correctionText = it; correctionError = null },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. dose should be X, or RDT timing is off…", color = kl.muted) },
+                        minLines = 3,
+                        enabled = !correctionBusy,
+                    )
+                    correctionError?.let {
+                        Spacer(Modifier.height(6.dp))
+                        Text(it, color = kl.primary, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    KlButton(
+                        text = if (correctionBusy) "Sending…" else "Submit correction",
+                        onClick = {
+                            val msg = correctionText.trim()
+                            if (msg.length < 8) {
+                                correctionError = "Please add a bit more detail (at least 8 characters)."
+                                return@KlButton
+                            }
+                            correctionBusy = true
+                            onSubmitCorrection(msg) { result ->
+                                correctionBusy = false
+                                result.onSuccess {
+                                    correctionSent = true
+                                    correctionText = ""
+                                }.onFailure { e ->
+                                    correctionError = e.message ?: "Could not send — try again."
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !correctionBusy && correctionText.isNotBlank(),
+                    )
+                }
             }
 
             Spacer(Modifier.height(20.dp))

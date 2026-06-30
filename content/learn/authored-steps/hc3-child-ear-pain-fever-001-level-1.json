@@ -1,0 +1,192 @@
+{
+  "canonicalCaseId": "hc3-child-ear-pain-fever-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Kato Ivan",
+      "id": "PT-CH-240305",
+      "age": "2M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Differentiate uncomplicated acute otitis media from dangerous ear infection signs.",
+      "Use fever, ear findings, and child behavior to choose treatment intensity.",
+      "Counsel caregivers on pain control, antibiotics adherence when indicated, and return signs."
+    ],
+    "takeaways": [
+      "A bulging or inflamed tympanic membrane with fever and ear pain supports acute otitis media.",
+      "No mastoid swelling or systemic danger signs supports HC III outpatient care.",
+      "Follow-up and return precautions are essential because ear infection can progress."
+    ],
+    "blurb": "A toddler with ear pain and fever needs careful ear exam and practical outpatient planning.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Right ear pain with fever for 2 days",
+            "chips": [
+              "Child ENT",
+              "Painful ear"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver concern",
+            "text": "Child cries when lying on the right side and pulls the ear repeatedly."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Ivan is crying but still drinking fluids",
+        "body": "First rule out severe disease, then treat likely acute otitis media appropriately."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.4 C",
+                "hot": true
+              },
+              {
+                "label": "HR",
+                "value": "132"
+              },
+              {
+                "label": "RESP",
+                "value": "32/min"
+              },
+              {
+                "label": "WT",
+                "value": "11 kg"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Ear findings",
+            "text": "Right tympanic membrane is red and bulging; no mastoid tenderness or swelling."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · diagnosis",
+        "title": "Which diagnosis fits best?",
+        "body": "Use the ear exam and danger-sign findings together."
+      },
+      "question": {
+        "prompt": "What is the most likely classification?",
+        "options": [
+          {
+            "text": "Acute otitis media without mastoiditis signs",
+            "correct": true
+          },
+          {
+            "text": "Severe mastoiditis requiring immediate surgery",
+            "correct": false
+          },
+          {
+            "text": "No ear disease because child has fever",
+            "correct": false
+          },
+          {
+            "text": "Primary pneumonia diagnosis only",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Bulging inflamed tympanic membrane with ear pain and fever supports AOM; no mastoid swelling lowers immediate referral urgency.",
+        "wrong": "Ignoring clear ear findings can miss treatable AOM. Severe referral signs like mastoid swelling are absent here."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Treatment bundle",
+            "drug": "AOM outpatient care",
+            "detail": "Analgesia +/- oral antibiotic per guideline, hydration, fever care"
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Escalate if",
+            "danger_signs": [
+              "Mastoid swelling/tenderness",
+              "Persistent high fever",
+              "Lethargy or vomiting",
+              "No improvement after 48 hours"
+            ],
+            "reveal_note": "Caregiver agrees to return if danger signs appear."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "What is the safest next action?",
+        "body": "Choose a realistic HC III plan."
+      },
+      "question": {
+        "prompt": "How should you manage this child now?",
+        "options": [
+          {
+            "text": "Treat likely AOM with pain control and guideline-based oral therapy, then review in 2 days",
+            "correct": true
+          },
+          {
+            "text": "Use ear candling and reassure only",
+            "correct": false
+          },
+          {
+            "text": "Start IV antibiotics immediately for every ear infection",
+            "correct": false
+          },
+          {
+            "text": "Discharge without return precautions once pain improves",
+            "correct": false
+          }
+        ],
+        "right": "Correct. This child is stable and fits uncomplicated AOM, so outpatient treatment and close review are appropriate.",
+        "wrong": "Either overtreatment or absent follow-up can harm outcomes. AOM needs practical treatment plus explicit return instructions."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You diagnosed probable acute otitis media and provided safe outpatient management with warning signs.",
+            "emphasis": "Ear exam details changed treatment confidence."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "For febrile ear pain in children, combine otoscopic findings with danger-sign screening. Most stable AOM can be managed at HC III with close follow-up."
+      }
+    }
+  ]
+}

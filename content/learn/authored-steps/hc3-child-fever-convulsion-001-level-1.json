@@ -1,0 +1,202 @@
+{
+  "canonicalCaseId": "hc3-child-fever-convulsion-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Aol Grace",
+      "id": "PT-CH-240306",
+      "age": "2F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Perform immediate post-convulsion danger-sign assessment in a febrile child.",
+      "Differentiate likely simple febrile convulsion from meningitis danger pattern.",
+      "Choose stabilization, investigation, and referral actions appropriate to findings."
+    ],
+    "takeaways": [
+      "History of convulsion is a high-risk signal until danger signs are excluded.",
+      "Alert child with no neck stiffness, no repeated convulsions, and good oral intake may be managed with close observation.",
+      "Any persistent altered consciousness, recurrent seizure, or meningeal signs needs urgent referral."
+    ],
+    "blurb": "A mother brings her 2-year-old after a fever-related convulsion at home. Decide rapidly between safe observation and urgent escalation.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Fever with convulsion at home",
+            "chips": [
+              "Emergency child",
+              "Neurologic risk"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Event history",
+            "text": "Seizure lasted about 2 minutes, stopped spontaneously before arrival."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Grace is sleepy but arousable",
+        "body": "Immediate danger-sign reassessment is more important than routine queue workflow."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Arrival vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "38.6 C",
+                "hot": true
+              },
+              {
+                "label": "HR",
+                "value": "136"
+              },
+              {
+                "label": "RESP",
+                "value": "34/min"
+              },
+              {
+                "label": "SpO2",
+                "value": "97%"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Neurologic danger signs",
+            "danger_signs": [
+              "Repeated convulsions",
+              "Unconsciousness",
+              "Neck stiffness",
+              "Unable to drink"
+            ],
+            "reveal_note": "None currently present; child now responsive and drinking."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · risk sorting",
+        "title": "How should you interpret this status?",
+        "body": "Choose the safest classification after current exam."
+      },
+      "question": {
+        "prompt": "What is the best immediate interpretation?",
+        "options": [
+          {
+            "text": "Post-febrile convulsion, currently stable but requires close monitoring and cause evaluation",
+            "correct": true
+          },
+          {
+            "text": "Definite meningitis; skip further assessment",
+            "correct": false
+          },
+          {
+            "text": "Completely low risk; discharge immediately",
+            "correct": false
+          },
+          {
+            "text": "Psychogenic event, no fever management needed",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Child had a convulsion, so careful observation and fever source assessment are still required even if danger signs are absent now.",
+        "wrong": "Either overcalling without evidence or early discharge is unsafe. Post-seizure children need structured reassessment."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "investigations",
+            "title": "Focused workup",
+            "orders": [
+              {
+                "name": "Malaria RDT",
+                "status": "resulted",
+                "sub": "Positive"
+              },
+              {
+                "name": "Blood glucose",
+                "status": "resulted",
+                "sub": "5.1 mmol/L"
+              }
+            ]
+          },
+          {
+            "type": "assessment",
+            "title": "Current neuro exam",
+            "text": "Alert, no neck stiffness, no repeat convulsion in facility."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "Choose the most appropriate next action",
+        "body": "Combine positive findings with current stability."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Treat confirmed febrile illness per guideline, observe closely, and counsel immediate return if seizure recurs",
+            "correct": true
+          },
+          {
+            "text": "Ignore fever source since seizure already stopped",
+            "correct": false
+          },
+          {
+            "text": "Discharge without counseling once child is awake",
+            "correct": false
+          },
+          {
+            "text": "Give sedatives for home use to prevent all future convulsions",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Current exam does not show meningitis danger signs, so treat identified febrile cause, observe, and provide strict seizure return precautions.",
+        "wrong": "Stopping at seizure cessation misses ongoing risk. Care must include cause-directed treatment and caregiver safety-netting."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You stabilized and reassessed a post-convulsion child, then matched management to current danger-sign status.",
+            "emphasis": "Structured neurologic screening prevented unsafe assumptions."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Fever with convulsion demands high vigilance. When repeat seizures, neck stiffness, persistent altered consciousness, or inability to drink appear, urgent referral is required."
+      }
+    }
+  ]
+}

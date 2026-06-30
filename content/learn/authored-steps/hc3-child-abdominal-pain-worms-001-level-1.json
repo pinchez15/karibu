@@ -1,0 +1,191 @@
+{
+  "canonicalCaseId": "hc3-child-abdominal-pain-worms-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Mugisha Paul",
+      "id": "PT-CH-240310",
+      "age": "6M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Evaluate abdominal pain with danger-sign screening before presumptive deworming.",
+      "Identify when empiric helminth treatment is appropriate by age and symptom pattern.",
+      "Provide hygiene and follow-up advice to reduce reinfection and missed severe disease."
+    ],
+    "takeaways": [
+      "Most worm-related abdominal pain is outpatient-manageable when severe danger signs are absent.",
+      "Albendazole use should match age eligibility and local deworming guidance.",
+      "Counseling on hand hygiene, footwear, and sanitation is part of treatment."
+    ],
+    "blurb": "A school-age child with abdominal pain and poor appetite is brought for 'worm medicine'. Avoid reflex treatment without screening.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Intermittent abdominal pain and reduced appetite",
+            "chips": [
+              "School-age child",
+              "Possible helminths"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Caregiver request",
+            "text": "Parent asks directly for deworming tablets after seeing worms in stool once."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Paul is uncomfortable but active",
+        "body": "First confirm there are no red flags that require referral-level workup."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "37.4 C"
+              },
+              {
+                "label": "HR",
+                "value": "102"
+              },
+              {
+                "label": "RESP",
+                "value": "24/min"
+              },
+              {
+                "label": "WT",
+                "value": "18 kg"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Abdominal danger screen",
+            "danger_signs": [
+              "Severe persistent pain",
+              "Bilious or persistent vomiting",
+              "Bloody stool",
+              "Abdominal distension with toxicity"
+            ],
+            "reveal_note": "None present."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · triage",
+        "title": "What does this allow you to do safely?",
+        "body": "Use findings to decide outpatient vs urgent referral."
+      },
+      "question": {
+        "prompt": "Best next interpretation?",
+        "options": [
+          {
+            "text": "Stable child with likely helminth-related symptoms; outpatient management is appropriate",
+            "correct": true
+          },
+          {
+            "text": "Immediate surgical abdomen requiring emergency transfer",
+            "correct": false
+          },
+          {
+            "text": "No need to examine because caregiver already diagnosed worms",
+            "correct": false
+          },
+          {
+            "text": "Treat as severe malaria despite no fever pattern",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Without red flags, this is suitable for outpatient management and age-appropriate deworming decisions.",
+        "wrong": "Skipping exam or over-escalating without danger signs leads to poor resource use and missed teaching."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Treatment option",
+            "drug": "Albendazole (age-appropriate)",
+            "detail": "Single-dose deworming per guideline plus dietary/hygiene counseling"
+          },
+          {
+            "type": "assessment",
+            "title": "Context",
+            "text": "Child is 6 years old, attends school barefoot at times, and has poor handwashing access."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · treatment",
+        "title": "Pick the most appropriate management package",
+        "body": "Avoid under-counseling and unnecessary antibiotics."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Give age-appropriate albendazole and reinforce sanitation, footwear, and hand hygiene",
+            "correct": true
+          },
+          {
+            "text": "Start broad-spectrum antibiotics for all abdominal pain",
+            "correct": false
+          },
+          {
+            "text": "Withhold all treatment because worms are always self-limiting",
+            "correct": false
+          },
+          {
+            "text": "Give repeated deworming doses daily for one week without indication",
+            "correct": false
+          }
+        ],
+        "right": "Correct. In a stable 6-year-old with compatible symptoms, guideline-based deworming and prevention counseling are appropriate.",
+        "wrong": "Non-targeted antibiotics or incorrect dosing strategies are common but avoidable errors in worm-related complaints."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You ruled out danger signs, used age-appropriate deworming, and gave prevention counseling.",
+            "emphasis": "Abdominal complaints need triage before presumptive treatment."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Caregiver expectations often push immediate deworming. Safe HC III practice still starts with danger-screening, then targeted treatment and hygiene counseling."
+      }
+    }
+  ]
+}

@@ -31,15 +31,19 @@ class LearnCaseSchemaTest {
     @Test
     fun `manifest parses and core pack is bundled`() {
         val manifest = json.decodeFromString(PackManifest.serializer(), asset("manifest.json"))
-        assertEquals(4, manifest.packs.size)
+        assertTrue("manifest should list bundled core + downloadable chapter packs", manifest.packs.size >= 40)
 
         val core = manifest.packs.first { it.id == "core-opd" }
         assertTrue("core pack must be bundled", core.bundled)
         assertEquals("learn/packs/core-opd.kpack", core.assetPath)
 
-        val ncd = manifest.packs.first { it.id == "ncd-essentials" }
-        assertTrue("remote pack must not be bundled", !ncd.bundled)
-        assertNotNull("remote pack needs a download url", ncd.downloadUrl)
+        manifest.packs.filter { !it.bundled }.forEach { pack ->
+            assertNotNull("${pack.id} needs a download url", pack.downloadUrl)
+            assertTrue(
+                "${pack.id} should use Supabase Storage or https",
+                pack.downloadUrl!!.startsWith("https://"),
+            )
+        }
     }
 
     @Test
@@ -106,12 +110,20 @@ class LearnCaseSchemaTest {
     }
 
     @Test
-    fun `all downloadable remote packs parse`() {
-        listOf("ncd-essentials", "maternal-hiv", "msk-clinic").forEach { id ->
-            val pack = json.decodeFromString(CasePack.serializer(), asset("remote/$id.kpack"))
-            assertEquals(id, pack.id)
-            assertTrue("$id should contain cases", pack.cases.isNotEmpty())
-        }
+    fun `exported chapter pack parses`() {
+        val repoRoot = sequenceOf(
+            File("../../../content/learn/published/chapters"),
+            File("../../content/learn/published/chapters"),
+            File("content/learn/published/chapters"),
+        ).firstOrNull { it.exists() }
+        assertNotNull("chapter export dir missing — run export-chapter-packs", repoRoot)
+
+        val sample = File(repoRoot!!, "fever-malaria-acute-illness-l1.kpack")
+        assertTrue("sample chapter pack should exist", sample.exists())
+        val pack = json.decodeFromString(CasePack.serializer(), sample.readText())
+        assertEquals("fever-malaria-acute-illness-l1", pack.id)
+        assertTrue("chapter pack should contain cases", pack.cases.isNotEmpty())
+        assertTrue("chapter cases should be walkable", pack.cases.all { it.ready })
     }
 
     @Test

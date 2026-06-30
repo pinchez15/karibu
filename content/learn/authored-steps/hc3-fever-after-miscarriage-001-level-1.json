@@ -1,0 +1,284 @@
+{
+  "canonicalCaseId": "hc3-fever-after-miscarriage-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Namusoke Lydia",
+      "id": "PT-240089",
+      "age": "24F",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Provide respectful, nonjudgmental triage for post-miscarriage complications.",
+      "Identify signs of post-abortion sepsis and initiate urgent referral-level management.",
+      "Document confidentiality, emergency interventions, and referral counseling clearly."
+    ],
+    "takeaways": [
+      "Fever, hypotension, and foul-smelling discharge after pregnancy loss suggest sepsis risk.",
+      "Compassionate language and privacy are part of clinical safety, not optional extras.",
+      "Do not delay stabilization and referral while seeking complete outpatient diagnostics."
+    ],
+    "blurb": "A woman presents with fever and abdominal pain after miscarriage and fears being judged. Choose care that is both clinically urgent and respectful.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Fever, lower abdominal pain, and foul vaginal discharge two days after miscarriage",
+            "chips": [
+              "Urgent",
+              "Maternal emergency"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Patient concern",
+            "text": "She speaks quietly and asks if staff will blame her for what happened."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Lydia arrives anxious and unwell",
+        "body": "She is shivering and visibly distressed. Your approach must combine emergency care with privacy and dignity.",
+        "quote": "“Please help me... I was afraid to come because people may judge me.”",
+        "teach": {
+          "label": "Clinical framing",
+          "text": "Respectful communication improves disclosure and speed of care in obstetric emergencies."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Initial vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "39.1 C",
+                "hot": true
+              },
+              {
+                "label": "BP",
+                "value": "90/58"
+              },
+              {
+                "label": "HR",
+                "value": "124"
+              },
+              {
+                "label": "RESP",
+                "value": "26"
+              },
+              {
+                "label": "SpO2",
+                "value": "96%"
+              }
+            ],
+            "critical": {
+              "title": "Sepsis danger pattern",
+              "body": "Fever + hypotension + tachycardia after miscarriage indicates urgent risk."
+            }
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Emergency screen",
+            "danger_signs": [
+              "Hypotension",
+              "High fever",
+              "Foul discharge",
+              "Lower abdominal tenderness"
+            ],
+            "reveal_note": "Multiple danger signs positive."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · first response",
+        "title": "Choose the safest opening action",
+        "body": "Pick the option that addresses both immediate physiology and patient dignity."
+      },
+      "question": {
+        "prompt": "What should you do first?",
+        "options": [
+          {
+            "text": "Move to a private space, start sepsis triage, and begin urgent stabilization/referral planning",
+            "correct": true
+          },
+          {
+            "text": "Question her about the miscarriage details in front of the waiting line before treating",
+            "correct": false
+          },
+          {
+            "text": "Give oral pain medicines and ask her to return if fever persists tomorrow",
+            "correct": false
+          },
+          {
+            "text": "Delay emergency care until legal documentation is completed",
+            "correct": false
+          }
+        ],
+        "right": "Correct. BP 90/58, HR 124, and temperature 39.1 C indicate urgent sepsis risk. Uganda Clinical Guidelines 2023 supports immediate stabilization and referral; respectful privacy improves safe care.",
+        "wrong": "This chart shows hemodynamic instability after miscarriage. Delaying care for interrogation or routine workflow is unsafe and undermines trust."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "investigations",
+            "title": "Rapid checks",
+            "orders": [
+              {
+                "name": "Repeat blood pressure",
+                "status": "resulted",
+                "sub": "88/56"
+              },
+              {
+                "name": "Hemoglobin (if available)",
+                "status": "pending",
+                "sub": "Sample sent"
+              }
+            ]
+          },
+          {
+            "type": "prescription",
+            "title": "Emergency plan",
+            "drug": "Post-miscarriage sepsis pre-referral care",
+            "detail": "Select immediate management bundle"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · stabilization",
+        "title": "What should be done before transfer?",
+        "body": "Her blood pressure is dropping and she remains febrile."
+      },
+      "question": {
+        "prompt": "Which management choice is best now?",
+        "options": [
+          {
+            "text": "Start IV fluids, give empiric broad-spectrum antibiotics per protocol, and arrange urgent referral",
+            "correct": true
+          },
+          {
+            "text": "Wait for all lab results before initiating treatment",
+            "correct": false
+          },
+          {
+            "text": "Treat as uncomplicated malaria because she has fever",
+            "correct": false
+          },
+          {
+            "text": "Provide only oral antibiotics and routine follow-up in 72 hours",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Persistent hypotension (88/56) with post-miscarriage infection signs requires immediate sepsis-oriented care and urgent referral, not delayed outpatient management.",
+        "wrong": "This patient is unstable. Delaying emergency treatment for full workup or malaria-first assumptions can be life-threatening."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "REFERRAL",
+        "sections": [
+          {
+            "type": "keyValues",
+            "title": "Referral handover",
+            "rows": [
+              {
+                "label": "Observed",
+                "value": "Fever 39.1 C, BP 88/56, foul discharge, pelvic pain"
+              },
+              {
+                "label": "Given",
+                "value": "IV fluids + empiric antibiotics + urgent transfer arranged"
+              },
+              {
+                "label": "Counseling",
+                "value": "Explained emergency risk and reassured nonjudgmental care"
+              }
+            ]
+          },
+          {
+            "type": "diagnosis",
+            "title": "Working diagnosis",
+            "codes": [
+              {
+                "code": "Possible post-abortion sepsis",
+                "name": "Maternal referral emergency",
+                "primary": true
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · communication",
+        "title": "What is essential in counseling and handover?",
+        "body": "Choose the response that preserves safety and dignity."
+      },
+      "question": {
+        "prompt": "How should you complete this transfer?",
+        "options": [
+          {
+            "text": "Use nonjudgmental language, explain emergency need, and send a full referral note with interventions",
+            "correct": true
+          },
+          {
+            "text": "Tell her she caused the illness and must confess details before referral",
+            "correct": false
+          },
+          {
+            "text": "Send without documentation to avoid difficult conversations",
+            "correct": false
+          },
+          {
+            "text": "Reassure only and keep her overnight at HC III for observation",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Compassionate counseling improves consent and adherence, while complete handover communicates her instability and treatment already started.",
+        "wrong": "Judgmental or incomplete communication harms care. This case requires both urgent transfer and trauma-informed respectful practice."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You identified post-miscarriage sepsis risk, stabilized early, and referred urgently with respectful care.",
+            "emphasis": "Nonjudgmental communication and emergency action were both essential."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Lydia's fever, hypotension, tachycardia, and foul discharge after pregnancy loss indicate high-risk infection requiring immediate referral-level care. Uganda Clinical Guidelines 2023 supports urgent stabilization and transfer, while respectful communication protects disclosure and timely treatment.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "In post-miscarriage emergencies, dignity is part of clinical quality: privacy, nonjudgment, and rapid treatment should happen together."
+        }
+      }
+    }
+  ]
+}

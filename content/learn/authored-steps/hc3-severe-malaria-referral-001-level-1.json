@@ -1,0 +1,284 @@
+{
+  "canonicalCaseId": "hc3-severe-malaria-referral-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Okumu Daniel",
+      "id": "PT-230411",
+      "age": "31M",
+      "sex": "Male"
+    },
+    "objectives": [
+      "Recognize confusion, hypotension, and tachypnea as danger signs requiring immediate referral-level care.",
+      "Start pre-referral stabilization and treatment without delaying for full outpatient workup.",
+      "Document and communicate referral details clearly to protect continuity of care."
+    ],
+    "takeaways": [
+      "Confusion plus BP 86/54 and RR 32/min is not uncomplicated malaria at HC III.",
+      "Give pre-referral emergency care first; do not wait for full diagnostics before transfer.",
+      "A complete referral note should include danger signs, interventions, and transfer time."
+    ],
+    "blurb": "A confused febrile adult arrives hypotensive and tachypneic. Decide what to do now, what not to delay, and how to hand over safely.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "High fever, confusion, and weakness since yesterday",
+            "chips": [
+              "Walk-in",
+              "HC III OPD"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Family report",
+            "text": "Wife says he became confused this morning and has barely taken fluids."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Daniel is critically unwell",
+        "body": "He is drowsy, answers slowly, and cannot sit unsupported for long. Start by deciding whether this is safe for outpatient management.",
+        "quote": "“He is not himself and keeps drifting off.”",
+        "teach": {
+          "label": "Clinical framing",
+          "text": "In febrile adults, altered mental status and shock physiology move you immediately toward emergency stabilization and referral."
+        }
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "VITALS",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Initial vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "39.7 C",
+                "hot": true
+              },
+              {
+                "label": "BP",
+                "value": "86/54"
+              },
+              {
+                "label": "HR",
+                "value": "132"
+              },
+              {
+                "label": "RESP",
+                "value": "32"
+              },
+              {
+                "label": "SpO2",
+                "value": "93%"
+              }
+            ],
+            "critical": {
+              "title": "Danger signs present",
+              "body": "Confusion + hypotension + tachypnea indicate severe febrile illness."
+            }
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Danger-sign screen",
+            "danger_signs": [
+              "Altered mental status",
+              "Unable to drink reliably",
+              "Hypotension",
+              "Respiratory distress"
+            ],
+            "reveal_note": "Multiple danger signs are positive."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · triage",
+        "title": "What is the safest first move?",
+        "body": "Choose the action that matches Daniel's current physiology, not a routine fever flow."
+      },
+      "question": {
+        "prompt": "What should you do first?",
+        "options": [
+          {
+            "text": "Begin emergency stabilization, classify as severe febrile illness, and prepare urgent referral immediately",
+            "correct": true
+          },
+          {
+            "text": "Start oral artemether-lumefantrine and observe in OPD for 6 hours",
+            "correct": false
+          },
+          {
+            "text": "Give paracetamol first and wait to see if confusion settles before deciding",
+            "correct": false
+          },
+          {
+            "text": "Wait for malaria RDT before deciding whether referral is needed",
+            "correct": false
+          }
+        ],
+        "right": "Correct. With confusion, BP 86/54, and RR 32/min, this patient meets danger-sign referral threshold now. Uganda Clinical Guidelines 2023 support immediate stabilization and urgent transfer rather than outpatient observation.",
+        "wrong": "Re-check this chart: confusion, hypotension (86/54), and tachypnea (32/min) make outpatient care unsafe. Delaying referral for oral AL, antipyretics, or test confirmation risks deterioration."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "ORDERS",
+        "sections": [
+          {
+            "type": "investigations",
+            "title": "Point-of-care checks",
+            "orders": [
+              {
+                "name": "Random blood glucose",
+                "status": "resulted",
+                "sub": "2.6 mmol/L"
+              },
+              {
+                "name": "Malaria RDT",
+                "status": "pending",
+                "sub": "Sample sent"
+              }
+            ]
+          },
+          {
+            "type": "prescription",
+            "title": "Pre-referral treatment panel",
+            "drug": "Emergency pre-referral bundle",
+            "detail": "Select the best immediate package"
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · immediate care",
+        "title": "Treat before transfer",
+        "body": "Transport is being arranged. Choose the intervention bundle that addresses his immediate risks."
+      },
+      "question": {
+        "prompt": "Which immediate action bundle is best before transfer?",
+        "options": [
+          {
+            "text": "Correct hypoglycemia, give pre-referral severe-malaria treatment per protocol, start fluids, and transfer urgently",
+            "correct": true
+          },
+          {
+            "text": "Wait for malaria RDT result before giving any antimalarial treatment",
+            "correct": false
+          },
+          {
+            "text": "Give only oral AL because malaria is likely, then send once he can swallow",
+            "correct": false
+          },
+          {
+            "text": "Give broad-spectrum oral antibiotics and ask family to return tomorrow if worse",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Glucose 2.6 mmol/L and altered mental status require immediate correction and pre-referral emergency treatment now. Uganda Clinical Guidelines 2023 emphasize not delaying life-saving care while referral is underway.",
+        "wrong": "This patient is unstable now: low glucose, confusion, and hypotension cannot wait for routine sequencing. Pre-referral emergency treatment and urgent transfer are safer than oral-only or delayed plans."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "REFERRAL",
+        "sections": [
+          {
+            "type": "diagnosis",
+            "title": "Working diagnosis",
+            "codes": [
+              {
+                "code": "Suspected severe malaria / severe febrile illness",
+                "name": "Referral emergency",
+                "primary": true
+              }
+            ]
+          },
+          {
+            "type": "keyValues",
+            "title": "Handover checklist",
+            "rows": [
+              {
+                "label": "Danger signs",
+                "value": "Confusion, hypotension, tachypnea"
+              },
+              {
+                "label": "Given",
+                "value": "Glucose correction + pre-referral emergency treatment"
+              },
+              {
+                "label": "Transfer",
+                "value": "Urgent ambulance requested"
+              }
+            ]
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · handover",
+        "title": "What must be communicated?",
+        "body": "A weak referral note can undo good emergency care. Choose the strongest handover."
+      },
+      "question": {
+        "prompt": "What should your referral communication include?",
+        "options": [
+          {
+            "text": "Document vitals, danger signs, treatments already given, and call receiving unit with ETA",
+            "correct": true
+          },
+          {
+            "text": "Write only 'fever' and leave receiving team to reassess from the start",
+            "correct": false
+          },
+          {
+            "text": "Delay transfer until every test result is finalized",
+            "correct": false
+          },
+          {
+            "text": "Send patient without paperwork because caregiver can explain",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Clear handover with Daniel's abnormal vitals and interventions supports continuity and faster receiving-facility decisions.",
+        "wrong": "This case has high-risk instability. Minimal or delayed handover increases transfer risk and repeats work at the receiving center."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "Recognized severe febrile danger signs and initiated urgent pre-referral care.",
+            "emphasis": "Outpatient oral malaria treatment alone was unsafe for this presentation."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "Daniel's confusion, BP 86/54, RR 32/min, and poor oral intake required emergency referral logic from the first minute. Uganda Clinical Guidelines 2023 support immediate stabilization and pre-referral treatment without waiting for complete outpatient diagnostics.",
+        "teach": {
+          "label": "Clinician review",
+          "text": "In severe febrile illness, triage physiology drives decisions: stabilize, treat immediate threats, and transfer with strong documentation."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "canonicalCaseId": "hc3-child-eye-discharge-newborn-001",
+  "difficultyLevel": 1,
+  "learnCaseOverrides": {
+    "patient": {
+      "name": "Baby Nambi",
+      "id": "PT-NN-240308",
+      "age": "6D",
+      "sex": "Female"
+    },
+    "objectives": [
+      "Assess neonatal eye discharge with systemic danger-sign screening.",
+      "Differentiate local conjunctival infection from neonatal sepsis risk.",
+      "Start appropriate local care including erythromycin eye ointment and referral when severe signs appear."
+    ],
+    "takeaways": [
+      "In neonates, poor feeding, fever/hypothermia, and lethargy can signal systemic infection.",
+      "Purulent eye discharge with swollen lids may need both local treatment and close follow-up.",
+      "Erythromycin eye ointment and hygienic eye care are practical first-line actions when stable."
+    ],
+    "blurb": "A 6-day-old newborn presents with sticky eye discharge. Decide if this is local infection or a wider neonatal danger pattern.",
+    "citations": [
+      "Uganda Clinical Guidelines 2023",
+      "WHO IMNCI chart booklet"
+    ]
+  },
+  "steps": [
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "TRIAGE",
+        "sections": [
+          {
+            "type": "chiefComplaint",
+            "title": "Chief complaint",
+            "text": "Eye discharge and eyelid swelling in newborn",
+            "chips": [
+              "Neonate",
+              "Infection risk"
+            ]
+          },
+          {
+            "type": "subjective",
+            "title": "Mother's report",
+            "text": "Discharge started yesterday. Baby still breastfeeds but less vigorously."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "The visit begins",
+        "title": "Baby Nambi is only 6 days old",
+        "body": "Neonates can deteriorate quickly. Always screen systemic danger signs before local treatment."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "EXAM",
+        "sections": [
+          {
+            "type": "vitals",
+            "title": "Neonatal vitals",
+            "vitals": [
+              {
+                "label": "TEMP",
+                "value": "36.1 C"
+              },
+              {
+                "label": "HR",
+                "value": "154"
+              },
+              {
+                "label": "RESP",
+                "value": "52/min"
+              },
+              {
+                "label": "WT",
+                "value": "3.1 kg"
+              }
+            ]
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Neonatal danger signs",
+            "danger_signs": [
+              "Poor feeding",
+              "Fever or low temperature",
+              "Lethargy",
+              "Convulsions",
+              "Severe chest indrawing"
+            ],
+            "reveal_note": "No convulsions or chest indrawing; feeding slightly reduced."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · neonatal risk",
+        "title": "What is your best immediate interpretation?",
+        "body": "Use both local eye findings and systemic neonatal signs."
+      },
+      "question": {
+        "prompt": "How should you classify this presentation now?",
+        "options": [
+          {
+            "text": "Possible neonatal conjunctivitis; treat locally and monitor closely for systemic illness",
+            "correct": true
+          },
+          {
+            "text": "Harmless blocked tear duct only, no follow-up required",
+            "correct": false
+          },
+          {
+            "text": "Meningitis confirmed from eye discharge alone",
+            "correct": false
+          },
+          {
+            "text": "No treatment needed in neonates with eye pus",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Current findings support localized neonatal eye infection, but age 6 days requires strict safety-net and close review.",
+        "wrong": "In neonates, minimizing infection signs is risky. Eye discharge can be local now but can progress if follow-up is poor."
+      }
+    },
+    {
+      "kind": "decision",
+      "chart": {
+        "tag": "PLAN",
+        "sections": [
+          {
+            "type": "prescription",
+            "title": "Initial treatment",
+            "drug": "Erythromycin eye ointment",
+            "detail": "Apply to affected eye(s) per protocol with gentle saline cleansing"
+          },
+          {
+            "type": "dangerScreen",
+            "title": "Urgent return triggers",
+            "danger_signs": [
+              "Poor or no breastfeeding",
+              "Fever or low temperature",
+              "Increasing eyelid swelling/redness",
+              "Lethargy or convulsions"
+            ],
+            "reveal_note": "Mother demonstrates cleaning technique and return plan."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Decision · management",
+        "title": "Choose the safest newborn care plan",
+        "body": "Pick the action that balances treatment and escalation vigilance."
+      },
+      "question": {
+        "prompt": "What should you do now?",
+        "options": [
+          {
+            "text": "Start erythromycin eye ointment, teach eye hygiene, and arrange very early review",
+            "correct": true
+          },
+          {
+            "text": "Give only herbal eye wash and wait one week",
+            "correct": false
+          },
+          {
+            "text": "Delay all treatment until lab culture is available",
+            "correct": false
+          },
+          {
+            "text": "Use steroid eye drops as first-line therapy",
+            "correct": false
+          }
+        ],
+        "right": "Correct. Early topical therapy plus strict neonatal follow-up is appropriate when systemic danger signs are not yet present.",
+        "wrong": "Delaying treatment or using inappropriate drops can worsen neonatal eye infection and risk systemic spread."
+      }
+    },
+    {
+      "kind": "story",
+      "chart": {
+        "tag": "COMPLETE",
+        "sections": [
+          {
+            "type": "assessment",
+            "title": "Case outcome",
+            "text": "You treated likely neonatal conjunctivitis and gave high-quality newborn safety-net counseling.",
+            "emphasis": "Neonatal age itself increases risk and follow-up urgency."
+          }
+        ]
+      },
+      "coach": {
+        "eyebrow": "Case complete",
+        "title": "Key teaching points",
+        "body": "In newborn eye complaints, always pair local treatment with systemic danger-sign screening. Erythromycin ointment and caregiver coaching are practical first actions when the infant is currently stable."
+      }
+    }
+  ]
+}

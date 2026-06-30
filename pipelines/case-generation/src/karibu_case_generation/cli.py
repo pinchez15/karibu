@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from karibu_case_generation.export.app_kpack import export_app_kpack_file
+from karibu_case_generation.export.chapter_packs import export_chapter_packs
 from karibu_case_generation.export.review_narratives import load_cases_from_pack, render_review_narratives
 from karibu_case_generation.generate.draft_cases import generate_hc3_draft_pack
 from karibu_case_generation.ingest.source_registry import validate_source_registry
@@ -77,6 +78,40 @@ def main() -> int:
         action="store_true",
         help="Export catalog stubs (ready=false) without auto-compiled steps.",
     )
+    export_parser.add_argument(
+        "--chapter",
+        help="Export only variants for this curriculum chapter id (e.g. fever-malaria-acute-illness).",
+    )
+
+    chapter_export_parser = subparsers.add_parser(
+        "export-chapter-packs",
+        help="Export all curriculum chapter packs (13 chapters × levels) for Supabase Storage.",
+    )
+    chapter_export_parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("content/learn/generated/hc3-core-draft-v0.1.0"),
+    )
+    chapter_export_parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("content/learn/published/chapters"),
+    )
+    chapter_export_parser.add_argument(
+        "--curriculum",
+        type=Path,
+        default=Path("content/learn/source/hc3-cpd-curriculum.json"),
+    )
+    chapter_export_parser.add_argument(
+        "--levels",
+        default="1,2,3",
+        help="Comma-separated difficulty levels to export (default: 1,2,3).",
+    )
+    chapter_export_parser.add_argument(
+        "--stubs-only",
+        action="store_true",
+        help="Export catalog stubs (ready=false) without auto-compiled steps.",
+    )
 
     args = parser.parse_args()
 
@@ -142,11 +177,26 @@ def main() -> int:
             compile_walkable=not args.stubs_only,
             ready=False if args.stubs_only else None,
             limit=args.limit,
+            chapter_id=args.chapter,
         )
         print(
             f"Exported {stats['cases']} cases ({stats['walkable']} walkable, {stats['stubs']} stubs) "
             f"to {args.output}"
         )
+        return 0
+
+    if args.command == "export-chapter-packs":
+        levels = [int(item.strip()) for item in args.levels.split(",") if item.strip()]
+        catalog = export_chapter_packs(
+            input_dir=args.input,
+            output_dir=args.output,
+            curriculum_path=args.curriculum,
+            levels=levels,
+            compile_walkable=not args.stubs_only,
+        )
+        total_cases = sum(entry["case_count"] for entry in catalog)
+        print(f"Exported {len(catalog)} packs ({total_cases} case slots) to {args.output}")
+        print(f"Catalog: {args.output / 'pack-catalog.json'}")
         return 0
 
     parser.error(f"Unknown command: {args.command}")
