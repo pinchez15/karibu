@@ -135,7 +135,7 @@ const UNITS: UnitDef[] = [
     basePaths: ['/dashboard/admin/reports'],
     roles: [],
     items: [
-      { id: 'data-overview', label: 'Overview', href: '/dashboard/admin/reports', icon: Home },
+      { id: 'data-overview', label: 'Register', href: '/dashboard/admin/reports', icon: Home },
       { id: 'data-hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
       { id: 'data-quality', label: 'Data quality', href: '/dashboard/admin/reports/data-quality', icon: Sparkles },
     ],
@@ -191,7 +191,7 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top header — logo (→ Today) + unit tabs, sticky across every page */}
-      <header className="sticky top-0 z-30 flex items-center border-b border-border bg-card pr-5 h-14 shrink-0">
+      <header className="no-print sticky top-0 z-30 flex items-center border-b border-border bg-card pr-5 h-14 shrink-0">
         {/* Logo occupies the sidebar's width so the unit tabs begin at the
             content column's left edge, tracking the sidebar divider line. */}
         <Link
@@ -237,7 +237,7 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
 
       {/* Body — unit sidebar + content */}
       <div className="flex flex-1 min-h-0">
-        <aside className="w-[208px] bg-card border-r border-border flex flex-col shrink-0">
+        <aside className="no-print w-[208px] bg-card border-r border-border flex flex-col shrink-0">
           <div className="p-4 border-b border-line-soft">
             <div className="kh-meta">CLINIC</div>
             <div className="text-[13px] font-semibold text-ink truncate">{clinicName}</div>

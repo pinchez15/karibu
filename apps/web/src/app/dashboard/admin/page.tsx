@@ -258,6 +258,23 @@ export default async function AdminPage() {
         </Link>
 
         <Link
+          href="/dashboard/admin/billing"
+          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold">Billing rates</h4>
+              <p className="text-sm text-muted-foreground">Consultation fee, pharmacy markup, lab price guide</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link
           href="/dashboard/admin/staff"
           className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
         >

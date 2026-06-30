@@ -86,6 +86,31 @@ export async function completePharmacyDispense(input: {
   return { success: true }
 }
 
+/** Mark dispensed for visits with free-text meds only (no structured Rx lines). */
+export async function completeLegacyPharmacyDispense(input: {
+  visitId: string
+  notes?: string
+}): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await assertDispenser()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_complete_legacy_pharmacy_dispense', {
+    p_visit_id: input.visitId,
+    p_notes: input.notes ?? null,
+    p_client_op_id: null,
+  })
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePharmacyPaths(input.visitId, staff.clinic_id)
+  return { success: true }
+}
+
 export async function sendPharmacyBackToClinician(
   visitId: string,
   reason: string,

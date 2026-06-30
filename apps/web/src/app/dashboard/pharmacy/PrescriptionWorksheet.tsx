@@ -9,6 +9,7 @@ import {
 import type { CompleteDispenseLine, DispenseLineStatus } from '@/lib/validators/prescription'
 import {
   completePharmacyDispense,
+  completeLegacyPharmacyDispense,
   listClinicPharmacyStock,
   sendPharmacyBackToClinician,
   startPharmacyDispense,
@@ -107,6 +108,26 @@ export function PrescriptionWorksheet({
     return map
   }, [stock])
 
+  useEffect(() => {
+    if (stock.length === 0) return
+    setDrafts((prev) =>
+      prev.map((draft, idx) => {
+        const line = lines[idx]
+        if (!line || draft.stock_item_id) return draft
+        const code = line.medication_code?.toUpperCase()
+        const match = code
+          ? stock.find((s) => s.drug_code.toUpperCase() === code)
+          : undefined
+        if (!match) return draft
+        return {
+          ...draft,
+          stock_item_id: match.id,
+          stock_quantity: draft.quantity_dispensed || draft.stock_quantity,
+        }
+      }),
+    )
+  }, [stock, lines])
+
   function updateDraft(id: string, patch: Partial<LineDraft>) {
     setDrafts((prev) => prev.map((d) => (d.prescription_order_id === id ? { ...d, ...patch } : d)))
   }
@@ -156,6 +177,19 @@ export function PrescriptionWorksheet({
   function handleComplete() {
     setSubmitError(null)
     startTransition(async () => {
+      if (lines.length === 0) {
+        const r = await completeLegacyPharmacyDispense({
+          visitId: row.id,
+          notes: visitNotes.trim() || undefined,
+        })
+        if (!r.success) {
+          setSubmitError(r.error)
+          return
+        }
+        onCompleted?.()
+        return
+      }
+
       if (!started) {
         if (completeFn) {
           setStarted(true)
@@ -214,10 +248,19 @@ export function PrescriptionWorksheet({
         )}
 
         {lines.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No structured prescription lines on this visit. Ask the clinician to resubmit from the
-            medication composer.
-          </p>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              No structured prescription lines on this visit. Dispense from the clinician&apos;s
+              medication list below, then mark complete.
+            </p>
+            {row.medications?.trim() ? (
+              <pre className="whitespace-pre-wrap rounded-lg border border-line-soft bg-background p-3 font-sans text-body">
+                {row.medications.trim()}
+              </pre>
+            ) : (
+              <p className="text-muted-foreground">No medications listed on this visit.</p>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {lines.map((line, idx) => {
@@ -346,25 +389,15 @@ export function PrescriptionWorksheet({
 
       {!readOnly && (
         <footer className="flex shrink-0 flex-wrap gap-2 border-t border-line-soft px-5 py-3">
-          {!started && (
-            <button
-              type="button"
-              className="rounded-md border border-line-soft px-4 py-2 text-sm font-medium"
-              onClick={handleStart}
-              disabled={pending || lines.length === 0}
-            >
-              Start dispense
-            </button>
-          )}
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-md bg-cobalt px-4 py-2 text-sm font-medium text-white"
             onClick={handleComplete}
-            disabled={pending || lines.length === 0}
+            disabled={pending}
             data-testid="save-complete"
           >
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Hand over &amp; complete
+            {lines.length === 0 ? 'Mark dispensed' : 'Dispense & complete'}
           </button>
           <button
             type="button"

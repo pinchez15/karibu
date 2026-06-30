@@ -346,6 +346,48 @@ export async function voidCharge(
   return { success: true }
 }
 
+/** Adjust an existing charge line (e.g. waive consultation or correct MRDT price). */
+export async function updateChargeAmount(
+  patientId: string,
+  chargeId: string,
+  amountUgx: number,
+): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const amount = Math.round(amountUgx)
+  if (amount < 0) return { success: false, error: 'Amount must be non-negative' }
+
+  const supabase = createServiceClient()
+  const { data: charge } = await supabase
+    .from('charges')
+    .select('id, quantity, voided')
+    .eq('id', chargeId)
+    .eq('patient_id', patientId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+
+  if (!charge || charge.voided) return { success: false, error: 'Charge not found' }
+
+  const qty = Math.max(1, Number(charge.quantity ?? 1))
+  const unit = Math.round(amount / qty)
+
+  const { error } = await supabase
+    .from('charges')
+    .update({ amount_ugx: amount, unit_price_ugx: unit })
+    .eq('id', chargeId)
+    .eq('clinic_id', staff.clinic_id)
+
+  if (error) return { success: false, error: error.message }
+
+  billingPaths(patientId)
+  return { success: true }
+}
+
 export async function recordBillingPayment(input: {
   patientId: string
   amountCashUgx: number

@@ -81,6 +81,32 @@ export async function createLabStockItem(formData: FormData): Promise<ActionResu
   return { success: true }
 }
 
+export async function updateLabStockUnitPrice(
+  stockItemId: string,
+  unitPriceUgx: number | null,
+): Promise<ActionResult> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not authenticated' }
+  if (staff.role !== 'lab_tech' && staff.role !== 'admin') {
+    return { success: false, error: 'Only lab techs and admins can edit stock' }
+  }
+
+  const price =
+    unitPriceUgx != null && Number.isFinite(unitPriceUgx) ? Math.max(0, Math.round(unitPriceUgx)) : null
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('lab_stock_items')
+    .update({ unit_price_ugx: price })
+    .eq('id', stockItemId)
+    .eq('clinic_id', staff.clinic_id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/lab/stock')
+  return { success: true }
+}
+
 export async function recordLabStockMovement(formData: FormData): Promise<ActionResult> {
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not authenticated' }

@@ -106,7 +106,7 @@ export async function getReferralFormContext(visitId: string): Promise<ReferralF
 
 export async function createReferral(
   input: z.infer<typeof CreateReferralSchema>,
-): Promise<{ ok: true; summary: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; summary: string; referralId: string } | { ok: false; error: string }> {
   const staff = await getStaff()
   if (!staff) return { ok: false, error: 'Not signed in' }
 
@@ -176,6 +176,92 @@ export async function createReferral(
   revalidatePath('/dashboard/orders')
   revalidatePath(`/dashboard/visits/${parsed.data.visitId}`)
   revalidatePath(`/dashboard/patients/${ctx.patientId}`)
+  revalidatePath(`/dashboard/referrals/${referralId}/print`)
 
-  return { ok: true, summary }
+  return { ok: true, summary, referralId }
+}
+
+export async function getReferralPrintSummary(referralId: string): Promise<string | null> {
+  const staff = await getStaff()
+  if (!staff) return null
+
+  const supabase = createServiceClient()
+  const { data: referral } = await supabase
+    .from('referrals')
+    .select(`
+      id,
+      to_facility,
+      urgency,
+      reason,
+      clinical_summary,
+      transport_mode,
+      created_at,
+      referred_by,
+      visit:visits(
+        chief_complaint,
+        diagnosis,
+        tests_ordered,
+        lab_results,
+        medications
+      ),
+      patient:patients(
+        id,
+        first_name,
+        last_name,
+        display_name,
+        patient_number,
+        sex,
+        date_of_birth,
+        whatsapp_number
+      )
+    `)
+    .eq('id', referralId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+
+  if (!referral) return null
+
+  let referringClinician = staff.display_name
+  if (referral.referred_by) {
+    const { data: referrer } = await supabase
+      .from('staff')
+      .select('display_name')
+      .eq('id', referral.referred_by as string)
+      .maybeSingle()
+    if (referrer?.display_name) referringClinician = referrer.display_name as string
+  }
+
+  const { data: clinic } = await supabase
+    .from('clinics')
+    .select('name')
+    .eq('id', staff.clinic_id)
+    .maybeSingle()
+
+  const patient = Array.isArray(referral.patient) ? referral.patient[0] : referral.patient
+  const visit = Array.isArray(referral.visit) ? referral.visit[0] : referral.visit
+
+  if (!patient) return null
+
+  return buildPrintableReferralSummary({
+    clinicName: (clinic?.name as string | null) ?? null,
+    referringClinician,
+    patientName: patientDisplayName(patient),
+    patientNumber:
+      (patient.patient_number as string | null) ??
+      `PT-${String(patient.id ?? '').slice(0, 8)}`,
+    patientSex: (patient.sex as string | null) ?? null,
+    patientDob: (patient.date_of_birth as string | null) ?? null,
+    patientPhone: (patient.whatsapp_number as string | null) ?? null,
+    toFacility: referral.to_facility as string,
+    urgency: referral.urgency as ReferralUrgency,
+    reason: referral.reason as string,
+    clinicalSummary: (referral.clinical_summary as string | null) ?? null,
+    transportMode: (referral.transport_mode as string | null) ?? null,
+    createdAt: referral.created_at as string,
+    chiefComplaint: (visit?.chief_complaint as string | null) ?? null,
+    diagnosis: (visit?.diagnosis as string | null) ?? null,
+    testsOrdered: (visit?.tests_ordered as string | null) ?? null,
+    labResults: (visit?.lab_results as string | null) ?? null,
+    medications: (visit?.medications as string | null) ?? null,
+  })
 }

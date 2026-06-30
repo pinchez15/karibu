@@ -11,6 +11,7 @@ import {
   addCharge,
   generateChargesFromVisit,
   voidCharge,
+  updateChargeAmount,
   recordBillingPayment,
   type PatientChargeRow,
   type PatientPaymentRow,
@@ -67,6 +68,8 @@ export function PatientBillClient({
   const [payCash, setPayCash] = useState('')
   const [payBarter, setPayBarter] = useState('')
   const [payBarterDesc, setPayBarterDesc] = useState('')
+  const [editingChargeId, setEditingChargeId] = useState<string | null>(null)
+  const [editAmount, setEditAmount] = useState('')
 
   const activeCharges = charges.filter((c) => !c.voided)
   const totalBill = activeCharges.reduce((sum, c) => sum + c.amount_ugx, 0)
@@ -206,7 +209,61 @@ export function PatientBillClient({
                     <td className="px-2 py-2 text-right">
                       {c.unit_price_ugx != null ? ugx(c.unit_price_ugx) : '—'}
                     </td>
-                    <td className="px-2 py-2 text-right font-medium">{ugx(c.amount_ugx)}</td>
+                    <td className="px-2 py-2 text-right font-medium">
+                      {editingChargeId === c.id ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <Input
+                            type="number"
+                            min={0}
+                            className="h-8 w-24 text-right text-[13px]"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            disabled={pending}
+                          />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs"
+                            disabled={pending}
+                            onClick={() => {
+                              run(async () => {
+                                const r = await updateChargeAmount(
+                                  patientId,
+                                  c.id,
+                                  Number(editAmount || 0),
+                                )
+                                if (!r.success) return r
+                                setEditingChargeId(null)
+                                return { success: true as const }
+                              })
+                            }}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2 text-xs"
+                            disabled={pending}
+                            onClick={() => setEditingChargeId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="rounded px-1 hover:bg-muted/80"
+                          title="Click to edit amount"
+                          onClick={() => {
+                            setEditingChargeId(c.id)
+                            setEditAmount(String(c.amount_ugx))
+                          }}
+                        >
+                          {ugx(c.amount_ugx)}
+                        </button>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-right">
                       <Button
                         variant="ghost"
@@ -288,8 +345,9 @@ export function PatientBillClient({
       {/* Record payment */}
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="text-sm font-semibold">Record payment</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
           Partial payments allowed. Use mixed or barter when the patient pays with goods and cash.
+          After saving, a fresh receipt opens automatically.
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -372,6 +430,7 @@ export function PatientBillClient({
                 setPayCash('')
                 setPayBarter('')
                 setPayBarterDesc('')
+                window.open(`/dashboard/billing/${patientId}/receipt`, '_blank', 'noopener,noreferrer')
                 return { success: true as const }
               })
             }

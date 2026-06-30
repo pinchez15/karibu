@@ -12,6 +12,7 @@ import {
   createLabStockItem,
   recordLabStockMovement,
   setLabStockActive,
+  updateLabStockUnitPrice,
 } from './actions'
 
 export type LabStockRow = {
@@ -233,6 +234,10 @@ export function LabStockClient({ initialRows }: { initialRows: LabStockRow[] }) 
 
 function LabStockRowItem({ row }: { row: LabStockRow }) {
   const [showMovement, setShowMovement] = useState(false)
+  const [editingPrice, setEditingPrice] = useState(false)
+  const [priceDraft, setPriceDraft] = useState('')
+  const [priceError, setPriceError] = useState<string | null>(null)
+  const [pricePending, startPrice] = useTransition()
   const status = getStockStatus(row)
   const categoryLabel = CATEGORY_LABELS[row.category] ?? row.category.replace(/_/g, ' ')
 
@@ -264,7 +269,66 @@ function LabStockRowItem({ row }: { row: LabStockRow }) {
           )}
         </td>
         <td className="px-2 py-1.5 align-middle text-right font-mono tabular-nums">
-          {formatStockUnitPrice(row.unit_price_ugx)}
+          {editingPrice ? (
+            <div className="flex items-center justify-end gap-1">
+              <Input
+                type="number"
+                min={0}
+                className="h-7 w-20 text-right text-xs"
+                value={priceDraft}
+                onChange={(e) => setPriceDraft(e.target.value)}
+                disabled={pricePending}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 px-1.5 text-[10px]"
+                disabled={pricePending}
+                onClick={() => {
+                  setPriceError(null)
+                  startPrice(async () => {
+                    const raw = priceDraft.trim()
+                    const r = await updateLabStockUnitPrice(
+                      row.id,
+                      raw === '' ? null : Number(raw),
+                    )
+                    if (!r.success) {
+                      setPriceError(r.error)
+                      return
+                    }
+                    setEditingPrice(false)
+                  })
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 px-1.5 text-[10px]"
+                disabled={pricePending}
+                onClick={() => setEditingPrice(false)}
+              >
+                ×
+              </Button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="rounded px-1 hover:bg-muted/80"
+              title="Click to set patient charge price"
+              onClick={() => {
+                setPriceDraft(row.unit_price_ugx != null ? String(row.unit_price_ugx) : '')
+                setEditingPrice(true)
+                setPriceError(null)
+              }}
+            >
+              {formatStockUnitPrice(row.unit_price_ugx)}
+            </button>
+          )}
+          {priceError && <div className="text-[10px] text-destructive">{priceError}</div>}
         </td>
         <td className="px-2 py-1.5 align-middle text-muted-foreground whitespace-nowrap">
           {row.expires_at

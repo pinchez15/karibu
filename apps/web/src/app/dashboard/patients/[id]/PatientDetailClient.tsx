@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Activity, Loader2, PenLine, Plus } from 'lucide-react'
+import { Activity, Loader2, PenLine, Plus, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -364,6 +364,8 @@ function LatestVitalsCard({ vitals }: { vitals: PatientLatestVitals | null }) {
 
 function VisitCard({ data, eventAt }: { data: VisitEventData; eventAt: string }) {
   const cfg = VISIT_STATUS_CONFIG[data.status] || VISIT_STATUS_CONFIG.error
+  const canPrint = ['sent', 'completed'].includes(data.status)
+  const printHref = `/dashboard/visits/${data.visit_id}/print`
   const labLabel =
     data.lab_status && data.lab_status !== 'not_ordered'
       ? LAB_STATUS_LABEL[data.lab_status] ?? data.lab_status
@@ -375,11 +377,9 @@ function VisitCard({ data, eventAt }: { data: VisitEventData; eventAt: string })
         ? 'Pharmacy queued'
         : null
   return (
-    <Link
-      href={`/dashboard/visits/${data.visit_id}`}
-      className="block bg-card border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors"
-    >
-      <div className="flex items-start justify-between gap-2 mb-2">
+    <div className="bg-card border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors">
+      <Link href={`/dashboard/visits/${data.visit_id}`} className="block">
+        <div className="flex items-start justify-between gap-2 mb-2">
         <div>
           <p className="font-medium">{formatDate(data.visit_date) || formatDate(eventAt)}</p>
           <div className="mt-1 flex flex-wrap gap-2">
@@ -413,7 +413,19 @@ function VisitCard({ data, eventAt }: { data: VisitEventData; eventAt: string })
           <span className="font-medium">Dx:</span> {data.diagnosis}
         </p>
       )}
-    </Link>
+      </Link>
+      {canPrint && (
+        <a
+          href={printHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-cobalt hover:underline"
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Print patient slip
+        </a>
+      )}
+    </div>
   )
 }
 
@@ -1083,6 +1095,20 @@ export function PatientDetailClient({
   const canSign = SIGNING_ROLES.has(staffRole)
   const canRecord = RECORDING_ROLES.has(staffRole)
 
+  const latestPrintableVisit = useMemo(() => {
+    const visits = events.filter(
+      (e): e is Extract<PatientTimelineEvent, { event_type: 'visit' }> =>
+        e.event_type === 'visit' && ['sent', 'completed'].includes(e.event_data.status),
+    )
+    return (
+      visits.sort(
+        (a, b) =>
+          new Date(b.event_data.visit_date).getTime() -
+          new Date(a.event_data.visit_date).getTime(),
+      )[0]?.event_data ?? null
+    )
+  }, [events])
+
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || events.length === 0) return
     setLoadingMore(true)
@@ -1110,6 +1136,18 @@ export function PatientDetailClient({
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Timeline</h3>
         <div className="flex items-center gap-2">
+          {latestPrintableVisit && (
+            <Button size="sm" variant="outline" className="gap-2" asChild>
+              <a
+                href={`/dashboard/visits/${latestPrintableVisit.visit_id}/print`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Printer className="w-4 h-4" />
+                Print slip
+              </a>
+            </Button>
+          )}
           <Button
             size="sm"
             variant="outline"

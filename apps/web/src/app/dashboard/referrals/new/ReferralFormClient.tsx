@@ -21,6 +21,7 @@ export function ReferralFormClient({ context }: { context: ReferralFormContext }
   const [clinicalSummary, setClinicalSummary] = useState(context.defaultSummary)
   const [transportMode, setTransportMode] = useState('')
   const [printableSummary, setPrintableSummary] = useState<string | null>(null)
+  const [referralId, setReferralId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -40,16 +41,16 @@ export function ReferralFormClient({ context }: { context: ReferralFormContext }
         return
       }
       setPrintableSummary(result.summary)
+      setReferralId(result.referralId)
+      window.open(`/dashboard/referrals/${result.referralId}/print`, '_blank', 'noopener,noreferrer')
     })
   }
 
+  const printHref = referralId ? `/dashboard/referrals/${referralId}/print` : null
+
   const handlePrint = () => {
-    if (!printableSummary) return
-    const w = window.open('', '_blank', 'noopener,noreferrer')
-    if (!w) return
-    w.document.write(`<pre style="font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;padding:24px">${printableSummary.replace(/</g, '&lt;')}</pre>`)
-    w.document.close()
-    w.print()
+    if (!printHref) return
+    window.open(printHref, '_blank', 'noopener,noreferrer')
   }
 
   if (printableSummary) {
@@ -60,10 +61,17 @@ export function ReferralFormClient({ context }: { context: ReferralFormContext }
           {printableSummary}
         </pre>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={handlePrint} className="gap-2">
+          <Button type="button" onClick={handlePrint} className="gap-2" disabled={!printHref}>
             <Printer className="h-4 w-4" />
             Print summary
           </Button>
+          {printHref && (
+            <Button type="button" variant="outline" asChild>
+              <a href={printHref} target="_blank" rel="noopener noreferrer">
+                Open print preview
+              </a>
+            </Button>
+          )}
           <Button type="button" variant="outline" asChild>
             <Link href={`/dashboard/visits/${context.visitId}`}>Back to visit</Link>
           </Button>

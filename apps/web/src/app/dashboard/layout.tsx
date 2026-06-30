@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
-import { DashboardShell } from '@/components/dashboard-shell'
+import { DashboardShellGate } from '@/components/dashboard-shell-gate'
 import { OnboardingGuard } from '@/components/onboarding-guard'
 
 /**
@@ -38,7 +38,7 @@ export default async function DashboardLayout({
 
   return (
     <OnboardingGuard onboardingComplete={Boolean(staff.onboarding_completed_at)}>
-      <DashboardShell
+      <DashboardShellGate
         clinicName={clinic?.name}
         staffRole={staff.role}
         staff={{
@@ -48,7 +48,7 @@ export default async function DashboardLayout({
         }}
       >
         {children}
-      </DashboardShell>
+      </DashboardShellGate>
     </OnboardingGuard>
   )
 }

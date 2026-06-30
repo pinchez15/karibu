@@ -416,7 +416,7 @@ export function VisitDetailClient({
         </div>
       )}
 
-      {/* Print receipt — only available once approved */}
+      {/* Print patient slip — only available once approved */}
       {['sent', 'completed'].includes(visit.status) && visit.patient_notes?.content && (
         <div className="flex items-center gap-3">
           <Button
@@ -424,7 +424,7 @@ export function VisitDetailClient({
             className="gap-2"
           >
             <Printer className="h-4 w-4" />
-            Print patient note
+            Print patient slip
           </Button>
         </div>
       )}

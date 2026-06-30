@@ -1,114 +1,21 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Download } from 'lucide-react'
 import { getStaff, isAdmin } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase'
+import { getClinicSimpleMetrics } from '@/lib/clinic-simple-metrics'
 import { WebTopBar } from '@/components/web-shell'
-import { KpiCard } from './_components/kpi-card'
+import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { ReportTile } from './_components/report-tile'
+import { RegisterMetricCard, RegisterSection } from './_components/register-metrics'
 
-/**
- * Analyst overview — real-data face of /dashboard/admin/reports.
- *
- * KPIs are computed from the visits + payments tables for the current
- * calendar month. Anything we can't compute from the existing schema
- * shows "—" rather than mock data.
- *
- * Wired-through reports: HMIS 105 + Data Quality (existing routes).
- * The other tiles route to /dashboard/admin/reports/coming-soon/[slug]
- * stubs and render without mini-charts / placeholder stats — only the
- * tag, title, and description (which describe the planned capability).
- */
-
-interface AnalystMetrics {
-  monthLabel: string
-  visitsThisMonth: number
-  uniquePatientsThisMonth: number
-  revenueThisMonthUgx: number | null
-  /** Average documentation duration in seconds (visit checked_in_at → documentation_completed_at). */
-  avgVisitSeconds: number | null
+function formatCount(n: number): string {
+  return n.toLocaleString('en-US')
 }
 
-async function getAnalystMetrics(clinicId: string): Promise<AnalystMetrics> {
-  const supabase = createServiceClient()
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const monthStartIso = monthStart.toISOString()
-  const monthStartDate = monthStartIso.slice(0, 10)
-  const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
-    .format(now)
-    .toUpperCase()
-
-  // Visits this month (any status — total clinical activity)
-  const { count: visitsCount } = await supabase
-    .from('visits')
-    .select('*', { count: 'exact', head: true })
-    .eq('clinic_id', clinicId)
-    .gte('visit_date', monthStartDate)
-
-  // Distinct patients seen this month
-  const { data: distinctPatients } = await supabase
-    .from('visits')
-    .select('patient_id')
-    .eq('clinic_id', clinicId)
-    .gte('visit_date', monthStartDate)
-
-  const uniquePatients = new Set((distinctPatients ?? []).map((row) => row.patient_id)).size
-
-  // Total revenue collected this month (paid payments only)
-  let revenueThisMonthUgx: number | null = null
-  const { data: payments, error: paymentsErr } = await supabase
-    .from('payments')
-    .select('amount_ugx')
-    .eq('clinic_id', clinicId)
-    .eq('status', 'paid')
-    .gte('created_at', monthStartIso)
-
-  if (!paymentsErr && payments) {
-    revenueThisMonthUgx = payments.reduce((sum, row) => sum + (row.amount_ugx ?? 0), 0)
-  }
-
-  // Average documentation duration this month — checked_in_at → documentation_completed_at
-  let avgVisitSeconds: number | null = null
-  const { data: timedVisits } = await supabase
-    .from('visits')
-    .select('checked_in_at, documentation_completed_at')
-    .eq('clinic_id', clinicId)
-    .eq('documentation_complete', true)
-    .gte('visit_date', monthStartDate)
-    .not('checked_in_at', 'is', null)
-    .not('documentation_completed_at', 'is', null)
-
-  if (timedVisits && timedVisits.length > 0) {
-    const total = timedVisits.reduce((acc, row) => {
-      const start = row.checked_in_at ? new Date(row.checked_in_at).getTime() : 0
-      const end = row.documentation_completed_at ? new Date(row.documentation_completed_at).getTime() : 0
-      const dur = (end - start) / 1000
-      return Number.isFinite(dur) && dur > 0 ? acc + dur : acc
-    }, 0)
-    if (total > 0) avgVisitSeconds = total / timedVisits.length
-  }
-
-  return {
-    monthLabel,
-    visitsThisMonth: visitsCount ?? 0,
-    uniquePatientsThisMonth: uniquePatients,
-    revenueThisMonthUgx,
-    avgVisitSeconds,
-  }
-}
-
-function formatUgx(value: number | null): string {
-  if (value === null || value === 0) return '—'
-  if (value >= 1_000_000) return `UGX ${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `UGX ${(value / 1_000).toFixed(0)}K`
-  return `UGX ${value.toLocaleString()}`
-}
-
-function formatDuration(seconds: number | null): string {
-  if (seconds === null || seconds <= 0) return '—'
-  const m = Math.floor(seconds / 60)
-  const s = Math.round(seconds % 60)
-  return m === 0 ? `${s}s` : `${m}m ${s}s`
+function formatUgx(n: number): string {
+  if (n === 0) return 'UGX 0'
+  if (n >= 1_000_000) return `UGX ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 10_000) return `UGX ${Math.round(n / 1_000)}K`
+  return `UGX ${n.toLocaleString('en-US')}`
 }
 
 export default async function ReportsOverviewPage() {
@@ -118,126 +25,168 @@ export default async function ReportsOverviewPage() {
   const admin = await isAdmin()
   if (!admin) redirect('/dashboard')
 
-  const metrics = await getAnalystMetrics(staff.clinic_id)
+  const m = await getClinicSimpleMetrics(staff.clinic_id)
 
   return (
     <>
       <WebTopBar
-        title="Overview"
-        subtitle={`DATA · ${metrics.monthLabel}`}
+        title="Clinic register"
+        subtitle={`DATA · ${m.todayLabel}`}
         actions={
-          <>
-            <div className="bg-card border border-border rounded-md px-2.5 py-1.5 flex items-center gap-2 text-[13px]">
-              <span className="kh-meta">RANGE</span>
-              <span className="font-semibold">{metrics.monthLabel.replace(/^\w/, (c) => c.toUpperCase())}</span>
-            </div>
-            <button className="bg-card text-body border border-border rounded-md px-3 py-2 font-medium text-[13px] inline-flex items-center gap-1.5 opacity-50 cursor-not-allowed">
-              <Download className="h-3.5 w-3.5" /> Export
-            </button>
-            <button className="bg-cobalt text-white rounded-md px-3.5 py-2 font-semibold text-[13px] opacity-50 cursor-not-allowed">
-              + New report
-            </button>
-          </>
+          <Link
+            href="/dashboard/billing/reports"
+            className="rounded-md border border-border bg-card px-3 py-2 text-[13px] font-medium text-body hover:bg-background"
+          >
+            Full cashflow →
+          </Link>
         }
       />
+      <RealtimeRefresher clinicId={staff.clinic_id} />
 
-      <div className="p-6 overflow-auto flex-1">
-        {/* Headline KPIs — real values from the visits + payments tables. */}
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          <KpiCard
-            label={`REVENUE · ${metrics.monthLabel}`}
-            value={formatUgx(metrics.revenueThisMonthUgx)}
-          />
-          <KpiCard
-            label="VISITS"
-            value={metrics.visitsThisMonth.toLocaleString()}
-          />
-          <KpiCard
-            label="UNIQUE PATIENTS"
-            value={metrics.uniquePatientsThisMonth.toLocaleString()}
-          />
-          <KpiCard
-            label="AVG VISIT TIME"
-            value={formatDuration(metrics.avgVisitSeconds)}
-          />
-        </div>
+      <div className="p-6 overflow-auto flex-1 space-y-8 max-w-5xl">
+        <p className="text-sm text-muted-foreground -mt-2">
+          Simple counts like the paper register — OPD cases reset each calendar month; inpatient
+          admissions keep running totals.
+        </p>
 
-        {/* Report library */}
-        <div className="flex items-baseline justify-between mb-3">
+        <RegisterSection title="Today" subtitle={m.todayLabel}>
+          <RegisterMetricCard
+            label="OPD cases"
+            value={formatCount(m.today.opdVisits)}
+            hint="Outpatient visits checked in today"
+            accent="cobalt"
+          />
+          <RegisterMetricCard
+            label="Income collected"
+            value={formatUgx(m.today.revenueUgx)}
+            hint="Cash & mobile money received today"
+            accent="green"
+          />
+          <RegisterMetricCard
+            label="New admissions"
+            value={formatCount(m.today.admissions)}
+            hint="Patients admitted to the ward today"
+            accent="slate"
+          />
+          <RegisterMetricCard
+            label="In ward now"
+            value={formatCount(m.activeInpatients)}
+            hint="Active inpatient admissions"
+            accent="slate"
+          />
+        </RegisterSection>
+
+        <RegisterSection
+          title={`This month — ${m.monthLabel.replace(/^\w/, (c) => c.toUpperCase())}`}
+          subtitle="OPD count starts again on the 1st of each month"
+        >
+          <RegisterMetricCard
+            label="OPD cases"
+            value={formatCount(m.month.opdVisits)}
+            hint="Outpatient visits since month start"
+            accent="cobalt"
+          />
+          <RegisterMetricCard
+            label="Income collected"
+            value={formatUgx(m.month.revenueUgx)}
+            hint="Cash & mobile received this month"
+            accent="green"
+          />
+          <RegisterMetricCard
+            label="Admissions"
+            value={formatCount(m.month.admissions)}
+            hint="Ward admissions this month (no monthly reset)"
+            accent="slate"
+          />
+          <RegisterMetricCard
+            label="Unique patients"
+            value={formatCount(m.month.uniquePatients)}
+            hint="Distinct OPD patients this month"
+          />
+        </RegisterSection>
+
+        <RegisterSection title={`${m.year} — year to date`} subtitle="Running totals since 1 January">
+          <RegisterMetricCard
+            label="OPD cases"
+            value={formatCount(m.yearToDate.opdVisits)}
+            accent="cobalt"
+          />
+          <RegisterMetricCard
+            label="Income collected"
+            value={formatUgx(m.yearToDate.revenueUgx)}
+            accent="green"
+          />
+          <RegisterMetricCard
+            label="Admissions"
+            value={formatCount(m.yearToDate.admissions)}
+            accent="slate"
+          />
+          <RegisterMetricCard
+            label="Billed this month"
+            value={formatUgx(m.month.chargedUgx)}
+            hint="Charges raised (may differ from collections)"
+          />
+        </RegisterSection>
+
+        <section className="space-y-3">
           <div>
-            <div className="text-base font-bold tracking-tight">Reports</div>
-            <div className="text-xs text-muted-foreground">
-              Open a report or browse what's planned next.
-            </div>
+            <h2 className="text-base font-semibold tracking-tight">Detailed reports</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              HMIS submissions, diagnosis breakdowns, and data quality checks.
+            </p>
           </div>
-        </div>
 
-        <div className="grid grid-cols-3 gap-3.5">
-          {/* Wired-through: existing reports. */}
-          <ReportTile
-            tag="COMPLIANCE"
-            title="HMIS 105"
-            desc="Monthly outpatient submission to the Ministry of Health, with age × sex disaggregation. Required for diocesan subsidies."
-            href="/dashboard/admin/reports/hmis105"
-          />
-          <ReportTile
-            tag="QUALITY"
-            title="Data quality"
-            desc="Find visits missing demographics, diagnosis codes, or AI confirmation before submitting HMIS reports."
-            href="/dashboard/admin/reports/data-quality"
-          />
-
-          {/* Planned reports — link to coming-soon stubs, no mini-charts or placeholder stats. */}
-          <ReportTile
-            tag="FINANCIAL"
-            title="Clinic profitability"
-            desc="Revenue, fees, payouts, and margin per clinic, drillable by service line."
-            href="/dashboard/admin/reports/profitability"
-          />
-          <ReportTile
-            tag="CLINICAL"
-            title="Disease burden"
-            desc="Top diagnoses by month, age band, and clinic. Triggers outbreak alerts."
-            href="/dashboard/admin/reports/disease-burden"
-          />
-          <ReportTile
-            tag="POPULATION"
-            title="Demographics"
-            desc="Age, sex, geography, repeat-visit rate. Catchment vs registered population."
-            href="/dashboard/admin/reports/demographics"
-          />
-          <ReportTile
-            tag="CLINICAL"
-            title="Care delivered"
-            desc="Visits, prescriptions, labs, ANC contacts, vaccinations, referrals."
-            href="/dashboard/admin/reports/care-delivered"
-          />
-          <ReportTile
-            tag="QUALITY"
-            title="30-day readmission"
-            desc="Patients returning within 30 days for the same complaint."
-            href="/dashboard/admin/reports/readmission"
-          />
-          <ReportTile
-            tag="MONITORING"
-            title="Outbreak watch"
-            desc="Continuous monitor that fires when any diagnosis exceeds 2× rolling baseline."
-            href="/dashboard/admin/reports/outbreak"
-          />
-          <ReportTile
-            tag="CUSTOM"
-            title="Workbench"
-            desc="Build your own report. Drag fields, save views, schedule recurring emails."
-            href="/dashboard/admin/reports/coming-soon/workbench"
-            workbench
-          />
-        </div>
-
-        <div className="mt-8 text-xs text-muted-foreground max-w-2xl">
-          KPIs above are live counts for the current month. Trend lines, cross-clinic compare, and per-report
-          drilldowns ship as the analyst aggregation layer is built — see{' '}
-          <code className="font-mono text-[11px]">docs/offline-first-refactor.md</code>.
-        </div>
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+            <ReportTile
+              tag="COMPLIANCE"
+              title="HMIS 105"
+              desc="Monthly outpatient form for the Ministry of Health."
+              href="/dashboard/admin/reports/hmis105"
+            />
+            <ReportTile
+              tag="QUALITY"
+              title="Data quality"
+              desc="Visits missing codes or demographics before HMIS submit."
+              href="/dashboard/admin/reports/data-quality"
+            />
+            <ReportTile
+              tag="CLINICAL"
+              title="Care delivered"
+              desc="Prescriptions, labs, and referrals this month."
+              href="/dashboard/admin/reports/care-delivered"
+            />
+            <ReportTile
+              tag="FINANCIAL"
+              title="Clinic profitability"
+              desc="Revenue and charges by service line this month."
+              href="/dashboard/admin/reports/profitability"
+            />
+            <ReportTile
+              tag="CLINICAL"
+              title="Disease burden"
+              desc="Top diagnoses by month and age band."
+              href="/dashboard/admin/reports/disease-burden"
+            />
+            <ReportTile
+              tag="POPULATION"
+              title="Demographics"
+              desc="Age, sex, and repeat-visit patterns."
+              href="/dashboard/admin/reports/demographics"
+            />
+            <ReportTile
+              tag="QUALITY"
+              title="30-day readmission"
+              desc="Patients returning within 30 days."
+              href="/dashboard/admin/reports/readmission"
+            />
+            <ReportTile
+              tag="MONITORING"
+              title="Outbreak watch"
+              desc="Diagnosis spikes above rolling baseline."
+              href="/dashboard/admin/reports/outbreak"
+            />
+          </div>
+        </section>
       </div>
     </>
   )
