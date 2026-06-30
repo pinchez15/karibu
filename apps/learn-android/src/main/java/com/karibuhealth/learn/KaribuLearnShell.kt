@@ -27,7 +27,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.karibuhealth.learn.chart.Green
+import com.karibuhealth.learn.chart.GreenSoft
+import com.karibuhealth.learn.data.supabase.CaseCompletionRow
+import com.karibuhealth.learn.model.CaseProgressStatus
 import com.karibuhealth.learn.model.LearnCase
+import com.karibuhealth.learn.model.caseProgressStatus
 import com.karibuhealth.learn.chart.KaribuMark
 import com.karibuhealth.learn.chart.MonoFamily
 
@@ -112,10 +117,17 @@ fun KlAppBar(title: String, sub: String? = null, showMark: Boolean = false, trai
     }
 }
 
-/** Horizontal case row used in Home + Library. */
+/** Horizontal case row used in Home + Library + chapter detail. */
 @Composable
-fun CaseCard(case: LearnCase, onOpen: (LearnCase) -> Unit) {
+fun CaseCard(
+    case: LearnCase,
+    onOpen: (LearnCase) -> Unit,
+    completion: CaseCompletionRow? = null,
+    status: CaseProgressStatus = caseProgressStatus(completion),
+) {
     val kl = LocalKl.current
+    val amber = Color(0xFFB45309)
+    val amberSoft = Color(0xFFFFF4E5)
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(kl.surface)
             .border(1.dp, kl.line, RoundedCornerShape(14.dp))
@@ -125,10 +137,24 @@ fun CaseCard(case: LearnCase, onOpen: (LearnCase) -> Unit) {
     ) {
         Box(
             Modifier.size(52.dp).clip(RoundedCornerShape(12.dp))
-                .then(if (case.ready) Modifier.background(kl.gradient()) else Modifier.background(kl.soft)),
+                .then(
+                    when (status) {
+                        CaseProgressStatus.Passed -> Modifier.background(GreenSoft)
+                        CaseProgressStatus.NeedsRedo -> Modifier.background(amberSoft)
+                        CaseProgressStatus.NotStarted ->
+                            if (case.ready) Modifier.background(kl.gradient()) else Modifier.background(kl.soft)
+                    },
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(KlIcons.stethoscope, null, tint = if (case.ready) Color.White else kl.primary, modifier = Modifier.size(22.dp))
+            when (status) {
+                CaseProgressStatus.Passed ->
+                    Icon(KlIcons.checkCircle, null, tint = Green, modifier = Modifier.size(24.dp))
+                CaseProgressStatus.NeedsRedo ->
+                    Icon(KlIcons.flag, null, tint = amber, modifier = Modifier.size(22.dp))
+                CaseProgressStatus.NotStarted ->
+                    Icon(KlIcons.stethoscope, null, tint = if (case.ready) Color.White else kl.primary, modifier = Modifier.size(22.dp))
+            }
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -138,6 +164,12 @@ fun CaseCard(case: LearnCase, onOpen: (LearnCase) -> Unit) {
                     Text(label, fontFamily = MonoFamily, fontSize = 8.5f.sp, fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.4.sp, color = kl.deep,
                         modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(kl.soft)
+                            .padding(horizontal = 5.dp, vertical = 1.dp))
+                }
+                progressBadge(status, completion)?.let { (text, bg, fg) ->
+                    Text(text, fontFamily = MonoFamily, fontSize = 8.5f.sp, fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.4.sp, color = fg,
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(bg)
                             .padding(horizontal = 5.dp, vertical = 1.dp))
                 }
                 if (!case.ready) {
@@ -155,9 +187,32 @@ fun CaseCard(case: LearnCase, onOpen: (LearnCase) -> Unit) {
                     MonoMeta("${case.mins}m", color = kl.muted, size = 10)
                 }
                 MonoMeta("· CME ${fmtCredit(case.credit)}", color = kl.muted, size = 10)
+                if (status == CaseProgressStatus.NeedsRedo && completion != null) {
+                    MonoMeta("· ${completion.score}/${completion.total}", color = amber, size = 10)
+                }
             }
         }
-        if (case.ready) Icon(KlIcons.play, null, tint = kl.primary, modifier = Modifier.size(16.dp))
+        if (case.ready) {
+            Icon(
+                if (status == CaseProgressStatus.NeedsRedo) KlIcons.play else KlIcons.play,
+                null,
+                tint = if (status == CaseProgressStatus.Passed) Green else kl.primary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+private fun progressBadge(
+    status: CaseProgressStatus,
+    completion: CaseCompletionRow?,
+): Triple<String, Color, Color>? {
+    val amber = Color(0xFFB45309)
+    val amberSoft = Color(0xFFFFF4E5)
+    return when (status) {
+        CaseProgressStatus.Passed -> Triple("DONE", GreenSoft, Green)
+        CaseProgressStatus.NeedsRedo -> Triple("RETRY", amberSoft, amber)
+        CaseProgressStatus.NotStarted -> null
     }
 }
 

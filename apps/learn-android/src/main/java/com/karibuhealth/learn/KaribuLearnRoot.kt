@@ -18,6 +18,7 @@ import androidx.compose.runtime.collectAsState
 import com.karibuhealth.learn.data.PackStatus
 import com.karibuhealth.learn.data.supabase.LearnAuthRepository
 import com.karibuhealth.learn.model.LearnCase
+import com.karibuhealth.learn.model.LearnChapter
 import com.karibuhealth.learn.ui.auth.LearnAuthScreen
 import com.karibuhealth.learn.walkthrough.WalkthroughScreen
 
@@ -26,6 +27,7 @@ private sealed interface LearnNav {
     data object Welcome : LearnNav
     data object Auth : LearnNav
     data class Tabs(val tab: LearnTab) : LearnNav
+    data class Chapter(val chapter: LearnChapter) : LearnNav
     data class Landing(val case: LearnCase) : LearnNav
     data class Walk(val case: LearnCase) : LearnNav
     data class Complete(val case: LearnCase, val score: Int, val total: Int) : LearnNav
@@ -74,6 +76,7 @@ fun KaribuLearnRoot(
                         tab = n.tab,
                         state = state,
                         progress = progress,
+                        chapters = viewModel.chapters(),
                         onSelectTab = { tab ->
                             if (tab == LearnTab.Progress && !progress.isSignedIn) {
                                 nav = LearnNav.Auth
@@ -83,16 +86,34 @@ fun KaribuLearnRoot(
                             }
                         },
                         onOpenCase = { nav = LearnNav.Landing(it) },
+                        onOpenChapter = { nav = LearnNav.Chapter(it) },
                         onDownload = viewModel::downloadPack,
-                        onRemove = viewModel::removePack,
                         onSignIn = { nav = LearnNav.Auth },
+                    )
+                }
+
+                is LearnNav.Chapter -> {
+                    BackHandler { nav = LearnNav.Tabs(LearnTab.Library) }
+                    ChapterDetailScreen(
+                        chapter = n.chapter,
+                        cases = state.cases,
+                        completionMap = progress.completionMap,
+                        downloading = state.downloading,
+                        onBack = { nav = LearnNav.Tabs(LearnTab.Library) },
+                        onOpenCase = { nav = LearnNav.Landing(it) },
+                        onDownload = viewModel::downloadPack,
                     )
                 }
 
                 is LearnNav.Landing -> CaseLandingScreen(
                     case = n.case,
                     onBegin = { c -> if (c.steps.isNotEmpty()) nav = LearnNav.Walk(c) },
-                    onBack = { nav = LearnNav.Tabs(LearnTab.Library) },
+                    onBack = {
+                        val chapter = viewModel.chapters().firstOrNull { ch ->
+                            ch.packs.any { p -> p.info.id == n.case.packId }
+                        }
+                        nav = if (chapter != null) LearnNav.Chapter(chapter) else LearnNav.Tabs(LearnTab.Library)
+                    },
                 )
 
                 is LearnNav.Walk -> WalkthroughScreen(
@@ -112,7 +133,12 @@ fun KaribuLearnRoot(
                         onSubmitCorrection = { message, onResult ->
                             viewModel.submitCaseCorrection(n.case, message, onResult)
                         },
-                        onLibrary = { nav = LearnNav.Tabs(LearnTab.Library) },
+                        onLibrary = {
+                            val chapter = viewModel.chapters().firstOrNull { ch ->
+                                ch.packs.any { p -> p.info.id == n.case.packId }
+                            }
+                            nav = if (chapter != null) LearnNav.Chapter(chapter) else LearnNav.Tabs(LearnTab.Library)
+                        },
                     )
                 }
             }
@@ -125,10 +151,11 @@ private fun TabsScaffold(
     tab: LearnTab,
     state: LearnUiState,
     progress: LearnProgressUiState,
+    chapters: List<LearnChapter>,
     onSelectTab: (LearnTab) -> Unit,
     onOpenCase: (LearnCase) -> Unit,
+    onOpenChapter: (LearnChapter) -> Unit,
     onDownload: (com.karibuhealth.learn.model.PackInfo) -> Unit,
-    onRemove: (com.karibuhealth.learn.model.PackInfo) -> Unit,
     onSignIn: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
@@ -152,8 +179,12 @@ private fun TabsScaffold(
                         onSeeAll = { onSelectTab(LearnTab.Library) },
                     )
                     LearnTab.Library -> LibraryScreen(
-                        cases = state.cases, packs = state.packs, downloading = state.downloading,
-                        onOpenCase = onOpenCase, onDownload = onDownload, onRemove = onRemove,
+                        chapters = chapters,
+                        cases = state.cases,
+                        completionMap = progress.completionMap,
+                        downloading = state.downloading,
+                        onOpenChapter = onOpenChapter,
+                        onDownload = onDownload,
                     )
                     LearnTab.Progress -> ProgressScreen(
                         cases = state.cases,

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.karibuhealth.learn.chart.Cobalt
 import com.karibuhealth.learn.data.LearnRepository
+import com.karibuhealth.learn.data.LocalProgressStore
 import com.karibuhealth.learn.data.supabase.LearnAuthRepository
 import com.karibuhealth.learn.data.supabase.LearnCorrectionsRepository
 import com.karibuhealth.learn.data.supabase.LearnProgressRepository
@@ -34,7 +35,14 @@ class MainActivity : ComponentActivity() {
         val authRepository = LearnAuthRepository()
         val progressRepository = LearnProgressRepository(authRepository)
         val correctionsRepository = LearnCorrectionsRepository(authRepository)
-        val factory = LearnViewModelFactory(repository, authRepository, progressRepository, correctionsRepository)
+        val localProgressStore = LocalProgressStore(applicationContext)
+        val factory = LearnViewModelFactory(
+            repository,
+            authRepository,
+            progressRepository,
+            correctionsRepository,
+            localProgressStore,
+        )
 
         setContent {
             MaterialTheme(

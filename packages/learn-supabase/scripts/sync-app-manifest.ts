@@ -33,6 +33,7 @@ type CatalogPack = {
   subtitle: string
   topic: string
   level: number
+  chapter_id: string
   case_count: number
   approx_size_kb: number
   storage_path: string
@@ -50,6 +51,7 @@ type ManifestPack = {
   asset_path?: string
   download_url?: string
   level?: number
+  chapter_id?: string
   version: number
 }
 
@@ -73,6 +75,7 @@ async function main() {
       approx_size_kb: pack.approx_size_kb,
       bundled: false,
       level: pack.level,
+      chapter_id: pack.chapter_id,
       download_url: `${storageBase}/${pack.storage_path}`,
       version: pack.version,
     }))

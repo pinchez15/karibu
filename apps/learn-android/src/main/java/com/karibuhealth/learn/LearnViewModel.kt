@@ -3,6 +3,7 @@ package com.karibuhealth.learn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.karibuhealth.learn.data.LocalProgressStore
 import com.karibuhealth.learn.data.LearnRepository
 import com.karibuhealth.learn.data.PackEntry
 import com.karibuhealth.learn.data.supabase.CaseCompletionRow
@@ -10,7 +11,10 @@ import com.karibuhealth.learn.data.supabase.LearnAuthRepository
 import com.karibuhealth.learn.data.supabase.LearnCorrectionsRepository
 import com.karibuhealth.learn.data.supabase.LearnProgressRepository
 import com.karibuhealth.learn.model.LearnCase
+import com.karibuhealth.learn.model.LearnChapter
 import com.karibuhealth.learn.model.PackInfo
+import com.karibuhealth.learn.model.buildChapters
+import com.karibuhealth.learn.model.mergeCompletion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,13 +40,16 @@ data class LearnProgressUiState(
     val creditsEarned: Double = 0.0,
     val completions: List<CaseCompletionRow> = emptyList(),
     val error: String? = null,
-)
+) {
+    val completionMap: Map<String, CaseCompletionRow> get() = completions.associateBy { it.caseId }
+}
 
 class LearnViewModel(
     private val repository: LearnRepository,
     private val authRepository: LearnAuthRepository,
     private val progressRepository: LearnProgressRepository,
     private val correctionsRepository: LearnCorrectionsRepository,
+    private val localProgressStore: LocalProgressStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LearnUiState())
@@ -51,21 +58,29 @@ class LearnViewModel(
     private val _progressState = MutableStateFlow(LearnProgressUiState())
     val progressState: StateFlow<LearnProgressUiState> = _progressState.asStateFlow()
 
+    private var remoteCompletions: Map<String, CaseCompletionRow> = emptyMap()
+    private var localCompletions: Map<String, CaseCompletionRow> = emptyMap()
+
     init {
+        viewModelScope.launch {
+            localCompletions = localProgressStore.loadAll()
+            publishMergedCompletions()
+        }
         refresh()
         authRepository.sessionStatus
             .onEach { signedIn ->
                 _progressState.update { it.copy(isSignedIn = signedIn) }
-                if (signedIn) refreshProgress() else {
-                    _progressState.update {
-                        it.copy(creditsEarned = 0.0, completions = emptyList(), error = null)
-                    }
-                }
+                if (signedIn) refreshProgress()
             }
             .launchIn(viewModelScope)
         _progressState.update { it.copy(isSignedIn = authRepository.isSignedIn) }
         if (authRepository.isSignedIn) refreshProgress()
     }
+
+    fun chapters(): List<LearnChapter> = buildChapters(_uiState.value.packs)
+
+    fun completionFor(caseId: String): CaseCompletionRow? =
+        _progressState.value.completionMap[caseId]
 
     fun refresh() {
         viewModelScope.launch {
@@ -97,13 +112,14 @@ class LearnViewModel(
             _progressState.update { it.copy(isLoading = true, error = null) }
             runCatching { progressRepository.fetchProgress() }
                 .onSuccess { progress ->
+                    remoteCompletions = progress.completions.associateBy { it.caseId }
                     _progressState.update {
                         it.copy(
                             isLoading = false,
                             creditsEarned = progress.creditsEarned,
-                            completions = progress.completions,
                         )
                     }
+                    publishMergedCompletions()
                 }
                 .onFailure { e ->
                     _progressState.update {
@@ -114,17 +130,31 @@ class LearnViewModel(
     }
 
     fun recordCaseCompletion(case: LearnCase, score: Int, total: Int) {
-        if (!authRepository.isSignedIn) return
         viewModelScope.launch {
-            runCatching {
-                progressRepository.recordCompletion(
-                    caseId = case.id,
-                    packId = case.packId,
-                    score = score,
-                    total = total,
-                    credit = case.credit,
-                )
-            }.onSuccess { refreshProgress() }
+            val row = CaseCompletionRow(
+                caseId = case.id,
+                packId = case.packId,
+                score = score,
+                total = total,
+                credit = case.credit,
+            )
+            localProgressStore.record(row)
+            localCompletions = localCompletions.toMutableMap().apply {
+                put(case.id, mergeCompletion(get(case.id), row))
+            }
+            publishMergedCompletions()
+
+            if (authRepository.isSignedIn) {
+                runCatching {
+                    progressRepository.recordCompletion(
+                        caseId = case.id,
+                        packId = case.packId,
+                        score = score,
+                        total = total,
+                        credit = case.credit,
+                    )
+                }.onSuccess { refreshProgress() }
+            }
         }
     }
 
@@ -164,6 +194,17 @@ class LearnViewModel(
     }
 
     fun caseById(id: String): LearnCase? = _uiState.value.cases.firstOrNull { it.id == id }
+
+    private fun publishMergedCompletions() {
+        val merged = mutableMapOf<String, CaseCompletionRow>()
+        localCompletions.values.forEach { row ->
+            merged[row.caseId] = mergeCompletion(merged[row.caseId], row)
+        }
+        remoteCompletions.values.forEach { row ->
+            merged[row.caseId] = mergeCompletion(merged[row.caseId], row)
+        }
+        _progressState.update { it.copy(completions = merged.values.toList()) }
+    }
 }
 
 class LearnViewModelFactory(
@@ -171,11 +212,18 @@ class LearnViewModelFactory(
     private val authRepository: LearnAuthRepository,
     private val progressRepository: LearnProgressRepository,
     private val correctionsRepository: LearnCorrectionsRepository,
+    private val localProgressStore: LocalProgressStore,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LearnViewModel::class.java)) {
-            return LearnViewModel(repository, authRepository, progressRepository, correctionsRepository) as T
+            return LearnViewModel(
+                repository,
+                authRepository,
+                progressRepository,
+                correctionsRepository,
+                localProgressStore,
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
     }

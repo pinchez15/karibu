@@ -41,6 +41,8 @@ data class PackInfo(
      * from a packaged asset — see LearnRepository.downloadPack.
      */
     @SerialName("download_url") val downloadUrl: String? = null,
+    @SerialName("chapter_id") val chapterId: String? = null,
+    val level: Int? = null,
     val version: Int = 1,
 )
 

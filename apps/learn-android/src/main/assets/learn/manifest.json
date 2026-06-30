@@ -3,481 +3,521 @@
     {
       "id": "core-opd",
       "title": "Everyday OPD",
-      "subtitle": "The cases you see on a busy morning — fever, cough, diarrhoea.",
+      "subtitle": "The cases you see on a busy morning \u2014 fever, cough, diarrhoea.",
       "topic": "General OPD",
       "case_count": 3,
       "approx_size_kb": 90,
       "bundled": true,
       "asset_path": "learn/packs/core-opd.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "core-opd"
     },
     {
       "id": "child-health-imnci-l1",
       "title": "Child Health and IMNCI Reasoning",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Child Health and IMNCI Reasoning",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/child-health-imnci-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "child-health-imnci"
     },
     {
       "id": "day-in-clinic-mixed-practice-l1",
       "title": "Day in the Clinic Mixed Practice",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Day in the Clinic Mixed Practice",
       "case_count": 7,
       "approx_size_kb": 72,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/day-in-clinic-mixed-practice-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "day-in-clinic-mixed-practice"
     },
     {
       "id": "emergency-critical-care-l1",
       "title": "Emergency and Critical Care at HC III",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Emergency and Critical Care at HC III",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/emergency-critical-care-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "emergency-critical-care"
     },
     {
       "id": "fever-malaria-acute-illness-l1",
       "title": "Fever, Malaria, and Acute Illness",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Fever, Malaria, and Acute Illness",
       "case_count": 7,
       "approx_size_kb": 74,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/fever-malaria-acute-illness-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "fever-malaria-acute-illness"
     },
     {
       "id": "general-hc3-practice-l1",
       "title": "General HC III Practice",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "General HC III Practice",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/general-hc3-practice-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "general-hc3-practice"
     },
     {
       "id": "hiv-tb-sti-continuity-l1",
       "title": "HIV, TB, STI, and Continuity of Care",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "HIV, TB, STI, and Continuity of Care",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/hiv-tb-sti-continuity-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "hiv-tb-sti-continuity"
     },
     {
       "id": "maternal-midwifery-emergencies-l1",
       "title": "Maternal Health and Midwifery Emergencies",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Maternal Health and Midwifery Emergencies",
       "case_count": 13,
       "approx_size_kb": 136,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/maternal-midwifery-emergencies-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "maternal-midwifery-emergencies"
     },
     {
       "id": "mental-health-psychosocial-care-l1",
       "title": "Mental Health and Psychosocial Care",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Mental Health and Psychosocial Care",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/mental-health-psychosocial-care-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "mental-health-psychosocial-care"
     },
     {
       "id": "ncd-mental-health-l1",
       "title": "NCD and Mental Health Reasoning",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "NCD and Mental Health Reasoning",
       "case_count": 7,
       "approx_size_kb": 73,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/ncd-mental-health-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "ncd-mental-health"
     },
     {
       "id": "neonatal-emergency-care-l1",
       "title": "Neonatal and Emergency Care",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Neonatal and Emergency Care",
       "case_count": 5,
       "approx_size_kb": 51,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/neonatal-emergency-care-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "neonatal-emergency-care"
     },
     {
       "id": "outbreak-ipc-ebola-vhf-l1",
       "title": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
       "case_count": 9,
       "approx_size_kb": 94,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/outbreak-ipc-ebola-vhf-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "outbreak-ipc-ebola-vhf"
     },
     {
       "id": "patient-safety-communication-l1",
       "title": "Patient Safety, Communication, and Digital Practice",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Patient Safety, Communication, and Digital Practice",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/patient-safety-communication-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "patient-safety-communication"
     },
     {
       "id": "pharmacy-lab-diagnostics-l1",
       "title": "Pharmacy, Lab, and Diagnostic Reasoning",
-      "subtitle": "Level 1 · Core practice",
+      "subtitle": "Level 1 \u00b7 Core practice",
       "topic": "Pharmacy, Lab, and Diagnostic Reasoning",
       "case_count": 6,
       "approx_size_kb": 62,
       "bundled": false,
       "level": 1,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/pharmacy-lab-diagnostics-l1.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "pharmacy-lab-diagnostics"
     },
     {
       "id": "child-health-imnci-l2",
       "title": "Child Health and IMNCI Reasoning",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Child Health and IMNCI Reasoning",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/child-health-imnci-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "child-health-imnci"
     },
     {
       "id": "day-in-clinic-mixed-practice-l2",
       "title": "Day in the Clinic Mixed Practice",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Day in the Clinic Mixed Practice",
       "case_count": 7,
       "approx_size_kb": 72,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/day-in-clinic-mixed-practice-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "day-in-clinic-mixed-practice"
     },
     {
       "id": "emergency-critical-care-l2",
       "title": "Emergency and Critical Care at HC III",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Emergency and Critical Care at HC III",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/emergency-critical-care-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "emergency-critical-care"
     },
     {
       "id": "fever-malaria-acute-illness-l2",
       "title": "Fever, Malaria, and Acute Illness",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Fever, Malaria, and Acute Illness",
       "case_count": 7,
       "approx_size_kb": 74,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/fever-malaria-acute-illness-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "fever-malaria-acute-illness"
     },
     {
       "id": "general-hc3-practice-l2",
       "title": "General HC III Practice",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "General HC III Practice",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/general-hc3-practice-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "general-hc3-practice"
     },
     {
       "id": "hiv-tb-sti-continuity-l2",
       "title": "HIV, TB, STI, and Continuity of Care",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "HIV, TB, STI, and Continuity of Care",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/hiv-tb-sti-continuity-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "hiv-tb-sti-continuity"
     },
     {
       "id": "maternal-midwifery-emergencies-l2",
       "title": "Maternal Health and Midwifery Emergencies",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Maternal Health and Midwifery Emergencies",
       "case_count": 13,
       "approx_size_kb": 136,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/maternal-midwifery-emergencies-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "maternal-midwifery-emergencies"
     },
     {
       "id": "mental-health-psychosocial-care-l2",
       "title": "Mental Health and Psychosocial Care",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Mental Health and Psychosocial Care",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/mental-health-psychosocial-care-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "mental-health-psychosocial-care"
     },
     {
       "id": "ncd-mental-health-l2",
       "title": "NCD and Mental Health Reasoning",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "NCD and Mental Health Reasoning",
       "case_count": 7,
       "approx_size_kb": 73,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/ncd-mental-health-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "ncd-mental-health"
     },
     {
       "id": "neonatal-emergency-care-l2",
       "title": "Neonatal and Emergency Care",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Neonatal and Emergency Care",
       "case_count": 5,
       "approx_size_kb": 51,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/neonatal-emergency-care-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "neonatal-emergency-care"
     },
     {
       "id": "outbreak-ipc-ebola-vhf-l2",
       "title": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
       "case_count": 9,
       "approx_size_kb": 94,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/outbreak-ipc-ebola-vhf-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "outbreak-ipc-ebola-vhf"
     },
     {
       "id": "patient-safety-communication-l2",
       "title": "Patient Safety, Communication, and Digital Practice",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Patient Safety, Communication, and Digital Practice",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/patient-safety-communication-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "patient-safety-communication"
     },
     {
       "id": "pharmacy-lab-diagnostics-l2",
       "title": "Pharmacy, Lab, and Diagnostic Reasoning",
-      "subtitle": "Level 2 · Guided reasoning",
+      "subtitle": "Level 2 \u00b7 Guided reasoning",
       "topic": "Pharmacy, Lab, and Diagnostic Reasoning",
       "case_count": 6,
       "approx_size_kb": 62,
       "bundled": false,
       "level": 2,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/pharmacy-lab-diagnostics-l2.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "pharmacy-lab-diagnostics"
     },
     {
       "id": "child-health-imnci-l3",
       "title": "Child Health and IMNCI Reasoning",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Child Health and IMNCI Reasoning",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/child-health-imnci-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "child-health-imnci"
     },
     {
       "id": "day-in-clinic-mixed-practice-l3",
       "title": "Day in the Clinic Mixed Practice",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Day in the Clinic Mixed Practice",
       "case_count": 7,
       "approx_size_kb": 72,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/day-in-clinic-mixed-practice-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "day-in-clinic-mixed-practice"
     },
     {
       "id": "emergency-critical-care-l3",
       "title": "Emergency and Critical Care at HC III",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Emergency and Critical Care at HC III",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/emergency-critical-care-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "emergency-critical-care"
     },
     {
       "id": "fever-malaria-acute-illness-l3",
       "title": "Fever, Malaria, and Acute Illness",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Fever, Malaria, and Acute Illness",
       "case_count": 7,
       "approx_size_kb": 74,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/fever-malaria-acute-illness-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "fever-malaria-acute-illness"
     },
     {
       "id": "general-hc3-practice-l3",
       "title": "General HC III Practice",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "General HC III Practice",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/general-hc3-practice-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "general-hc3-practice"
     },
     {
       "id": "hiv-tb-sti-continuity-l3",
       "title": "HIV, TB, STI, and Continuity of Care",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "HIV, TB, STI, and Continuity of Care",
       "case_count": 10,
       "approx_size_kb": 104,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/hiv-tb-sti-continuity-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "hiv-tb-sti-continuity"
     },
     {
       "id": "maternal-midwifery-emergencies-l3",
       "title": "Maternal Health and Midwifery Emergencies",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Maternal Health and Midwifery Emergencies",
       "case_count": 13,
       "approx_size_kb": 136,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/maternal-midwifery-emergencies-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "maternal-midwifery-emergencies"
     },
     {
       "id": "mental-health-psychosocial-care-l3",
       "title": "Mental Health and Psychosocial Care",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Mental Health and Psychosocial Care",
       "case_count": 2,
       "approx_size_kb": 21,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/mental-health-psychosocial-care-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "mental-health-psychosocial-care"
     },
     {
       "id": "ncd-mental-health-l3",
       "title": "NCD and Mental Health Reasoning",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "NCD and Mental Health Reasoning",
       "case_count": 7,
       "approx_size_kb": 73,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/ncd-mental-health-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "ncd-mental-health"
     },
     {
       "id": "neonatal-emergency-care-l3",
       "title": "Neonatal and Emergency Care",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Neonatal and Emergency Care",
       "case_count": 5,
       "approx_size_kb": 51,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/neonatal-emergency-care-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "neonatal-emergency-care"
     },
     {
       "id": "outbreak-ipc-ebola-vhf-l3",
       "title": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Outbreak, IPC, Ebola, and Viral Haemorrhagic Fever",
       "case_count": 9,
       "approx_size_kb": 94,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/outbreak-ipc-ebola-vhf-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "outbreak-ipc-ebola-vhf"
     },
     {
       "id": "patient-safety-communication-l3",
       "title": "Patient Safety, Communication, and Digital Practice",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Patient Safety, Communication, and Digital Practice",
       "case_count": 11,
       "approx_size_kb": 115,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/patient-safety-communication-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "patient-safety-communication"
     },
     {
       "id": "pharmacy-lab-diagnostics-l3",
       "title": "Pharmacy, Lab, and Diagnostic Reasoning",
-      "subtitle": "Level 3 · Challenge",
+      "subtitle": "Level 3 \u00b7 Challenge",
       "topic": "Pharmacy, Lab, and Diagnostic Reasoning",
       "case_count": 6,
       "approx_size_kb": 62,
       "bundled": false,
       "level": 3,
       "download_url": "https://zvandlyuhhovvqovutyq.supabase.co/storage/v1/object/public/learn-packs/v1/pharmacy-lab-diagnostics-l3.kpack",
-      "version": 1
+      "version": 1,
+      "chapter_id": "pharmacy-lab-diagnostics"
     }
   ]
 }
