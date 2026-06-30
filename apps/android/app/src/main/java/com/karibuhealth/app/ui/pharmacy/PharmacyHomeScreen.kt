@@ -3,7 +3,6 @@ package com.karibuhealth.app.ui.pharmacy
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
 import com.karibuhealth.app.domain.model.PharmacyQueueTab
+import com.karibuhealth.app.domain.model.pharmacyTabForVisit
 import com.karibuhealth.app.ui.adaptive.KaribuAdaptiveQueue
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
@@ -25,7 +25,6 @@ import com.karibuhealth.app.ui.theme.Ink
 @Composable
 fun PharmacyHomeScreen(
     onNavigateToVisit: (String) -> Unit,
-    onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit = {},
     viewModel: PharmacyHomeViewModel = hiltViewModel(),
 ) {
@@ -51,13 +50,10 @@ fun PharmacyHomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Pharmacy queue") },
+                title = { Text("Pharmacy") },
                 actions = {
                     IconButton(onClick = onNavigateToBilling) {
                         Icon(Icons.Default.Payments, contentDescription = "Billing")
-                    }
-                    IconButton(onClick = onNavigateToWorklists) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Worklists")
                     }
                 },
             )
@@ -66,6 +62,7 @@ fun PharmacyHomeScreen(
         Column(Modifier.padding(padding)) {
             PharmacyTabRow(
                 selected = uiState.selectedTab,
+                items = uiState.items,
                 onSelect = viewModel::selectTab,
             )
             PullToRefreshBox(
@@ -74,8 +71,11 @@ fun PharmacyHomeScreen(
                 modifier = Modifier.weight(1f),
             ) {
                 if (filtered.isEmpty() && !uiState.isLoading) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No orders in this tab", color = Ink.copy(alpha = 0.6f))
+                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No orders in this tab. Visits appear after a clinician submits a pharmacy order.",
+                            color = Ink.copy(alpha = 0.6f),
+                        )
                     }
                 } else {
                     KaribuAdaptiveQueue(
@@ -116,6 +116,7 @@ fun PharmacyHomeScreen(
 @Composable
 private fun PharmacyTabRow(
     selected: PharmacyQueueTab,
+    items: List<NeedsPharmacyItem>,
     onSelect: (PharmacyQueueTab) -> Unit,
 ) {
     val tabs = listOf(
@@ -127,10 +128,11 @@ private fun PharmacyTabRow(
         selectedTabIndex = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0),
     ) {
         tabs.forEach { (tab, label) ->
+            val count = items.count { pharmacyTabForVisit(it.dispensingStatus, it.dispensedAt) == tab }
             Tab(
                 selected = selected == tab,
                 onClick = { onSelect(tab) },
-                text = { Text(label) },
+                text = { Text(if (count > 0) "$label ($count)" else label) },
             )
         }
     }

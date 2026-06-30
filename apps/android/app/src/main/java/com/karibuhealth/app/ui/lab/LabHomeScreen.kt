@@ -1,8 +1,6 @@
 package com.karibuhealth.app.ui.lab
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -16,7 +14,6 @@ import com.karibuhealth.app.domain.LabQueue
 @Composable
 fun LabHomeScreen(
     onNavigateToVisit: (String) -> Unit,
-    onNavigateToWorklists: () -> Unit,
     viewModel: LabHomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -27,17 +24,12 @@ fun LabHomeScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Lab queue")
+                        Text("Lab bench")
                         Text(
                             "$openCount tests · ${uiState.items.size} patients",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToWorklists) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Worklists")
                     }
                 },
             )
@@ -75,8 +67,11 @@ fun LabHomeScreen(
                     }
                 }
                 if (uiState.items.isEmpty() && !uiState.isLoading) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No pending lab work", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            "No pending lab work. Tests appear when a clinician orders labs on a visit.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 } else {
                     LabQueueList(

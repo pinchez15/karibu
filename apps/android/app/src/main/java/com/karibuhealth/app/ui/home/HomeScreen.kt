@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -28,14 +26,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import com.karibuhealth.app.domain.model.OpdPatientFilter
 import com.karibuhealth.app.domain.model.OpdPatientRow
 import com.karibuhealth.app.domain.model.Patient
-import com.karibuhealth.app.data.local.datastore.RecentPatientEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
-import com.karibuhealth.app.domain.model.Staff
 import com.karibuhealth.app.domain.model.StaffRole
 import com.karibuhealth.app.ui.lab.LabHomeScreen
 import com.karibuhealth.app.ui.pharmacy.PharmacyHomeScreen
@@ -64,10 +58,7 @@ fun HomeScreen(
     onNavigateToNewVisit: () -> Unit,
     onNavigateToVisitDetails: (String) -> Unit,
     onNavigateToPatient: (String) -> Unit,
-    onNavigateToWorklists: () -> Unit,
     onNavigateToBilling: () -> Unit = {},
-    onNavigateToAnc: () -> Unit = {},
-    showAppBar: Boolean = true,
     selectedPatientId: String? = null,
     onSelectPatient: (String) -> Unit = onNavigateToPatient,
     modifier: Modifier = Modifier,
@@ -79,14 +70,12 @@ fun HomeScreen(
         StaffRole.lab_tech -> {
             LabHomeScreen(
                 onNavigateToVisit = onNavigateToVisitDetails,
-                onNavigateToWorklists = onNavigateToWorklists,
             )
             return
         }
         StaffRole.dispenser -> {
             PharmacyHomeScreen(
                 onNavigateToVisit = onNavigateToVisitDetails,
-                onNavigateToWorklists = onNavigateToWorklists,
                 onNavigateToBilling = onNavigateToBilling,
             )
             return
@@ -95,7 +84,6 @@ fun HomeScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
-    var profileMenuOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -134,24 +122,6 @@ fun HomeScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                if (showAppBar) {
-                    item {
-                        HomeAppBar(
-                            clinicName = uiState.clinic?.name,
-                            staff = uiState.staff,
-                            onAvatarClick = { profileMenuOpen = true },
-                            profileMenuOpen = profileMenuOpen,
-                            onDismissMenu = { profileMenuOpen = false },
-                            onSignOut = {
-                                profileMenuOpen = false
-                                viewModel.signOut()
-                            },
-                            onOpenWorklists = onNavigateToWorklists,
-                            onOpenAnc = onNavigateToAnc,
-                        )
-                    }
-                }
-
                 item {
                     HomeHero(
                         seen = uiState.doneTodayCount,
@@ -159,77 +129,11 @@ fun HomeScreen(
                     )
                 }
 
-                if (uiState.searchQuery.isBlank() && uiState.recentPatients.isNotEmpty()) {
-                    item {
-                        RecentPatientsStrip(
-                            entries = uiState.recentPatients,
-                                onOpenPatient = { entry ->
-                                viewModel.recordPatientTouch(
-                                    entry.patientId,
-                                    entry.patientName,
-                                    entry.visitId,
-                                )
-                                onSelectPatient(entry.patientId)
-                            },
-                        )
-                    }
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OpdPatientFilter.entries.forEach { filter ->
-                            val selected = uiState.selectedFilter == filter
-                            val count = uiState.filterCount(filter)
-                            FilterChip(
-                                selected = selected,
-                                onClick = { viewModel.selectFilter(filter) },
-                                label = {
-                                    Text(
-                                        if (count > 0) "${filter.label} ($count)" else filter.label,
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        StatTile(
-                            label = "PATIENTS",
-                            value = uiState.filteredPatients.size.toString(),
-                            modifier = Modifier.weight(1f),
-                        )
-                        StatTile(
-                            label = "TO SYNC",
-                            value = uiState.pendingSyncCount.toString(),
-                            modifier = Modifier.weight(1f),
-                            indicatorColor = if (uiState.pendingSyncCount > 0) Amber else null,
-                        )
-                        StatTile(
-                            label = "DONE",
-                            value = uiState.doneTodayCount.toString(),
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-
                 item {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
+                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
                     ) {
                         OutlinedTextField(
                             value = uiState.searchQuery,
@@ -245,6 +149,32 @@ fun HomeScreen(
                                 focusedBorderColor = Cobalt,
                                 unfocusedBorderColor = Line,
                             ),
+                        )
+                    }
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        StatTile(
+                            label = "WAITING",
+                            value = uiState.waitingCount.toString(),
+                            modifier = Modifier.weight(1f),
+                        )
+                        StatTile(
+                            label = "TO SYNC",
+                            value = uiState.pendingSyncCount.toString(),
+                            modifier = Modifier.weight(1f),
+                            indicatorColor = if (uiState.pendingSyncCount > 0) Amber else null,
+                        )
+                        StatTile(
+                            label = "DONE",
+                            value = uiState.doneTodayCount.toString(),
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -285,6 +215,7 @@ fun HomeScreen(
                 }
 
                 if (uiState.searchQuery.isBlank()) {
+                    val patients = uiState.activePatients
                     item {
                         Row(
                             modifier = Modifier
@@ -293,34 +224,34 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "Today's patients",
+                                text = if (uiState.waitingCount > 0) "Up next" else "Today's patients",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             KhMetaText(
-                                text = if (uiState.filteredPatients.size == 1) {
+                                text = if (patients.size == 1) {
                                     "1 PATIENT"
                                 } else {
-                                    "${uiState.filteredPatients.size} PATIENTS"
+                                    "${patients.size} PATIENTS"
                                 },
                             )
                         }
                     }
 
-                    if (uiState.filteredPatients.isEmpty()) {
+                    if (patients.isEmpty()) {
                         item {
                             EmptyHint(
                                 text = if (uiState.isLoading) {
                                     "Loading..."
                                 } else {
-                                    "No patients match this filter. Tap + to register one."
+                                    "No patients waiting. Tap + to register one."
                                 },
                             )
                         }
                     } else {
-                        items(uiState.filteredPatients, key = { "opd-${it.patientId}" }) { row ->
+                        items(patients, key = { "opd-${it.patientId}" }) { row ->
                             Box(modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp)) {
                                 OpdPatientCard(
                                     row = row,
@@ -366,62 +297,6 @@ fun HomeScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun HomeAppBar(
-    clinicName: String?,
-    staff: Staff?,
-    onAvatarClick: () -> Unit,
-    profileMenuOpen: Boolean,
-    onDismissMenu: () -> Unit,
-    onSignOut: () -> Unit,
-    onOpenWorklists: () -> Unit,
-    onOpenAnc: () -> Unit = {},
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            KhMetaText(text = (clinicName ?: "Karibu Health").uppercase())
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = staff?.displayName ?: "—",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-
-        // Billing moved to the pharmacy — patients pay when they collect drugs,
-        // not with the clinician at the visit.
-
-        TextButton(onClick = onOpenAnc) {
-            Text("ANC", color = Cobalt, fontWeight = FontWeight.SemiBold)
-        }
-
-        IconButton(onClick = onOpenWorklists) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.List,
-                contentDescription = "Open worklists",
-                tint = Cobalt,
-            )
-        }
-
-        Box {
-            ProfileAvatar(staff = staff, onClick = onAvatarClick)
-            ProfileMenu(
-                expanded = profileMenuOpen,
-                staff = staff,
-                clinicName = clinicName,
-                onDismiss = onDismissMenu,
-                onSignOut = onSignOut,
-            )
         }
     }
 }
@@ -492,68 +367,6 @@ private fun StatTile(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ProfileAvatar(staff: Staff?, onClick: () -> Unit) {
-    val initials = staff?.displayName?.split(" ")
-        ?.mapNotNull { it.firstOrNull()?.uppercaseChar() }
-        ?.take(2)
-        ?.joinToString("")
-        ?.ifBlank { null } ?: "?"
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(CobaltSoft)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = initials,
-            style = MaterialTheme.typography.labelLarge,
-            color = Cobalt,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-}
-
-@Composable
-private fun ProfileMenu(
-    expanded: Boolean,
-    staff: Staff?,
-    clinicName: String?,
-    onDismiss: () -> Unit,
-    onSignOut: () -> Unit,
-) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Text(
-                text = staff?.displayName ?: "—",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = staff?.role?.name?.replace('_', ' ')?.replaceFirstChar { it.titlecase() }
-                    ?: "",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            clinicName?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text("Sign out") },
-            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
-            onClick = onSignOut,
-        )
     }
 }
 
@@ -847,36 +660,6 @@ private fun StatusCard(
             )
         }
         KhStatusPill(kind = kind, label = statusLabel)
-    }
-}
-
-@Composable
-private fun RecentPatientsStrip(
-    entries: List<RecentPatientEntry>,
-    onOpenPatient: (RecentPatientEntry) -> Unit,
-) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(
-            text = "Recent",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = KaribuLayout.contentPaddingHorizontal()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            entries.forEach { entry ->
-                FilterChip(
-                    selected = false,
-                    onClick = { onOpenPatient(entry) },
-                    label = { Text(entry.patientName) },
-                )
-            }
-        }
     }
 }
 

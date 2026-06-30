@@ -227,6 +227,7 @@ class SyncEngine @Inject constructor(
             "queue_op" -> syncQueueOperation(entry)
             "record_payment" -> syncRecordPayment(entry)
             "rpc_submit_pharmacy_order" -> syncSubmitPharmacyOrder(entry)
+            "submit_lab_order" -> syncSubmitLabOrder(entry)
             "rpc_start_lab" -> syncStartLab(entry)
             "rpc_start_lab_test" -> syncStartLabTest(entry)
             "rpc_record_lab_result" -> syncRecordLabResult(entry)
@@ -647,6 +648,21 @@ class SyncEngine @Inject constructor(
         }
         val idMap = prescriptionOrderRepository.replaceLocalAfterSubmit(entry.entityId)
         remapPendingCompleteDispense(entry.entityId, idMap)
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncSubmitLabOrder(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(SubmitLabOrderSyncPayload.serializer(), entry.payload)
+        val visitId = decoded.visitId
+        Log.d(TAG, "Syncing submit_lab_order: $visitId")
+        supabaseApi.updateVisit(
+            visitId,
+            mapOf(
+                "tests_ordered" to decoded.testsOrdered,
+                "lab_status" to decoded.labStatus,
+                "lab_test_results" to Json.parseToJsonElement(decoded.labTestResultsJson),
+            ),
+        )
         markVisitSyncedIfQuiet(entry)
     }
 

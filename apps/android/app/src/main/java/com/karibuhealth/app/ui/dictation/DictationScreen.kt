@@ -116,6 +116,7 @@ fun DictationScreen(
         },
         onSendToPharmacy = viewModel::sendToPharmacy,
         onAppendPrescriptionLine = viewModel::appendPrescriptionLine,
+        onSubmitLabOrder = viewModel::submitLabOrderFromPicker,
     )
 }
 
@@ -133,6 +134,7 @@ private fun DictationScreenContent(
     onToggleWhisper: () -> Unit,
     onSendToPharmacy: () -> Unit,
     onAppendPrescriptionLine: (PharmacyPickerResult) -> Unit,
+    onSubmitLabOrder: (String) -> Unit,
 ) {
     var showLabPicker by remember { mutableStateOf(false) }
     var signConfirmPending by remember { mutableStateOf(false) }
@@ -301,6 +303,7 @@ private fun DictationScreenContent(
                             .filter { it.isNotBlank() }
                             .joinToString(", ")
                         onSectionsChange(sections.copy(testsOrdered = merged))
+                        onSubmitLabOrder(addition)
                         showLabPicker = false
                     },
                 )
@@ -903,6 +906,7 @@ private fun DictationScreenPreview() {
             onToggleWhisper = {},
             onSendToPharmacy = {},
             onAppendPrescriptionLine = {},
+            onSubmitLabOrder = {},
         )
     }
 }

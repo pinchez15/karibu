@@ -23,6 +23,7 @@ import com.karibuhealth.app.data.remote.dto.StartPharmacyDispenseRequest
 import com.karibuhealth.app.data.remote.dto.ActivateClinicalProtocolRequest
 import com.karibuhealth.app.data.remote.dto.AdmitPatientRequest
 import com.karibuhealth.app.data.remote.dto.GetOpdPatientsTodayRequest
+import com.karibuhealth.app.data.remote.dto.SubmitLabOrderSyncPayload
 import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
 import com.karibuhealth.app.data.sync.SyncQueueHelper
@@ -532,28 +533,61 @@ class VisitRepository @Inject constructor(
     suspend fun submitLabOrder(visitId: String, testNames: List<String>): Result<Unit> =
         withContext(Dispatchers.IO) {
             val clean = testNames.map { it.trim() }.filter { it.isNotEmpty() }
-            if (clean.isEmpty()) return@withContext Result.failure(IllegalArgumentException("Select at least one test"))
+            if (clean.isEmpty()) {
+                return@withContext Result.failure(IllegalArgumentException("Select at least one test"))
+            }
             val visit = visitDao.getByIdOnce(visitId)
                 ?: return@withContext Result.failure(IllegalStateException("Visit not found"))
             val existing = LabQueue.parseTestsOrdered(visit.testsOrdered)
             val merged = (existing + clean).distinct()
             val testsOrdered = merged.joinToString(", ")
-            val results = LabQueue.mergeLabTestResults(testsOrdered, LabQueue.parseStoredResults(visit.labTestResultsJson))
+            val results = LabQueue.mergeLabTestResults(
+                testsOrdered,
+                LabQueue.parseStoredResults(visit.labTestResultsJson),
+            )
             val encoded = LabQueue.encodeResults(results)
             val now = Instant.now().toString()
             visitDao.updateTestsOrdered(visitId, testsOrdered, "pending", encoded, now)
             visitDao.updateSyncState(visitId, false)
+
+            val syncEntryId = UUID.randomUUID().toString()
+            val payload = SubmitLabOrderSyncPayload(
+                visitId = visitId,
+                testsOrdered = testsOrdered,
+                labStatus = "pending",
+                labTestResultsJson = encoded,
+                clientOpId = syncEntryId,
+            )
+            val payloadJson = json.encodeToString(SubmitLabOrderSyncPayload.serializer(), payload)
+
             if (networkMonitor.isOnline()) {
                 runCatching {
                     supabaseApi.updateVisit(
                         visitId,
-                        mapOf("tests_ordered" to testsOrdered, "lab_status" to "pending"),
+                        mapOf(
+                            "tests_ordered" to testsOrdered,
+                            "lab_status" to "pending",
+                            "lab_test_results" to Json.parseToJsonElement(encoded),
+                        ),
                     )
-                    visitDao.updateSyncState(visitId, true)
+                    markVisitSyncedIfQuiet(visitId)
+                    return@withContext Result.success(Unit)
                 }.onFailure {
-                    return@withContext Result.failure(it)
+                    // Queue for sync when the direct write fails offline mid-flight.
                 }
             }
+
+            val syncEntry = SyncQueueEntry(
+                id = syncEntryId,
+                operationType = "submit_lab_order",
+                entityType = "visits",
+                entityId = visitId,
+                payload = payloadJson,
+                status = "pending",
+                attempts = 0,
+                createdAt = System.currentTimeMillis(),
+            )
+            syncQueueHelper.enqueue(syncEntry)
             Result.success(Unit)
         }
 
@@ -568,7 +602,26 @@ class VisitRepository @Inject constructor(
         admissionId: String,
         patientId: String,
     ): InpatientVisitContext? = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext null
+        val today = LocalDate.now().toString()
+        visitDao.getVisitForPatientOnDate(clinicId, patientId, today)?.let { local ->
+            return@withContext InpatientVisitContext(
+                visitId = local.id,
+                testsOrdered = local.testsOrdered,
+                labStatus = local.labStatus,
+            )
+        }
+        if (!networkMonitor.isOnline()) {
+            val (visit, _) = createVisit(
+                clinicId = clinicId,
+                patientId = patientId,
+                doctorId = null,
+            )
+            return@withContext InpatientVisitContext(
+                visitId = visit.id,
+                testsOrdered = visit.testsOrdered,
+                labStatus = visit.labStatus,
+            )
+        }
         runCatching {
             val existing = supabaseApi.getVisitsByAdmission("eq.$admissionId", "eq.$clinicId").firstOrNull()
             if (existing != null) {

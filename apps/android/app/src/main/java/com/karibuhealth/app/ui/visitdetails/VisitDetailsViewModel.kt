@@ -68,6 +68,8 @@ data class VisitDetailsUiState(
     val aiReviewError: String? = null,
     val isSendingToPharmacy: Boolean = false,
     val pharmacyMessage: String? = null,
+    val isSubmittingLab: Boolean = false,
+    val labMessage: String? = null,
     val prescriptionLines: List<PrescriptionLineRpc> = emptyList(),
     val pendingSyncCount: Int = 0,
     val isOnline: Boolean = true,
@@ -451,6 +453,23 @@ class VisitDetailsViewModel @Inject constructor(
         val lines = prescriptionOrderRepository.getLinesForVisit(visitId)
         if (lines.isNotEmpty()) {
             _uiState.update { it.copy(prescriptionLines = lines.map { line -> line.toRpc() }) }
+        }
+    }
+
+    fun submitLabOrder(testNames: List<String>) {
+        val visit = _uiState.value.visit ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmittingLab = true, labMessage = null) }
+            visitRepository.submitLabOrder(visit.id, testNames)
+                .onSuccess {
+                    syncEngine.processQueue()
+                    visitRepository.refreshVisit(visit.id)
+                    _uiState.update { it.copy(labMessage = "Sent to lab") }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(labMessage = e.message ?: "Could not send to lab") }
+                }
+            _uiState.update { it.copy(isSubmittingLab = false) }
         }
     }
 

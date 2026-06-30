@@ -43,6 +43,7 @@ import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhVitalChip
 import com.karibuhealth.app.ui.components.AiNotesTimeline
 import com.karibuhealth.app.ui.components.VisitCriticalAlertBanner
+import com.karibuhealth.app.ui.components.VisitLabOrderPanel
 import com.karibuhealth.app.ui.components.incorporationFor
 import com.karibuhealth.app.ui.components.DictationIncorporate
 import com.karibuhealth.app.ui.util.BottomBarScrollPadding
@@ -336,11 +337,12 @@ fun VisitDetailsScreen(
                     }
 
                     uiState.visit?.let { visit ->
-                        VisitPharmacySubmitSection(
+                        VisitCareActions(
                             visit = visit,
                             uiState = uiState,
                             onAddPrescription = { showRxPicker = true },
                             onSendToPharmacy = viewModel::sendToPharmacy,
+                            onSubmitLab = viewModel::submitLabOrder,
                         )
                     }
 
@@ -393,11 +395,12 @@ fun VisitDetailsScreen(
                         )
                     }
                     uiState.visit?.let { visit ->
-                        VisitPharmacySubmitSection(
+                        VisitCareActions(
                             visit = visit,
                             uiState = uiState,
                             onAddPrescription = { showRxPicker = true },
                             onSendToPharmacy = viewModel::sendToPharmacy,
+                            onSubmitLab = viewModel::submitLabOrder,
                         )
                     }
                     uiState.aiReviewError?.let { err ->
@@ -1227,6 +1230,35 @@ private fun EbolaScreeningSection(
                 modifier = Modifier.padding(bottom = 8.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun VisitCareActions(
+    visit: Visit,
+    uiState: VisitDetailsUiState,
+    onAddPrescription: () -> Unit,
+    onSendToPharmacy: () -> Unit,
+    onSubmitLab: (List<String>) -> Unit,
+) {
+    val labOpen = visit.labStatus in listOf("not_ordered", "pending", "running")
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (labOpen) {
+            VisitLabOrderPanel(
+                testsOrdered = visit.testsOrdered,
+                busy = uiState.isSubmittingLab,
+                onSubmit = onSubmitLab,
+            )
+            uiState.labMessage?.let { msg ->
+                Text(msg, style = MaterialTheme.typography.bodySmall, color = Muted)
+            }
+        }
+        VisitPharmacySubmitSection(
+            visit = visit,
+            uiState = uiState,
+            onAddPrescription = onAddPrescription,
+            onSendToPharmacy = onSendToPharmacy,
+        )
     }
 }
 

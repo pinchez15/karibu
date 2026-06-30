@@ -96,10 +96,14 @@ fun KaribuNavHost(
                     onNavigateToPatient = { patientId ->
                         navigator.go(NavRoute.PatientDetail(patientId))
                     },
-                    onNavigateToWorklists = { navigator.go(NavRoute.Worklists) },
                     onNavigateToBilling = { navigator.go(NavRoute.Billing) },
-                    onNavigateToInpatient = { navigator.go(NavRoute.Inpatient) },
-                    onNavigateToAnc = { navigator.go(NavRoute.AncRegistry) },
+                    onNavigateToAdmit = { navigator.go(NavRoute.AdmitPatient) },
+                    onNavigateToAdmissionChart = { admissionId ->
+                        navigator.go(NavRoute.AdmissionChart(admissionId))
+                    },
+                    onNavigateToHandover = { navigator.go(NavRoute.WardHandover) },
+                    onNavigateToAncRegister = { navigator.go(NavRoute.StartPregnancy) },
+                    onNavigateToPregnancy = { id -> navigator.go(NavRoute.PregnancyDetail(id)) },
                     onAddPatientNote = { patientId ->
                         navigator.go(NavRoute.PatientNote(patientId, null))
                     },
@@ -392,7 +396,7 @@ fun KaribuNavHost(
                     onNavigateBack = { navigator.back() },
                     onAdmitted = { admissionId ->
                         // Replace the admit form with the chart so Back returns to the census.
-                        navigator.goReset(NavRoute.AdmissionChart(admissionId), NavRoute.Inpatient)
+                        navigator.goReset(NavRoute.AdmissionChart(admissionId), NavRoute.Home)
                     },
                 )
             }
@@ -416,8 +420,7 @@ fun KaribuNavHost(
                 StartPregnancyScreen(
                     onNavigateBack = { navigator.back() },
                     onStarted = { id ->
-                        // Replace the form with the detail so Back returns to the registry.
-                        navigator.goReset(NavRoute.PregnancyDetail(id), NavRoute.AncRegistry)
+                        navigator.goReset(NavRoute.PregnancyDetail(id), NavRoute.Home)
                     },
                 )
             }

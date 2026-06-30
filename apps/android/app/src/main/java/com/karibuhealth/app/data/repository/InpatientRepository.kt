@@ -87,6 +87,7 @@ class InpatientRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcActiveAdmissions(ActiveAdmissionsRequest(clinicId))
+                val remoteIds = remote.map { it.id }.toSet()
                 admissionDao.upsertAll(
                     remote.map { dto ->
                         AdmissionEntity(
@@ -107,6 +108,18 @@ class InpatientRepository @Inject constructor(
                         )
                     },
                 )
+                // Drop local active rows the server no longer returns (discharged elsewhere).
+                admissionDao.activeIds(clinicId)
+                    .filter { it !in remoteIds }
+                    .forEach { staleId ->
+                        admissionDao.dischargeLocal(
+                            id = staleId,
+                            status = "discharged",
+                            outcome = null,
+                            disposition = null,
+                            notes = null,
+                        )
+                    }
             }
         }
     }

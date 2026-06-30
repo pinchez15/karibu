@@ -865,6 +865,15 @@ fun List<PrescriptionLineRpc>.medicationsSummary(): String =
     map { it.summaryText() }.filter { it.isNotBlank() }.joinToString("\n")
 
 @Serializable
+data class SubmitLabOrderSyncPayload(
+    @SerialName("visit_id") val visitId: String,
+    @SerialName("tests_ordered") val testsOrdered: String,
+    @SerialName("lab_status") val labStatus: String,
+    @SerialName("lab_test_results") val labTestResultsJson: String,
+    @SerialName("client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
 data class SubmitPharmacyOrderRequest(
     @SerialName("p_visit_id") val visitId: String,
     @SerialName("p_medications") val medications: String,

@@ -14,12 +14,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,8 +32,7 @@ import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
 
 /**
- * Clinic + staff chrome shared across Patients and Orders tabs on tablet.
- * On compact phones the OPD screen keeps its inline app bar.
+ * Clinic + staff context bar — identity and sign-out only, not navigation.
  */
 @Composable
 fun ClinicalShellAppBar(
@@ -45,8 +42,6 @@ fun ClinicalShellAppBar(
     onAvatarClick: () -> Unit,
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
-    onOpenWorklists: () -> Unit,
-    onOpenAnc: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -66,20 +61,6 @@ fun ClinicalShellAppBar(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-
-        // Billing moved to the pharmacy — patients pay at drug collection.
-
-        androidx.compose.material3.TextButton(onClick = onOpenAnc) {
-            Text("ANC", color = Cobalt, fontWeight = FontWeight.SemiBold)
-        }
-
-        IconButton(onClick = onOpenWorklists) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.List,
-                contentDescription = "Worklists",
-                tint = Cobalt,
             )
         }
 

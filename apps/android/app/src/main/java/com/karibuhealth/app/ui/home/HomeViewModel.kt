@@ -44,6 +44,15 @@ data class HomeUiState(
             opdPatients.filter { filter.matches(it) }
         } ?: opdPatients
 
+    /** Today's in-flight patients, waiting-first — excludes completed visits. */
+    val activePatients: List<OpdPatientRow>
+        get() = opdPatients
+            .filter { it.bucket != OpdPatientFilter.DoneToday }
+            .sortedWith(
+                compareBy<OpdPatientRow> { bucketSortKey(it.bucket) }
+                    .thenBy { it.checkedInAt ?: "\uFFFF" },
+            )
+
     val waitingCount: Int
         get() = opdPatients.count { it.bucket == OpdPatientFilter.Waiting }
 
@@ -52,6 +61,15 @@ data class HomeUiState(
 
     fun filterCount(filter: OpdPatientFilter): Int =
         opdPatients.count { filter.matches(it) }
+}
+
+private fun bucketSortKey(bucket: OpdPatientFilter): Int = when (bucket) {
+    OpdPatientFilter.Waiting -> 0
+    OpdPatientFilter.NeedsVitals -> 1
+    OpdPatientFilter.WithClinician -> 2
+    OpdPatientFilter.AwaitingLabs -> 3
+    OpdPatientFilter.AtPharmacy -> 4
+    OpdPatientFilter.DoneToday -> 5
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -15,6 +15,16 @@ interface VisitDao {
     @Query("SELECT * FROM visits WHERE clinic_id = :clinicId AND visit_date = :date ORDER BY checked_in_at DESC")
     fun getTodayVisits(clinicId: String, date: String): Flow<List<VisitEntity>>
 
+    @Query(
+        """
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId AND patient_id = :patientId AND visit_date = :date
+        ORDER BY checked_in_at DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun getVisitForPatientOnDate(clinicId: String, patientId: String, date: String): VisitEntity?
+
     @Transaction
     @Query("SELECT * FROM visits WHERE clinic_id = :clinicId AND visit_date = :date ORDER BY queue_position ASC")
     fun getTodayQueue(clinicId: String, date: String): Flow<List<VisitWithPatient>>

@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.inpatient
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,25 +11,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.karibuhealth.app.data.local.db.dao.AdmissionCensusRow
+import com.karibuhealth.app.ui.adaptive.KaribuLayout
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -42,31 +52,37 @@ fun WardCensusScreen(
     onAdmit: () -> Unit,
     onOpenAdmission: (String) -> Unit,
     onHandover: () -> Unit = {},
+    embedded: Boolean = false,
+    modifier: Modifier = Modifier,
     viewModel: WardCensusViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val rows = state.rows.filter { state.ward == null || it.admission.ward == state.ward }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Ward") },
-                actions = {
-                    androidx.compose.material3.TextButton(onClick = onHandover) { Text("Handover") }
-                },
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAdmit,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Admit") },
-            )
-        },
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+    val censusContent: @Composable (Modifier) -> Unit = { contentModifier ->
+        Column(contentModifier.fillMaxSize()) {
+            if (embedded) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Ward census",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    androidx.compose.material3.TextButton(onClick = onHandover) {
+                        Text("Handover")
+                    }
+                }
+            }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilterChip(selected = state.ward == null, onClick = { viewModel.setWardFilter(null) }, label = { Text("All") })
@@ -90,7 +106,12 @@ fun WardCensusScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp,
+                        bottom = if (embedded) KaribuLayout.bottomBarScrollPadding().dp else 16.dp,
+                    ),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(rows, key = { it.admission.id }) { row ->
@@ -98,6 +119,72 @@ fun WardCensusScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (embedded) {
+        Scaffold(
+            modifier = modifier,
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = onAdmit,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("Admit") },
+                )
+            },
+        ) { padding ->
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        isRefreshing = true
+                        viewModel.refresh()
+                        isRefreshing = false
+                    }
+                },
+                modifier = Modifier.padding(padding),
+            ) {
+                censusContent(Modifier.fillMaxSize())
+            }
+        }
+        return
+    }
+
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Ward") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    androidx.compose.material3.TextButton(onClick = onHandover) { Text("Handover") }
+                },
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onAdmit,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Admit") },
+            )
+        },
+    ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                scope.launch {
+                    isRefreshing = true
+                    viewModel.refresh()
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.padding(padding),
+        ) {
+            censusContent(Modifier.fillMaxSize())
         }
     }
 }

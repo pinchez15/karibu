@@ -53,10 +53,11 @@ object KaribuLayout {
      * Bottom scroll inset: bottom nav on phone, navigation rail on tablet.
      */
     @Composable
+    /** Extra scroll inset above the FAB — scaffold already clears the bottom bar. */
     fun bottomBarScrollPadding(): Int = when (currentKaribuLayoutWidth()) {
-        KaribuLayoutWidth.Compact -> 96
-        KaribuLayoutWidth.Medium -> 24
-        KaribuLayoutWidth.Expanded -> 24
+        KaribuLayoutWidth.Compact -> 20
+        KaribuLayoutWidth.Medium -> 16
+        KaribuLayoutWidth.Expanded -> 16
     }
 
     @Composable

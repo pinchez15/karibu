@@ -261,7 +261,7 @@ fun AdmissionChartScreen(
                     ChartTab.ORDERS -> {
                         item(key = "lab-order") {
                             AdmissionLabPanel(
-                                enabled = s.labOrdersOnline && s.inpatientVisitId != null,
+                                enabled = s.inpatientVisitId != null,
                                 testsOrdered = s.inpatientTestsOrdered,
                                 onSubmit = viewModel::submitLabOrder,
                             )

@@ -346,6 +346,18 @@ class DictationViewModel @Inject constructor(
         }
     }
 
+    /** Catalog picks go to the lab bench immediately — not only note free text. */
+    fun submitLabOrderFromPicker(catalogAddition: String) {
+        val visitId = _uiState.value.visitId ?: return
+        val names = catalogAddition.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        if (names.isEmpty()) return
+        viewModelScope.launch {
+            visitRepository.submitLabOrder(visitId, names)
+                .onSuccess { syncEngine.processQueue() }
+                .onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+        }
+    }
+
     fun hasMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECORD_AUDIO,
