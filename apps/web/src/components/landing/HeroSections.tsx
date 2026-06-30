@@ -12,7 +12,7 @@ export function Hero() {
 
       <Container className="relative pb-16 pt-12 sm:pb-24 sm:pt-[72px]">
         <div className="grid items-center gap-12 max-[920px]:grid-cols-1 min-[921px]:grid-cols-[1.05fr_0.95fr]">
-          <div className="max-[920px]:order-2">
+          <div>
             <Reveal>
               <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-2 py-1.5 shadow-[0_1px_2px_rgba(11,20,82,0.04)]">
                 <span className="rounded-full bg-cobalt-soft px-2 py-0.5 font-mono text-[10.5px] font-bold tracking-wide text-cobalt">
@@ -24,16 +24,15 @@ export function Hero() {
 
             <Reveal delay={70}>
               <h1 className="landing-heading mt-6 text-[clamp(40px,5vw,64px)] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
-                Clinical software for Uganda, built from the&nbsp;first&nbsp;step.
+                A medical record, completely on your phone. Designed by clinicians from the very
+                start.
               </h1>
             </Reveal>
 
             <Reveal delay={130}>
               <p className="mt-[22px] max-w-[520px] text-[clamp(16px,1.4vw,19px)] leading-relaxed text-body">
-                <strong className="font-semibold text-ink">Karibu EHR</strong> runs your clinic.{' '}
-                <strong className="font-semibold text-ink">Karibu Learn</strong> trains the people in
-                it. Both made for how care actually happens here — on the phones you already carry,
-                at the pace you already work.
+                An AI-enabled EHR designed to run on Android phones, for use in rural clinics in
+                Uganda.
               </p>
             </Reveal>
 
@@ -72,7 +71,7 @@ export function Hero() {
             </Reveal>
           </div>
 
-          <Reveal delay={160} className="flex justify-center max-[920px]:order-1">
+          <Reveal delay={160} className="flex justify-center">
             <HeroEHR />
           </Reveal>
         </div>
