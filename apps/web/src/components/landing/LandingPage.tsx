@@ -1,5 +1,6 @@
 'use client'
 
+import { AboutSection } from './AboutSection'
 import { EHRSection } from './EHRSection'
 import { FinalCTA } from './FinalCTA'
 import { Footer } from './Footer'
@@ -22,6 +23,7 @@ export function LandingPage() {
         <ImpactBand />
         <LearnSection />
         <MissionBand />
+        <AboutSection />
         <FinalCTA />
       </main>
       <Footer />
