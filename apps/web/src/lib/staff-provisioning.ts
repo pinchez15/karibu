@@ -2,6 +2,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase'
 import { getSiteUrl } from '@/lib/site-url'
 import { assertStaffRole } from '@/lib/staff-roles'
+import { formatClerkInviteError } from '@/lib/clerk-org-errors'
 import type { StaffRole } from '@karibu/shared'
 
 function orgRoleFor(role: StaffRole): 'org:admin' | 'org:member' {
@@ -120,11 +121,15 @@ export async function inviteStaffToClinic(params: {
     })
 
     if (!memberships.data[0]) {
-      await clerk.organizations.createOrganizationMembership({
-        organizationId: clinic.clerk_organization_id,
-        userId: existingUser.id,
-        role: orgRoleFor(role),
-      })
+      try {
+        await clerk.organizations.createOrganizationMembership({
+          organizationId: clinic.clerk_organization_id,
+          userId: existingUser.id,
+          role: orgRoleFor(role),
+        })
+      } catch (error) {
+        throw new Error(formatClerkInviteError(error))
+      }
     } else {
       await syncMembershipRole({
         organizationId: clinic.clerk_organization_id,
@@ -159,13 +164,35 @@ export async function inviteStaffToClinic(params: {
     return { status: 'provisioned' as const, email, displayName }
   }
 
-  const invitation = await clerk.organizations.createOrganizationInvitation({
-    organizationId: clinic.clerk_organization_id,
-    emailAddress: email,
-    role: orgRoleFor(role),
-    inviterUserId: params.invitedByClerkUserId,
-    redirectUrl: `${getSiteUrl()}/accept-invitation`,
-  })
+  const { data: stalePending } = await supabase
+    .from('staff_invitations')
+    .select('id')
+    .eq('clinic_id', params.clinicId)
+    .eq('email', email)
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (stalePending) {
+    await revokeStaffInvitation({
+      invitationRowId: stalePending.id,
+      clinicId: params.clinicId,
+      clerkOrganizationId: clinic.clerk_organization_id,
+      requestingClerkUserId: params.invitedByClerkUserId,
+    })
+  }
+
+  let invitation
+  try {
+    invitation = await clerk.organizations.createOrganizationInvitation({
+      organizationId: clinic.clerk_organization_id,
+      emailAddress: email,
+      role: orgRoleFor(role),
+      inviterUserId: params.invitedByClerkUserId,
+      redirectUrl: `${getSiteUrl()}/accept-invitation`,
+    })
+  } catch (error) {
+    throw new Error(formatClerkInviteError(error))
+  }
 
   const { error } = await supabase.from('staff_invitations').upsert(
     {
@@ -185,6 +212,99 @@ export async function inviteStaffToClinic(params: {
   if (error) throw error
 
   return { status: 'invited' as const, email, displayName }
+}
+
+export async function revokeStaffInvitation(params: {
+  invitationRowId: string
+  clinicId: string
+  clerkOrganizationId: string
+  requestingClerkUserId: string
+}) {
+  const supabase = createServiceClient()
+  const { data: row, error: lookupError } = await supabase
+    .from('staff_invitations')
+    .select('id, clerk_invitation_id, status')
+    .eq('id', params.invitationRowId)
+    .eq('clinic_id', params.clinicId)
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (lookupError) throw lookupError
+  if (!row) return
+
+  if (row.clerk_invitation_id) {
+    const clerk = await clerkClient()
+    try {
+      await clerk.organizations.revokeOrganizationInvitation({
+        organizationId: params.clerkOrganizationId,
+        invitationId: row.clerk_invitation_id,
+        requestingUserId: params.requestingClerkUserId,
+      })
+    } catch (error) {
+      const code = (error as { errors?: Array<{ code?: string }> }).errors?.[0]?.code
+      if (code && !['resource_not_found', 'invitation_not_found'].includes(code)) {
+        throw new Error(formatClerkInviteError(error))
+      }
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from('staff_invitations')
+    .update({ status: 'revoked' })
+    .eq('id', params.invitationRowId)
+    .eq('clinic_id', params.clinicId)
+
+  if (updateError) throw updateError
+}
+
+export async function resendStaffInvitation(params: {
+  invitationRowId: string
+  clinicId: string
+  invitedByClerkUserId: string
+  invitedByStaffId: string
+}) {
+  const supabase = createServiceClient()
+  const { data: row, error: lookupError } = await supabase
+    .from('staff_invitations')
+    .select('id, email, display_name, role, clinic_id')
+    .eq('id', params.invitationRowId)
+    .eq('clinic_id', params.clinicId)
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (lookupError) throw lookupError
+  if (!row) throw new Error('Invitation not found or already accepted')
+
+  const { data: clinic } = await supabase
+    .from('clinics')
+    .select('clerk_organization_id')
+    .eq('id', params.clinicId)
+    .single()
+
+  if (!clinic?.clerk_organization_id) {
+    throw new Error('Clinic is not linked to sign-in for this site')
+  }
+
+  await revokeStaffInvitation({
+    invitationRowId: row.id,
+    clinicId: params.clinicId,
+    clerkOrganizationId: clinic.clerk_organization_id,
+    requestingClerkUserId: params.invitedByClerkUserId,
+  })
+
+  const parts = row.display_name.trim().split(/\s+/)
+  const firstName = parts[0] ?? ''
+  const lastName = parts.slice(1).join(' ')
+
+  return inviteStaffToClinic({
+    clinicId: params.clinicId,
+    email: row.email,
+    firstName,
+    lastName,
+    role: assertStaffRole(row.role),
+    invitedByClerkUserId: params.invitedByClerkUserId,
+    invitedByStaffId: params.invitedByStaffId,
+  })
 }
 
 export async function updateClinicStaffRole(params: {

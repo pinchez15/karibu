@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { WebTopBar } from '@/components/web-shell'
 import { inviteClinicStaffAction } from './actions'
+import { PendingInvitesList } from './PendingInvitesList'
 import { StaffList } from './StaffList'
 import type { Staff } from '@karibu/shared'
 
@@ -133,27 +134,7 @@ export default async function StaffManagementPage() {
           </form>
         </section>
 
-        {pendingInvites.length > 0 && (
-          <section className="rounded-2xl border border-border bg-muted/40 p-6">
-            <h3 className="text-lg font-semibold">Pending invitations ({pendingInvites.length})</h3>
-            <ul className="mt-4 space-y-3">
-              {pendingInvites.map((invite) => (
-                <li
-                  key={invite.id}
-                  className="rounded-lg border border-border bg-card px-4 py-3"
-                >
-                  <p className="font-medium">{invite.display_name}</p>
-                  <p className="text-sm text-muted-foreground">{invite.email}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {STAFF_ROLE_LABELS[invite.role as keyof typeof STAFF_ROLE_LABELS] ??
-                      invite.role}{' '}
-                    · sent {new Date(invite.created_at).toLocaleString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {pendingInvites.length > 0 && <PendingInvitesList invites={pendingInvites} />}
 
         <StaffList initialStaff={staffList} />
 

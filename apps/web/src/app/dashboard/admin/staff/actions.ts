@@ -4,7 +4,8 @@ import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { getStaff, isAdmin } from '@/lib/auth'
 import { assertStaffRole } from '@/lib/staff-roles'
-import { inviteStaffToClinic, updateClinicStaffRole } from '@/lib/staff-provisioning'
+import { inviteStaffToClinic, resendStaffInvitation, revokeStaffInvitation, updateClinicStaffRole } from '@/lib/staff-provisioning'
+import { formatClerkInviteError } from '@/lib/clerk-org-errors'
 import { createServiceClient } from '@/lib/supabase'
 import type { StaffRole } from '@karibu/shared'
 
@@ -27,18 +28,77 @@ export async function inviteClinicStaffAction(formData: FormData) {
 
   if (!email) throw new Error('Email is required')
 
-  const result = await inviteStaffToClinic({
-    clinicId: actor.clinic_id,
-    email,
-    firstName,
-    lastName,
-    role,
-    invitedByClerkUserId: userId,
-    invitedByStaffId: actor.id,
-  })
+  try {
+    const result = await inviteStaffToClinic({
+      clinicId: actor.clinic_id,
+      email,
+      firstName,
+      lastName,
+      role,
+      invitedByClerkUserId: userId,
+      invitedByStaffId: actor.id,
+    })
 
-  revalidatePath('/dashboard/admin/staff')
-  return result
+    revalidatePath('/dashboard/admin/staff')
+    return result
+  } catch (err) {
+    throw new Error(formatClerkInviteError(err))
+  }
+}
+
+export async function revokeStaffInvitationAction(
+  invitationId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actor = await requireClinicAdmin()
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: 'Unauthorized' }
+
+    const supabase = createServiceClient()
+    const { data: clinic } = await supabase
+      .from('clinics')
+      .select('clerk_organization_id')
+      .eq('id', actor.clinic_id)
+      .single()
+
+    if (!clinic?.clerk_organization_id) {
+      return { success: false, error: 'Clinic sign-in is not configured' }
+    }
+
+    await revokeStaffInvitation({
+      invitationRowId: invitationId,
+      clinicId: actor.clinic_id,
+      clerkOrganizationId: clinic.clerk_organization_id,
+      requestingClerkUserId: userId,
+    })
+
+    revalidatePath('/dashboard/admin/staff')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: formatClerkInviteError(err) }
+  }
+}
+
+export async function resendStaffInvitationAction(
+  invitationId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actor = await requireClinicAdmin()
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: 'Unauthorized' }
+
+    await resendStaffInvitation({
+      invitationRowId: invitationId,
+      clinicId: actor.clinic_id,
+      invitedByClerkUserId: userId,
+      invitedByStaffId: actor.id,
+    })
+
+    revalidatePath('/dashboard/admin/staff')
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: formatClerkInviteError(err) }
+  }
 }
 
 export async function updateStaffRole(
