@@ -7,7 +7,7 @@ import {
   CompletePharmacyDispenseSchema,
   type CompleteDispenseLine,
 } from '@/lib/validators/prescription'
-import type { PrescriptionOrderLine, PharmacyQueueTab } from '@karibu/shared'
+import type { PrescriptionOrderLine } from '@karibu/shared'
 import type { PharmacyStockItem, PharmacyStockResult } from './pharmacy-data'
 import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
@@ -238,5 +238,3 @@ function revalidatePharmacyPaths(visitId: string, clinicId: string) {
   // orders, today). Best-effort, fire-and-forget.
   void broadcastClinicRefresh(clinicId)
 }
-
-export type { PharmacyQueueTab }
