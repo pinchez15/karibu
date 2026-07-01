@@ -83,7 +83,7 @@ function GuidedModule({
         <p className="text-[10px] font-semibold uppercase tracking-wider text-cobalt-soft">
           {module.roleLabel}
         </p>
-        <h1 className="text-lg font-semibold">{module.title}</h1>
+        <h1 className="text-lg font-semibold text-white">{module.title}</h1>
         <p className="text-xs text-white/75">
           Step {stepIndex + 1} of {module.steps.length}
         </p>
@@ -243,13 +243,13 @@ export function EhrOnboardingClient({
     return (
       <div className="flex h-[100dvh] flex-col bg-cobalt-ink text-white">
         <div className="flex items-center gap-3 px-6 pt-8">
-          <KaribuLockup size={32} color="rgb(255 255 255)" />
+          <KaribuLockup size={32} variant="onDark" />
         </div>
         <div className="flex flex-1 flex-col justify-center px-6 pb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-cobalt-soft">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70">
             Staff training
           </p>
-          <h1 className="mt-3 max-w-lg text-3xl font-semibold leading-tight">
+          <h1 className="mt-3 max-w-lg text-3xl font-semibold leading-tight text-white">
             Learn KaribuEHR before your first real patient
           </h1>
           <p className="mt-4 max-w-md text-base leading-relaxed text-white/85">

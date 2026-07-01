@@ -15,10 +15,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,27 +85,23 @@ private fun DrawScope.drawKaribuMark(color: Color, fg: Color) {
     )
 }
 
-/** Wordmark "Karibu.health" — bold cobalt + light .health suffix. */
+/** KaribuEHR wordmark — matches web branding. */
 @Composable
 fun KaribuWordmark(
-    height: Dp = 28.dp,
-    color: Color = Slate,
+    height: androidx.compose.ui.unit.Dp = 28.dp,
+    color: Color = Cobalt,
+    onDark: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val sp = with(androidx.compose.ui.platform.LocalDensity.current) { height.toSp() }
     Text(
         modifier = modifier,
-        text = buildAnnotatedString {
-            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = color)) {
-                append("Karibu")
-            }
-            withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = color.copy(alpha = 0.75f))) {
-                append(".health")
-            }
-        },
+        text = "KaribuEHR",
+        fontWeight = FontWeight.SemiBold,
         fontSize = sp,
         letterSpacing = (-0.025f).sp,
         lineHeight = sp,
+        color = if (onDark) Color.White else color,
     )
 }
 
@@ -117,15 +110,19 @@ fun KaribuWordmark(
 fun KaribuLockup(
     size: Dp = 36.dp,
     color: Color = Cobalt,
+    fg: Color = Color.White,
+    onDark: Boolean = false,
     textColor: Color = Slate,
     modifier: Modifier = Modifier,
 ) {
+    val markColor = if (onDark) Color.White else color
+    val markFg = if (onDark) Cobalt else fg
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        KaribuMark(size = size, color = color)
-        KaribuWordmark(height = size * 0.7f, color = textColor)
+        KaribuMark(size = size, color = markColor, fg = markFg)
+        KaribuWordmark(height = size * 0.7f, color = textColor, onDark = onDark)
     }
 }

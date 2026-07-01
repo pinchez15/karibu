@@ -46,18 +46,28 @@ export function KaribuMark({
 interface KaribuWordmarkProps {
   height?: number
   className?: string
+  /** White wordmark for cobalt / cobalt-ink backgrounds. */
+  variant?: 'default' | 'onDark'
 }
 
 /**
  * KaribuEHR wordmark. The product is now branded **KaribuEHR** (one word, the
- * EHR is part of the name, not a tagline). Rendered as text in the brand cobalt
- * so it stays crisp at any size and we don't ship a stale "Karibu.health" PNG.
+ * EHR is part of the name, not a tagline). Rendered as text so it stays crisp
+ * at any size.
  */
-export function KaribuWordmark({ height = 36, className }: KaribuWordmarkProps) {
+export function KaribuWordmark({
+  height = 36,
+  className,
+  variant = 'default',
+}: KaribuWordmarkProps) {
   return (
     <span
       aria-label="KaribuEHR"
-      className={cn('font-semibold tracking-tight text-cobalt leading-none', className)}
+      className={cn(
+        'font-semibold tracking-tight leading-none',
+        variant === 'onDark' ? 'text-white' : 'text-cobalt',
+        className,
+      )}
       style={{ fontSize: Math.round(height * 0.7) }}
     >
       KaribuEHR
@@ -67,11 +77,14 @@ export function KaribuWordmark({ height = 36, className }: KaribuWordmarkProps) 
 
 interface KaribuLockupProps {
   size?: number
-  /** Mark background. Defaults to cobalt; pass 'transparent' or other for dark surfaces. */
+  /** Mark background. Defaults to cobalt; on dark surfaces use variant="onDark". */
   color?: string
+  /** Mark foreground (k+). Defaults to white. */
+  fg?: string
+  /** White lockup on cobalt / cobalt-ink — inverse mark per brand sheet. */
+  variant?: 'default' | 'onDark'
   /**
-   * Legacy prop kept for backwards-compat; the wordmark now renders from
-   * the brand PNG so its color is fixed. Ignored.
+   * Legacy prop kept for backwards-compat. Prefer `variant="onDark"`.
    */
   textColor?: string
   className?: string
@@ -79,13 +92,18 @@ interface KaribuLockupProps {
 
 export function KaribuLockup({
   size = 36,
-  color = 'rgb(31 54 199)',
+  color,
+  fg,
+  variant = 'default',
   className,
 }: KaribuLockupProps) {
+  const markColor = color ?? (variant === 'onDark' ? '#fff' : 'rgb(31 54 199)')
+  const markFg = fg ?? (variant === 'onDark' ? 'rgb(31 54 199)' : '#FFFFFF')
+
   return (
     <div className={cn('inline-flex items-center gap-2.5', className)}>
-      <KaribuMark size={size} color={color} />
-      <KaribuWordmark height={Math.round(size * 0.9)} />
+      <KaribuMark size={size} color={markColor} fg={markFg} />
+      <KaribuWordmark height={Math.round(size * 0.9)} variant={variant} />
     </div>
   )
 }

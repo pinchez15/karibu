@@ -15,16 +15,19 @@ KaribuEHR Onboarding is **required staff training** inside Karibu EHR. It is not
 
 ## Experience
 
-Gamified walkthrough — same interaction pattern as KaribuLearn (coral coach + cobalt chart simulation on the left), reframed for **where to tap in KaribuEHR**. Every new staff member completes **all role modules** (records, nurse, clinician, lab, pharmacy, billing) regardless of their assigned role.
+Self-guided EHR training on **interactive mock screens** with step-by-step coach copy (paper bridges + tips). Every staff member completes **all six role modules** regardless of assigned role.
 
-- **Android-first:** primary training surface; matches how HC III staff use Karibu in the field.
-- **Web bonus:** `/onboarding` mirrors modules on laptop; manifest `web_bonus` copy highlights desk-wide views (lab batch, pharmacy inventory, billing receipts).
+- **Web:** `/onboarding` — `EhrOnboardingClient` + `ehr-modules.ts` + `mock-screens.tsx`
+- **Android:** `OnboardingRoot` → `EhrGuidedModuleScreen` + `EhrOnboardingModules.kt` + `EhrMockScreens.kt`
+- **Shared:** module IDs, Supabase progress (`staff_onboarding_progress`), completion gate on `rpc_create_patient`
+
+Legacy KaribuLearn `WalkthroughScreen` / `fever-headache` case playback is **no longer** used for EHR onboarding (still used by in-app KaribuLearn CME if enabled).
 
 ## Content
 
-Module catalog: `content/onboarding/manifest.json` (bundled to Android assets and `apps/web/public/onboarding/`).
+Module catalog: `content/onboarding/manifest.json` (hub titles; bundled to Android assets and `apps/web/public/onboarding/`).
 
-Cases reuse KaribuLearn `.kpack` fixtures (e.g. `core-opd` / `fever-headache`) with onboarding-specific coach intros. Long-term: dedicated `onboarding_steps` per module in the pack schema.
+**Step copy source of truth:** `apps/web/src/app/onboarding/ehr-modules.ts` and `apps/android/.../ehr/EhrOnboardingModules.kt` (keep in sync).
 
 ## Completion gate
 

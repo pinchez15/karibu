@@ -66,7 +66,7 @@ export default function BrandSheetPage() {
           <KaribuLockup size={48} />
         </div>
         <div className="bg-cobalt-ink rounded-xl flex items-center justify-center h-[140px]">
-          <KaribuLockup size={48} color="#fff" textColor="#fff" />
+          <KaribuLockup size={48} variant="onDark" />
         </div>
       </div>
 
