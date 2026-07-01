@@ -110,6 +110,14 @@ interface SupabaseApi {
         @Query("order") order: String = "drug_name.asc",
     ): List<PharmacyStockItemDto>
 
+    @GET("lab_stock_items")
+    suspend fun getLabStockItems(
+        @Query("clinic_id") clinicId: String,
+        @Query("active") active: String = "eq.true",
+        @Query("select") select: String = "id,test_name,category,unit,quantity_on_hand,low_stock_threshold",
+        @Query("order") order: String = "test_name.asc",
+    ): List<LabStockItemDto>
+
     // Queue RPCs (SECURITY DEFINER -- bypass RLS).
     //
     // Bodies are typed as JsonObject (not Map<String, Any?>) so the

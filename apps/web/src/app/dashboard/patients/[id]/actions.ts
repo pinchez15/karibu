@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
+import { syncCriticalAlertsForVisit } from '@/lib/sync-critical-alerts'
 import type {
   Patient,
   PatientLatestVitals,
@@ -437,6 +438,23 @@ export async function recordPatientVitals(
   })
   if (rpcErr) {
     return { success: false, error: `Failed to save vitals: ${rpcErr.message}` }
+  }
+
+  if (visitId) {
+    await syncCriticalAlertsForVisit(
+      visitId,
+      staff.clinic_id,
+      { dateOfBirth: patient.date_of_birth },
+      {
+        temp_c,
+        bp_systolic,
+        bp_diastolic,
+        resp_rate,
+        spo2_pct,
+        muac_cm,
+      },
+    )
+    revalidatePath(`/dashboard/visits/${visitId}`)
   }
 
   revalidatePath(`/dashboard/patients/${input.patient_id}`)

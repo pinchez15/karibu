@@ -97,6 +97,7 @@ fun ClinicalMainShell(
     onNavigateToDictation: (String, Boolean) -> Unit = { _, _ -> },
     onNavigateToReview: (String) -> Unit = {},
     onNavigateToWorklists: () -> Unit = {},
+    onNavigateToStock: () -> Unit = {},
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -192,6 +193,7 @@ fun ClinicalMainShell(
                     else -> onNavigateToWorklists
                 },
                 onOpenBilling = onNavigateToBilling,
+                onOpenStock = onNavigateToStock,
             )
             tabContent(Modifier.weight(1f))
         }

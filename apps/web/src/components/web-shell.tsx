@@ -21,6 +21,7 @@ import {
   Database,
   BarChart3,
   Receipt,
+  Package,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
@@ -94,12 +95,13 @@ const UNITS: UnitDef[] = [
     id: 'opd',
     label: 'OPD',
     icon: Stethoscope,
-    basePaths: ['/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review'],
+    basePaths: ['/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview'],
     roles: CLINICAL,
     items: [
       { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
       { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
       { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
+      { id: 'stock', label: 'Stock', href: '/dashboard/stock-overview', icon: Package },
       { id: 'review', label: 'Review Notes', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
     ],
   },

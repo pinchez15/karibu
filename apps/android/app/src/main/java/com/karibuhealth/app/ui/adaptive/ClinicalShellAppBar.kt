@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,6 +48,7 @@ fun ClinicalShellAppBar(
     onSignOut: () -> Unit,
     onOpenWorklists: (() -> Unit)? = null,
     onOpenBilling: (() -> Unit)? = null,
+    onOpenStock: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -83,6 +85,15 @@ fun ClinicalShellAppBar(
                 Icon(
                     Icons.Outlined.Payments,
                     contentDescription = "Billing",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        onOpenStock?.let { open ->
+            IconButton(onClick = open) {
+                Icon(
+                    Icons.Outlined.Inventory2,
+                    contentDescription = "Stock",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import { syncCriticalAlertsForVisit } from '@/lib/sync-critical-alerts'
 
 const CLINICAL_ROLES = new Set([
   'admin',
@@ -46,16 +47,13 @@ export async function recordVitals(
   const supabase = createServiceClient()
   const { data: patient } = await supabase
     .from('patients')
-    .select('id')
+    .select('id, date_of_birth')
     .eq('id', input.patientId)
     .eq('clinic_id', staff.clinic_id)
     .maybeSingle()
   if (!patient) return { success: false, error: 'Patient not found in your clinic' }
 
-  const { error } = await supabase.from('patient_vitals').insert({
-    patient_id: input.patientId,
-    visit_id: input.visitId,
-    recorded_by: staff.id,
+  const vitalsPayload = {
     weight_kg: input.weight_kg ?? null,
     height_cm: input.height_cm ?? null,
     temp_c: input.temp_c ?? null,
@@ -66,8 +64,22 @@ export async function recordVitals(
     spo2_pct: input.spo2_pct ?? null,
     muac_cm: input.muac_cm ?? null,
     notes: input.notes ?? null,
+  }
+
+  const { error } = await supabase.from('patient_vitals').insert({
+    patient_id: input.patientId,
+    visit_id: input.visitId,
+    recorded_by: staff.id,
+    ...vitalsPayload,
   })
   if (error) return { success: false, error: error.message }
+
+  await syncCriticalAlertsForVisit(
+    input.visitId,
+    staff.clinic_id,
+    { dateOfBirth: patient.date_of_birth },
+    vitalsPayload,
+  )
 
   revalidatePath(`/dashboard/visits/${input.visitId}`)
   return { success: true }

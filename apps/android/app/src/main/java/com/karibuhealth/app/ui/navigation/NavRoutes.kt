@@ -44,6 +44,9 @@ sealed interface NavRoute {
     /** Patient-level billing — charges, payments, balances (migrations 076–077). */
     @Serializable data object Billing : NavRoute
 
+    /** Clinician read-only pharmacy + lab stock (parity with web stock-overview). */
+    @Serializable data object StockOverview : NavRoute
+
     @Serializable data class PatientBill(val patientId: String) : NavRoute
 
     /** Today's labs, pharmacy, and referrals — clinician action queue. */

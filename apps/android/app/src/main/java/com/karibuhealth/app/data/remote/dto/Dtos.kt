@@ -183,6 +183,16 @@ data class PharmacyStockItemDto(
     @SerialName("updated_at") val updatedAt: String = "",
 )
 
+@Serializable
+data class LabStockItemDto(
+    val id: String,
+    @SerialName("test_name") val testName: String,
+    val category: String,
+    val unit: String,
+    @SerialName("quantity_on_hand") val quantityOnHand: Double,
+    @SerialName("low_stock_threshold") val lowStockThreshold: Double? = null,
+)
+
 // Return shape of rpc_find_duplicate_candidates / rpc_search_patients (migration
 // 038). match_reasons is an ARRAY_REMOVE(...) result so SQL guarantees no NULLs
 // inside, but we model it as List<String?> defensively in case Postgres returns

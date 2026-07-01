@@ -25,6 +25,7 @@ import com.karibuhealth.app.ui.payment.PaymentScreen
 import com.karibuhealth.app.ui.success.SuccessScreen
 import com.karibuhealth.app.ui.billing.BillingHomeScreen
 import com.karibuhealth.app.ui.billing.PatientBillScreen
+import com.karibuhealth.app.ui.stock.StockOverviewScreen
 import com.karibuhealth.app.ui.worklists.WorklistsScreen
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
 import com.karibuhealth.app.ui.anc.AncRegistryScreen
@@ -131,6 +132,7 @@ fun KaribuNavHost(
                         navigator.go(NavRoute.Review(visitId))
                     },
                     onNavigateToWorklists = { navigator.go(NavRoute.Worklists) },
+                    onNavigateToStock = { navigator.go(NavRoute.StockOverview) },
                 )
             }
 
@@ -365,6 +367,10 @@ fun KaribuNavHost(
                         navigator.go(NavRoute.PatientBill(patientId))
                     },
                 )
+            }
+
+            composable<NavRoute.StockOverview> {
+                StockOverviewScreen(onNavigateBack = { navigator.back() })
             }
 
             composable<NavRoute.PatientBill> {
