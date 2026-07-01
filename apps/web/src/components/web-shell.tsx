@@ -22,10 +22,14 @@ import {
   BarChart3,
   Receipt,
   Package,
+  UserPlus,
+  ArrowRightLeft,
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
 import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
+import { SidebarPatientSearch } from '@/components/sidebar-patient-search'
+import { activeWebShellUnitId } from '@/lib/web-shell-units'
 import { cn } from '@/lib/utils'
 
 // Legacy role type — kept exported so older imports don't break. The shell now
@@ -81,6 +85,15 @@ const ALL_STAFF = [
   'dispenser',
 ]
 
+/** Shared shortcuts on OPD and Inpatient sidebars — orders, tasks, stock, register. */
+const CLINICAL_CROSS_LINKS: NavItem[] = [
+  { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
+  { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
+  { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
+  { id: 'stock', label: 'Stock', href: '/dashboard/stock-overview', icon: Package },
+  { id: 'review', label: 'Review notes', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
+]
+
 // Top-header units. Home (calendar) is shared; other units are role-scoped desks.
 const UNITS: UnitDef[] = [
   {
@@ -95,26 +108,25 @@ const UNITS: UnitDef[] = [
     id: 'opd',
     label: 'OPD',
     icon: Stethoscope,
-    basePaths: ['/dashboard/opd', '/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview'],
+    basePaths: ['/dashboard/opd', '/dashboard/visits', '/dashboard/patients', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview', '/dashboard/consult', '/dashboard/referrals'],
     roles: CLINICAL,
     items: [
-      { id: 'opd-today', label: 'Today', href: '/dashboard/opd', icon: Home },
-      { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
-      { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
-      { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
-      { id: 'stock', label: 'Stock', href: '/dashboard/stock-overview', icon: Package },
-      { id: 'review', label: 'Review Notes', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
+      { id: 'opd-today', label: 'Today & queue', href: '/dashboard/opd', icon: Home },
+      ...CLINICAL_CROSS_LINKS,
     ],
   },
   {
     id: 'inpatient',
     label: 'Inpatient',
     icon: BedDouble,
-    basePaths: ['/dashboard/inpatient', '/dashboard/inpatient/admit', '/dashboard/inpatient/handover'],
+    basePaths: ['/dashboard/inpatient'],
     roles: CLINICAL,
     items: [
-      { id: 'admissions', label: 'Admissions', href: '/dashboard/inpatient', icon: BedDouble },
-      { id: 'handover', label: 'Handover', href: '/dashboard/inpatient/handover', icon: ListTodo },
+      { id: 'ward-census', label: 'Ward census', href: '/dashboard/inpatient', icon: BedDouble },
+      { id: 'admit', label: 'Admit patient', href: '/dashboard/inpatient/admit', icon: UserPlus },
+      { id: 'handover', label: 'Handover', href: '/dashboard/inpatient/handover', icon: ArrowRightLeft },
+      { id: 'anc-registry', label: 'ANC registry', href: '/dashboard/anc', icon: Baby },
+      ...CLINICAL_CROSS_LINKS,
     ],
   },
   {
@@ -185,15 +197,7 @@ const UNITS: UnitDef[] = [
 ]
 
 function activeUnitId(pathname: string): string {
-  // Bare /dashboard is the shared calendar home.
-  if (pathname === '/dashboard') return 'home'
-  for (const unit of UNITS) {
-    if (unit.basePaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-      return unit.id
-    }
-  }
-  // Anything else without a unit match falls under OPD for clinicians.
-  return 'opd'
+  return activeWebShellUnitId(pathname)
 }
 
 function canSeeUnit(unit: UnitDef, staffRole?: string): boolean {
@@ -290,6 +294,12 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
             )}
           </div>
 
+          {(currentUnitId === 'opd' || currentUnitId === 'inpatient') && (
+            <div className="px-3 pt-3 pb-2 border-b border-line-soft">
+              <SidebarPatientSearch />
+            </div>
+          )}
+
           <nav className="px-3 py-3 flex-1 overflow-y-auto">
             {items.map((item) => {
               const active = isActive(pathname, item.href)
@@ -369,7 +379,10 @@ function isActive(pathname: string, href: string) {
   if (pathname === href) return true
   if (href === '/dashboard') return false
   if (href === '/dashboard/admin' && pathname.startsWith('/dashboard/admin/reports')) return false
-  // Pharmacy/lab "Today" roots shouldn't stay lit on their stock/history children.
+  // OPD "Today" only on the list root — not visit detail or other OPD children.
+  if (href === '/dashboard/opd' && pathname !== href) return false
+  // Ward census only on the census list — not admit, handover, or admission chart.
+  if (href === '/dashboard/inpatient' && pathname !== href) return false
   if ((href === '/dashboard/pharmacy' || href === '/dashboard/lab') && pathname !== href) return false
   // Billing Payments only on the list root — not patient bills or reports.
   if (href === '/dashboard/billing' && pathname.startsWith('/dashboard/billing/')) return false
