@@ -353,10 +353,7 @@ fun NewVisitScreen(
                 )
             }
 
-            // Location section. Village + parish are the primary
-            // disambiguators when DOB is unknown — surfaced inline. Subcounty,
-            // district, guardian, and national ID live behind the "More"
-            // disclosure so the form stays compact for the common case.
+            // Location: village, parish, district (defaults from clinic).
             Column {
                 KhMetaText(text = "LOCATION")
                 Spacer(Modifier.height(6.dp))
@@ -367,7 +364,6 @@ fun NewVisitScreen(
                         onValueChange = viewModel::updateVillage,
                         placeholder = "Village",
                         error = null,
-                        helper = "Useful when DOB is unknown",
                         modifier = Modifier.weight(1f),
                         imeAction = ImeAction.Next,
                     )
@@ -377,11 +373,21 @@ fun NewVisitScreen(
                         onValueChange = viewModel::updateParish,
                         placeholder = "Parish",
                         error = null,
-                        helper = "Useful when DOB is unknown",
                         modifier = Modifier.weight(1f),
                         imeAction = ImeAction.Next,
                     )
                 }
+                Spacer(Modifier.height(10.dp))
+                LabeledOutlinedField(
+                    label = "DISTRICT",
+                    value = uiState.district,
+                    onValueChange = viewModel::updateDistrict,
+                    placeholder = "District",
+                    error = null,
+                    helper = "Defaults from your clinic — change if needed",
+                    modifier = Modifier.fillMaxWidth(),
+                    imeAction = ImeAction.Next,
+                )
             }
 
             // "More" disclosure: less-used identity fields.
@@ -399,7 +405,7 @@ fun NewVisitScreen(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = if (moreExpanded) "Less" else "More (subcounty, district, guardian, national ID)",
+                    text = if (moreExpanded) "Less" else "More (subcounty, guardian, national ID)",
                     color = Cobalt,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
@@ -407,35 +413,31 @@ fun NewVisitScreen(
             }
             AnimatedVisibility(visible = moreExpanded) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        LabeledOutlinedField(
-                            label = "SUBCOUNTY",
-                            value = uiState.subcounty,
-                            onValueChange = viewModel::updateSubcounty,
-                            placeholder = "Subcounty",
-                            error = null,
-                            modifier = Modifier.weight(1f),
-                            imeAction = ImeAction.Next,
-                        )
-                        LabeledOutlinedField(
-                            label = "DISTRICT",
-                            value = uiState.district,
-                            onValueChange = viewModel::updateDistrict,
-                            placeholder = "District",
-                            error = null,
-                            modifier = Modifier.weight(1f),
-                            imeAction = ImeAction.Next,
-                        )
-                    }
                     LabeledOutlinedField(
-                        label = "GUARDIAN NAME",
-                        value = uiState.guardianName,
-                        onValueChange = viewModel::updateGuardianName,
-                        placeholder = "Parent or guardian",
+                        label = "SUBCOUNTY",
+                        value = uiState.subcounty,
+                        onValueChange = viewModel::updateSubcounty,
+                        placeholder = "Subcounty",
                         error = null,
                         modifier = Modifier.fillMaxWidth(),
                         imeAction = ImeAction.Next,
                     )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LabeledOutlinedField(
+                            label = "GUARDIAN NAME",
+                            value = uiState.guardianName,
+                            onValueChange = viewModel::updateGuardianName,
+                            placeholder = "Parent or guardian",
+                            error = null,
+                            modifier = Modifier.weight(1f),
+                            imeAction = ImeAction.Next,
+                        )
+                        GuardianRelationshipPicker(
+                            value = uiState.guardianRelationship,
+                            onValueChange = viewModel::updateGuardianRelationship,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                     LabeledOutlinedField(
                         label = "NATIONAL ID",
                         value = uiState.nationalId,
@@ -716,6 +718,53 @@ private fun humanizeMatchReason(reason: String): String = when (reason) {
     "national_id_match" -> "Same national ID"
     "age_match" -> "Similar age"
     else -> reason
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GuardianRelationshipPicker(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = value.takeIf { it.isNotBlank() }?.let { GuardianRelationship.label(it) } ?: "Relationship"
+
+    Column(modifier = modifier) {
+        KhMetaText(text = "RELATIONSHIP")
+        Spacer(Modifier.height(6.dp))
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Line),
+        ) {
+            Text(
+                text = if (value.isBlank()) "Select" else label,
+                modifier = Modifier.weight(1f),
+                color = if (value.isBlank()) Muted else Ink,
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("—") },
+                onClick = {
+                    onValueChange("")
+                    expanded = false
+                },
+            )
+            GuardianRelationship.OPTIONS.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(GuardianRelationship.label(option)) },
+                    onClick = {
+                        onValueChange(option)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

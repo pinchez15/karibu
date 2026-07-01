@@ -16,6 +16,7 @@ data class ClinicEntity(
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     @ColumnInfo(name = "workflow_config_json") val workflowConfigJson: String? = null,
+    val district: String? = null,
 )
 
 @Entity(
@@ -76,6 +77,7 @@ data class PatientEntity(
     val subcounty: String? = null,
     val district: String? = null,
     @ColumnInfo(name = "guardian_name") val guardianName: String? = null,
+    @ColumnInfo(name = "guardian_relationship") val guardianRelationship: String? = null,
     @ColumnInfo(name = "national_id") val nationalId: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: String,
     @ColumnInfo(name = "updated_at") val updatedAt: String,

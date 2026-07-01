@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Activity, Loader2, PenLine, Plus, Printer } from 'lucide-react'
+import { Activity, Loader2, PenLine, Pencil, Plus, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -33,6 +33,8 @@ import {
   recordPatientVitals,
   signPatientNote,
 } from './actions'
+import { PatientEditSheet } from './PatientEditSheet'
+import { guardianRelationshipLabel } from '@/lib/patient-demographics'
 import { VISIT_STATUS_DISPLAY } from '@/lib/visit-status'
 
 // Roles allowed to sign a note (matches signPatientNote / migration 039).
@@ -196,7 +198,13 @@ function formatDueAt(value: string | null | undefined): string {
 // Header
 // ---------------------------------------------------------------------------
 
-function PatientHeader({ patient }: { patient: PatientWithDerivedAge }) {
+function PatientHeader({
+  patient,
+  onEdit,
+}: {
+  patient: PatientWithDerivedAge
+  onEdit: () => void
+}) {
   const name =
     [patient.first_name, patient.last_name].filter(Boolean).join(' ') ||
     patient.display_name ||
@@ -209,6 +217,11 @@ function PatientHeader({ patient }: { patient: PatientWithDerivedAge }) {
   }, [patient.derived_age, patient.dob_precision])
 
   const sexLabel = patient.sex === 'M' ? 'Male' : patient.sex === 'F' ? 'Female' : null
+  const guardianLabel = useMemo(() => {
+    if (!patient.guardian_name) return null
+    const rel = guardianRelationshipLabel(patient.guardian_relationship)
+    return rel ? `${patient.guardian_name} (${rel})` : patient.guardian_name
+  }, [patient.guardian_name, patient.guardian_relationship])
 
   return (
     <div className="bg-card border border-border rounded-lg p-4">
@@ -222,16 +235,22 @@ function PatientHeader({ patient }: { patient: PatientWithDerivedAge }) {
         <div className="flex flex-wrap items-center gap-2">
           {sexLabel && <Badge variant="info">{sexLabel}</Badge>}
           <Badge variant="info">{ageLabel}</Badge>
+          <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
         {patient.village && <span>Village: {patient.village}</span>}
         {patient.parish && <span>Parish: {patient.parish}</span>}
+        {patient.subcounty && <span>Subcounty: {patient.subcounty}</span>}
+        {patient.district && <span>District: {patient.district}</span>}
         {patient.whatsapp_number && (
           <span className="font-mono">{patient.whatsapp_number}</span>
         )}
-        {patient.guardian_name && <span>Guardian: {patient.guardian_name}</span>}
+        {guardianLabel && <span>Guardian: {guardianLabel}</span>}
       </div>
     </div>
   )
@@ -1074,7 +1093,7 @@ function AddVitalsSheet({
 
 export function PatientDetailClient({
   staffRole,
-  patient,
+  patient: initialPatient,
   latestVitals,
   initialTimeline,
 }: {
@@ -1083,6 +1102,7 @@ export function PatientDetailClient({
   latestVitals: PatientLatestVitals | null
   initialTimeline: PatientTimelineEvent[]
 }) {
+  const [patient, setPatient] = useState(initialPatient)
   const [events, setEvents] = useState<PatientTimelineEvent[]>(initialTimeline)
   const [loadingMore, setLoadingMore] = useState(false)
   // hasMore is a heuristic: if the last page returned a full PAGE_LIMIT,
@@ -1090,7 +1110,12 @@ export function PatientDetailClient({
   const [hasMore, setHasMore] = useState(initialTimeline.length >= PAGE_LIMIT)
   const [addNoteOpen, setAddNoteOpen] = useState(false)
   const [vitalsOpen, setVitalsOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [latestVitalsState, setLatestVitalsState] = useState(latestVitals)
+
+  useEffect(() => {
+    setPatient(initialPatient)
+  }, [initialPatient])
 
   const canSign = SIGNING_ROLES.has(staffRole)
   const canRecord = RECORDING_ROLES.has(staffRole)
@@ -1130,7 +1155,7 @@ export function PatientDetailClient({
 
   return (
     <div className="space-y-4">
-      <PatientHeader patient={patient} />
+      <PatientHeader patient={patient} onEdit={() => setEditOpen(true)} />
       <LatestVitalsCard vitals={latestVitalsState} />
 
       <div className="flex items-center justify-between gap-2">
@@ -1222,6 +1247,13 @@ export function PatientDetailClient({
           // The server action already calls revalidatePath; next refresh
           // round-trip will replace latestVitalsState with the server's view.
         }}
+      />
+
+      <PatientEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        patient={patient}
+        onSaved={setPatient}
       />
     </div>
   )

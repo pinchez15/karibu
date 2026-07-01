@@ -27,6 +27,7 @@ import com.karibuhealth.app.data.local.db.migrations.MIGRATION_22_23
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_23_24
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_24_25
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_25_26
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_28_29
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_27_28
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_26_27
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_9_10
@@ -76,6 +77,7 @@ object DatabaseModule {
                 MIGRATION_25_26,
                 MIGRATION_26_27,
                 MIGRATION_27_28,
+                MIGRATION_28_29,
             )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()

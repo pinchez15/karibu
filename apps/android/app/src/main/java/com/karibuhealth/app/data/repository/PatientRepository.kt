@@ -131,6 +131,7 @@ class PatientRepository @Inject constructor(
         subcounty: String? = null,
         district: String? = null,
         guardianName: String? = null,
+        guardianRelationship: String? = null,
         nationalId: String? = null,
     ): Pair<Patient, String?> = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
@@ -163,6 +164,7 @@ class PatientRepository @Inject constructor(
             subcounty = subcounty,
             district = district,
             guardianName = guardianName,
+            guardianRelationship = guardianRelationship,
             nationalId = nationalId,
             createdAt = now,
             updatedAt = now,

@@ -3,6 +3,7 @@ package com.karibuhealth.app.ui.newvisit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.local.db.dao.ClinicDao
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.DuplicateCandidate
@@ -21,6 +22,27 @@ enum class PatientSex { M, F }
 // Server-side dob_precision discriminator values (migration 038). Kept as
 // strings — the migration uses a CHECK constraint rather than an enum so we
 // stay close to the wire format.
+object GuardianRelationship {
+    const val MOTHER = "mother"
+    const val FATHER = "father"
+    const val HUSBAND = "husband"
+    const val WIFE = "wife"
+    const val RELATIVE = "relative"
+    const val NEIGHBOR = "neighbor"
+
+    val OPTIONS = listOf(MOTHER, FATHER, HUSBAND, WIFE, RELATIVE, NEIGHBOR)
+
+    fun label(value: String): String = when (value) {
+        MOTHER -> "Mother"
+        FATHER -> "Father"
+        HUSBAND -> "Husband"
+        WIFE -> "Wife"
+        RELATIVE -> "Relative"
+        NEIGHBOR -> "Neighbor"
+        else -> value
+    }
+}
+
 object DobPrecision {
     const val EXACT = "exact"
     const val YEAR_ONLY = "year_only"
@@ -59,6 +81,7 @@ data class NewVisitUiState(
     val subcounty: String = "",
     val district: String = "",
     val guardianName: String = "",
+    val guardianRelationship: String = "",
     val nationalId: String = "",
     val chiefComplaint: String = "",
     val searchResults: List<Patient> = emptyList(),
@@ -82,10 +105,22 @@ class NewVisitViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
+    private val clinicDao: ClinicDao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NewVisitUiState())
     val uiState: StateFlow<NewVisitUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val clinicId = authTokenStore.getClinicId() ?: return@launch
+            val clinic = clinicDao.getByIdOnce(clinicId)
+            val defaultDistrict = clinic?.district?.trim().orEmpty()
+            if (defaultDistrict.isNotEmpty()) {
+                _uiState.update { it.copy(district = defaultDistrict) }
+            }
+        }
+    }
 
     fun updateSearch(query: String) {
         _uiState.update { it.copy(searchQuery = query, fieldErrors = it.fieldErrors.copy(phone = null)) }
@@ -198,6 +233,10 @@ class NewVisitViewModel @Inject constructor(
 
     fun updateGuardianName(input: String) {
         _uiState.update { it.copy(guardianName = input) }
+    }
+
+    fun updateGuardianRelationship(input: String) {
+        _uiState.update { it.copy(guardianRelationship = input) }
     }
 
     fun updateNationalId(input: String) {
@@ -389,6 +428,7 @@ class NewVisitViewModel @Inject constructor(
                 subcounty = state.subcounty.trim().takeIf { it.isNotBlank() },
                 district = state.district.trim().takeIf { it.isNotBlank() },
                 guardianName = state.guardianName.trim().takeIf { it.isNotBlank() },
+                guardianRelationship = state.guardianRelationship.trim().takeIf { it.isNotBlank() },
                 nationalId = state.nationalId.trim().takeIf { it.isNotBlank() },
             )
             val staffId = authTokenStore.getStaffId()

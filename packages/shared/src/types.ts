@@ -874,6 +874,14 @@ export interface CompleteDispenseLineInput {
   notes?: string | null;
 }
 
+export type GuardianRelationship =
+  | 'mother'
+  | 'father'
+  | 'husband'
+  | 'wife'
+  | 'relative'
+  | 'neighbor';
+
 export type PharmacyQueueTab = 'waiting' | 'in_progress' | 'done_today';
 
 export interface Payment {

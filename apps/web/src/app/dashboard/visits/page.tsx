@@ -180,6 +180,14 @@ export default async function PatientsPage({
   )
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
+  const supabase = createServiceClient()
+  const { data: clinic } = await supabase
+    .from('clinics')
+    .select('district')
+    .eq('id', staff.clinic_id)
+    .maybeSingle()
+  const defaultDistrict = clinic?.district?.trim() ?? ''
+
   const buildHref = (targetPage?: number): string => {
     const qs = new URLSearchParams()
     if (search) qs.set('search', search)
@@ -195,7 +203,7 @@ export default async function PatientsPage({
       <WebTopBar title="Patients" subtitle={`${total} ${total === 1 ? 'patient' : 'patients'}`} subtitleMeta={false} />
       <RealtimeRefresher clinicId={staff.clinic_id} />
       <div className="flex-1 overflow-auto px-8 py-6 space-y-4">
-        <PatientsToolbar />
+        <PatientsToolbar defaultDistrict={defaultDistrict} />
 
         <p className="text-sm text-muted-foreground">
           {total} {total === 1 ? 'patient' : 'patients'}

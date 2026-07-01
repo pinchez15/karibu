@@ -18,6 +18,14 @@ import {
   type DobPrecision,
   type DuplicateCandidate,
 } from './actions'
+import {
+  GUARDIAN_RELATIONSHIP_LABELS,
+  GUARDIAN_RELATIONSHIP_OPTIONS,
+} from '@/lib/patient-demographics'
+import type { GuardianRelationship } from '@karibu/shared'
+
+const selectClassName =
+  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
 
 function formatUgandaDateInput(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 8)
@@ -113,7 +121,7 @@ function CandidateCard({
   )
 }
 
-export function PatientsToolbar() {
+export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: string }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -128,9 +136,11 @@ export function PatientsToolbar() {
   const [lastName, setLastName] = useState('')
   const [village, setVillage] = useState('')
   const [parish, setParish] = useState('')
+  const [district, setDistrict] = useState(defaultDistrict)
   const [sex, setSex] = useState<'M' | 'F' | ''>('')
   const [birthYear, setBirthYear] = useState('')
   const [approximateAge, setApproximateAge] = useState('')
+  const [guardianRelationship, setGuardianRelationship] = useState<GuardianRelationship | ''>('')
   const [moreOpen, setMoreOpen] = useState(false)
 
   // Duplicate detection state.
@@ -139,6 +149,10 @@ export function PatientsToolbar() {
   const [serverCandidates, setServerCandidates] = useState<DuplicateCandidate[] | null>(null)
   const [liveCandidates, setLiveCandidates] = useState<DuplicateCandidate[]>([])
   const [lookupPending, setLookupPending] = useState(false)
+
+  useEffect(() => {
+    setDistrict(defaultDistrict)
+  }, [defaultDistrict])
 
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const lookupTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -219,9 +233,11 @@ export function PatientsToolbar() {
     setLastName('')
     setVillage('')
     setParish('')
+    setDistrict(defaultDistrict)
     setSex('')
     setBirthYear('')
     setApproximateAge('')
+    setGuardianRelationship('')
     setMoreOpen(false)
     setError(null)
     setServerCandidates(null)
@@ -305,6 +321,10 @@ export function PatientsToolbar() {
         >
           {/* Hidden inputs that mirror controlled state so they're included in FormData */}
           <input type="hidden" name="dob_precision" value={precision} />
+          <input type="hidden" name="district" value={district} />
+          {guardianRelationship ? (
+            <input type="hidden" name="guardian_relationship" value={guardianRelationship} />
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="space-y-1.5">
@@ -460,7 +480,7 @@ export function PatientsToolbar() {
           {/* Location section */}
           <div className="space-y-2">
             <Label>Location</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="village" className="text-xs text-muted-foreground">
                   Village
@@ -485,11 +505,24 @@ export function PatientsToolbar() {
                   placeholder="Parish"
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="district" className="text-xs text-muted-foreground">
+                  District
+                </Label>
+                <Input
+                  id="district"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  placeholder="District"
+                />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Useful when DOB is unknown.</p>
+            <p className="text-xs text-muted-foreground">
+              District defaults from your clinic — change if the patient is from elsewhere.
+            </p>
           </div>
 
-          {/* More: subcounty, district, guardian, national_id */}
+          {/* More: subcounty, guardian, national_id */}
           <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
             <CollapsibleTrigger asChild>
               <button
@@ -513,12 +546,6 @@ export function PatientsToolbar() {
                   <Input id="subcounty" name="subcounty" placeholder="Subcounty" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="district" className="text-xs text-muted-foreground">
-                    District
-                  </Label>
-                  <Input id="district" name="district" placeholder="District" />
-                </div>
-                <div className="space-y-1.5">
                   <Label htmlFor="guardian_name" className="text-xs text-muted-foreground">
                     Guardian name
                   </Label>
@@ -527,6 +554,26 @@ export function PatientsToolbar() {
                     name="guardian_name"
                     placeholder="Parent / guardian"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="guardian_relationship" className="text-xs text-muted-foreground">
+                    Guardian relationship
+                  </Label>
+                  <select
+                    id="guardian_relationship"
+                    className={selectClassName}
+                    value={guardianRelationship}
+                    onChange={(e) =>
+                      setGuardianRelationship(e.target.value as GuardianRelationship | '')
+                    }
+                  >
+                    <option value="">—</option>
+                    {GUARDIAN_RELATIONSHIP_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {GUARDIAN_RELATIONSHIP_LABELS[opt]}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="national_id" className="text-xs text-muted-foreground">

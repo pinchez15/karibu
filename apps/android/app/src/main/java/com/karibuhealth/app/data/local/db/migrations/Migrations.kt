@@ -13,6 +13,14 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+// v28 -> v29: guardian relationship on patients + clinic district (migration 086 mirror).
+val MIGRATION_28_29 = object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE patients ADD COLUMN guardian_relationship TEXT")
+        db.execSQL("ALTER TABLE clinics ADD COLUMN district TEXT")
+    }
+}
+
 // v27 -> v28: enriched formulary from medication_catalog (migration 080 mirror).
 val MIGRATION_27_28 = object : Migration(27, 28) {
     override fun migrate(db: SupportSQLiteDatabase) {

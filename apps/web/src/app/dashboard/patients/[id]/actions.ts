@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
+import { isGuardianRelationship } from '@/lib/patient-demographics'
 import type {
   Patient,
   PatientLatestVitals,
@@ -76,7 +78,10 @@ export type PatientWithDerivedAge = Patient & {
   dob_precision: 'exact' | 'year_only' | 'age_estimate' | 'unknown'
   village: string | null
   parish: string | null
+  subcounty: string | null
+  district: string | null
   guardian_name: string | null
+  guardian_relationship: string | null
   national_id: string | null
   /** Derived from patient_age_years() — null for dob_precision='unknown'. */
   derived_age: number | null
@@ -455,4 +460,74 @@ export async function recordPatientVitals(
       notes,
     },
   }
+}
+
+export type UpdatePatientDemographicsInput = {
+  first_name: string
+  last_name: string
+  village: string | null
+  parish: string | null
+  subcounty: string | null
+  district: string | null
+  guardian_name: string | null
+  guardian_relationship: string | null
+  whatsapp_number: string | null
+}
+
+export async function updatePatientDemographics(
+  patientId: string,
+  input: UpdatePatientDemographicsInput,
+): Promise<
+  { patient: PatientWithDerivedAge } | { error: string }
+> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const firstName = input.first_name.trim()
+  const lastName = input.last_name.trim()
+  if (!firstName || !lastName) {
+    return { error: 'First name and last name are required' }
+  }
+
+  if (
+    input.guardian_relationship &&
+    !isGuardianRelationship(input.guardian_relationship)
+  ) {
+    return { error: 'Invalid guardian relationship' }
+  }
+
+  let whatsappNumber: string | null = null
+  if (input.whatsapp_number && input.whatsapp_number.trim().length > 0) {
+    whatsappNumber = formatPhoneNumber(input.whatsapp_number)
+    if (!isValidUgandaPhone(whatsappNumber)) {
+      return { error: 'Invalid Uganda phone number. Format: +256 7XX XXX XXX' }
+    }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_update_patient_demographics', {
+    p_patient_id: patientId,
+    p_clinic_id: staff.clinic_id,
+    p_first_name: firstName,
+    p_last_name: lastName,
+    p_village: input.village?.trim() || null,
+    p_parish: input.parish?.trim() || null,
+    p_subcounty: input.subcounty?.trim() || null,
+    p_district: input.district?.trim() || null,
+    p_guardian_name: input.guardian_name?.trim() || null,
+    p_guardian_relationship: input.guardian_relationship?.trim() || null,
+    p_whatsapp_number: whatsappNumber,
+  })
+
+  if (error) {
+    console.error('updatePatientDemographics', error)
+    return { error: 'Failed to update patient details' }
+  }
+
+  revalidatePath(`/dashboard/patients/${patientId}`)
+  revalidatePath('/dashboard/visits')
+
+  const updated = await getPatient(patientId)
+  if (!updated) return { error: 'Patient not found after update' }
+  return { patient: updated }
 }

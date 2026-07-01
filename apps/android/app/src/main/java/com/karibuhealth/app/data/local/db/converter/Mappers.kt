@@ -24,12 +24,14 @@ fun ClinicDto.toEntity() = ClinicEntity(
     timezone = timezone, isActive = isActive,
     createdAt = createdAt, updatedAt = updatedAt,
     workflowConfigJson = workflowConfig?.let { clinicJson.encodeToString(it) },
+    district = district,
 )
 
 fun ClinicEntity.toDomain() = Clinic(
     id = id, name = name, slug = slug,
     clerkOrganizationId = clerkOrganizationId,
     timezone = timezone, isActive = isActive,
+    district = district,
     workflowConfig = workflowConfigJson?.let {
         runCatching {
             val dto = clinicJson.decodeFromString<ClinicWorkflowConfigDto>(it)
@@ -73,7 +75,7 @@ fun PatientDto.toEntity(isSynced: Boolean = true) = PatientEntity(
     birthYear = birthYear, approximateAge = approximateAge,
     ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
     village = village, parish = parish, subcounty = subcounty, district = district,
-    guardianName = guardianName, nationalId = nationalId,
+    guardianName = guardianName, guardianRelationship = guardianRelationship, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced,
 )
@@ -87,7 +89,7 @@ fun PatientEntity.toDomain() = Patient(
     birthYear = birthYear, approximateAge = approximateAge,
     ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
     village = village, parish = parish, subcounty = subcounty, district = district,
-    guardianName = guardianName, nationalId = nationalId,
+    guardianName = guardianName, guardianRelationship = guardianRelationship, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced,
 )
@@ -101,7 +103,7 @@ fun Patient.toEntity(isSynced: Boolean = true, localCreatedAt: Long? = null) = P
     birthYear = birthYear, approximateAge = approximateAge,
     ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
     village = village, parish = parish, subcounty = subcounty, district = district,
-    guardianName = guardianName, nationalId = nationalId,
+    guardianName = guardianName, guardianRelationship = guardianRelationship, nationalId = nationalId,
     createdAt = createdAt, updatedAt = updatedAt,
     isSynced = isSynced, localCreatedAt = localCreatedAt,
 )
@@ -114,7 +116,7 @@ fun Patient.toCreateDto() = PatientCreateDto(
     birthYear = birthYear, approximateAge = approximateAge,
     ageRecordedAt = ageRecordedAt, dobPrecision = dobPrecision,
     village = village, parish = parish, subcounty = subcounty, district = district,
-    guardianName = guardianName, nationalId = nationalId,
+    guardianName = guardianName, guardianRelationship = guardianRelationship, nationalId = nationalId,
 )
 
 // Map the duplicate-candidate RPC row to the domain projection. Strips NULLs

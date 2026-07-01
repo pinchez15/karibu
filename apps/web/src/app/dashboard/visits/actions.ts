@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { getStaff, requireStaff } from '@/lib/auth'
 import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
+import { isGuardianRelationship } from '@/lib/patient-demographics'
 
 export type DobPrecision = 'exact' | 'year_only' | 'age_estimate' | 'unknown'
 
@@ -196,7 +197,13 @@ export async function createPatientWithVisit(formData: FormData) {
   const subcounty = nullableTrim(formData.get('subcounty'))
   const district = nullableTrim(formData.get('district'))
   const guardianName = nullableTrim(formData.get('guardian_name'))
+  const guardianRelationshipRaw = nullableTrim(formData.get('guardian_relationship'))
   const nationalId = nullableTrim(formData.get('national_id'))
+
+  if (guardianRelationshipRaw && !isGuardianRelationship(guardianRelationshipRaw)) {
+    return { error: 'Invalid guardian relationship' }
+  }
+  const guardianRelationship = guardianRelationshipRaw
 
   if (!firstName || !lastName) {
     return { error: 'First name and last name are required' }
@@ -309,6 +316,7 @@ export async function createPatientWithVisit(formData: FormData) {
         subcounty,
         district,
         guardian_name: guardianName,
+        guardian_relationship: guardianRelationship,
         national_id: nationalId,
         sex,
       })

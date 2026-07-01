@@ -20,6 +20,7 @@ data class ClinicDto(
     val timezone: String = "Africa/Kampala",
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("workflow_config") val workflowConfig: ClinicWorkflowConfigDto? = null,
+    val district: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
@@ -93,6 +94,7 @@ data class PatientDto(
     val subcounty: String? = null,
     val district: String? = null,
     @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("guardian_relationship") val guardianRelationship: String? = null,
     @SerialName("national_id") val nationalId: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
@@ -117,6 +119,7 @@ data class PatientCreateDto(
     val subcounty: String? = null,
     val district: String? = null,
     @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("guardian_relationship") val guardianRelationship: String? = null,
     @SerialName("national_id") val nationalId: String? = null,
 )
 
@@ -138,6 +141,7 @@ data class RpcCreatePatientRequest(
     @SerialName("p_subcounty") val subcounty: String? = null,
     @SerialName("p_district") val district: String? = null,
     @SerialName("p_guardian_name") val guardianName: String? = null,
+    @SerialName("p_guardian_relationship") val guardianRelationship: String? = null,
     @SerialName("p_national_id") val nationalId: String? = null,
     @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
@@ -159,6 +163,7 @@ fun PatientCreateDto.toRpcRequest(clientOpId: String? = null) = RpcCreatePatient
     subcounty = subcounty,
     district = district,
     guardianName = guardianName,
+    guardianRelationship = guardianRelationship,
     nationalId = nationalId,
     clientOpId = clientOpId,
 )
@@ -196,6 +201,7 @@ data class DuplicateCandidateDto(
     val village: String? = null,
     val parish: String? = null,
     @SerialName("guardian_name") val guardianName: String? = null,
+    @SerialName("guardian_relationship") val guardianRelationship: String? = null,
     @SerialName("national_id") val nationalId: String? = null,
     @SerialName("whatsapp_number") val whatsappNumber: String? = null,
     @SerialName("derived_age") val derivedAge: Int? = null,
