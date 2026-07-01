@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase'
-import type { OnboardingManifest, OnboardingStatus } from '@karibu/shared'
+import { getOnboardingStatusForStaff } from '@/lib/onboarding-db'
+import type { OnboardingManifest } from '@karibu/shared'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { OnboardingClient } from './OnboardingClient'
@@ -25,13 +25,7 @@ export default async function OnboardingPage() {
     redirect('/dashboard')
   }
 
-  const supabase = createServiceClient()
-  const { data: status, error } = await supabase.rpc('rpc_get_onboarding_status')
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  const onboarding = status as OnboardingStatus
+  const onboarding = await getOnboardingStatusForStaff(staff)
   const manifest = await loadManifest()
   const completedIds = onboarding.progress.map((row) => row.module_id)
 
