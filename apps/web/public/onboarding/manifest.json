@@ -1,76 +1,73 @@
 {
-  "version": 1,
-  "title": "KaribuEHR onboarding",
-  "subtitle": "Learn every role before your first real patient.",
+  "version": 2,
+  "title": "KaribuEHR training",
+  "subtitle": "Self-guided practice on real EHR screens — no trainer required.",
   "modules": [
     {
       "id": "records-register",
       "title": "Register a patient",
-      "subtitle": "Records desk — search, register, and open a chart",
+      "subtitle": "Search, register, and check in to OPD",
       "simulated_role": "records_officer",
       "sort_order": 1,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "Every visit starts at the front desk. You'll learn where to register a patient and start a visit on your phone — no real data is saved during training.",
+      "coach_intro": "Practice the front desk flow: search first, register only when needed, check in to the right department.",
       "android_primary": true
     },
     {
       "id": "nurse-vitals",
       "title": "Record vitals",
-      "subtitle": "Nurse — capture vitals on the patient timeline",
+      "subtitle": "Capture vitals on the patient timeline",
       "simulated_role": "nurse",
       "sort_order": 2,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "You're assigned as a nurse, but every staff member should know this flow. Watch where vitals are entered before the clinician sees the patient.",
+      "coach_intro": "Learn where nurses enter vitals before the clinician sees the patient.",
       "android_primary": true
     },
     {
       "id": "clinician-note-pharmacy",
-      "title": "Note & send to pharmacy",
-      "subtitle": "Clinician — document and submit a pharmacy order",
+      "title": "Document the visit",
+      "subtitle": "Clinical note, orders, and pharmacy",
       "simulated_role": "clinical_officer",
       "sort_order": 3,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "The clinician documents the visit and can send to pharmacy while the note is still open. This is how KaribuEHR works in a busy HC III.",
+      "coach_intro": "The Clinical Officer documents, orders labs, and sends to pharmacy while the note is still open.",
       "android_primary": true
     },
     {
       "id": "lab-result",
       "title": "Record a lab result",
-      "subtitle": "Lab tech — work the lab queue on your phone",
+      "subtitle": "Lab queue and result release",
       "simulated_role": "lab_tech",
       "sort_order": 4,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "Even if you're not the lab tech, you should know what they see. Lab results flow back to the chart automatically.",
-      "android_primary": true,
-      "web_bonus": "On the web app you get a wider lab desk view with batch actions."
+      "coach_intro": "Collect specimens, enter results, and release them to the chart.",
+      "android_primary": true
     },
     {
       "id": "pharmacy-dispense",
-      "title": "Dispense & manage stock",
-      "subtitle": "Dispenser — pharmacy queue and stock",
+      "title": "Dispense medicines",
+      "subtitle": "Pharmacy queue and stock",
       "simulated_role": "dispenser",
       "sort_order": 5,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "Pharmacy opens when the clinician sends an order — not when the note is signed. Learn the dispenser home and stock screen.",
-      "android_primary": true,
-      "web_bonus": "The web pharmacy desk shows the full formulary and inventory in one view."
+      "coach_intro": "Pharmacy opens when the clinician sends an order — not when the note is signed.",
+      "android_primary": true
     },
     {
       "id": "billing-payment",
       "title": "Record a payment",
-      "subtitle": "Front desk — billing without blocking care",
+      "subtitle": "Billing without blocking care",
       "simulated_role": "records_officer",
       "sort_order": 6,
       "case_id": "fever-headache",
       "pack_id": "core-opd",
-      "coach_intro": "Payment is separate from signing the note. Any staff can record a payment when the clinic is ready to collect.",
-      "android_primary": true,
-      "web_bonus": "Web billing gives itemized charges and printable receipts."
+      "coach_intro": "Payment is separate from signing the note. Record cash or mobile money when the clinic collects.",
+      "android_primary": true
     }
   ]
 }
