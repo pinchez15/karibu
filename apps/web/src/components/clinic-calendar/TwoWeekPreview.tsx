@@ -53,7 +53,7 @@ export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointme
           </p>
         </div>
         <Link
-          href="/dashboard/calendar"
+          href="/dashboard"
           className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-[12px] font-semibold text-cobalt hover:bg-cobalt-soft/30 transition-colors"
         >
           Open calendar
@@ -129,7 +129,7 @@ export function TwoWeekPreview({ appointments }: { appointments: ClinicAppointme
                 )}
                 {events.length > 3 && (
                   <Link
-                    href="/dashboard/calendar"
+                    href="/dashboard"
                     className="text-[10px] font-medium text-cobalt hover:underline"
                   >
                     +{events.length - 3} more

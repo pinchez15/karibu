@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Sparkles } from 'lucide-react'
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { WebTopBar } from '@/components/web-shell'
 
 interface ComingSoonPageProps {
@@ -55,8 +55,7 @@ export default async function ComingSoonReportPage({ params }: ComingSoonPagePro
   const staff = await getStaff()
   if (!staff) redirect('/')
 
-  const admin = await isAdmin()
-  if (!admin) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const { slug } = await params
   const meta = TITLES[slug] || {

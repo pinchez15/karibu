@@ -389,6 +389,19 @@ interface SupabaseApi {
     @POST("rpc/rpc_pregnancy_contacts")
     suspend fun rpcPregnancyContacts(@Body request: PregnancyContactsRequest): List<AncContactDto>
 
+    // Clinic calendar (migration 070 / 073).
+    @POST("rpc/rpc_list_appointments")
+    suspend fun rpcListAppointments(@Body request: ListAppointmentsRequest): List<AppointmentDto>
+
+    @POST("rpc/rpc_create_appointment")
+    suspend fun rpcCreateAppointment(@Body request: CreateAppointmentRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_update_appointment")
+    suspend fun rpcUpdateAppointment(@Body request: UpdateAppointmentRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_cancel_appointment")
+    suspend fun rpcCancelAppointment(@Body request: CancelAppointmentRequest): Response<ResponseBody>
+
     // Ebola / VHF screening (migration 060).
     @POST("rpc/rpc_record_ebola_screening")
     suspend fun rpcRecordEbolaScreening(@Body request: RecordEbolaScreeningRequest): Response<ResponseBody>

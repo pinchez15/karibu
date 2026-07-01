@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { getClinicSimpleMetrics } from '@/lib/clinic-simple-metrics'
 import { WebTopBar } from '@/components/web-shell'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
@@ -22,8 +22,7 @@ export default async function ReportsOverviewPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
-  const admin = await isAdmin()
-  if (!admin) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const m = await getClinicSimpleMetrics(staff.clinic_id)
 

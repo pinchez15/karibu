@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -13,8 +13,7 @@ export default async function Hmis105Page() {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
-  const admin = await isAdmin()
-  if (!admin) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const { from, to } = monthToDateRange()
   const [{ data: clinics }, unfinalized] = await Promise.all([

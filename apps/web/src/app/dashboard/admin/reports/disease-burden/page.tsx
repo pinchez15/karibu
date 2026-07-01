@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 export default async function DiseaseBurdenReportPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (!(await isAdmin())) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()
   const now = new Date()

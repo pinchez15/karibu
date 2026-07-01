@@ -23,6 +23,8 @@ const CALENDAR_ROLES = [
   'midwife',
   'nursing_assistant',
   'records_officer',
+  'lab_tech',
+  'dispenser',
 ] as const
 
 function canManageCalendar(role: string): boolean {

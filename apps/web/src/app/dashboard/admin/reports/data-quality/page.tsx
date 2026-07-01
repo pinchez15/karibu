@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -9,8 +9,7 @@ export default async function DataQualityPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
 
-  const admin = await isAdmin()
-  if (!admin) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const result = await getDataQualityStats()
   if (result.error || !result.data) {

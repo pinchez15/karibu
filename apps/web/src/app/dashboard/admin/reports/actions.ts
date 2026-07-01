@@ -1,7 +1,7 @@
 'use server'
 
 import { createServiceClient } from '@/lib/supabase'
-import { getStaff, isAdmin, isSuperadmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess, isSuperadmin } from '@/lib/auth'
 import type {
   Hmis105Row,
   DataQualityStats,
@@ -67,8 +67,8 @@ async function authorizeHmisAccess(clinicIds: string[]): Promise<
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
-  const admin = await isAdmin()
-  if (!admin) return { error: 'Admin access required' }
+  const allowed = await hasDataReportsAccess()
+  if (!allowed) return { error: 'Data reports access required' }
 
   const crossClinic = clinicIds.some((id) => id !== staff.clinic_id)
   if (crossClinic) {
@@ -277,8 +277,8 @@ export async function getDataQualityStats(): Promise<{
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
-  const admin = await isAdmin()
-  if (!admin) return { error: 'Admin access required' }
+  const allowed = await hasDataReportsAccess()
+  if (!allowed) return { error: 'Data reports access required' }
 
   const supabase = createServiceClient()
 
@@ -379,8 +379,8 @@ export async function fetchAllClinics(): Promise<{
   const staff = await getStaff()
   if (!staff) return { error: 'Not authenticated' }
 
-  const admin = await isAdmin()
-  if (!admin) return { error: 'Admin access required' }
+  const allowed = await hasDataReportsAccess()
+  if (!allowed) return { error: 'Data reports access required' }
 
   const supabase = createServiceClient()
 

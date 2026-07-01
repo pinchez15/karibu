@@ -1,15 +1,18 @@
 package com.karibuhealth.app.ui.clinical
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChildCare
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalHotel
+import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -26,21 +29,37 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.karibuhealth.app.domain.model.StaffRole
 import com.karibuhealth.app.ui.adaptive.ClinicalShellAppBar
 import com.karibuhealth.app.ui.adaptive.usesNavigationRail
 import com.karibuhealth.app.ui.anc.AncRegistryScreen
+import com.karibuhealth.app.ui.calendar.CalendarScreen
 import com.karibuhealth.app.ui.home.HomeViewModel
-import com.karibuhealth.app.ui.home.OpdTodayPane
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
+import com.karibuhealth.app.ui.lab.LabHomeScreen
 import com.karibuhealth.app.ui.orders.OrdersScreen
+import com.karibuhealth.app.ui.pharmacy.PharmacyHomeScreen
 
 /**
  * Clinician phone/tablet shell — **one** navigation zone (bottom bar or rail).
  *
- * Today · Ward · Orders · ANC are peers. The top bar is context only (clinic,
- * staff, sign-out) — not a second nav layer.
+ * Calendar is the shared homepage for every role. Ward / Lab / Pharmacy / Orders /
+ * ANC tabs vary by staff role.
  */
-enum class ClinicalTab { Today, Ward, Orders, Anc }
+enum class ShellTab {
+    Calendar,
+    Ward,
+    Orders,
+    Anc,
+    Lab,
+    Pharmacy,
+}
+
+private fun shellTabsFor(role: StaffRole?): List<ShellTab> = when (role) {
+    StaffRole.lab_tech -> listOf(ShellTab.Calendar, ShellTab.Lab, ShellTab.Orders)
+    StaffRole.dispenser -> listOf(ShellTab.Calendar, ShellTab.Pharmacy, ShellTab.Orders)
+    else -> listOf(ShellTab.Calendar, ShellTab.Ward, ShellTab.Orders, ShellTab.Anc)
+}
 
 @Composable
 fun ClinicalMainShell(
@@ -62,14 +81,22 @@ fun ClinicalMainShell(
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = hiltViewModel(),
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(ClinicalTab.Today.ordinal) }
-    var profileMenuOpen by rememberSaveable { mutableStateOf(false) }
     val homeUiState by homeViewModel.uiState.collectAsState()
+    val tabs = shellTabsFor(homeUiState.staff?.role)
+    var tabIndex by rememberSaveable { mutableIntStateOf(0) }
+    if (tabIndex >= tabs.size) tabIndex = 0
+    val tab = tabs[tabIndex]
+    var profileMenuOpen by rememberSaveable { mutableStateOf(false) }
     val useRail = usesNavigationRail()
 
     val tabContent: @Composable (Modifier) -> Unit = { contentModifier ->
         when (tab) {
-            ClinicalTab.Orders.ordinal -> OrdersScreen(
+            ShellTab.Calendar -> CalendarScreen(
+                embedded = true,
+                onNavigateToNewVisit = onNavigateToNewVisit,
+                modifier = contentModifier.fillMaxSize(),
+            )
+            ShellTab.Orders -> OrdersScreen(
                 onOpenVisit = onNavigateToVisitDetails,
                 onOpenPatient = onNavigateToPatient,
                 onAddPatientNote = onAddPatientNote,
@@ -79,35 +106,30 @@ fun ClinicalMainShell(
                 onNavigateToReview = onNavigateToReview,
                 modifier = contentModifier.fillMaxSize(),
             )
-            ClinicalTab.Ward.ordinal -> WardCensusScreen(
+            ShellTab.Ward -> WardCensusScreen(
                 embedded = true,
-                onNavigateBack = { tab = ClinicalTab.Today.ordinal },
+                onNavigateBack = { tabIndex = 0 },
                 onAdmit = onNavigateToAdmit,
                 onOpenAdmission = onNavigateToAdmissionChart,
                 onHandover = onNavigateToHandover,
                 modifier = contentModifier.fillMaxSize(),
             )
-            ClinicalTab.Anc.ordinal -> AncRegistryScreen(
+            ShellTab.Anc -> AncRegistryScreen(
                 embedded = true,
-                onNavigateBack = { tab = ClinicalTab.Today.ordinal },
+                onNavigateBack = { tabIndex = 0 },
                 onRegister = onNavigateToAncRegister,
                 onOpenPregnancy = onNavigateToPregnancy,
                 modifier = contentModifier.fillMaxSize(),
             )
-            else -> OpdTodayPane(
-                onNavigateToQueue = onNavigateToQueue,
-                onNavigateToNewVisit = onNavigateToNewVisit,
-                onNavigateToVisitDetails = onNavigateToVisitDetails,
-                onNavigateToPatient = onNavigateToPatient,
-                onNavigateToBilling = onNavigateToBilling,
-                onAddPatientNote = onAddPatientNote,
-                onRecordPatientVitals = onRecordPatientVitals,
-                onNavigateToReferral = onNavigateToReferral,
-                onNavigateToDictation = { visitId ->
-                    onNavigateToDictation(visitId, false)
-                },
-                modifier = contentModifier.fillMaxSize(),
-            )
+            ShellTab.Lab -> Box(modifier = contentModifier.fillMaxSize()) {
+                LabHomeScreen(onNavigateToVisit = onNavigateToVisitDetails)
+            }
+            ShellTab.Pharmacy -> Box(modifier = contentModifier.fillMaxSize()) {
+                PharmacyHomeScreen(
+                    onNavigateToVisit = onNavigateToVisitDetails,
+                    onNavigateToBilling = onNavigateToBilling,
+                )
+            }
         }
     }
 
@@ -131,30 +153,14 @@ fun ClinicalMainShell(
     if (useRail) {
         Row(modifier = modifier.fillMaxSize()) {
             NavigationRail {
-                NavigationRailItem(
-                    selected = tab == ClinicalTab.Today.ordinal,
-                    onClick = { tab = ClinicalTab.Today.ordinal },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Today") },
-                    label = { Text("Today") },
-                )
-                NavigationRailItem(
-                    selected = tab == ClinicalTab.Ward.ordinal,
-                    onClick = { tab = ClinicalTab.Ward.ordinal },
-                    icon = { Icon(Icons.Default.LocalHotel, contentDescription = "Ward") },
-                    label = { Text("Ward") },
-                )
-                NavigationRailItem(
-                    selected = tab == ClinicalTab.Orders.ordinal,
-                    onClick = { tab = ClinicalTab.Orders.ordinal },
-                    icon = { Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = "Orders") },
-                    label = { Text("Orders") },
-                )
-                NavigationRailItem(
-                    selected = tab == ClinicalTab.Anc.ordinal,
-                    onClick = { tab = ClinicalTab.Anc.ordinal },
-                    icon = { Icon(Icons.Default.ChildCare, contentDescription = "ANC") },
-                    label = { Text("ANC") },
-                )
+                tabs.forEachIndexed { index, shellTab ->
+                    NavigationRailItem(
+                        selected = tabIndex == index,
+                        onClick = { tabIndex = index },
+                        icon = { Icon(shellTab.icon(), contentDescription = shellTab.label()) },
+                        label = { Text(shellTab.label()) },
+                    )
+                }
             }
             shellChrome(Modifier.weight(1f).fillMaxHeight())
         }
@@ -164,34 +170,37 @@ fun ClinicalMainShell(
             contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 NavigationBar {
-                    NavigationBarItem(
-                        selected = tab == ClinicalTab.Today.ordinal,
-                        onClick = { tab = ClinicalTab.Today.ordinal },
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Today") },
-                        label = { Text("Today") },
-                    )
-                    NavigationBarItem(
-                        selected = tab == ClinicalTab.Ward.ordinal,
-                        onClick = { tab = ClinicalTab.Ward.ordinal },
-                        icon = { Icon(Icons.Default.LocalHotel, contentDescription = "Ward") },
-                        label = { Text("Ward") },
-                    )
-                    NavigationBarItem(
-                        selected = tab == ClinicalTab.Orders.ordinal,
-                        onClick = { tab = ClinicalTab.Orders.ordinal },
-                        icon = { Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = "Orders") },
-                        label = { Text("Orders") },
-                    )
-                    NavigationBarItem(
-                        selected = tab == ClinicalTab.Anc.ordinal,
-                        onClick = { tab = ClinicalTab.Anc.ordinal },
-                        icon = { Icon(Icons.Default.ChildCare, contentDescription = "ANC") },
-                        label = { Text("ANC") },
-                    )
+                    tabs.forEachIndexed { index, shellTab ->
+                        NavigationBarItem(
+                            selected = tabIndex == index,
+                            onClick = { tabIndex = index },
+                            icon = { Icon(shellTab.icon(), contentDescription = shellTab.label()) },
+                            label = { Text(shellTab.label()) },
+                        )
+                    }
                 }
             },
         ) { padding ->
             shellChrome(Modifier.padding(padding))
         }
     }
+}
+
+@Composable
+private fun ShellTab.icon() = when (this) {
+    ShellTab.Calendar -> Icons.Default.CalendarMonth
+    ShellTab.Ward -> Icons.Default.LocalHotel
+    ShellTab.Orders -> Icons.AutoMirrored.Filled.Assignment
+    ShellTab.Anc -> Icons.Default.ChildCare
+    ShellTab.Lab -> Icons.Default.Science
+    ShellTab.Pharmacy -> Icons.Default.Medication
+}
+
+private fun ShellTab.label() = when (this) {
+    ShellTab.Calendar -> "Calendar"
+    ShellTab.Ward -> "Ward"
+    ShellTab.Orders -> "Orders"
+    ShellTab.Anc -> "ANC"
+    ShellTab.Lab -> "Lab"
+    ShellTab.Pharmacy -> "Pharmacy"
 }

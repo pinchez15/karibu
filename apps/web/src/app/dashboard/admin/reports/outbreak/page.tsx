@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -21,7 +21,7 @@ const MIN_CASES = 3 // ignore tiny numbers — 1→2 is not an outbreak
 export default async function OutbreakReportPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (!(await isAdmin())) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()
   const now = new Date()

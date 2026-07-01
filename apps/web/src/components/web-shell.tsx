@@ -15,6 +15,7 @@ import {
   Settings,
   Stethoscope,
   BedDouble,
+  Baby,
   CreditCard,
   Database,
   BarChart3,
@@ -37,6 +38,9 @@ interface NavItem {
   count?: number | string
   amber?: boolean
 }
+
+/** Clinic staff who can open the Data unit (register, HMIS, quality). */
+const DATA_STAFF = ['doctor', 'nurse', 'clinical_officer', 'records_officer']
 
 // Clinical roles share OPD/Inpatient. Lab/pharmacy desks are role-scoped.
 const CLINICAL = [
@@ -67,18 +71,31 @@ interface UnitDef {
   items: NavItem[]
 }
 
-// Top-header units. "Today" is global (the logo returns to it) and is not a
-// unit. OPD is the catch-all unit for the core clinician routes.
+/** Every clinic staff role — the calendar homepage is shared across the team. */
+const ALL_STAFF = [
+  'admin',
+  ...CLINICAL,
+  'lab_tech',
+  'dispenser',
+]
+
+// Top-header units. Home (calendar) is shared; other units are role-scoped desks.
 const UNITS: UnitDef[] = [
+  {
+    id: 'home',
+    label: 'Home',
+    icon: Home,
+    basePaths: ['/dashboard'],
+    roles: ALL_STAFF,
+    items: [{ id: 'calendar', label: 'Calendar', href: '/dashboard', icon: Calendar }],
+  },
   {
     id: 'opd',
     label: 'OPD',
     icon: Stethoscope,
-    basePaths: ['/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/calendar'],
+    basePaths: ['/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review'],
     roles: CLINICAL,
     items: [
-      { id: 'today', label: 'Today', href: '/dashboard', icon: Home },
-      { id: 'calendar', label: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
       { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
       { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
@@ -92,6 +109,14 @@ const UNITS: UnitDef[] = [
     basePaths: ['/dashboard/inpatient', '/dashboard/inpatient/admit'],
     roles: CLINICAL,
     items: [{ id: 'admissions', label: 'Admissions', href: '/dashboard/inpatient', icon: BedDouble }],
+  },
+  {
+    id: 'anc',
+    label: 'ANC',
+    icon: Baby,
+    basePaths: ['/dashboard/anc'],
+    roles: CLINICAL,
+    items: [{ id: 'anc-registry', label: 'Registry', href: '/dashboard/anc', icon: Baby }],
   },
   {
     id: 'lab',
@@ -133,7 +158,7 @@ const UNITS: UnitDef[] = [
     label: 'Data',
     icon: Database,
     basePaths: ['/dashboard/admin/reports'],
-    roles: [],
+    roles: DATA_STAFF,
     items: [
       { id: 'data-overview', label: 'Register', href: '/dashboard/admin/reports', icon: Home },
       { id: 'data-hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
@@ -143,17 +168,19 @@ const UNITS: UnitDef[] = [
 ]
 
 function activeUnitId(pathname: string): string {
+  // Bare /dashboard is the shared calendar home.
+  if (pathname === '/dashboard') return 'home'
   for (const unit of UNITS) {
     if (unit.basePaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
       return unit.id
     }
   }
-  // Bare /dashboard (Today) and anything else falls under OPD.
+  // Anything else without a unit match falls under OPD for clinicians.
   return 'opd'
 }
 
 function canSeeUnit(unit: UnitDef, staffRole?: string): boolean {
-  if (!staffRole) return unit.id === 'opd'
+  if (!staffRole) return unit.id === 'home'
   if (staffRole === 'admin') return true
   return unit.roles.includes(staffRole)
 }
@@ -196,7 +223,7 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
             content column's left edge, tracking the sidebar divider line. */}
         <Link
           href="/dashboard"
-          aria-label="KaribuEHR — go to Today"
+          aria-label="KaribuEHR — calendar home"
           className="flex w-[208px] shrink-0 items-center px-4"
         >
           <KaribuLockup size={28} />

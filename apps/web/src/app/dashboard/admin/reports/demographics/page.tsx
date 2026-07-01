@@ -1,4 +1,4 @@
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff, hasDataReportsAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -40,7 +40,7 @@ const AGE_ORDER = ['<1y', '1–4y', '5–14y', '15–49y', '50y+', 'Unknown']
 export default async function DemographicsReportPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
-  if (!(await isAdmin())) redirect('/dashboard')
+  if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()
   const now = new Date()

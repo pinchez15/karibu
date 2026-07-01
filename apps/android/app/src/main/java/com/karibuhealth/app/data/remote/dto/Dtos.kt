@@ -1612,6 +1612,58 @@ data class AncContactDto(
     val notes: String? = null,
 )
 
+// ── Clinic calendar (migration 070 / 073) ───────────────────────────────────
+@Serializable
+data class ListAppointmentsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_from") val from: String,
+    @SerialName("p_to") val to: String,
+)
+
+@Serializable
+data class AppointmentDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String? = null,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("event_type") val eventType: String,
+    val title: String? = null,
+    val reason: String? = null,
+    @SerialName("scheduled_at") val scheduledAt: String,
+    @SerialName("scheduled_end") val scheduledEnd: String? = null,
+    val unit: String? = null,
+    val status: String,
+)
+
+@Serializable
+data class CreateAppointmentRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_event_type") val eventType: String,
+    @SerialName("p_scheduled_at") val scheduledAt: String,
+    @SerialName("p_patient_id") val patientId: String? = null,
+    @SerialName("p_title") val title: String? = null,
+    @SerialName("p_reason") val reason: String? = null,
+    @SerialName("p_unit") val unit: String? = "opd",
+    @SerialName("p_scheduled_end") val scheduledEnd: String? = null,
+)
+
+@Serializable
+data class UpdateAppointmentRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_appointment_id") val appointmentId: String,
+    @SerialName("p_event_type") val eventType: String,
+    @SerialName("p_scheduled_at") val scheduledAt: String,
+    @SerialName("p_patient_id") val patientId: String? = null,
+    @SerialName("p_title") val title: String? = null,
+    @SerialName("p_reason") val reason: String? = null,
+    @SerialName("p_scheduled_end") val scheduledEnd: String? = null,
+)
+
+@Serializable
+data class CancelAppointmentRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_appointment_id") val appointmentId: String,
+)
+
 // ── Ebola / VHF screening (migration 060) ──────────────────────────────────
 @Serializable
 data class RecordEbolaScreeningRequest(
