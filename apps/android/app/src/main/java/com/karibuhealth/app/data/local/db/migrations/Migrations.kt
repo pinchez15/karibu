@@ -21,6 +21,98 @@ val MIGRATION_28_29 = object : Migration(28, 29) {
     }
 }
 
+// v29 -> v30: HIV/TB program registers (migration 088 mirror).
+val MIGRATION_29_30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS hts_events (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                patient_name TEXT,
+                event_date TEXT NOT NULL,
+                counseled INTEGER NOT NULL DEFAULT 1,
+                tested INTEGER NOT NULL DEFAULT 0,
+                result TEXT,
+                result_received INTEGER NOT NULL DEFAULT 0,
+                suspected_tb INTEGER NOT NULL DEFAULT 0,
+                started_cpt INTEGER NOT NULL DEFAULT 0,
+                retester INTEGER NOT NULL DEFAULT 0,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_hts_events_clinic_id ON hts_events(clinic_id)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_hts_events_clinic_id_event_date " +
+                "ON hts_events(clinic_id, event_date)",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS hiv_care_enrollments (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                patient_name TEXT,
+                enrolled_at TEXT NOT NULL,
+                care_status TEXT NOT NULL DEFAULT 'pre_art',
+                who_stage INTEGER,
+                art_start_date TEXT,
+                art_regimen TEXT,
+                art_line TEXT,
+                cpt_at_last_visit INTEGER NOT NULL DEFAULT 0,
+                tb_assessed_last_visit INTEGER NOT NULL DEFAULT 0,
+                tb_treatment_started INTEGER NOT NULL DEFAULT 0,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_hiv_care_enrollments_clinic_id " +
+                "ON hiv_care_enrollments(clinic_id)",
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS tb_episodes (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                patient_name TEXT,
+                unit_tb_number TEXT,
+                registered_at TEXT NOT NULL,
+                case_type TEXT NOT NULL DEFAULT 'new',
+                disease_class TEXT NOT NULL DEFAULT 'pulmonary_smear_positive',
+                hiv_status TEXT,
+                treatment_started_at TEXT,
+                outcome TEXT NOT NULL DEFAULT 'ongoing',
+                outcome_date TEXT,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tb_episodes_clinic_id ON tb_episodes(clinic_id)")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS viral_load_tests (
+                id TEXT NOT NULL PRIMARY KEY,
+                clinic_id TEXT NOT NULL,
+                patient_id TEXT NOT NULL,
+                enrollment_id TEXT,
+                test_date TEXT NOT NULL,
+                result_copies REAL,
+                suppressed INTEGER,
+                is_synced INTEGER NOT NULL DEFAULT 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_viral_load_tests_enrollment_id " +
+                "ON viral_load_tests(enrollment_id)",
+        )
+    }
+}
+
 // v27 -> v28: enriched formulary from medication_catalog (migration 080 mirror).
 val MIGRATION_27_28 = object : Migration(27, 28) {
     override fun migrate(db: SupportSQLiteDatabase) {

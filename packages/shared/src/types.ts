@@ -805,6 +805,51 @@ export interface Hmis105MultiReport {
 }
 
 // =============================================
+// HMIS 106a HIV / TB (DHIS2 quarterly)
+// =============================================
+
+export type Hmis106aSection = 'hct' | 'art' | 'casefinding' | 'outcomes' | 'tpt';
+
+export interface Hmis106aRow {
+  element_code: string;
+  section: Hmis106aSection;
+  display_name: string;
+  sort_order: number;
+  male_under_2: number;
+  female_under_2: number;
+  male_2_4: number;
+  female_2_4: number;
+  male_5_14: number;
+  female_5_14: number;
+  male_15_49: number;
+  female_15_49: number;
+  male_50_plus: number;
+  female_50_plus: number;
+  total: number;
+}
+
+export interface Hmis106aReport {
+  clinic_id: string;
+  clinic_name: string;
+  report: 'hiv' | 'tb';
+  fy_start_year: number;
+  quarter: number;
+  quarter_label: string;
+  period_start: string;
+  period_end: string;
+  generated_at: string;
+  rows: Hmis106aRow[];
+  quality: Hmis106aQualityStats;
+}
+
+export interface Hmis106aQualityStats {
+  hts_events_in_period: number;
+  hiv_enrollments_active: number;
+  tb_episodes_active: number;
+  missing_sex_patients: number;
+}
+
+// =============================================
 // PAYMENTS
 // =============================================
 

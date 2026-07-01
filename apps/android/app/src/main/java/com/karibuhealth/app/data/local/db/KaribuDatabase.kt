@@ -29,12 +29,16 @@ import com.karibuhealth.app.data.local.db.entity.*
         AdmissionNoteEntity::class,
         PregnancyEntity::class,
         AncContactEntity::class,
+        HtsEventEntity::class,
+        HivCareEnrollmentEntity::class,
+        TbEpisodeEntity::class,
+        ViralLoadTestEntity::class,
         EbolaScreeningEntity::class,
         PrescriptionOrderEntity::class,
         IvInfusionEntity::class,
         IvInfusionCheckEntity::class,
     ],
-    version = 29,
+    version = 30,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {
@@ -54,6 +58,10 @@ abstract class KaribuDatabase : RoomDatabase() {
     abstract fun postnatalObservationDao(): PostnatalObservationDao
     abstract fun pregnancyDao(): PregnancyDao
     abstract fun ancContactDao(): AncContactDao
+    abstract fun htsEventDao(): HtsEventDao
+    abstract fun hivCareDao(): HivCareDao
+    abstract fun tbEpisodeDao(): TbEpisodeDao
+    abstract fun viralLoadDao(): ViralLoadDao
     abstract fun ebolaScreeningDao(): EbolaScreeningDao
     abstract fun admissionNoteDao(): AdmissionNoteDao
     abstract fun admissionDao(): AdmissionDao

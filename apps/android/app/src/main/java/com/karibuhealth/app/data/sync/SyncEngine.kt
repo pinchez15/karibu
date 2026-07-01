@@ -38,6 +38,10 @@ class SyncEngine @Inject constructor(
     private val admissionNoteDao: AdmissionNoteDao,
     private val pregnancyDao: PregnancyDao,
     private val ancContactDao: AncContactDao,
+    private val htsEventDao: HtsEventDao,
+    private val hivCareDao: HivCareDao,
+    private val tbEpisodeDao: TbEpisodeDao,
+    private val viralLoadDao: ViralLoadDao,
     private val ebolaScreeningDao: EbolaScreeningDao,
     private val ivInfusionDao: IvInfusionDao,
     private val ivInfusionCheckDao: IvInfusionCheckDao,
@@ -252,6 +256,10 @@ class SyncEngine @Inject constructor(
             "rpc_record_admission_note" -> syncRecordAdmissionNote(entry)
             "rpc_start_pregnancy" -> syncStartPregnancy(entry)
             "rpc_record_anc_contact" -> syncRecordAncContact(entry)
+            "rpc_record_hts_event" -> syncRecordHtsEvent(entry)
+            "rpc_upsert_hiv_care" -> syncUpsertHivCare(entry)
+            "rpc_record_viral_load" -> syncRecordViralLoad(entry)
+            "rpc_upsert_tb_episode" -> syncUpsertTbEpisode(entry)
             "rpc_record_ebola_screening" -> syncRecordEbolaScreening(entry)
             "record_review_response" -> syncRecordReviewResponse(entry)
             else -> Log.w(TAG, "Unknown operation type: ${entry.operationType}")
@@ -969,6 +977,50 @@ class SyncEngine @Inject constructor(
             throw IllegalStateException("rpc_record_anc_contact HTTP ${result.code()} ${body.take(300)}".trim())
         }
         ancContactDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordHtsEvent(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordHtsEventRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordHtsEvent(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_hts_event HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        htsEventDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncUpsertHivCare(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(UpsertHivCareRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcUpsertHivCare(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_upsert_hiv_care HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        hivCareDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncRecordViralLoad(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(RecordViralLoadRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcRecordViralLoad(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_record_viral_load HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        viralLoadDao.markSynced(entry.entityId)
+    }
+
+    private suspend fun syncUpsertTbEpisode(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(UpsertTbEpisodeRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.entityId)
+        val result = supabaseApi.rpcUpsertTbEpisode(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw IllegalStateException("rpc_upsert_tb_episode HTTP ${result.code()} ${body.take(300)}".trim())
+        }
+        tbEpisodeDao.markSynced(entry.entityId)
     }
 
     private suspend fun syncRecordEbolaScreening(entry: SyncQueueEntry) {

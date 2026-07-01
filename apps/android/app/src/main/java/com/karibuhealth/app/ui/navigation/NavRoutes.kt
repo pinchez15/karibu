@@ -67,6 +67,14 @@ sealed interface NavRoute {
     @Serializable data object StartPregnancy : NavRoute
     @Serializable data class PregnancyDetail(val pregnancyId: String) : NavRoute
 
+    // HIV/TB program registers (migration 088) — HMIS 106a capture.
+    @Serializable data object HivTbRegistry : NavRoute
+    @Serializable data object RecordHts : NavRoute
+    @Serializable data object RecordHivCare : NavRoute
+    @Serializable data object RecordTbEpisode : NavRoute
+    @Serializable data class HivCareDetail(val enrollmentId: String) : NavRoute
+    @Serializable data class TbEpisodeDetail(val episodeId: String) : NavRoute
+
     @Serializable data object Onboarding : NavRoute
 
     /**

@@ -389,6 +389,28 @@ interface SupabaseApi {
     @POST("rpc/rpc_pregnancy_contacts")
     suspend fun rpcPregnancyContacts(@Body request: PregnancyContactsRequest): List<AncContactDto>
 
+    // HIV/TB program registers (migration 088).
+    @POST("rpc/rpc_record_hts_event")
+    suspend fun rpcRecordHtsEvent(@Body request: RecordHtsEventRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_upsert_hiv_care")
+    suspend fun rpcUpsertHivCare(@Body request: UpsertHivCareRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_record_viral_load")
+    suspend fun rpcRecordViralLoad(@Body request: RecordViralLoadRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_upsert_tb_episode")
+    suspend fun rpcUpsertTbEpisode(@Body request: UpsertTbEpisodeRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_recent_hts_events")
+    suspend fun rpcRecentHtsEvents(@Body request: RecentHtsRequest): List<HtsEventDto>
+
+    @POST("rpc/rpc_active_hiv_care")
+    suspend fun rpcActiveHivCare(@Body request: ClinicOnlyRequest): List<HivCareDto>
+
+    @POST("rpc/rpc_active_tb_episodes")
+    suspend fun rpcActiveTbEpisodes(@Body request: ClinicOnlyRequest): List<TbEpisodeDto>
+
     // Clinic calendar (migration 070 / 073).
     @POST("rpc/rpc_list_appointments")
     suspend fun rpcListAppointments(@Body request: ListAppointmentsRequest): List<AppointmentDto>

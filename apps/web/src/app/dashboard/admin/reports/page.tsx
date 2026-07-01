@@ -143,6 +143,18 @@ export default async function ReportsOverviewPage() {
               href="/dashboard/admin/reports/hmis105"
             />
             <ReportTile
+              tag="COMPLIANCE"
+              title="HMIS 106a HIV"
+              desc="Quarterly HIV/TB program report for DHIS2 (HTS, ART, VL)."
+              href="/dashboard/admin/reports/hmis106a-hiv"
+            />
+            <ReportTile
+              tag="COMPLIANCE"
+              title="HMIS 106a TB"
+              desc="Quarterly TB/Leprosy case-finding, outcomes, and TPT."
+              href="/dashboard/admin/reports/hmis106a-tb"
+            />
+            <ReportTile
               tag="QUALITY"
               title="Data quality"
               desc="Visits missing codes or demographics before HMIS submit."

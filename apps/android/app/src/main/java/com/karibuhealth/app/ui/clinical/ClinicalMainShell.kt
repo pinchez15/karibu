@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.LocalHotel
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -33,6 +34,7 @@ import com.karibuhealth.app.domain.model.StaffRole
 import com.karibuhealth.app.ui.adaptive.ClinicalShellAppBar
 import com.karibuhealth.app.ui.adaptive.usesNavigationRail
 import com.karibuhealth.app.ui.anc.AncRegistryScreen
+import com.karibuhealth.app.ui.hivtb.HivTbRegistryScreen
 import com.karibuhealth.app.ui.calendar.CalendarScreen
 import com.karibuhealth.app.ui.home.HomeViewModel
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
@@ -51,6 +53,7 @@ enum class ShellTab {
     Ward,
     Orders,
     Anc,
+    HivTb,
     Lab,
     Pharmacy,
 }
@@ -58,7 +61,7 @@ enum class ShellTab {
 private fun shellTabsFor(role: StaffRole?): List<ShellTab> = when (role) {
     StaffRole.lab_tech -> listOf(ShellTab.Calendar, ShellTab.Lab, ShellTab.Orders)
     StaffRole.dispenser -> listOf(ShellTab.Calendar, ShellTab.Pharmacy, ShellTab.Orders)
-    else -> listOf(ShellTab.Calendar, ShellTab.Ward, ShellTab.Orders, ShellTab.Anc)
+    else -> listOf(ShellTab.Calendar, ShellTab.Ward, ShellTab.Orders, ShellTab.Anc, ShellTab.HivTb)
 }
 
 @Composable
@@ -73,6 +76,11 @@ fun ClinicalMainShell(
     onNavigateToHandover: () -> Unit = {},
     onNavigateToAncRegister: () -> Unit = {},
     onNavigateToPregnancy: (String) -> Unit = {},
+    onNavigateToRecordHts: () -> Unit = {},
+    onNavigateToRecordHivCare: () -> Unit = {},
+    onNavigateToRecordTb: () -> Unit = {},
+    onNavigateToHivCare: (String) -> Unit = {},
+    onNavigateToTbEpisode: (String) -> Unit = {},
     onAddPatientNote: (String) -> Unit = {},
     onRecordPatientVitals: (String) -> Unit = {},
     onNavigateToReferral: (String) -> Unit = {},
@@ -119,6 +127,16 @@ fun ClinicalMainShell(
                 onNavigateBack = { tabIndex = 0 },
                 onRegister = onNavigateToAncRegister,
                 onOpenPregnancy = onNavigateToPregnancy,
+                modifier = contentModifier.fillMaxSize(),
+            )
+            ShellTab.HivTb -> HivTbRegistryScreen(
+                embedded = true,
+                onNavigateBack = { tabIndex = 0 },
+                onRecordHts = onNavigateToRecordHts,
+                onRecordHivCare = onNavigateToRecordHivCare,
+                onRecordTb = onNavigateToRecordTb,
+                onOpenHivCare = onNavigateToHivCare,
+                onOpenTbEpisode = onNavigateToTbEpisode,
                 modifier = contentModifier.fillMaxSize(),
             )
             ShellTab.Lab -> Box(modifier = contentModifier.fillMaxSize()) {
@@ -192,6 +210,7 @@ private fun ShellTab.icon() = when (this) {
     ShellTab.Ward -> Icons.Default.LocalHotel
     ShellTab.Orders -> Icons.AutoMirrored.Filled.Assignment
     ShellTab.Anc -> Icons.Default.ChildCare
+    ShellTab.HivTb -> Icons.Outlined.MonitorHeart
     ShellTab.Lab -> Icons.Default.Science
     ShellTab.Pharmacy -> Icons.Default.Medication
 }
@@ -201,6 +220,7 @@ private fun ShellTab.label() = when (this) {
     ShellTab.Ward -> "Ward"
     ShellTab.Orders -> "Orders"
     ShellTab.Anc -> "ANC"
+    ShellTab.HivTb -> "HIV/TB"
     ShellTab.Lab -> "Lab"
     ShellTab.Pharmacy -> "Pharmacy"
 }

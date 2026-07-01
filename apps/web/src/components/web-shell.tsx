@@ -16,6 +16,7 @@ import {
   Stethoscope,
   BedDouble,
   Baby,
+  HeartPulse,
   CreditCard,
   Database,
   BarChart3,
@@ -119,6 +120,14 @@ const UNITS: UnitDef[] = [
     items: [{ id: 'anc-registry', label: 'Registry', href: '/dashboard/anc', icon: Baby }],
   },
   {
+    id: 'hiv-tb',
+    label: 'HIV/TB',
+    icon: HeartPulse,
+    basePaths: ['/dashboard/hiv-tb'],
+    roles: CLINICAL,
+    items: [{ id: 'hiv-tb-registry', label: 'Registers', href: '/dashboard/hiv-tb', icon: HeartPulse }],
+  },
+  {
     id: 'lab',
     label: 'Lab',
     icon: FlaskConical,
@@ -162,6 +171,8 @@ const UNITS: UnitDef[] = [
     items: [
       { id: 'data-overview', label: 'Register', href: '/dashboard/admin/reports', icon: Home },
       { id: 'data-hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
+      { id: 'data-hmis106a-hiv', label: 'HMIS 106a HIV', href: '/dashboard/admin/reports/hmis106a-hiv', icon: ClipboardList },
+      { id: 'data-hmis106a-tb', label: 'HMIS 106a TB', href: '/dashboard/admin/reports/hmis106a-tb', icon: ClipboardList },
       { id: 'data-quality', label: 'Data quality', href: '/dashboard/admin/reports/data-quality', icon: Sparkles },
     ],
   },

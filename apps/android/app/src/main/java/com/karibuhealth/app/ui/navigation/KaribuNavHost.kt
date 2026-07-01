@@ -30,6 +30,12 @@ import com.karibuhealth.app.ui.inpatient.WardCensusScreen
 import com.karibuhealth.app.ui.anc.AncRegistryScreen
 import com.karibuhealth.app.ui.anc.StartPregnancyScreen
 import com.karibuhealth.app.ui.anc.PregnancyDetailScreen
+import com.karibuhealth.app.ui.hivtb.HivCareDetailScreen
+import com.karibuhealth.app.ui.hivtb.HivTbRegistryScreen
+import com.karibuhealth.app.ui.hivtb.RecordHivCareScreen
+import com.karibuhealth.app.ui.hivtb.RecordHtsScreen
+import com.karibuhealth.app.ui.hivtb.RecordTbScreen
+import com.karibuhealth.app.ui.hivtb.TbEpisodeDetailScreen
 import com.karibuhealth.app.ui.inpatient.WardHandoverScreen
 import com.karibuhealth.app.ui.inpatient.AdmitPatientScreen
 import com.karibuhealth.app.ui.inpatient.AdmissionChartScreen
@@ -104,6 +110,11 @@ fun KaribuNavHost(
                     onNavigateToHandover = { navigator.go(NavRoute.WardHandover) },
                     onNavigateToAncRegister = { navigator.go(NavRoute.StartPregnancy) },
                     onNavigateToPregnancy = { id -> navigator.go(NavRoute.PregnancyDetail(id)) },
+                    onNavigateToRecordHts = { navigator.go(NavRoute.RecordHts) },
+                    onNavigateToRecordHivCare = { navigator.go(NavRoute.RecordHivCare) },
+                    onNavigateToRecordTb = { navigator.go(NavRoute.RecordTbEpisode) },
+                    onNavigateToHivCare = { id -> navigator.go(NavRoute.HivCareDetail(id)) },
+                    onNavigateToTbEpisode = { id -> navigator.go(NavRoute.TbEpisodeDetail(id)) },
                     onAddPatientNote = { patientId ->
                         navigator.go(NavRoute.PatientNote(patientId, null))
                     },
@@ -429,6 +440,50 @@ fun KaribuNavHost(
                 PregnancyDetailScreen(
                     onNavigateBack = { navigator.back() },
                 )
+            }
+
+            composable<NavRoute.HivTbRegistry> {
+                HivTbRegistryScreen(
+                    onNavigateBack = { navigator.back() },
+                    onRecordHts = { navigator.go(NavRoute.RecordHts) },
+                    onRecordHivCare = { navigator.go(NavRoute.RecordHivCare) },
+                    onRecordTb = { navigator.go(NavRoute.RecordTbEpisode) },
+                    onOpenHivCare = { id -> navigator.go(NavRoute.HivCareDetail(id)) },
+                    onOpenTbEpisode = { id -> navigator.go(NavRoute.TbEpisodeDetail(id)) },
+                )
+            }
+
+            composable<NavRoute.RecordHts> {
+                RecordHtsScreen(
+                    onNavigateBack = { navigator.back() },
+                    onSaved = { navigator.back() },
+                )
+            }
+
+            composable<NavRoute.RecordHivCare> {
+                RecordHivCareScreen(
+                    onNavigateBack = { navigator.back() },
+                    onSaved = { id ->
+                        navigator.goReset(NavRoute.HivCareDetail(id), NavRoute.Home)
+                    },
+                )
+            }
+
+            composable<NavRoute.RecordTbEpisode> {
+                RecordTbScreen(
+                    onNavigateBack = { navigator.back() },
+                    onSaved = { id ->
+                        navigator.goReset(NavRoute.TbEpisodeDetail(id), NavRoute.Home)
+                    },
+                )
+            }
+
+            composable<NavRoute.HivCareDetail> {
+                HivCareDetailScreen(onNavigateBack = { navigator.back() })
+            }
+
+            composable<NavRoute.TbEpisodeDetail> {
+                TbEpisodeDetailScreen(onNavigateBack = { navigator.back() })
             }
         }
     }

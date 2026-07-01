@@ -1698,3 +1698,128 @@ data class EbolaScreeningDto(
     @SerialName("action_taken") val actionTaken: String? = null,
     @SerialName("created_at") val createdAt: String,
 )
+
+// ── HIV/TB program registers (migration 088) ────────────────────────────────
+@Serializable
+data class RecordHtsEventRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_event_date") val eventDate: String? = null,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_counseled") val counseled: Boolean = true,
+    @SerialName("p_tested") val tested: Boolean = false,
+    @SerialName("p_result") val result: String? = null,
+    @SerialName("p_result_received") val resultReceived: Boolean = false,
+    @SerialName("p_first_result_in_fy") val firstResultInFy: Boolean = false,
+    @SerialName("p_suspected_tb") val suspectedTb: Boolean = false,
+    @SerialName("p_started_cpt") val startedCpt: Boolean = false,
+    @SerialName("p_retester") val retester: Boolean = false,
+    @SerialName("p_couple_test") val coupleTest: Boolean = false,
+    @SerialName("p_couple_concordant") val coupleConcordant: Boolean? = null,
+    @SerialName("p_pep") val pep: Boolean = false,
+    @SerialName("p_smc_provided") val smcProvided: Boolean = false,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class UpsertHivCareRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_enrolled_at") val enrolledAt: String? = null,
+    @SerialName("p_care_status") val careStatus: String = "pre_art",
+    @SerialName("p_who_stage") val whoStage: Int? = null,
+    @SerialName("p_art_start_date") val artStartDate: String? = null,
+    @SerialName("p_art_regimen") val artRegimen: String? = null,
+    @SerialName("p_art_line") val artLine: String? = null,
+    @SerialName("p_pregnant_at_enrollment") val pregnantAtEnrollment: Boolean = false,
+    @SerialName("p_eligible_not_on_art") val eligibleNotOnArt: Boolean = false,
+    @SerialName("p_tb_assessed_last_visit") val tbAssessedLastVisit: Boolean = false,
+    @SerialName("p_tb_treatment_started") val tbTreatmentStarted: Boolean = false,
+    @SerialName("p_cpt_at_last_visit") val cptAtLastVisit: Boolean = false,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class RecordViralLoadRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_enrollment_id") val enrollmentId: String? = null,
+    @SerialName("p_test_date") val testDate: String? = null,
+    @SerialName("p_result_copies") val resultCopies: Double? = null,
+    @SerialName("p_suppressed") val suppressed: Boolean? = null,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class UpsertTbEpisodeRequest(
+    @SerialName("p_id") val id: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_unit_tb_number") val unitTbNumber: String? = null,
+    @SerialName("p_registered_at") val registeredAt: String? = null,
+    @SerialName("p_case_type") val caseType: String = "new",
+    @SerialName("p_disease_class") val diseaseClass: String = "pulmonary_smear_positive",
+    @SerialName("p_ept_site") val eptSite: String? = null,
+    @SerialName("p_hiv_status") val hivStatus: String? = null,
+    @SerialName("p_on_art_at_diagnosis") val onArtAtDiagnosis: Boolean = false,
+    @SerialName("p_on_cpt_at_diagnosis") val onCptAtDiagnosis: Boolean = false,
+    @SerialName("p_treatment_started_at") val treatmentStartedAt: String? = null,
+    @SerialName("p_regimen_category") val regimenCategory: String? = null,
+    @SerialName("p_treatment_phase") val treatmentPhase: String? = null,
+    @SerialName("p_outcome") val outcome: String = "ongoing",
+    @SerialName("p_outcome_date") val outcomeDate: String? = null,
+    @SerialName("p_notes") val notes: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class ClinicOnlyRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+)
+
+@Serializable
+data class RecentHtsRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_limit") val limit: Int = 50,
+)
+
+@Serializable
+data class HtsEventDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("event_date") val eventDate: String,
+    val tested: Boolean = false,
+    val result: String? = null,
+    @SerialName("result_received") val resultReceived: Boolean = false,
+)
+
+@Serializable
+data class HivCareDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("enrolled_at") val enrolledAt: String,
+    @SerialName("care_status") val careStatus: String,
+    @SerialName("who_stage") val whoStage: Int? = null,
+    @SerialName("art_start_date") val artStartDate: String? = null,
+    @SerialName("art_regimen") val artRegimen: String? = null,
+    @SerialName("art_line") val artLine: String? = null,
+    @SerialName("cpt_at_last_visit") val cptAtLastVisit: Boolean = false,
+    @SerialName("tb_assessed_last_visit") val tbAssessedLastVisit: Boolean = false,
+)
+
+@Serializable
+data class TbEpisodeDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("patient_name") val patientName: String? = null,
+    @SerialName("unit_tb_number") val unitTbNumber: String? = null,
+    @SerialName("registered_at") val registeredAt: String,
+    @SerialName("case_type") val caseType: String,
+    @SerialName("disease_class") val diseaseClass: String,
+    @SerialName("hiv_status") val hivStatus: String? = null,
+    @SerialName("treatment_started_at") val treatmentStartedAt: String? = null,
+    val outcome: String,
+)

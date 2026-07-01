@@ -34,6 +34,7 @@ import {
   signPatientNote,
 } from './actions'
 import { PatientEditSheet } from './PatientEditSheet'
+import { PatientProgramsCard } from './PatientProgramsCard'
 import { guardianRelationshipLabel } from '@/lib/patient-demographics'
 import { VISIT_STATUS_DISPLAY } from '@/lib/visit-status'
 
@@ -1157,6 +1158,7 @@ export function PatientDetailClient({
     <div className="space-y-4">
       <PatientHeader patient={patient} onEdit={() => setEditOpen(true)} />
       <LatestVitalsCard vitals={latestVitalsState} />
+      <PatientProgramsCard patientId={patient.id} canRecord={canSign || canRecord} />
 
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Timeline</h3>

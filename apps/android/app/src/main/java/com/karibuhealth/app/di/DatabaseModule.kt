@@ -28,6 +28,7 @@ import com.karibuhealth.app.data.local.db.migrations.MIGRATION_23_24
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_24_25
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_25_26
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_28_29
+import com.karibuhealth.app.data.local.db.migrations.MIGRATION_29_30
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_27_28
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_26_27
 import com.karibuhealth.app.data.local.db.migrations.MIGRATION_9_10
@@ -78,6 +79,7 @@ object DatabaseModule {
                 MIGRATION_26_27,
                 MIGRATION_27_28,
                 MIGRATION_28_29,
+                MIGRATION_29_30,
             )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
@@ -102,6 +104,10 @@ object DatabaseModule {
         db.admissionNoteDao()
     @Provides fun providePregnancyDao(db: KaribuDatabase): PregnancyDao = db.pregnancyDao()
     @Provides fun provideAncContactDao(db: KaribuDatabase): AncContactDao = db.ancContactDao()
+    @Provides fun provideHtsEventDao(db: KaribuDatabase): HtsEventDao = db.htsEventDao()
+    @Provides fun provideHivCareDao(db: KaribuDatabase): HivCareDao = db.hivCareDao()
+    @Provides fun provideTbEpisodeDao(db: KaribuDatabase): TbEpisodeDao = db.tbEpisodeDao()
+    @Provides fun provideViralLoadDao(db: KaribuDatabase): ViralLoadDao = db.viralLoadDao()
     @Provides fun provideEbolaScreeningDao(db: KaribuDatabase): EbolaScreeningDao = db.ebolaScreeningDao()
     @Provides fun provideAdmissionDao(db: KaribuDatabase): AdmissionDao = db.admissionDao()
     @Provides fun provideAdmissionObservationDao(db: KaribuDatabase): AdmissionObservationDao =
