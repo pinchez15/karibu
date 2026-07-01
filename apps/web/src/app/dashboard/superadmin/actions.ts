@@ -7,12 +7,9 @@ import { requireProvisioningAccess, requireStaff } from '@/lib/auth'
 import { assertStaffRole } from '@/lib/staff-roles'
 import {
   inviteStaffToClinic,
-  syncMembershipRole,
   updateClinicStaffRole,
-  upsertStaffRecord,
 } from '@/lib/staff-provisioning'
 import type { ClinicWorkflowConfig, OpdPatientFilter, VisitDepartment } from '@karibu/shared'
-import type { StaffRole } from '@karibu/shared'
 
 const DEPARTMENTS = ['opd', 'anc', 'maternity', 'family_planning', 'immunization'] as const
 
@@ -26,10 +23,6 @@ function assertDepartmentList(values: FormDataEntryValue[]): Department[] {
   return values
     .map((value) => (typeof value === 'string' ? value : ''))
     .filter((value): value is Department => (DEPARTMENTS as readonly string[]).includes(value))
-}
-
-function orgRoleFor(role: StaffRole): 'org:admin' | 'org:member' {
-  return role === 'admin' ? 'org:admin' : 'org:member'
 }
 
 async function saveClinicDepartments(clinicId: string, departments: Department[]) {
@@ -270,6 +263,3 @@ export async function updateProtocolEnrollmentAction(formData: FormData) {
   if (error) throw error
   revalidatePath('/dashboard/superadmin')
 }
-
-// Re-export for any legacy imports
-export { upsertStaffRecord, syncMembershipRole, orgRoleFor }
