@@ -2,24 +2,29 @@ import { getCoordinatorScope, getStaff, hasProvisioningAccess, isAdmin } from '@
 import { createServiceClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import {
+  BarChart3,
+  Boxes,
+  CreditCard,
+  Upload,
+  Users,
+} from 'lucide-react'
+import { WebTopBar } from '@/components/web-shell'
 
 async function getClinicStats(clinicId: string) {
   const supabase = createServiceClient()
 
-  // Get staff count
   const { count: staffCount } = await supabase
     .from('staff')
     .select('*', { count: 'exact' })
     .eq('clinic_id', clinicId)
     .eq('is_active', true)
 
-  // Get patient count
   const { count: patientCount } = await supabase
     .from('patients')
     .select('*', { count: 'exact' })
     .eq('clinic_id', clinicId)
 
-  // Get visits by day for last 7 days
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
 
@@ -29,16 +34,12 @@ async function getClinicStats(clinicId: string) {
     .eq('clinic_id', clinicId)
     .gte('visit_date', weekAgo.toISOString().split('T')[0])
 
-  // Count visits per day
   const visitsByDay: Record<string, number> = {}
   for (const visit of recentVisits || []) {
     const date = visit.visit_date
     visitsByDay[date] = (visitsByDay[date] || 0) + 1
   }
 
-  // Cases this month, broken out by clinician, with how many still need
-  // finalization (= note not signed: status not in sent/completed). This is
-  // the per-clinician "finalize before it counts" view (#16).
   const now = new Date()
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const { data: monthVisits } = await supabase
@@ -63,7 +64,6 @@ async function getClinicStats(clinicId: string) {
     .map(([name, c]) => ({ name, ...c }))
     .sort((a, b) => b.total - a.total)
 
-  // Get clinic info
   const { data: clinic } = await supabase
     .from('clinics')
     .select('*')
@@ -81,24 +81,24 @@ async function getClinicStats(clinicId: string) {
   }
 }
 
+const QUICK_LINKS = [
+  { href: '/dashboard/admin/stock-import', label: 'Stock import', icon: Upload },
+  { href: '/dashboard/admin/inventory', label: 'Inventory', icon: Boxes },
+  { href: '/dashboard/admin/billing', label: 'Billing rates', icon: CreditCard },
+  { href: '/dashboard/admin/staff', label: 'Staff', icon: Users },
+  { href: '/dashboard/admin/reports', label: 'HMIS reports', icon: BarChart3 },
+] as const
+
 export default async function AdminPage() {
   const staff = await getStaff()
-
-  if (!staff) {
-    redirect('/')
-  }
-
-  const admin = await isAdmin()
-  if (!admin) {
-    redirect('/dashboard')
-  }
+  if (!staff) redirect('/')
+  if (!(await isAdmin())) redirect('/dashboard')
 
   const stats = await getClinicStats(staff.clinic_id)
   const provisioningAccess = await hasProvisioningAccess()
   const coordinatorScope = await getCoordinatorScope()
   const outbreakAccess = coordinatorScope === 'all' || coordinatorScope.length > 0
 
-  // Generate last 7 days for chart
   const days: { date: string; label: string; count: number }[] = []
   for (let i = 6; i >= 0; i--) {
     const d = new Date()
@@ -110,225 +110,167 @@ export default async function AdminPage() {
       count: stats.visitsByDay[dateStr] || 0,
     })
   }
-
   const maxCount = Math.max(...days.map((d) => d.count), 1)
 
   return (
-    <div className="p-4">
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h2>
-        <p className="text-muted-foreground mt-1">
-          Manage your clinic settings and staff
-        </p>
-      </div>
-
-      {/* Clinic Info */}
-      <div className="bg-card rounded-xl p-6 border border-border mb-6">
-        <h3 className="text-lg font-semibold mb-4">Clinic Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Name</p>
-            <p className="font-medium">{stats.clinic?.name || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Slug</p>
-            <p className="font-medium">{stats.clinic?.slug || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Timezone</p>
-            <p className="font-medium">{stats.clinic?.timezone || '-'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-card rounded-xl p-6 border border-border">
-          <p className="text-sm font-medium text-muted-foreground">Active Staff</p>
-          <p className="text-3xl font-semibold mt-2">{stats.staffCount}</p>
-          <Link
-            href="/dashboard/admin/staff"
-            className="text-sm text-primary hover:underline mt-2 inline-block"
-          >
-            Manage staff →
-          </Link>
-        </div>
-
-        <div className="bg-card rounded-xl p-6 border border-border">
-          <p className="text-sm font-medium text-muted-foreground">Total Patients</p>
-          <p className="text-3xl font-semibold mt-2">{stats.patientCount}</p>
-        </div>
-
-        <div className="bg-card rounded-xl p-6 border border-border">
-          <p className="text-sm font-medium text-muted-foreground">Visits This Week</p>
-          <p className="text-3xl font-semibold mt-2">{stats.totalWeekVisits}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Avg: {Math.round(stats.totalWeekVisits / 7)} per day
-          </p>
-        </div>
-      </div>
-
-      {/* Visits Chart */}
-      <div className="bg-card rounded-xl p-6 border border-border">
-        <h3 className="text-lg font-semibold mb-6">Visits Per Day (Last 7 Days)</h3>
-        <div className="flex items-end justify-between gap-2 h-40">
-          {days.map((day) => (
-            <div key={day.date} className="flex-1 flex flex-col items-center">
-              <div className="w-full flex items-end justify-center" style={{ height: 120 }}>
-                <div
-                  className="w-full max-w-[40px] bg-primary rounded-t"
-                  style={{ height: `${(day.count / maxCount) * 100}%`, minHeight: day.count > 0 ? 4 : 0 }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">{day.label}</p>
-              <p className="text-sm font-medium">{day.count}</p>
+    <>
+      <WebTopBar
+        title="Admin"
+        subtitle="CLINIC SETTINGS"
+        actions={
+          (provisioningAccess || outbreakAccess) ? (
+            <div className="flex flex-wrap gap-1.5">
+              {provisioningAccess && (
+                <Link
+                  href="/dashboard/superadmin"
+                  className="inline-flex items-center rounded-md border border-cobalt/30 bg-cobalt-soft px-2.5 py-1 text-xs font-medium text-cobalt hover:bg-cobalt-soft/80"
+                >
+                  Provisioning
+                </Link>
+              )}
+              {outbreakAccess && (
+                <Link
+                  href="/dashboard/outbreaks"
+                  className="inline-flex items-center rounded-md border border-red-500/40 bg-red-500/5 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                >
+                  Outbreaks
+                </Link>
+              )}
             </div>
+          ) : undefined
+        }
+      />
+
+      <div className="flex-1 overflow-auto px-3 py-2 max-w-6xl space-y-2">
+        {/* Primary actions — first thing on screen */}
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_LINKS.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-semibold hover:border-cobalt/50 hover:bg-cobalt-soft/40 transition-colors"
+            >
+              <Icon className="h-3.5 w-3.5 text-cobalt shrink-0" />
+              {label}
+            </Link>
           ))}
         </div>
-      </div>
 
-      {/* Cases by clinician + finalization (this month) */}
-      <div className="mt-8 bg-card rounded-xl p-6 border border-border">
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <h3 className="text-lg font-semibold">Cases by clinician (this month)</h3>
-          <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${
-              stats.unfinalizedCount > 0 ? 'bg-amber-soft text-amber-ink' : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {stats.unfinalizedCount} awaiting finalization
-          </span>
+        {/* Clinic strip + KPIs — one dense row */}
+        <div className="flex flex-wrap items-stretch gap-2">
+          <div className="flex min-w-[200px] flex-1 flex-wrap items-center gap-x-4 gap-y-0.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs">
+            <span className="font-semibold text-sm">{stats.clinic?.name || '—'}</span>
+            <span className="text-muted-foreground">
+              {stats.clinic?.timezone || '—'}
+            </span>
+            {stats.clinic?.district && (
+              <span className="text-muted-foreground">{stats.clinic.district}</span>
+            )}
+          </div>
+          <StatCard label="Staff" value={stats.staffCount} href="/dashboard/admin/staff" />
+          <StatCard label="Patients" value={stats.patientCount} />
+          <StatCard
+            label="Visits 7d"
+            value={stats.totalWeekVisits}
+            hint={`~${Math.round(stats.totalWeekVisits / 7)}/d`}
+          />
         </div>
-        {stats.casesByClinician.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No visits yet this month.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {stats.casesByClinician.map((c) => (
-              <li key={c.name} className="flex items-center justify-between gap-3 py-2 text-sm">
-                <span className="font-medium truncate">{c.name}</span>
-                <span className="flex items-center gap-4 shrink-0">
-                  <span className="text-muted-foreground">{c.total} cases</span>
-                  {c.unfinalized > 0 && (
-                    <span className="text-amber-ink font-medium">{c.unfinalized} to finalize</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-3 text-xs text-muted-foreground">
-          Finalize = sign the note (status → sent/completed). Unfinalized cases are excluded from HMIS 105 and reports.
-        </p>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <Link
-          href="/dashboard/admin/stock-import"
-          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-semibold">Bulk stock import</h4>
-              <p className="text-sm text-muted-foreground">Spreadsheet or CSV upload for meds, lab, and supplies</p>
+        {/* Analytics — compact, side by side on md+ */}
+        <div className="grid gap-2 md:grid-cols-2">
+          <div className="rounded-lg border border-border bg-card px-3 py-2">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+              Visits / day (7d)
+            </h3>
+            <div className="flex items-end justify-between gap-1 h-14">
+              {days.map((day) => (
+                <div key={day.date} className="flex flex-1 flex-col items-center min-w-0">
+                  <div className="flex w-full h-10 items-end justify-center">
+                    <div
+                      className="w-full max-w-[22px] bg-cobalt rounded-t"
+                      style={{
+                        height: `${(day.count / maxCount) * 100}%`,
+                        minHeight: day.count > 0 ? 2 : 0,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-0.5 truncate w-full text-center">
+                    {day.label}
+                  </p>
+                  <p className="text-[11px] font-medium leading-none">{day.count}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </Link>
 
-        <Link
-          href="/dashboard/admin/inventory"
-          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
+          <div className="rounded-lg border border-border bg-card px-3 py-2">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Cases by clinician (month)
+              </h3>
+              <span
+                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
+                  stats.unfinalizedCount > 0 ? 'bg-amber-soft text-amber-ink' : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {stats.unfinalizedCount} open
+              </span>
             </div>
-            <div>
-              <h4 className="font-semibold">Inventory</h4>
-              <p className="text-sm text-muted-foreground">Labs and drugs your clinic has on hand</p>
-            </div>
+            {stats.casesByClinician.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No visits this month.</p>
+            ) : (
+              <ul className="divide-y divide-line-soft max-h-[4.5rem] overflow-y-auto">
+                {stats.casesByClinician.map((c) => (
+                  <li key={c.name} className="flex items-center justify-between gap-2 py-1 text-xs">
+                    <span className="font-medium truncate">{c.name}</span>
+                    <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
+                      <span>{c.total}</span>
+                      {c.unfinalized > 0 && (
+                        <span className="text-amber-ink font-medium">{c.unfinalized} open</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </Link>
-
-        <Link
-          href="/dashboard/admin/billing"
-          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-semibold">Billing rates</h4>
-              <p className="text-sm text-muted-foreground">Consultation fee, pharmacy markup, lab price guide</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/dashboard/admin/staff"
-          className="bg-card rounded-xl p-6 border border-border hover:border-primary/40 transition-colors group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zM12.75 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-semibold">Staff Management</h4>
-              <p className="text-sm text-muted-foreground">View, invite, and manage staff members</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          href="/dashboard/admin/reports"
-          className="bg-card rounded-xl p-6 border border-border hover:border-accent/40 transition-colors group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-              <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-semibold">HMIS Reports</h4>
-              <p className="text-sm text-muted-foreground">Generate HMIS 105 reports and review data quality</p>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {(provisioningAccess || outbreakAccess) && (
-        <div className="mt-6 flex flex-wrap gap-3">
-          {provisioningAccess && (
-            <Link
-              href="/dashboard/superadmin"
-              className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
-            >
-              Open Provisioning Workspace
-            </Link>
-          )}
-          {outbreakAccess && (
-            <Link
-              href="/dashboard/outbreaks"
-              className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/5 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-500/10 transition-colors dark:text-red-300"
-            >
-              Outbreak protocols
-            </Link>
-          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   )
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  href,
+}: {
+  label: string
+  value: number
+  hint?: string
+  href?: string
+}) {
+  const inner = (
+    <>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground leading-none">
+        {label}
+      </p>
+      <p className="text-lg font-semibold leading-tight mt-0.5">{value}</p>
+      {hint && <p className="text-[10px] text-muted-foreground leading-none">{hint}</p>}
+    </>
+  )
+
+  const className =
+    'rounded-lg border border-border bg-card px-2.5 py-1.5 min-w-[4.5rem] shrink-0'
+
+  if (href) {
+    return (
+      <Link href={href} className={`${className} hover:border-cobalt/40 transition-colors block`}>
+        {inner}
+      </Link>
+    )
+  }
+
+  return <div className={className}>{inner}</div>
 }

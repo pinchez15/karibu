@@ -78,6 +78,7 @@ export async function completePharmacyDispense(input: {
     p_lines: rpcLinesPayload(parsed.data.lines),
     p_notes: parsed.data.notes ?? null,
     p_client_op_id: null,
+    p_dispensed_by: staff.id,
   })
 
   if (error) return { success: false, error: error.message }
@@ -103,6 +104,7 @@ export async function completeLegacyPharmacyDispense(input: {
     p_visit_id: input.visitId,
     p_notes: input.notes ?? null,
     p_client_op_id: null,
+    p_dispensed_by: staff.id,
   })
 
   if (error) return { success: false, error: error.message }
