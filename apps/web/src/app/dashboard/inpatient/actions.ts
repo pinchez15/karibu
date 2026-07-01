@@ -9,12 +9,14 @@ import type {
   AdmissionNote,
   AdmissionObservation,
   CensusRow,
+  DeliveryDetail,
   InpatientVisitContext,
   IvInfusion,
   IvInfusionCheck,
   MedicationAdmin,
   MedicationOrder,
   ObservationInput,
+  PostnatalObservationRow,
 } from './types'
 
 const CLINICAL_ROLES = new Set([
@@ -110,6 +112,18 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
   if (ivResult.error) console.warn('rpc_admission_iv_infusions:', ivResult.error.message)
   if (ivChecksResult.error) console.warn('rpc_admission_iv_infusion_checks:', ivChecksResult.error.message)
 
+  const ward = admission.ward as string
+  let delivery: DeliveryDetail | null = null
+  let postnatalObs: PostnatalObservationRow[] = []
+  if (ward === 'maternity') {
+    const [{ data: deliveryRows }, { data: postnatalRows }] = await Promise.all([
+      supabase.rpc('rpc_admission_delivery', { p_admission_id: admissionId }),
+      supabase.rpc('rpc_admission_postnatal_obs', { p_admission_id: admissionId }),
+    ])
+    delivery = ((deliveryRows ?? [])[0] ?? null) as DeliveryDetail | null
+    postnatalObs = (postnatalRows ?? []) as PostnatalObservationRow[]
+  }
+
   return {
     admission: {
       ...admission,
@@ -122,6 +136,8 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
     ivInfusions,
     ivInfusionChecks,
     visit: visitCtx,
+    delivery,
+    postnatalObs,
   }
 }
 
@@ -585,6 +601,114 @@ export async function stopIvInfusion(admissionId: string, infusionId: string): P
     p_client_op_id: null,
   })
 
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/inpatient/${admissionId}`)
+  return { success: true }
+}
+
+export async function recordDelivery(
+  admissionId: string,
+  input: {
+    mode?: string | null
+    outcome?: string | null
+    babySex?: string | null
+    birthWeightG?: number | null
+    apgar1?: number | null
+    apgar5?: number | null
+    bloodLossMl?: number | null
+    oxytocinGiven?: boolean
+    placentaComplete?: boolean | null
+    resuscitationDone?: boolean
+    vitaminKGiven?: boolean
+    earlyBreastfeeding?: boolean
+    notes?: string | null
+  },
+): Promise<ActionResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const roleErr = clinicalRoleError(staff.role)
+  if (roleErr) return { success: false, error: roleErr }
+
+  const admission = await assertAdmissionInClinic(admissionId, staff.clinic_id)
+  if (!admission) return { success: false, error: 'Admission not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_record_delivery', {
+    p_id: randomUUID(),
+    p_admission_id: admissionId,
+    p_mode: input.mode ?? null,
+    p_outcome: input.outcome ?? null,
+    p_baby_sex: input.babySex ?? null,
+    p_birth_weight_g: input.birthWeightG ?? null,
+    p_apgar_1: input.apgar1 ?? null,
+    p_apgar_5: input.apgar5 ?? null,
+    p_blood_loss_ml: input.bloodLossMl ?? null,
+    p_oxytocin_given: input.oxytocinGiven ?? false,
+    p_placenta_complete: input.placentaComplete ?? null,
+    p_resuscitation_done: input.resuscitationDone ?? false,
+    p_vitamin_k_given: input.vitaminKGiven ?? false,
+    p_early_breastfeeding: input.earlyBreastfeeding ?? false,
+    p_notes: input.notes?.trim() || null,
+    p_client_op_id: null,
+  })
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/dashboard/inpatient/${admissionId}`)
+  return { success: true }
+}
+
+export async function recordPostnatalObservation(
+  admissionId: string,
+  input: {
+    subject: 'mother' | 'newborn'
+    tempC?: number | null
+    pulseBpm?: number | null
+    respRate?: number | null
+    bpSystolic?: number | null
+    bpDiastolic?: number | null
+    bleeding?: string | null
+    fundusFirm?: boolean | null
+    feedingWell?: boolean | null
+    notFeeding?: boolean
+    convulsions?: boolean
+    jaundice?: boolean
+    note?: string | null
+  },
+): Promise<ActionResult> {
+  let staff
+  try {
+    staff = await requireStaff()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+  const roleErr = clinicalRoleError(staff.role)
+  if (roleErr) return { success: false, error: roleErr }
+
+  const admission = await assertAdmissionInClinic(admissionId, staff.clinic_id)
+  if (!admission) return { success: false, error: 'Admission not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_record_postnatal_obs', {
+    p_id: randomUUID(),
+    p_admission_id: admissionId,
+    p_subject: input.subject,
+    p_temp_c: input.tempC ?? null,
+    p_pulse_bpm: input.pulseBpm ?? null,
+    p_resp_rate: input.respRate ?? null,
+    p_bp_systolic: input.bpSystolic ?? null,
+    p_bp_diastolic: input.bpDiastolic ?? null,
+    p_bleeding: input.bleeding ?? null,
+    p_fundus_firm: input.fundusFirm ?? null,
+    p_feeding_well: input.feedingWell ?? null,
+    p_not_feeding: input.notFeeding ?? false,
+    p_convulsions: input.convulsions ?? false,
+    p_jaundice: input.jaundice ?? false,
+    p_note: input.note?.trim() || null,
+    p_client_op_id: null,
+  })
   if (error) return { success: false, error: error.message }
   revalidatePath(`/dashboard/inpatient/${admissionId}`)
   return { success: true }

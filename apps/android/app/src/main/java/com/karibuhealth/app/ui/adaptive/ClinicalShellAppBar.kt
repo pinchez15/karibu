@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +35,7 @@ import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
 
 /**
- * Clinic + staff context bar — identity and sign-out only, not navigation.
+ * Clinic + staff context bar — clinic identity, quick actions, and sign-out.
  */
 @Composable
 fun ClinicalShellAppBar(
@@ -42,6 +45,8 @@ fun ClinicalShellAppBar(
     onAvatarClick: () -> Unit,
     onDismissMenu: () -> Unit,
     onSignOut: () -> Unit,
+    onOpenWorklists: (() -> Unit)? = null,
+    onOpenBilling: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -62,6 +67,25 @@ fun ClinicalShellAppBar(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+        }
+
+        onOpenWorklists?.let { open ->
+            IconButton(onClick = open) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.ListAlt,
+                    contentDescription = "Worklists",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        onOpenBilling?.let { open ->
+            IconButton(onClick = open) {
+                Icon(
+                    Icons.Outlined.Payments,
+                    contentDescription = "Billing",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Box {

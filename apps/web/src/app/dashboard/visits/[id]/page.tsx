@@ -124,12 +124,35 @@ async function getVisitDetails(visitId: string, clinicId: string) {
     library_slug: (a.library_slug as string | null) ?? null,
   }))
 
+  const [{ data: protocols }, { data: ebolaRows }, { data: vitalsRows }] = await Promise.all([
+    supabase.rpc('rpc_active_protocols_for_clinic', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_visit_ebola_screening', { p_visit_id: visitId }),
+    supabase
+      .from('patient_vitals')
+      .select('temp_c')
+      .eq('visit_id', visitId)
+      .order('recorded_at', { ascending: false })
+      .limit(1),
+  ])
+
+  const ebolaProtocolActive = (protocols ?? []).some(
+    (p: { protocol?: string }) => p.protocol === 'ebola',
+  )
+  const ebolaScreening = (ebolaRows ?? [])[0] ?? null
+  const latestTempC =
+    vitalsRows && vitalsRows.length > 0
+      ? (vitalsRows[0].temp_c as number | null)
+      : null
+
   return {
     ...visit,
     patient_notes_clinician: clinicianNote,
     patient_notes_ai: aiNote,
     ai_review_suggestions,
     critical_alerts,
+    ebola_protocol_active: ebolaProtocolActive,
+    ebola_screening: ebolaScreening,
+    latest_temp_c: latestTempC,
   }
 }
 

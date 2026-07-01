@@ -321,6 +321,19 @@ fun VisitDetailsScreen(
                         Text("Refer to hospital")
                     }
 
+                    uiState.patient?.let { patient ->
+                        VisitQueueActions(
+                            patientId = patient.id,
+                            queueStatus = uiState.visit?.queueStatus?.name,
+                            followUpBooked = uiState.followUpBooked,
+                            followUpError = uiState.followUpError,
+                            isCheckingOut = uiState.isCheckingOut,
+                            checkoutError = uiState.checkoutError,
+                            onBookFollowUp = viewModel::bookFollowUp,
+                            onCheckOut = { viewModel.checkOutVisit(visitId) },
+                        )
+                    }
+
                     uiState.providerNote?.let { note ->
                         NoteLifecycleActionsCard(
                             noteStatus = note.status.name,
@@ -378,6 +391,18 @@ fun VisitDetailsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Refer to hospital")
+                    }
+                    uiState.patient?.let { patient ->
+                        VisitQueueActions(
+                            patientId = patient.id,
+                            queueStatus = uiState.visit?.queueStatus?.name,
+                            followUpBooked = uiState.followUpBooked,
+                            followUpError = uiState.followUpError,
+                            isCheckingOut = uiState.isCheckingOut,
+                            checkoutError = uiState.checkoutError,
+                            onBookFollowUp = viewModel::bookFollowUp,
+                            onCheckOut = { viewModel.checkOutVisit(visitId) },
+                        )
                     }
                     contextColumn()
                     uiState.providerNote?.let { note ->
@@ -1350,5 +1375,79 @@ private fun CheckRowE(label: String, checked: Boolean, onChange: (Boolean) -> Un
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked, onCheckedChange = onChange)
         Text(label, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VisitQueueActions(
+    patientId: String,
+    queueStatus: String?,
+    followUpBooked: Boolean,
+    followUpError: String?,
+    isCheckingOut: Boolean,
+    checkoutError: String?,
+    onBookFollowUp: (String, java.time.LocalDate, String?) -> Unit,
+    onCheckOut: () -> Unit,
+) {
+    var showFollowUp by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var followUpDate by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var followUpReason by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+
+    if (followUpBooked) {
+        Text(
+            "Follow-up booked",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    } else if (!showFollowUp) {
+        OutlinedButton(onClick = { showFollowUp = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("Book follow-up")
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = followUpDate,
+                onValueChange = { followUpDate = it },
+                label = { Text("Date (YYYY-MM-DD)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = followUpReason,
+                onValueChange = { followUpReason = it },
+                label = { Text("Reason (optional)") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        runCatching { java.time.LocalDate.parse(followUpDate) }.onSuccess { d ->
+                            onBookFollowUp(patientId, d, followUpReason)
+                            showFollowUp = false
+                        }
+                    },
+                    enabled = followUpDate.isNotBlank(),
+                    modifier = Modifier.weight(1f),
+                ) { Text("Book") }
+                TextButton(onClick = { showFollowUp = false }) { Text("Cancel") }
+            }
+        }
+    }
+    followUpError?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+    }
+
+    if (queueStatus != "completed" && queueStatus != "cancelled") {
+        OutlinedButton(
+            onClick = onCheckOut,
+            enabled = !isCheckingOut,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (isCheckingOut) "Checking out…" else "Check out")
+        }
+    }
+    checkoutError?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
 }

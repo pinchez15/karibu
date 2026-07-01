@@ -58,6 +58,7 @@ import java.time.format.DateTimeFormatter
 fun CalendarScreen(
     embedded: Boolean = false,
     onNavigateToNewVisit: () -> Unit = {},
+    onOpenPatient: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: CalendarViewModel = hiltViewModel(),
 ) {
@@ -199,6 +200,9 @@ fun CalendarScreen(
             onDismiss = { viewModel.dismissSheets() },
             onEdit = { viewModel.openEdit() },
             onDelete = { viewModel.deleteSelected() },
+            onOpenPatient = state.selectedEvent?.patientId?.let { id ->
+                { onOpenPatient(id); viewModel.dismissSheets() }
+            },
         )
     }
 }

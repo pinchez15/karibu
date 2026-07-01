@@ -17,6 +17,7 @@ import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel
 import { DueNowPanel } from '@/components/inpatient/DueNowPanel'
 import { IvDripPanel } from '@/components/inpatient/IvDripPanel'
 import { QuickVitalsBar } from '@/components/inpatient/QuickVitalsBar'
+import { MaternityPanel } from '@/components/inpatient/MaternityPanel'
 import {
   addAdmissionNote,
   addMedicationOrder,
@@ -29,11 +30,13 @@ import type {
   AdmissionDetail,
   AdmissionNote,
   AdmissionObservation,
+  DeliveryDetail,
   InpatientVisitContext,
   IvInfusion,
   IvInfusionCheck,
   MedicationAdmin,
   MedicationOrder,
+  PostnatalObservationRow,
   ObservationInput,
 } from '@/app/dashboard/inpatient/types'
 import {
@@ -47,7 +50,7 @@ import { cn } from '@/lib/utils'
 
 const DISCHARGE_OUTCOMES = ['recovered', 'improved', 'unchanged', 'absconded', 'died'] as const
 const FREQ_OPTIONS = ['STAT', 'OD', 'BD', 'TDS', 'QDS', 'PRN'] as const
-type TabId = 'rounds' | 'meds' | 'orders' | 'notes'
+type TabId = 'rounds' | 'meds' | 'orders' | 'maternity' | 'notes'
 
 type ChartProps = {
   admission: AdmissionDetail
@@ -59,6 +62,8 @@ type ChartProps = {
   ivInfusionChecks: IvInfusionCheck[]
   visit: InpatientVisitContext | null
   staffRole: StaffRole
+  delivery: DeliveryDetail | null
+  postnatalObs: PostnatalObservationRow[]
 }
 
 export function AdmissionChartClient(props: ChartProps) {
@@ -75,6 +80,17 @@ export function AdmissionChartClient(props: ChartProps) {
   const patientName = patientDisplayName(admission.patient)
   const ageYears = ageYearsFromDob(admission.patient.date_of_birth)
   const latestObs = props.observations[0] ?? null
+  const isMaternity = admission.ward === 'maternity'
+
+  const tabDefs = (
+    [
+      ['rounds', 'Rounds'],
+      ['meds', 'All meds'],
+      ['orders', 'Lab / Rx'],
+      ...(isMaternity ? [['maternity', 'Maternity'] as const] : []),
+      ['notes', 'Notes'],
+    ] as const
+  )
 
   const dangerFindings = useMemo(() => {
     if (!latestObs) return []
@@ -182,18 +198,11 @@ export function AdmissionChartClient(props: ChartProps) {
 
       {/* Tabs — only this section scrolls */}
       <div className="flex shrink-0 border-b border-border px-4 gap-1 pt-1">
-        {(
-          [
-            ['rounds', 'Rounds'],
-            ['meds', 'All meds'],
-            ['orders', 'Lab / Rx'],
-            ['notes', 'Notes'],
-          ] as const
-        ).map(([id, label]) => (
+        {tabDefs.map(([id, label]) => (
           <button
             key={id}
             type="button"
-            onClick={() => setTab(id)}
+            onClick={() => setTab(id as TabId)}
             className={cn(
               'px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors',
               tab === id ? 'border-cobalt text-cobalt' : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -229,6 +238,13 @@ export function AdmissionChartClient(props: ChartProps) {
         )}
         {tab === 'orders' && props.visit && (
           <OrdersTab visit={props.visit} staffRole={props.staffRole} onSubmitted={refresh} />
+        )}
+        {tab === 'maternity' && isMaternity && (
+          <MaternityPanel
+            admissionId={admission.id}
+            delivery={props.delivery}
+            postnatalObs={props.postnatalObs}
+          />
         )}
         {tab === 'notes' && (
           <NotesTab notes={props.notes} onAdd={() => setShowNote(true)} />

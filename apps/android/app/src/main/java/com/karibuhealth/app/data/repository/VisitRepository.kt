@@ -980,6 +980,25 @@ class VisitRepository @Inject constructor(
         syncQueueHelper.enqueue(syncEntry)
     }
 
+    /** Check patient out of today's queue without signing the note (F1 / migration 068). */
+    suspend fun checkOutVisit(visitId: String) = withContext(Dispatchers.IO) {
+        val now = Instant.now().toString()
+        visitDao.updateQueueStatus(visitId, QueueStatus.completed.name, now)
+        visitDao.updateSyncState(visitId, false)
+        if (!networkMonitor.isOnline()) {
+            throw IllegalStateException("Check-out requires an internet connection")
+        }
+        val response = supabaseApi.rpcCheckOutVisit(
+            com.karibuhealth.app.data.remote.dto.CheckOutVisitRequest(visitId = visitId),
+        )
+        if (!response.isSuccessful) {
+            throw IllegalStateException(
+                "rpc_check_out_visit HTTP ${response.code()} ${response.errorBody()?.string()?.take(200)}",
+            )
+        }
+        markVisitSyncedIfQuiet(visitId)
+    }
+
     suspend fun updateStatus(visitId: String, status: VisitStatus) {
         withContext(Dispatchers.IO) {
             visitDao.updateStatus(visitId, status.name, Instant.now().toString())

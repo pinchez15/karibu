@@ -34,6 +34,8 @@ export default async function AdmissionChartPage({
       ivInfusionChecks={chart.ivInfusionChecks}
       visit={chart.visit}
       staffRole={staff.role as StaffRole}
+      delivery={chart.delivery ?? null}
+      postnatalObs={chart.postnatalObs ?? []}
     />
   )
 }

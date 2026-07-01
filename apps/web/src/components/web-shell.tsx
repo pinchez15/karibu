@@ -107,9 +107,12 @@ const UNITS: UnitDef[] = [
     id: 'inpatient',
     label: 'Inpatient',
     icon: BedDouble,
-    basePaths: ['/dashboard/inpatient', '/dashboard/inpatient/admit'],
+    basePaths: ['/dashboard/inpatient', '/dashboard/inpatient/admit', '/dashboard/inpatient/handover'],
     roles: CLINICAL,
-    items: [{ id: 'admissions', label: 'Admissions', href: '/dashboard/inpatient', icon: BedDouble }],
+    items: [
+      { id: 'admissions', label: 'Admissions', href: '/dashboard/inpatient', icon: BedDouble },
+      { id: 'handover', label: 'Handover', href: '/dashboard/inpatient/handover', icon: ListTodo },
+    ],
   },
   {
     id: 'anc',

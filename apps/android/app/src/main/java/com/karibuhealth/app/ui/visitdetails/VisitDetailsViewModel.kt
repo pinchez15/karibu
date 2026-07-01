@@ -16,6 +16,7 @@ import com.karibuhealth.app.domain.CriticalAlertRules
 import com.karibuhealth.app.ui.components.filterTimelineAiNotes
 import com.karibuhealth.app.data.repository.NoteRepository
 import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
+import com.karibuhealth.app.data.repository.CalendarRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.data.repository.VitalsRepository
@@ -25,6 +26,7 @@ import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
 import com.karibuhealth.app.domain.model.*
+import com.karibuhealth.app.domain.ClinicEventType
 import com.karibuhealth.app.ui.dictation.PharmacyPickerResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -72,6 +74,10 @@ data class VisitDetailsUiState(
     val labMessage: String? = null,
     val prescriptionLines: List<PrescriptionLineRpc> = emptyList(),
     val pendingSyncCount: Int = 0,
+    val followUpBooked: Boolean = false,
+    val followUpError: String? = null,
+    val isCheckingOut: Boolean = false,
+    val checkoutError: String? = null,
     val isOnline: Boolean = true,
 )
 
@@ -118,6 +124,7 @@ class VisitDetailsViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val vitalsRepository: VitalsRepository,
     private val staffRepository: StaffRepository,
+    private val calendarRepository: CalendarRepository,
     private val regionProtocolRepository: com.karibuhealth.app.data.repository.RegionProtocolRepository,
     private val authTokenStore: com.karibuhealth.app.data.local.datastore.AuthTokenStore,
     private val networkMonitor: NetworkMonitor,
@@ -503,6 +510,41 @@ class VisitDetailsViewModel @Inject constructor(
                 _uiState.update { it.copy(pharmacyMessage = e.message ?: "Could not send to pharmacy") }
             }
             _uiState.update { it.copy(isSendingToPharmacy = false) }
+        }
+    }
+
+    fun checkOutVisit(visitId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingOut = true, checkoutError = null) }
+            runCatching { visitRepository.checkOutVisit(visitId) }
+                .onSuccess { visitRepository.refreshVisit(visitId) }
+                .onFailure { e ->
+                    _uiState.update { it.copy(checkoutError = e.message ?: "Could not check out") }
+                }
+            _uiState.update { it.copy(isCheckingOut = false) }
+        }
+    }
+
+    fun bookFollowUp(patientId: String, scheduledDate: java.time.LocalDate, reason: String?) {
+        val clinicId = _uiState.value.currentStaff?.clinicId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(followUpError = null) }
+            runCatching {
+                val at = scheduledDate.atTime(9, 0).atZone(java.time.ZoneId.systemDefault()).toInstant()
+                calendarRepository.createAppointment(
+                    clinicId = clinicId,
+                    eventType = ClinicEventType.follow_up,
+                    scheduledAt = at,
+                    patientId = patientId,
+                    title = null,
+                    reason = reason?.trim()?.takeIf { it.isNotEmpty() },
+                    scheduledEnd = null,
+                )
+            }.onSuccess {
+                _uiState.update { it.copy(followUpBooked = true, followUpError = null) }
+            }.onFailure { e ->
+                _uiState.update { it.copy(followUpError = e.message ?: "Could not book follow-up") }
+            }
         }
     }
 }

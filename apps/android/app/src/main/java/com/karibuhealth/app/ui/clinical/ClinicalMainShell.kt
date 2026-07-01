@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.LocalHotel
 import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material3.Icon
@@ -37,6 +38,7 @@ import com.karibuhealth.app.ui.anc.AncRegistryScreen
 import com.karibuhealth.app.ui.hivtb.HivTbRegistryScreen
 import com.karibuhealth.app.ui.calendar.CalendarScreen
 import com.karibuhealth.app.ui.home.HomeViewModel
+import com.karibuhealth.app.ui.home.OpdTodayPane
 import com.karibuhealth.app.ui.inpatient.WardCensusScreen
 import com.karibuhealth.app.ui.lab.LabHomeScreen
 import com.karibuhealth.app.ui.orders.OrdersScreen
@@ -45,11 +47,12 @@ import com.karibuhealth.app.ui.pharmacy.PharmacyHomeScreen
 /**
  * Clinician phone/tablet shell — **one** navigation zone (bottom bar or rail).
  *
- * Calendar is the shared homepage for every role. Ward / Lab / Pharmacy / Orders /
- * ANC tabs vary by staff role.
+ * Calendar is the shared homepage for every role. Patients (OPD today + search),
+ * Ward / Lab / Pharmacy / Orders / ANC / HIV-TB tabs vary by staff role.
  */
 enum class ShellTab {
     Calendar,
+    Patients,
     Ward,
     Orders,
     Anc,
@@ -61,7 +64,14 @@ enum class ShellTab {
 private fun shellTabsFor(role: StaffRole?): List<ShellTab> = when (role) {
     StaffRole.lab_tech -> listOf(ShellTab.Calendar, ShellTab.Lab, ShellTab.Orders)
     StaffRole.dispenser -> listOf(ShellTab.Calendar, ShellTab.Pharmacy, ShellTab.Orders)
-    else -> listOf(ShellTab.Calendar, ShellTab.Ward, ShellTab.Orders, ShellTab.Anc, ShellTab.HivTb)
+    else -> listOf(
+        ShellTab.Calendar,
+        ShellTab.Patients,
+        ShellTab.Ward,
+        ShellTab.Orders,
+        ShellTab.Anc,
+        ShellTab.HivTb,
+    )
 }
 
 @Composable
@@ -86,6 +96,7 @@ fun ClinicalMainShell(
     onNavigateToReferral: (String) -> Unit = {},
     onNavigateToDictation: (String, Boolean) -> Unit = { _, _ -> },
     onNavigateToReview: (String) -> Unit = {},
+    onNavigateToWorklists: () -> Unit = {},
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -102,6 +113,19 @@ fun ClinicalMainShell(
             ShellTab.Calendar -> CalendarScreen(
                 embedded = true,
                 onNavigateToNewVisit = onNavigateToNewVisit,
+                onOpenPatient = onNavigateToPatient,
+                modifier = contentModifier.fillMaxSize(),
+            )
+            ShellTab.Patients -> OpdTodayPane(
+                onNavigateToQueue = onNavigateToQueue,
+                onNavigateToNewVisit = onNavigateToNewVisit,
+                onNavigateToVisitDetails = onNavigateToVisitDetails,
+                onNavigateToPatient = onNavigateToPatient,
+                onNavigateToBilling = onNavigateToBilling,
+                onAddPatientNote = onAddPatientNote,
+                onRecordPatientVitals = onRecordPatientVitals,
+                onNavigateToReferral = onNavigateToReferral,
+                onNavigateToDictation = onNavigateToDictation,
                 modifier = contentModifier.fillMaxSize(),
             )
             ShellTab.Orders -> OrdersScreen(
@@ -163,6 +187,11 @@ fun ClinicalMainShell(
                     profileMenuOpen = false
                     homeViewModel.signOut()
                 },
+                onOpenWorklists = when (homeUiState.staff?.role) {
+                    StaffRole.lab_tech, StaffRole.dispenser -> null
+                    else -> onNavigateToWorklists
+                },
+                onOpenBilling = onNavigateToBilling,
             )
             tabContent(Modifier.weight(1f))
         }
@@ -207,6 +236,7 @@ fun ClinicalMainShell(
 @Composable
 private fun ShellTab.icon() = when (this) {
     ShellTab.Calendar -> Icons.Default.CalendarMonth
+    ShellTab.Patients -> Icons.Default.People
     ShellTab.Ward -> Icons.Default.LocalHotel
     ShellTab.Orders -> Icons.AutoMirrored.Filled.Assignment
     ShellTab.Anc -> Icons.Default.ChildCare
@@ -217,6 +247,7 @@ private fun ShellTab.icon() = when (this) {
 
 private fun ShellTab.label() = when (this) {
     ShellTab.Calendar -> "Calendar"
+    ShellTab.Patients -> "Patients"
     ShellTab.Ward -> "Ward"
     ShellTab.Orders -> "Orders"
     ShellTab.Anc -> "ANC"

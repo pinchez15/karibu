@@ -171,6 +171,9 @@ interface SupabaseApi {
     @POST("rpc/rpc_mark_documentation_complete")
     suspend fun rpcMarkDocumentationComplete(@Body request: MarkDocumentationCompleteDto): Response<ResponseBody>
 
+    @POST("rpc/rpc_check_out_visit")
+    suspend fun rpcCheckOutVisit(@Body request: CheckOutVisitRequest): Response<ResponseBody>
+
     @POST("rpc/rpc_upsert_visit_clinical_summary")
     suspend fun rpcUpsertVisitClinicalSummary(@Body request: VisitClinicalSummaryUpsertDto): Response<ResponseBody>
 

@@ -130,6 +130,7 @@ fun KaribuNavHost(
                     onNavigateToReview = { visitId ->
                         navigator.go(NavRoute.Review(visitId))
                     },
+                    onNavigateToWorklists = { navigator.go(NavRoute.Worklists) },
                 )
             }
 

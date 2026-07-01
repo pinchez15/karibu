@@ -24,6 +24,7 @@ import {
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 import { VitalsCard } from './VitalsCard'
 import { BookFollowUp } from './BookFollowUp'
+import { EbolaScreeningCard, type EbolaScreeningRecord } from './EbolaScreeningCard'
 import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
 import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
 
@@ -93,6 +94,9 @@ interface VisitWithRelations extends Visit {
   patient_notes_ai: PatientNote | null
   ai_review_suggestions?: ReviewSuggestion[] | null
   critical_alerts?: VisitCriticalAlert[] | null
+  ebola_protocol_active?: boolean
+  ebola_screening?: EbolaScreeningRecord | null
+  latest_temp_c?: number | null
 }
 
 interface PaymentData {
@@ -206,6 +210,16 @@ export function VisitDetailClient({
       {(visit.critical_alerts ?? []).map((alert) => (
         <VisitCriticalAlertBanner key={alert.id} alert={alert} />
       ))}
+
+      {visit.ebola_protocol_active && (
+        <EbolaScreeningCard
+          visitId={visit.id}
+          patientId={visit.patient_id}
+          febrile={visit.latest_temp_c != null && visit.latest_temp_c >= 38}
+          screening={visit.ebola_screening ?? null}
+          tempC={visit.latest_temp_c ?? null}
+        />
+      )}
 
       <VitalsCard patientId={visit.patient_id} visitId={visit.id} />
 

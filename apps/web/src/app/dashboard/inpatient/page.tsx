@@ -21,13 +21,21 @@ export default async function InpatientPage() {
         title="Ward"
         subtitle="ADMISSIONS"
         actions={
-          <Link
-            href="/dashboard/inpatient/admit"
-            className="inline-flex items-center gap-1.5 rounded-md bg-cobalt px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-cobalt/90"
-          >
-            <Plus className="h-4 w-4" />
-            Admit
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/dashboard/inpatient/handover"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-body hover:bg-background"
+            >
+              Handover
+            </Link>
+            <Link
+              href="/dashboard/inpatient/admit"
+              className="inline-flex items-center gap-1.5 rounded-md bg-cobalt px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-cobalt/90"
+            >
+              <Plus className="h-4 w-4" />
+              Admit
+            </Link>
+          </div>
         }
       />
       <WardCensusClient rows={rows} />

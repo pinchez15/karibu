@@ -133,3 +133,39 @@ export type ObservationInput = {
   imciLethargicUnconscious?: boolean
   note?: string | null
 }
+
+export type DeliveryDetail = {
+  id: string
+  delivered_at: string
+  mode: string | null
+  oxytocin_given: boolean
+  blood_loss_ml: number | null
+  placenta_complete: boolean | null
+  outcome: string | null
+  baby_sex: string | null
+  birth_weight_g: number | null
+  apgar_1: number | null
+  apgar_5: number | null
+  resuscitation_done: boolean
+  vitamin_k_given: boolean
+  early_breastfeeding: boolean
+  notes: string | null
+}
+
+export type PostnatalObservationRow = {
+  id: string
+  subject: 'mother' | 'newborn'
+  observed_at: string
+  temp_c: number | null
+  pulse_bpm: number | null
+  resp_rate: number | null
+  bp_systolic: number | null
+  bp_diastolic: number | null
+  bleeding: string | null
+  fundus_firm: boolean | null
+  feeding_well: boolean | null
+  not_feeding: boolean
+  convulsions: boolean
+  jaundice: boolean
+  note: string | null
+}

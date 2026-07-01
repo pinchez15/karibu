@@ -220,6 +220,7 @@ fun EventDetailSheet(
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onOpenPatient: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState()
     val zone = ZoneId.systemDefault()
@@ -237,6 +238,14 @@ fun EventDetailSheet(
             Text(ClinicCalendarEvents.appointmentTitle(event), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("${meta?.label ?: event.eventType.wire} · ${at.format(DateTimeFormatter.ofPattern("EEE d MMM · HH:mm"))}")
             event.reason?.takeIf { it.isNotBlank() }?.let { Text(it) }
+            onOpenPatient?.let { open ->
+                androidx.compose.material3.OutlinedButton(
+                    onClick = open,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Open patient chart")
+                }
+            }
             Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("Edit") }
             TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
                 Text("Delete", color = MaterialTheme.colorScheme.error)
