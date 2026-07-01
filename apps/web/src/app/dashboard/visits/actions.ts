@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 import { getStaff, requireStaff } from '@/lib/auth'
 import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
@@ -330,26 +331,28 @@ export async function createPatientWithVisit(formData: FormData) {
     patientId = newPatient.id
   }
 
-  // Create a visit for today. Status starts at 'pending' — clinician will
-  // dictate the SOAP note from this visit later from the dashboard or app.
-  const { data: visit, error: visitError } = await supabase
-    .from('visits')
-    .insert({
-      clinic_id: staff.clinic_id,
-      patient_id: patientId,
-      doctor_id: staff.role === 'doctor' ? staff.id : null,
-      nurse_id: staff.role === 'nurse' ? staff.id : null,
-      status: 'pending',
-    })
-    .select('id')
-    .single()
+  // Check the patient into today's OPD queue so clinicians see them on Today
+  // and worklists. Raw visit inserts skip queue_position / checked_in_at.
+  const chiefComplaint = nullableTrim(formData.get('chief_complaint'))
+  const { data: visitId, error: visitError } = await supabase.rpc('check_in_patient', {
+    p_clinic_id: staff.clinic_id,
+    p_patient_id: patientId,
+    p_chief_complaint: chiefComplaint,
+    p_priority: 'normal',
+    p_staff_id: staff.id,
+    p_department: 'opd',
+  })
 
-  if (visitError) {
-    console.error('Failed to create visit:', visitError)
-    return { error: 'Failed to create visit' }
+  if (visitError || !visitId) {
+    console.error('Failed to check in patient:', visitError)
+    return { error: visitError?.message || 'Failed to add patient to today\'s queue' }
   }
 
-  return { visitId: visit.id }
+  broadcastClinicRefresh(staff.clinic_id).catch(() => {})
+  revalidatePath('/dashboard/opd')
+  revalidatePath('/dashboard/worklists')
+
+  return { visitId: visitId as string }
 }
 
 // saveVisitNotes removed in the dictation pivot. Pre-pivot it was used by

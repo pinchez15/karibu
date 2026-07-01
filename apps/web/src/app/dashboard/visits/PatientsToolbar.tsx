@@ -154,25 +154,24 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
     setDistrict(defaultDistrict)
   }, [defaultDistrict])
 
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    setSearch(searchParams?.get('search') || '')
+  }, [searchParams])
+
+  const applySearch = (term: string) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (term.trim()) {
+      params.set('search', term.trim())
+    } else {
+      params.delete('search')
+    }
+    params.delete('page')
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const lookupTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const lookupVersionRef = useRef(0)
   const formRef = useRef<HTMLFormElement>(null)
-
-  const updateSearch = (term: string) => {
-    setSearch(term)
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    searchTimeoutRef.current = setTimeout(() => {
-      const params = new URLSearchParams(searchParams?.toString())
-      if (term) {
-        params.set('search', term)
-      } else {
-        params.delete('search')
-      }
-      params.delete('page')
-      router.push(`${pathname}?${params.toString()}`)
-    }, 300)
-  }
 
   const effectiveAge = useMemo<number | null>(() => {
     const now = new Date()
@@ -289,11 +288,20 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => updateSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                applySearch(search)
+              }
+            }}
             placeholder="Search name, patient #, phone, or address..."
             className="pl-9"
           />
         </div>
+        <Button type="button" variant="secondary" onClick={() => applySearch(search)}>
+          Search
+        </Button>
         <Button
           onClick={() => {
             setShowNewPatient(!showNewPatient)

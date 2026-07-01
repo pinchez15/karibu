@@ -95,9 +95,10 @@ const UNITS: UnitDef[] = [
     id: 'opd',
     label: 'OPD',
     icon: Stethoscope,
-    basePaths: ['/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview'],
+    basePaths: ['/dashboard/opd', '/dashboard/visits', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview'],
     roles: CLINICAL,
     items: [
+      { id: 'opd-today', label: 'Today', href: '/dashboard/opd', icon: Home },
       { id: 'patients', label: 'Patients', href: '/dashboard/visits', icon: Users },
       { id: 'worklists', label: 'Worklists', href: '/dashboard/worklists', icon: ListTodo },
       { id: 'orders', label: 'Orders', href: '/dashboard/orders', icon: ClipboardList },
