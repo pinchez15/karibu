@@ -76,7 +76,7 @@ export async function getPharmacyStationQueue(
   if (tab === 'waiting') {
     query = query.eq('dispensing_status', 'not_started')
   } else if (tab === 'in_progress') {
-    query = query.eq('dispensing_status', 'in_progress')
+    query = query.in('dispensing_status', ['in_progress', 'partial'])
   } else {
     query = query
       .in('dispensing_status', [...TERMINAL])
@@ -136,7 +136,7 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
       .select('id', { count: 'exact', head: true })
       .eq('clinic_id', clinicId)
       .not('pharmacy_order_submitted_at', 'is', null)
-      .eq('dispensing_status', 'in_progress'),
+      .in('dispensing_status', ['in_progress', 'partial']),
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })

@@ -10,7 +10,7 @@ import { PHARMACY_STATION_FIXTURE_ROWS } from '@/app/dashboard/pharmacy/pharmacy
  */
 export function StationDemoClient() {
   const completeDispenseFn = useCallback(
-    async () => ({ success: true as const }),
+    async () => ({ success: true as const, dispensingStatus: 'dispensed' }),
     [],
   )
 

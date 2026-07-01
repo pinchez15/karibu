@@ -59,7 +59,10 @@ export async function completePharmacyDispense(input: {
   visitId: string
   lines: CompleteDispenseLine[]
   notes?: string
-}): Promise<{ success: true } | { success: false; error: string }> {
+}): Promise<
+  | { success: true; dispensingStatus: string }
+  | { success: false; error: string }
+> {
   const parsed = CompletePharmacyDispenseSchema.safeParse(input)
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
@@ -83,8 +86,21 @@ export async function completePharmacyDispense(input: {
 
   if (error) return { success: false, error: error.message }
 
+  const { data: visit, error: visitError } = await supabase
+    .from('visits')
+    .select('dispensing_status')
+    .eq('id', parsed.data.visitId)
+    .single()
+
+  if (visitError) {
+    console.error('completePharmacyDispense: could not load visit status', visitError)
+  }
+
   revalidatePharmacyPaths(parsed.data.visitId, staff.clinic_id)
-  return { success: true }
+  return {
+    success: true,
+    dispensingStatus: (visit?.dispensing_status as string) ?? 'dispensed',
+  }
 }
 
 /** Mark dispensed for visits with free-text meds only (no structured Rx lines). */

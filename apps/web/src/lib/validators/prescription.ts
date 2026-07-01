@@ -60,8 +60,11 @@ export function pharmacyTabForVisit(
   dispensedAt: string | null | undefined,
 ): 'waiting' | 'in_progress' | 'done_today' | null {
   if (dispensingStatus === 'not_started') return 'waiting';
-  if (dispensingStatus === 'in_progress') return 'in_progress';
-  if (['dispensed', 'partial', 'out_of_stock'].includes(dispensingStatus)) {
+  // Partial visits still need pharmacist action — keep them in the active queue.
+  if (dispensingStatus === 'in_progress' || dispensingStatus === 'partial') {
+    return 'in_progress';
+  }
+  if (['dispensed', 'out_of_stock'].includes(dispensingStatus)) {
     if (!dispensedAt) return 'done_today';
     const today = new Date();
     today.setHours(0, 0, 0, 0);

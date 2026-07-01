@@ -21,7 +21,7 @@ import {
   captureStationWorkspaceViewed,
 } from '@/lib/station-analytics'
 import type { PharmacyQueueTab } from '@karibu/shared'
-import { PrescriptionWorksheet } from './PrescriptionWorksheet'
+import { PrescriptionWorksheet, type DispenseCompletionResult } from './PrescriptionWorksheet'
 import type { PharmacyStationRow } from './pharmacy-data'
 import { patientDisplayName, patientMeta, StatusPill } from './pharmacy-shared'
 
@@ -125,6 +125,17 @@ export function PharmacyStationClient({
     [refreshOnUpdate, router],
   )
 
+  const handleDispenseCompleted = useCallback(
+    (visitId: string, result: DispenseCompletionResult) => {
+      if (['dispensed', 'out_of_stock'].includes(result.dispensingStatus)) {
+        removeRow(visitId)
+        return
+      }
+      if (refreshOnUpdate) router.refresh()
+    },
+    [refreshOnUpdate, router, removeRow],
+  )
+
   const handleListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (rows.length === 0) return
     const idx = rows.findIndex((r) => r.id === selectedId)
@@ -226,7 +237,7 @@ export function PharmacyStationClient({
         row={selectedRow}
         readOnly={readOnly}
         completeFn={completeDispenseFn}
-        onCompleted={() => removeRow(selectedRow.id)}
+        onCompleted={(result) => handleDispenseCompleted(selectedRow.id, result)}
         onSentBack={() => removeRow(selectedRow.id)}
       />
     </div>
