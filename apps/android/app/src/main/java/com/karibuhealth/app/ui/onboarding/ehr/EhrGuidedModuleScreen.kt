@@ -72,7 +72,7 @@ fun EhrGuidedModuleScreen(
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(CobaltInk)
+                .background(Cobalt)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             KlButton("All modules", onBack, kind = KlBtnKind.GhostDark, modifier = Modifier.padding(bottom = 4.dp))

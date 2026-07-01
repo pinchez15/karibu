@@ -74,7 +74,7 @@ function GuidedModule({
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
-      <header className="shrink-0 border-b border-border bg-cobalt-ink px-4 py-3 text-white">
+      <header className="shrink-0 border-b border-cobalt-deep/30 bg-cobalt onboarding-dark px-4 py-3 text-white">
         <button
           type="button"
           onClick={onBack}
@@ -242,7 +242,7 @@ export function EhrOnboardingClient({
 
   if (needsPassword) {
     return (
-      <div className="flex h-[100dvh] flex-col bg-cobalt-ink text-white">
+      <div className="flex h-[100dvh] flex-col bg-cobalt onboarding-dark text-white">
         <div className="px-6 pt-8">
           <KaribuLockup size={32} variant="onDark" />
         </div>
@@ -282,7 +282,7 @@ export function EhrOnboardingClient({
 
   if (view.k === 'welcome') {
     return (
-      <div className="flex h-[100dvh] flex-col bg-cobalt-ink text-white">
+      <div className="flex h-[100dvh] flex-col bg-cobalt onboarding-dark text-white">
         <div className="flex items-center gap-3 px-6 pt-8">
           <KaribuLockup size={32} variant="onDark" />
         </div>
@@ -307,7 +307,7 @@ export function EhrOnboardingClient({
           <button
             type="button"
             onClick={() => setView({ k: 'hub' })}
-            className="w-full rounded-xl bg-white px-4 py-3.5 text-base font-semibold text-cobalt-ink hover:bg-cobalt-soft"
+            className="w-full rounded-xl bg-white px-4 py-3.5 text-base font-semibold text-cobalt hover:bg-cobalt-soft"
           >
             Start training
           </button>
@@ -320,8 +320,8 @@ export function EhrOnboardingClient({
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
-      <header className="shrink-0 bg-cobalt px-5 py-5 text-white">
-        <h1 className="text-xl font-semibold">KaribuEHR training</h1>
+      <header className="onboarding-dark shrink-0 bg-cobalt px-5 py-5 text-white">
+        <h1 className="text-xl font-semibold text-white">KaribuEHR training</h1>
         <p className="mt-1 text-sm text-white/85">
           {doneCount} of {modules.length} modules complete
         </p>

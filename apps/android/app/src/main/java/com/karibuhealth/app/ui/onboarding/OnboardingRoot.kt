@@ -179,7 +179,7 @@ private fun OnboardingWelcomeScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(CobaltInk, CobaltDeep))),
+            .background(Brush.verticalGradient(listOf(Cobalt, CobaltDeep))),
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
             Spacer(Modifier.height(28.dp))

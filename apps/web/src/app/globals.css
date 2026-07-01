@@ -116,6 +116,14 @@
   .landing-dark h4 {
     color: inherit;
   }
+
+  /* EHR onboarding welcome / cobalt headers — avoid global h1 ink on dark bands */
+  .onboarding-dark h1,
+  .onboarding-dark h2,
+  .onboarding-dark h3,
+  .onboarding-dark h4 {
+    color: inherit;
+  }
 }
 
 @layer components {
