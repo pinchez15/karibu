@@ -119,19 +119,19 @@ export default async function AdminPage() {
         subtitle="CLINIC SETTINGS"
         actions={
           (provisioningAccess || outbreakAccess) ? (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {provisioningAccess && (
                 <Link
                   href="/dashboard/superadmin"
-                  className="inline-flex items-center rounded-md border border-cobalt/30 bg-cobalt-soft px-2.5 py-1 text-xs font-medium text-cobalt hover:bg-cobalt-soft/80"
+                  className="inline-flex items-center rounded-lg border border-cobalt/30 bg-cobalt-soft px-3 py-1.5 text-sm font-medium text-cobalt hover:bg-cobalt-soft/80"
                 >
-                  Provisioning
+                  New clinic setup
                 </Link>
               )}
               {outbreakAccess && (
                 <Link
                   href="/dashboard/outbreaks"
-                  className="inline-flex items-center rounded-md border border-red-500/40 bg-red-500/5 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                  className="inline-flex items-center rounded-lg border border-red-500/40 bg-red-500/5 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-500/10 dark:text-red-300"
                 >
                   Outbreaks
                 </Link>
@@ -141,92 +141,87 @@ export default async function AdminPage() {
         }
       />
 
-      <div className="flex-1 overflow-auto px-3 py-2 max-w-6xl space-y-2">
-        {/* Primary actions — first thing on screen */}
-        <div className="flex flex-wrap gap-1.5">
+      <div className="mx-auto max-w-6xl flex-1 space-y-6 overflow-auto px-6 py-8">
+        <div className="flex flex-wrap gap-3">
           {QUICK_LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-semibold hover:border-cobalt/50 hover:bg-cobalt-soft/40 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:border-cobalt/50 hover:bg-cobalt-soft/40"
             >
-              <Icon className="h-3.5 w-3.5 text-cobalt shrink-0" />
+              <Icon className="h-4 w-4 shrink-0 text-cobalt" />
               {label}
             </Link>
           ))}
         </div>
 
-        {/* Clinic strip + KPIs — one dense row */}
-        <div className="flex flex-wrap items-stretch gap-2">
-          <div className="flex min-w-[200px] flex-1 flex-wrap items-center gap-x-4 gap-y-0.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs">
-            <span className="font-semibold text-sm">{stats.clinic?.name || '—'}</span>
-            <span className="text-muted-foreground">
-              {stats.clinic?.timezone || '—'}
-            </span>
+        <div className="flex flex-wrap items-stretch gap-4">
+          <div className="flex min-w-[240px] flex-1 flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-border bg-card px-5 py-4">
+            <span className="text-lg font-semibold">{stats.clinic?.name || '—'}</span>
+            <span className="text-sm text-muted-foreground">{stats.clinic?.timezone || '—'}</span>
             {stats.clinic?.district && (
-              <span className="text-muted-foreground">{stats.clinic.district}</span>
+              <span className="text-sm text-muted-foreground">{stats.clinic.district}</span>
             )}
           </div>
           <StatCard label="Staff" value={stats.staffCount} href="/dashboard/admin/staff" />
           <StatCard label="Patients" value={stats.patientCount} />
           <StatCard
-            label="Visits 7d"
+            label="Visits (7 days)"
             value={stats.totalWeekVisits}
-            hint={`~${Math.round(stats.totalWeekVisits / 7)}/d`}
+            hint={`~${Math.round(stats.totalWeekVisits / 7)}/day`}
           />
         </div>
 
-        {/* Analytics — compact, side by side on md+ */}
-        <div className="grid gap-2 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-card px-3 py-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-              Visits / day (7d)
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card px-5 py-4">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Visits per day (last 7 days)
             </h3>
-            <div className="flex items-end justify-between gap-1 h-14">
+            <div className="flex h-28 items-end justify-between gap-2">
               {days.map((day) => (
-                <div key={day.date} className="flex flex-1 flex-col items-center min-w-0">
-                  <div className="flex w-full h-10 items-end justify-center">
+                <div key={day.date} className="flex min-w-0 flex-1 flex-col items-center">
+                  <div className="flex h-20 w-full items-end justify-center">
                     <div
-                      className="w-full max-w-[22px] bg-cobalt rounded-t"
+                      className="w-full max-w-8 rounded-t bg-cobalt"
                       style={{
                         height: `${(day.count / maxCount) * 100}%`,
-                        minHeight: day.count > 0 ? 2 : 0,
+                        minHeight: day.count > 0 ? 4 : 0,
                       }}
                     />
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-0.5 truncate w-full text-center">
-                    {day.label}
-                  </p>
-                  <p className="text-[11px] font-medium leading-none">{day.count}</p>
+                  <p className="mt-2 truncate text-xs text-muted-foreground">{day.label}</p>
+                  <p className="text-sm font-medium">{day.count}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-card px-3 py-2">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Cases by clinician (month)
+          <div className="rounded-xl border border-border bg-card px-5 py-4">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Cases by clinician (this month)
               </h3>
               <span
-                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
-                  stats.unfinalizedCount > 0 ? 'bg-amber-soft text-amber-ink' : 'bg-muted text-muted-foreground'
+                className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  stats.unfinalizedCount > 0
+                    ? 'bg-amber-soft text-amber-ink'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {stats.unfinalizedCount} open
               </span>
             </div>
             {stats.casesByClinician.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No visits this month.</p>
+              <p className="text-sm text-muted-foreground">No visits this month.</p>
             ) : (
-              <ul className="divide-y divide-line-soft max-h-[4.5rem] overflow-y-auto">
+              <ul className="max-h-40 divide-y divide-line-soft overflow-y-auto">
                 {stats.casesByClinician.map((c) => (
-                  <li key={c.name} className="flex items-center justify-between gap-2 py-1 text-xs">
-                    <span className="font-medium truncate">{c.name}</span>
+                  <li key={c.name} className="flex items-center justify-between gap-2 py-2 text-sm">
+                    <span className="truncate font-medium">{c.name}</span>
                     <span className="flex shrink-0 items-center gap-2 text-muted-foreground">
                       <span>{c.total}</span>
                       {c.unfinalized > 0 && (
-                        <span className="text-amber-ink font-medium">{c.unfinalized} open</span>
+                        <span className="font-medium text-amber-ink">{c.unfinalized} open</span>
                       )}
                     </span>
                   </li>
@@ -253,20 +248,18 @@ function StatCard({
 }) {
   const inner = (
     <>
-      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground leading-none">
-        {label}
-      </p>
-      <p className="text-lg font-semibold leading-tight mt-0.5">{value}</p>
-      {hint && <p className="text-[10px] text-muted-foreground leading-none">{hint}</p>}
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </>
   )
 
   const className =
-    'rounded-lg border border-border bg-card px-2.5 py-1.5 min-w-[4.5rem] shrink-0'
+    'min-w-[7rem] shrink-0 rounded-xl border border-border bg-card px-4 py-3'
 
   if (href) {
     return (
-      <Link href={href} className={`${className} hover:border-cobalt/40 transition-colors block`}>
+      <Link href={href} className={`${className} block transition-colors hover:border-cobalt/40`}>
         {inner}
       </Link>
     )

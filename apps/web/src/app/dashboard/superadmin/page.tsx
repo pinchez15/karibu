@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { hasProvisioningAccess, isSuperadmin } from '@/lib/auth'
 import { createClinicAction, inviteStaffAction, updateClinicAction, updateClinicWorkflowConfigAction, updateProtocolEnrollmentAction, updateProvisionedStaffAction } from './actions'
 import type { ClinicWorkflowConfig } from '@karibu/shared'
+import { STAFF_ROLES, STAFF_ROLE_LABELS, staffRoleLabel } from '@/lib/staff-roles'
 
 const DEPARTMENTS = [
   { value: 'opd', label: 'OPD' },
@@ -11,18 +12,6 @@ const DEPARTMENTS = [
   { value: 'maternity', label: 'Maternity' },
   { value: 'family_planning', label: 'Family Planning' },
   { value: 'immunization', label: 'Immunization' },
-] as const
-
-const STAFF_ROLES = [
-  'admin',
-  'doctor',
-  'nurse',
-  'clinical_officer',
-  'midwife',
-  'nursing_assistant',
-  'records_officer',
-  'lab_tech',
-  'dispenser',
 ] as const
 
 type ClinicRow = {
@@ -178,95 +167,32 @@ export default async function SuperadminProvisioningPage() {
   const enrollmentsByClinic = groupedEnrollments(enrollments)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-semibold">Provisioning</h2>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Create clinics, assign departments, and onboard staff without opening Clerk.
-            The page creates the Clerk organization/membership behind the scenes and keeps
-            Supabase clinic and staff records aligned.
+          <h2 className="text-3xl font-semibold">New clinic setup</h2>
+          <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+            Karibu operations: register a new health center and configure advanced clinic settings.
+            To add staff at an existing site, use{' '}
+            <Link href="/dashboard/admin/staff" className="text-primary hover:underline">
+              Admin → Staff
+            </Link>
+            .
           </p>
         </div>
-        <Link href="/dashboard" className="text-sm text-primary hover:underline">
-          Back to dashboard
+        <Link href="/dashboard/admin" className="text-sm text-primary hover:underline">
+          ← Admin
         </Link>
       </div>
 
       {!superadmin && (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
-          Bootstrap mode: no active `superadmins` row was found, so clinic-admin access is temporarily allowed.
-          Seed the first superadmin row after applying migration `025_superadmin_provisioning.sql`.
+          Bootstrap mode: no platform operator row found yet. Seed the first row in the superadmins
+          table after your first clinic is created.
         </div>
       )}
 
-      <section className="mb-8 rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-xl font-semibold">Create Clinic</h3>
-        <form action={createClinicAction} className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <label className="text-sm text-foreground">
-            Name
-            <input name="name" required className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Slug
-            <input name="slug" required className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Timezone
-            <input name="timezone" defaultValue="Africa/Kampala" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Diocese
-            <input name="diocese" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            District
-            <input name="district" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Level
-            <input name="level" placeholder="HC II / HC III / HC IV" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Subcounty
-            <input name="subcounty" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Parish
-            <input name="parish" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Village
-            <input name="village" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            Phone
-            <input name="phone" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <label className="text-sm text-foreground">
-            UMDPC Number
-            <input name="umdpc_number" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2" />
-          </label>
-          <div className="md:col-span-2 xl:col-span-3">
-            <p className="text-sm font-medium">Departments</p>
-            <div className="mt-2 flex flex-wrap gap-4">
-              {DEPARTMENTS.map((department) => (
-                <label key={department.value} className="inline-flex items-center gap-2 text-sm text-foreground">
-                  <input type="checkbox" name="departments" value={department.value} defaultChecked={department.value === 'opd'} />
-                  {department.label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="md:col-span-2 xl:col-span-3">
-            <button type="submit" className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              Create Clinic
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="space-y-6">
+      <section className="space-y-8">
         {clinics.map((clinic) => {
           const clinicDepartments = departmentsByClinic[clinic.id] ?? new Set<string>()
           const clinicStaff = staffByClinic[clinic.id] ?? []
@@ -286,9 +212,6 @@ export default async function SuperadminProvisioningPage() {
                   <h3 className="text-2xl font-semibold">{clinic.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {clinic.slug} · {clinic.level || 'No level set'} · {clinic.district || 'No district set'}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Clerk org: {clinic.clerk_organization_id || 'Unlinked'}
                   </p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${clinic.is_active ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
@@ -494,16 +417,16 @@ export default async function SuperadminProvisioningPage() {
                             <tr key={member.id}>
                               <td className="px-4 py-3 font-medium">{member.display_name}</td>
                               <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{member.role.replace(/_/g, ' ')}</td>
+                              <td className="px-4 py-3 text-muted-foreground">{staffRoleLabel(member.role)}</td>
                               <td className="px-4 py-3 text-muted-foreground">{member.is_active ? 'Active' : 'Inactive'}</td>
                               <td className="px-4 py-3">
                                 <form action={updateProvisionedStaffAction} className="flex flex-wrap items-center gap-2">
                                   <input type="hidden" name="staff_id" value={member.id} />
                                   <input type="hidden" name="clinic_id" value={clinic.id} />
-                                  <select name="role" defaultValue={member.role} className="rounded-md border border-input bg-background px-2 py-1 text-sm">
+                                  <select name="role" defaultValue={member.role} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
                                     {STAFF_ROLES.map((role) => (
                                       <option key={role} value={role}>
-                                        {role.replace(/_/g, ' ')}
+                                        {STAFF_ROLE_LABELS[role]}
                                       </option>
                                     ))}
                                   </select>
@@ -550,17 +473,17 @@ export default async function SuperadminProvisioningPage() {
                       </label>
                       <label className="text-sm text-foreground">
                         Role
-                        <select name="role" defaultValue="doctor" className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2">
-                          {STAFF_ROLES.map((role) => (
+                        <select name="role" defaultValue="clinical_officer" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base">
+                          {STAFF_ROLES.filter((role) => role !== 'doctor').map((role) => (
                             <option key={role} value={role}>
-                              {role.replace(/_/g, ' ')}
+                              {STAFF_ROLE_LABELS[role]}
                             </option>
                           ))}
                         </select>
                       </label>
                     </div>
-                    <button type="submit" className="mt-4 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                      Invite / Provision
+                    <button type="submit" className="mt-4 rounded-lg bg-primary px-5 py-2.5 text-base font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                      Send invitation
                     </button>
                   </form>
 
@@ -572,7 +495,7 @@ export default async function SuperadminProvisioningPage() {
                           <div className="font-medium">{invite.display_name}</div>
                           <div className="text-sm text-muted-foreground">{invite.email}</div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {invite.role.replace(/_/g, ' ')} · invited {new Date(invite.created_at).toLocaleString()}
+                            {staffRoleLabel(invite.role)} · invited {new Date(invite.created_at).toLocaleString()}
                           </div>
                         </div>
                       ))}
@@ -587,6 +510,76 @@ export default async function SuperadminProvisioningPage() {
           )
         })}
       </section>
+
+      <details className="mt-10 rounded-2xl border border-border bg-card p-6">
+        <summary className="cursor-pointer text-xl font-semibold">Register another clinic site</summary>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Use when onboarding a new HCIII that is not yet in Karibu. Each clinic gets its own sign-in
+          organization and staff roster.
+        </p>
+        <form action={createClinicAction} className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <label className="text-sm font-medium">
+            Name
+            <input name="name" required className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Slug
+            <input name="slug" required className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Timezone
+            <input name="timezone" defaultValue="Africa/Kampala" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Diocese
+            <input name="diocese" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            District
+            <input name="district" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Level
+            <input name="level" placeholder="HC II / HC III / HC IV" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Subcounty
+            <input name="subcounty" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Parish
+            <input name="parish" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Village
+            <input name="village" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            Phone
+            <input name="phone" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <label className="text-sm font-medium">
+            UMDPC Number
+            <input name="umdpc_number" className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base" />
+          </label>
+          <div className="md:col-span-2 xl:col-span-3">
+            <p className="text-sm font-medium">Departments</p>
+            <div className="mt-2 flex flex-wrap gap-4">
+              {DEPARTMENTS.map((department) => (
+                <label key={department.value} className="inline-flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="departments" value={department.value} defaultChecked={department.value === 'opd'} />
+                  {department.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="md:col-span-2 xl:col-span-3">
+            <button type="submit" className="rounded-lg bg-primary px-5 py-2.5 text-base font-medium text-primary-foreground hover:bg-primary/90">
+              Create clinic
+            </button>
+          </div>
+        </form>
+      </details>
     </div>
   )
 }

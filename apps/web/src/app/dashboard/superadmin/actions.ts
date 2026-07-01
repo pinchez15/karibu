@@ -4,23 +4,19 @@ import { auth, clerkClient } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { requireProvisioningAccess, requireStaff } from '@/lib/auth'
+import { assertStaffRole } from '@/lib/staff-roles'
+import {
+  inviteStaffToClinic,
+  syncMembershipRole,
+  updateClinicStaffRole,
+  upsertStaffRecord,
+} from '@/lib/staff-provisioning'
 import type { ClinicWorkflowConfig, OpdPatientFilter, VisitDepartment } from '@karibu/shared'
+import type { StaffRole } from '@karibu/shared'
 
 const DEPARTMENTS = ['opd', 'anc', 'maternity', 'family_planning', 'immunization'] as const
-const STAFF_ROLES = [
-  'admin',
-  'doctor',
-  'nurse',
-  'clinical_officer',
-  'midwife',
-  'nursing_assistant',
-  'records_officer',
-  'lab_tech',
-  'dispenser',
-] as const
 
 type Department = typeof DEPARTMENTS[number]
-type StaffRole = typeof STAFF_ROLES[number]
 
 function asText(value: FormDataEntryValue | null): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -30,14 +26,6 @@ function assertDepartmentList(values: FormDataEntryValue[]): Department[] {
   return values
     .map((value) => (typeof value === 'string' ? value : ''))
     .filter((value): value is Department => (DEPARTMENTS as readonly string[]).includes(value))
-}
-
-function assertRole(value: FormDataEntryValue | null): StaffRole {
-  const role = typeof value === 'string' ? value : ''
-  if (!(STAFF_ROLES as readonly string[]).includes(role)) {
-    throw new Error('Invalid staff role')
-  }
-  return role as StaffRole
 }
 
 function orgRoleFor(role: StaffRole): 'org:admin' | 'org:member' {
@@ -53,78 +41,6 @@ async function saveClinicDepartments(clinicId: string, departments: Department[]
     const { error } = await supabase.from('clinic_departments').insert(rows)
     if (error) throw error
   }
-}
-
-async function upsertStaffRecord(params: {
-  clerkUserId: string
-  clinicId: string
-  email: string
-  displayName: string
-  role: StaffRole
-}) {
-  const supabase = createServiceClient()
-  const { clerkUserId, clinicId, email, displayName, role } = params
-
-  const { data: existing, error: lookupError } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('clerk_user_id', clerkUserId)
-    .maybeSingle()
-
-  if (lookupError) throw lookupError
-
-  if (existing) {
-    const { error } = await supabase
-      .from('staff')
-      .update({
-        clinic_id: clinicId,
-        email,
-        display_name: displayName,
-        role,
-        is_active: true,
-        deactivated_at: null,
-      })
-      .eq('id', existing.id)
-
-    if (error) throw error
-    return
-  }
-
-  const { error } = await supabase
-    .from('staff')
-    .insert({
-      clerk_user_id: clerkUserId,
-      clinic_id: clinicId,
-      email,
-      display_name: displayName,
-      role,
-      is_active: true,
-      deactivated_at: null,
-    })
-
-  if (error) throw error
-}
-
-async function syncMembershipRole(params: {
-  organizationId: string
-  userId: string
-  role: StaffRole
-}) {
-  const clerk = await clerkClient()
-  const desiredRole = orgRoleFor(params.role)
-  const memberships = await clerk.organizations.getOrganizationMembershipList({
-    organizationId: params.organizationId,
-    userId: [params.userId],
-    limit: 10,
-  })
-  const membership = memberships.data[0]
-  if (!membership) return
-  if (membership.role === desiredRole) return
-  await clerk.organizations.updateOrganizationMembership({
-    organizationId: params.organizationId,
-    userId: params.userId,
-    role: desiredRole,
-  })
 }
 
 export async function createClinicAction(formData: FormData) {
@@ -155,8 +71,6 @@ export async function createClinicAction(formData: FormData) {
       name,
       slug,
       timezone,
-      phone: asText(formData.get('phone')) || null,
-      umdpc_number: asText(formData.get('umdpc_number')) || null,
       diocese: asText(formData.get('diocese')) || null,
       district: asText(formData.get('district')) || null,
       subcounty: asText(formData.get('subcounty')) || null,
@@ -175,14 +89,15 @@ export async function createClinicAction(formData: FormData) {
 
   await saveClinicDepartments(clinic.id, departments)
 
-  // Bootstrap visibility for the actor if they are creating the first platform page
-  // before a dedicated superadmin seed exists.
-  await supabase.from('superadmins').upsert({
-    clerk_user_id: actor.userId,
-    email: actor.email ?? 'unknown@example.com',
-    display_name: actor.displayName ?? actor.email ?? actor.userId,
-    is_active: true,
-  }, { onConflict: 'clerk_user_id' })
+  await supabase.from('superadmins').upsert(
+    {
+      clerk_user_id: actor.userId,
+      email: actor.email ?? 'unknown@example.com',
+      display_name: actor.displayName ?? actor.email ?? actor.userId,
+      is_active: true,
+    },
+    { onConflict: 'clerk_user_id' },
+  )
 
   revalidatePath('/dashboard/superadmin')
 }
@@ -215,27 +130,19 @@ export async function updateClinicAction(formData: FormData) {
       name,
       slug,
       timezone,
-      phone: asText(formData.get('phone')) || null,
-      umdpc_number: asText(formData.get('umdpc_number')) || null,
       diocese: asText(formData.get('diocese')) || null,
       district: asText(formData.get('district')) || null,
       subcounty: asText(formData.get('subcounty')) || null,
       parish: asText(formData.get('parish')) || null,
       village: asText(formData.get('village')) || null,
       level: asText(formData.get('level')) || null,
+      phone: asText(formData.get('phone')) || null,
+      umdpc_number: asText(formData.get('umdpc_number')) || null,
       is_active: formData.get('is_active') === 'on',
     })
     .eq('id', clinicId)
 
   if (error) throw error
-
-  if (clinic.clerk_organization_id) {
-    const clerk = await clerkClient()
-    await clerk.organizations.updateOrganization(clinic.clerk_organization_id, {
-      name,
-      slug,
-    })
-  }
 
   await saveClinicDepartments(clinicId, departments)
   revalidatePath('/dashboard/superadmin')
@@ -247,106 +154,24 @@ export async function inviteStaffAction(formData: FormData) {
   const email = asText(formData.get('email')).toLowerCase()
   const firstName = asText(formData.get('first_name'))
   const lastName = asText(formData.get('last_name'))
-  const displayName = [firstName, lastName].filter(Boolean).join(' ') || email.split('@')[0]
-  const role = assertRole(formData.get('role'))
+  const role = assertStaffRole(asText(formData.get('role')))
 
   if (!clinicId || !email) {
     throw new Error('Clinic and email are required')
   }
 
-  const supabase = createServiceClient()
-  const { data: clinic, error: clinicError } = await supabase
-    .from('clinics')
-    .select('id, clerk_organization_id')
-    .eq('id', clinicId)
-    .single()
-
-  if (clinicError || !clinic?.clerk_organization_id) {
-    throw clinicError ?? new Error('Clinic is not linked to a Clerk organization')
-  }
-
-  const clerk = await clerkClient()
-  const existingUsers = await clerk.users.getUserList({
-    emailAddress: [email],
-    limit: 10,
+  await inviteStaffToClinic({
+    clinicId,
+    email,
+    firstName,
+    lastName,
+    role,
+    invitedByClerkUserId: actor.userId,
+    invitedByStaffId: (await requireStaff().catch(() => null))?.id ?? null,
   })
-  const existingUser = existingUsers.data[0]
-
-  if (existingUser) {
-    const memberships = await clerk.organizations.getOrganizationMembershipList({
-      organizationId: clinic.clerk_organization_id,
-      userId: [existingUser.id],
-      limit: 10,
-    })
-
-    if (!memberships.data[0]) {
-      await clerk.organizations.createOrganizationMembership({
-        organizationId: clinic.clerk_organization_id,
-        userId: existingUser.id,
-        role: orgRoleFor(role),
-      })
-    } else {
-      await syncMembershipRole({
-        organizationId: clinic.clerk_organization_id,
-        userId: existingUser.id,
-        role,
-      })
-    }
-
-    await upsertStaffRecord({
-      clerkUserId: existingUser.id,
-      clinicId,
-      email,
-      displayName,
-      role,
-    })
-
-    await supabase
-      .from('staff_invitations')
-      .upsert({
-        clinic_id: clinicId,
-        clerk_organization_id: clinic.clerk_organization_id,
-        email,
-        display_name: displayName,
-        role,
-        status: 'accepted',
-        invited_by_clerk_user_id: actor.userId,
-        accepted_at: new Date().toISOString(),
-      }, { onConflict: 'clinic_id,email,status' })
-  } else {
-    const invitation = await clerk.organizations.createOrganizationInvitation({
-      organizationId: clinic.clerk_organization_id,
-      emailAddress: email,
-      role: orgRoleFor(role),
-      inviterUserId: actor.userId,
-    })
-
-    const inviterStaff = await (async () => {
-      try {
-        return await requireStaff()
-      } catch {
-        return null
-      }
-    })()
-
-    const { error } = await supabase
-      .from('staff_invitations')
-      .upsert({
-        clinic_id: clinicId,
-        clerk_organization_id: clinic.clerk_organization_id,
-        clerk_invitation_id: invitation.id,
-        email,
-        display_name: displayName,
-        role,
-        status: 'pending',
-        invited_by_staff_id: inviterStaff?.id ?? null,
-        invited_by_clerk_user_id: actor.userId,
-      }, { onConflict: 'clerk_invitation_id' })
-
-    if (error) throw error
-  }
 
   revalidatePath('/dashboard/superadmin')
+  revalidatePath('/dashboard/admin/staff')
 }
 
 export async function updateProvisionedStaffAction(formData: FormData) {
@@ -354,49 +179,22 @@ export async function updateProvisionedStaffAction(formData: FormData) {
 
   const staffId = asText(formData.get('staff_id'))
   const clinicId = asText(formData.get('clinic_id'))
-  const role = assertRole(formData.get('role'))
+  const role = assertStaffRole(asText(formData.get('role')))
   const active = formData.get('is_active') === 'on'
 
   if (!staffId || !clinicId) {
     throw new Error('Missing staff identifiers')
   }
 
-  const supabase = createServiceClient()
-  const { data: staff, error: staffError } = await supabase
-    .from('staff')
-    .select('clerk_user_id, clinic:clinics!staff_clinic_id_fkey(clerk_organization_id)')
-    .eq('id', staffId)
-    .single()
-
-  if (staffError || !staff) {
-    throw staffError ?? new Error('Staff member not found')
-  }
-
-  const { error } = await supabase
-    .from('staff')
-    .update({
-      role,
-      is_active: active,
-      deactivated_at: active ? null : new Date().toISOString(),
-    })
-    .eq('id', staffId)
-    .eq('clinic_id', clinicId)
-
-  if (error) throw error
-
-  const organizationId = Array.isArray(staff.clinic)
-    ? staff.clinic[0]?.clerk_organization_id
-    : (staff.clinic as { clerk_organization_id?: string } | null)?.clerk_organization_id
-
-  if (staff.clerk_user_id && organizationId) {
-    await syncMembershipRole({
-      organizationId,
-      userId: staff.clerk_user_id,
-      role,
-    })
-  }
+  await updateClinicStaffRole({
+    staffId,
+    clinicId,
+    role,
+    isActive: active,
+  })
 
   revalidatePath('/dashboard/superadmin')
+  revalidatePath('/dashboard/admin/staff')
 }
 
 const OPD_FILTERS: OpdPatientFilter[] = [
@@ -408,54 +206,43 @@ const OPD_FILTERS: OpdPatientFilter[] = [
   'done_today',
 ]
 
-const WORKFLOW_DEPARTMENTS: VisitDepartment[] = [
-  'opd',
-  'anc',
-  'maternity',
-  'family_planning',
-  'immunization',
-]
-
-function parseWorkflowConfig(formData: FormData): ClinicWorkflowConfig {
-  const filters = formData
-    .getAll('default_opd_filters')
-    .map((v) => (typeof v === 'string' ? v : ''))
-    .filter((v): v is OpdPatientFilter => (OPD_FILTERS as readonly string[]).includes(v))
-
-  const departments = formData
-    .getAll('prominent_departments')
-    .map((v) => (typeof v === 'string' ? v : ''))
-    .filter((v): v is VisitDepartment =>
-      (WORKFLOW_DEPARTMENTS as readonly string[]).includes(v),
-    )
-
-  const protocolSlugs = asText(formData.get('enabled_protocol_slugs'))
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-
-  return {
-    default_opd_filters: filters.length > 0 ? filters : ['waiting', 'done_today'],
-    prominent_departments: departments.length > 0 ? departments : ['opd'],
-    show_physical_queue_filter: formData.get('show_physical_queue_filter') === 'on',
-    enabled_protocol_slugs: protocolSlugs,
-  }
-}
-
 export async function updateClinicWorkflowConfigAction(formData: FormData) {
   await requireProvisioningAccess()
 
   const clinicId = asText(formData.get('clinic_id'))
   if (!clinicId) throw new Error('Missing clinic id')
 
-  const workflow_config = parseWorkflowConfig(formData)
+  const defaultOpdFilters = formData
+    .getAll('default_opd_filters')
+    .map((value) => (typeof value === 'string' ? value : ''))
+    .filter((value): value is OpdPatientFilter => OPD_FILTERS.includes(value as OpdPatientFilter))
+
+  const prominentDepartments = formData
+    .getAll('prominent_departments')
+    .map((value) => (typeof value === 'string' ? value : ''))
+    .filter((value): value is VisitDepartment =>
+      (DEPARTMENTS as readonly string[]).includes(value),
+    )
+
+  const enabledProtocolSlugs = asText(formData.get('enabled_protocol_slugs'))
+    .split(',')
+    .map((slug) => slug.trim())
+    .filter(Boolean)
+
+  const workflowConfig: ClinicWorkflowConfig = {
+    default_opd_filters: defaultOpdFilters.length > 0 ? defaultOpdFilters : ['waiting', 'done_today'],
+    prominent_departments: prominentDepartments.length > 0 ? prominentDepartments : ['opd'],
+    show_physical_queue_filter: formData.get('show_physical_queue_filter') === 'on',
+    enabled_protocol_slugs: enabledProtocolSlugs,
+  }
+
   const supabase = createServiceClient()
   const { error } = await supabase
     .from('clinics')
-    .update({ workflow_config })
+    .update({ workflow_config: workflowConfig })
     .eq('id', clinicId)
-  if (error) throw error
 
+  if (error) throw error
   revalidatePath('/dashboard/superadmin')
 }
 
@@ -466,14 +253,23 @@ export async function updateProtocolEnrollmentAction(formData: FormData) {
   const protocolId = asText(formData.get('protocol_id'))
   const enabled = formData.get('enabled') === 'on'
 
-  if (!clinicId || !protocolId) throw new Error('Missing clinic or protocol id')
+  if (!clinicId || !protocolId) {
+    throw new Error('Missing enrollment identifiers')
+  }
 
   const supabase = createServiceClient()
   const { error } = await supabase.from('clinic_protocol_enrollments').upsert(
-    { clinic_id: clinicId, protocol_id: protocolId, enabled },
+    {
+      clinic_id: clinicId,
+      protocol_id: protocolId,
+      enabled,
+    },
     { onConflict: 'clinic_id,protocol_id' },
   )
-  if (error) throw error
 
+  if (error) throw error
   revalidatePath('/dashboard/superadmin')
 }
+
+// Re-export for any legacy imports
+export { upsertStaffRecord, syncMembershipRole, orgRoleFor }
