@@ -4,11 +4,14 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Lightbulb } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
+import { SetAndroidPasswordForm } from '@/components/account/SetAndroidPasswordForm'
+import { useUser } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
 import { completeOnboardingModuleAction, refreshOnboardingStatusAction } from './actions'
 import { EHR_MODULE_BY_ID, EHR_ONBOARDING_MODULES, type EhrModuleDef } from './ehr-modules'
 
 type View =
+  | { k: 'password' }
   | { k: 'welcome' }
   | { k: 'hub' }
   | { k: 'module'; moduleId: string; stepIndex: number }
@@ -163,8 +166,10 @@ export function EhrOnboardingClient({
   allComplete: boolean
 }) {
   const router = useRouter()
+  const { user, isLoaded: userLoaded } = useUser()
   const [completed, setCompleted] = React.useState(() => new Set(initialCompletedIds))
   const [view, setView] = React.useState<View>({ k: 'welcome' })
+  const [passwordDone, setPasswordDone] = React.useState(false)
   const [stepIndex, setStepIndex] = React.useState(0)
   const [error, setError] = React.useState<string | null>(null)
   const [submitting, setSubmitting] = React.useState(false)
@@ -173,6 +178,13 @@ export function EhrOnboardingClient({
     ...m,
     completed: completed.has(m.id),
   }))
+
+  React.useEffect(() => {
+    if (!userLoaded) return
+    if (user?.passwordEnabled) setPasswordDone(true)
+  }, [userLoaded, user?.passwordEnabled])
+
+  const needsPassword = userLoaded && user && !user.passwordEnabled && !passwordDone
 
   React.useEffect(() => {
     if (allComplete) router.replace('/dashboard')
@@ -218,6 +230,35 @@ export function EhrOnboardingClient({
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (!userLoaded) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center bg-background text-sm text-muted-foreground">
+        Loading…
+      </div>
+    )
+  }
+
+  if (needsPassword) {
+    return (
+      <div className="flex h-[100dvh] flex-col bg-cobalt-ink text-white">
+        <div className="px-6 pt-8">
+          <KaribuLockup size={32} variant="onDark" />
+        </div>
+        <div className="flex flex-1 flex-col justify-center px-6 pb-10">
+          <div className="mx-auto w-full max-w-md rounded-xl bg-white p-6 text-ink">
+            <SetAndroidPasswordForm
+              compact
+              onComplete={() => {
+                setPasswordDone(true)
+                setView({ k: 'welcome' })
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (view.k === 'module') {

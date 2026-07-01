@@ -1,5 +1,6 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase'
+import { getSiteUrl } from '@/lib/site-url'
 import { assertStaffRole } from '@/lib/staff-roles'
 import type { StaffRole } from '@karibu/shared'
 
@@ -163,6 +164,7 @@ export async function inviteStaffToClinic(params: {
     emailAddress: email,
     role: orgRoleFor(role),
     inviterUserId: params.invitedByClerkUserId,
+    redirectUrl: `${getSiteUrl()}/accept-invitation`,
   })
 
   const { error } = await supabase.from('staff_invitations').upsert(
