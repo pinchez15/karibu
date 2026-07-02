@@ -18,8 +18,8 @@ vi.mock('@/lib/station-analytics', () => ({
 
 vi.mock('./actions', () => ({
   startPharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
-  completePharmacyDispense: vi.fn().mockResolvedValue({ success: true }),
-  sendPharmacyBackToClinician: vi.fn().mockResolvedValue({ success: true }),
+  dispensePharmacyLine: vi.fn().mockResolvedValue({ success: true, dispensingStatus: 'partial' }),
+  sendPharmacyLineBackToClinician: vi.fn().mockResolvedValue({ success: true }),
   listClinicPharmacyStock: vi.fn().mockResolvedValue({ ok: true, items: [] }),
 }))
 
@@ -74,7 +74,7 @@ describe('PharmacyStationClient', () => {
     expect(screen.getByTestId('pharmacy-detail-pane')).toHaveTextContent('Amina Okello')
   })
 
-  it('shows per-line worksheet with save & complete', async () => {
+  it('shows per-line worksheet with dispense button', async () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}

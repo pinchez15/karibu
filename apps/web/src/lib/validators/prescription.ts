@@ -87,15 +87,20 @@ export function aggregateDispensingStatus(
 ): 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock' {
   const active = lineStatuses.filter((s) => s !== 'cancelled');
   if (active.length === 0) return 'not_started';
-  if (active.some((s) => s === 'needs_clarification')) return 'not_started';
   if (active.every((s) => s === 'dispensed')) return 'dispensed';
   if (active.every((s) => s === 'out_of_stock')) return 'out_of_stock';
+  if (active.every((s) => s === 'needs_clarification')) return 'not_started';
   if (
     active.some((s) =>
       ['dispensed', 'partially_dispensed', 'out_of_stock'].includes(s),
     )
   ) {
     return 'partial';
+  }
+  if (
+    active.some((s) => ['ordered', 'dispensing', 'needs_clarification'].includes(s))
+  ) {
+    return 'in_progress';
   }
   return 'in_progress';
 }

@@ -48,7 +48,7 @@ export function PharmacyStationClient({
   initialVisitId?: string | null
   activeTab: PharmacyQueueTab
   refreshOnUpdate?: boolean
-  completeDispenseFn?: typeof import('./actions').completePharmacyDispense
+  completeDispenseFn?: typeof import('./actions').dispensePharmacyLine
 }) {
   const router = useRouter()
   useAutoRefresh()
@@ -236,9 +236,11 @@ export function PharmacyStationClient({
       <PrescriptionWorksheet
         row={selectedRow}
         readOnly={readOnly}
-        completeFn={completeDispenseFn}
+        dispenseLineFn={completeDispenseFn}
+        onUpdated={() => {
+          if (refreshOnUpdate) router.refresh()
+        }}
         onCompleted={(result) => handleDispenseCompleted(selectedRow.id, result)}
-        onSentBack={() => removeRow(selectedRow.id)}
       />
     </div>
   ) : null

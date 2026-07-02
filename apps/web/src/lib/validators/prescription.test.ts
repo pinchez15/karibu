@@ -10,8 +10,14 @@ describe('aggregateDispensingStatus', () => {
     expect(aggregateDispensingStatus(['dispensed', 'out_of_stock'])).toBe('partial')
   })
 
-  it('returns not_started when clarification needed', () => {
-    expect(aggregateDispensingStatus(['needs_clarification', 'ordered'])).toBe('not_started')
+  it('returns not_started when all lines need clarification', () => {
+    expect(aggregateDispensingStatus(['needs_clarification', 'needs_clarification'])).toBe(
+      'not_started',
+    )
+  })
+
+  it('returns in_progress when one line sent back and others still open', () => {
+    expect(aggregateDispensingStatus(['needs_clarification', 'ordered'])).toBe('in_progress')
   })
 
   it('returns in_progress while lines still open', () => {

@@ -156,6 +156,50 @@ export async function sendPharmacyBackToClinician(
   return { success: true }
 }
 
+export async function dispensePharmacyLine(input: {
+  visitId: string
+  line: CompleteDispenseLine
+  notes?: string
+}): Promise<
+  | { success: true; dispensingStatus: string }
+  | { success: false; error: string }
+> {
+  return completePharmacyDispense({
+    visitId: input.visitId,
+    lines: [input.line],
+    notes: input.notes,
+  })
+}
+
+export async function sendPharmacyLineBackToClinician(
+  visitId: string,
+  prescriptionOrderId: string,
+  reason: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const trimmed = reason.trim()
+  if (!trimmed) return { success: false, error: 'Reason is required' }
+
+  let staff
+  try {
+    staff = await assertDispenser()
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_send_pharmacy_line_back_to_clinician', {
+    p_visit_id: visitId,
+    p_prescription_order_id: prescriptionOrderId,
+    p_reason: trimmed,
+    p_client_op_id: null,
+  })
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePharmacyPaths(visitId, staff.clinic_id)
+  return { success: true }
+}
+
 /** @deprecated Use completePharmacyDispense — kept for tests/e2e fixture shim. */
 export async function setDispensingStatus(
   visitId: string,
