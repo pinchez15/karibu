@@ -6,7 +6,6 @@ import {
   BarChart3,
   Boxes,
   CreditCard,
-  Printer,
   Upload,
   Users,
 } from 'lucide-react'
@@ -86,7 +85,6 @@ const QUICK_LINKS = [
   { href: '/dashboard/admin/stock-import', label: 'Stock import', icon: Upload },
   { href: '/dashboard/admin/inventory', label: 'Inventory', icon: Boxes },
   { href: '/dashboard/admin/billing', label: 'Billing rates', icon: CreditCard },
-  { href: '/dashboard/admin/printer', label: 'Thermal printer', icon: Printer },
   { href: '/dashboard/admin/staff', label: 'Staff', icon: Users },
   { href: '/dashboard/admin/reports', label: 'HMIS reports', icon: BarChart3 },
 ] as const

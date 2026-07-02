@@ -1,7 +1,7 @@
 # Thermal printer setup
 
-Clinic admins configure thermal printing at **Admin → Thermal printer**
-(`/dashboard/admin/printer`). Settings live in `clinic_print_settings` and apply to
+Clinic admins configure thermal printing at **Settings → Printer setup**
+(`/dashboard/settings/printer`). Settings live in `clinic_print_settings` and apply to
 visit summaries, billing receipts, and pharmacy slips via `ReceiptShell`.
 
 Manual wizard today: connect hardware → print test receipt → verify alignment/cut → save.

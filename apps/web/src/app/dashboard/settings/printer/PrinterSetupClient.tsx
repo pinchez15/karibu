@@ -10,11 +10,9 @@ import Link from 'next/link'
 import { CheckCircle2, ExternalLink, Loader2, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import {
-  updateClinicPrintSettings,
-  type ClinicPrintSettingsDto,
-  type PaperWidthMm,
-} from './actions'
+import { updateClinicPrintSettings } from './actions'
+import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
+import type { PaperWidthMm } from '@/lib/thermal-print'
 
 const CUT_FEED_PRESETS = [
   { mm: 10, label: 'Less feed', hint: 'Cut lands closer to text' },
@@ -24,7 +22,7 @@ const CUT_FEED_PRESETS = [
 
 type Step = 1 | 2 | 3
 
-export function PrinterSetupClient({ initial }: { initial: ClinicPrintSettingsDto }) {
+export function PrinterSetupClient({ initial }: { initial: ClinicPrintSettings }) {
   const [step, setStep] = useState<Step>(initial.setupCompletedAt ? 3 : 1)
   const [paperWidthMm, setPaperWidthMm] = useState<PaperWidthMm>(initial.paperWidthMm)
   const [cutFeedMm, setCutFeedMm] = useState(initial.cutFeedMm)
@@ -220,7 +218,7 @@ export function PrinterSetupClient({ initial }: { initial: ClinicPrintSettingsDt
               disabled={pending}
               onClick={() =>
                 save(false, () => {
-                  window.open('/dashboard/admin/printer/test', '_blank', 'noopener,noreferrer')
+                  window.open('/dashboard/settings/printer/test', '_blank', 'noopener,noreferrer')
                 })
               }
             >
@@ -319,7 +317,7 @@ export function PrinterSetupClient({ initial }: { initial: ClinicPrintSettingsDt
           <li>Pharmacy slip — bilingual medicine instructions</li>
         </ul>
         <Button variant="outline" size="sm" className="mt-2 gap-2" asChild>
-          <Link href="/dashboard/admin/printer/test" target="_blank" rel="noopener noreferrer">
+          <Link href="/dashboard/settings/printer/test" target="_blank" rel="noopener noreferrer">
             <Printer className="h-4 w-4" />
             Print test again
           </Link>

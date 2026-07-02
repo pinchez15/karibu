@@ -719,7 +719,7 @@ export function PrinterSetupMock({ activeStepId, onStepAction }: MockProps) {
 
       {h('open-admin') && (
         <MockBtn active className="mb-3 w-full" onClick={() => onStepAction('open-admin')}>
-          Open Admin → Thermal printer
+          Open Settings → Printer setup
         </MockBtn>
       )}
 

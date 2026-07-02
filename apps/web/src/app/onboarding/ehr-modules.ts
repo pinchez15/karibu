@@ -301,8 +301,8 @@ export const EHR_ONBOARDING_MODULES: EhrModuleDef[] = [
   },
   {
     id: 'thermal-printer',
-    role: 'admin',
-    roleLabel: 'Clinic admin',
+    role: 'records_officer',
+    roleLabel: 'All staff',
     title: 'Set up the receipt printer',
     subtitle: 'One printer for visits, billing, and pharmacy',
     intro:
@@ -312,7 +312,7 @@ export const EHR_ONBOARDING_MODULES: EhrModuleDef[] = [
       {
         id: 'open-admin',
         title: 'Open printer setup',
-        body: 'Go to **Admin → Thermal printer**. Any clinic admin can run this wizard.',
+        body: 'Go to **Settings → Printer setup** (from your account menu or the Settings page). Any staff member can run this wizard.',
         paper: 'This replaces the inkjet discharge printout and the paper receipt book with one thermal roll.',
         requiresMockAction: true,
       },

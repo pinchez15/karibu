@@ -88,7 +88,7 @@ export function ThermalTestReceipt({ clinicName, clinicPhone, printSettings }: P
     <ReceiptShell
       layout={printSettings}
       autoPrint={printSettings.autoPrint}
-      setupUrl="/dashboard/admin/printer"
+      setupUrl="/dashboard/settings/printer"
     >
       <TestReceiptBody clinicName={clinicName} clinicPhone={clinicPhone} />
     </ReceiptShell>

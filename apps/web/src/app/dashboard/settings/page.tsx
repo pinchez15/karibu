@@ -5,7 +5,8 @@ import { SignOutButton } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { WebTopBar } from '@/components/web-shell'
 import { SetAndroidPasswordForm } from '@/components/account/SetAndroidPasswordForm'
-import { LogOut } from 'lucide-react'
+import { LogOut, Printer } from 'lucide-react'
+import Link from 'next/link'
 
 async function getClinicName(clinicId: string): Promise<string> {
   const supabase = createServiceClient()
@@ -56,6 +57,20 @@ export default async function SettingsPage() {
               <span className="font-medium text-right">{staff.email}</span>
             </div>
           </div>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <h2 className="font-medium">Thermal printer</h2>
+          <p className="text-sm text-muted-foreground">
+            Set up the receipt printer for visit summaries, billing slips, and pharmacy labels.
+            Any staff member at the clinic can run the setup wizard.
+          </p>
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href="/dashboard/settings/printer">
+              <Printer className="h-4 w-4" />
+              Printer setup
+            </Link>
+          </Button>
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4 space-y-3">

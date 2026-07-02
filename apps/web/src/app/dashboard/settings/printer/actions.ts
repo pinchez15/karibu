@@ -2,14 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { getStaff, isAdmin } from '@/lib/auth'
+import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
-import {
-  DEFAULT_CLINIC_PRINT_SETTINGS,
-  getClinicPrintSettings,
-  type ClinicPrintSettings,
-} from '@/lib/clinic-print-settings'
-import type { PaperWidthMm } from '@/lib/thermal-print'
+import { getClinicPrintSettings } from '@/lib/clinic-print-settings'
 
 const UpdatePrintSettingsSchema = z.object({
   paperWidthMm: z.union([z.literal(58), z.literal(80)]),
@@ -18,21 +13,15 @@ const UpdatePrintSettingsSchema = z.object({
   markSetupComplete: z.boolean().optional(),
 })
 
-export type ClinicPrintSettingsDto = ClinicPrintSettings
-
-export async function getClinicPrintSettingsForAdmin(): Promise<ClinicPrintSettingsDto | null> {
+export async function getClinicPrintSettingsForStaff() {
   const staff = await getStaff()
   if (!staff) return null
-  if (!(await isAdmin())) return null
   return getClinicPrintSettings(staff.clinic_id)
 }
 
 export async function updateClinicPrintSettings(
   input: z.infer<typeof UpdatePrintSettingsSchema>,
 ): Promise<{ success: true } | { success: false; error: string }> {
-  const admin = await isAdmin()
-  if (!admin) return { success: false, error: 'Admin only' }
-
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not signed in' }
 
@@ -57,8 +46,8 @@ export async function updateClinicPrintSettings(
   })
   if (error) return { success: false, error: error.message }
 
-  revalidatePath('/dashboard/admin/printer')
-  revalidatePath('/dashboard/admin/printer/test')
+  revalidatePath('/dashboard/settings/printer')
+  revalidatePath('/dashboard/settings/printer/test')
   return { success: true }
 }
 
@@ -84,5 +73,3 @@ export async function getClinicLetterheadForTest(): Promise<{
     phone: (data.phone as string | null) ?? null,
   }
 }
-
-export { DEFAULT_CLINIC_PRINT_SETTINGS, type PaperWidthMm }

@@ -20,7 +20,7 @@ export function useReceiptPrint(): ReceiptPrintContextValue {
   const ctx = useContext(ReceiptPrintContext)
   if (!ctx) {
     const helpers = createThermalHelpers(DEFAULT_THERMAL_LAYOUT)
-    return { ...helpers, autoPrint: true, setupUrl: '/dashboard/admin/printer' }
+    return { ...helpers, autoPrint: true, setupUrl: '/dashboard/settings/printer' }
   }
   return ctx
 }
@@ -54,7 +54,7 @@ export function ReceiptShell({
   lang = 'en',
   layout = DEFAULT_THERMAL_LAYOUT,
   autoPrint = true,
-  setupUrl = '/dashboard/admin/printer',
+  setupUrl = '/dashboard/settings/printer',
 }: ReceiptShellProps) {
   const ctx = useMemo(
     () => ({
