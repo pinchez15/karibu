@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { DashboardShell } from '@/components/dashboard-shell'
 
 /** Routes that render a bare print/receipt surface — no sidebar or unit tabs. */
-const PRINT_PATH_RE = /\/(receipt|print)(\/|$)/
+const PRINT_PATH_RE = /\/(receipt|print|printer\/test)(\/|$)/
 
 interface DashboardShellGateProps {
   staff: { displayName: string; role: string; initials: string }

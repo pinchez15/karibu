@@ -1,7 +1,10 @@
 import { redirect, notFound } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicPrintSettings } from '@/lib/clinic-print-settings'
 import { BillingReceipt, type BillingReceiptData } from './BillingReceipt'
+
+export const dynamic = 'force-dynamic'
 
 export default async function BillingReceiptPage({
   params,
@@ -28,7 +31,7 @@ export default async function BillingReceiptPage({
     .eq('id', staff.clinic_id)
     .single()
 
-  const [{ data: charges }, { data: payments }] = await Promise.all([
+  const [{ data: charges }, { data: payments }, printSettings] = await Promise.all([
     supabase
       .from('charges')
       .select('description, amount_ugx, created_at')
@@ -43,6 +46,7 @@ export default async function BillingReceiptPage({
       .eq('patient_id', patientId)
       .eq('status', 'paid')
       .order('created_at', { ascending: true }),
+    getClinicPrintSettings(staff.clinic_id),
   ])
 
   const data: BillingReceiptData = {
@@ -61,5 +65,5 @@ export default async function BillingReceiptPage({
     })),
   }
 
-  return <BillingReceipt data={data} />
+  return <BillingReceipt data={data} patientId={patientId} printSettings={printSettings} />
 }

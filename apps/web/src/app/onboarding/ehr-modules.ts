@@ -5,6 +5,7 @@ import {
   ClinicianNoteMock,
   LabQueueMock,
   PharmacyMock,
+  PrinterSetupMock,
   RecordsDeskMock,
   VitalsMock,
 } from './mock-screens'
@@ -295,6 +296,50 @@ export const EHR_ONBOARDING_MODULES: EhrModuleDef[] = [
         id: 'done',
         title: 'Payment logged',
         body: 'HMIS and monthly reports use this data. The clinician does not need to reopen the note for payment.',
+      },
+    ],
+  },
+  {
+    id: 'thermal-printer',
+    role: 'admin',
+    roleLabel: 'Clinic admin',
+    title: 'Set up the receipt printer',
+    subtitle: 'One printer for visits, billing, and pharmacy',
+    intro:
+      'Karibu prints visit summaries, payment receipts, and medicine slips on a **thermal roll** — no ink, no toner, cheap paper. Connect the clinic printer once so every patient leaves with a paper record.',
+    Mock: PrinterSetupMock,
+    steps: [
+      {
+        id: 'open-admin',
+        title: 'Open printer setup',
+        body: 'Go to **Admin → Thermal printer**. Any clinic admin can run this wizard.',
+        paper: 'This replaces the inkjet discharge printout and the paper receipt book with one thermal roll.',
+        requiresMockAction: true,
+      },
+      {
+        id: 'connect',
+        title: 'Connect the hardware',
+        body: 'Plug in the USB thermal printer (or pair Bluetooth), load 58mm paper, and install the driver so it appears in your computer\'s printer list.',
+        tip: 'In the print dialog later, set margins to **None** and scale to **100%**.',
+        requiresMockAction: true,
+      },
+      {
+        id: 'test-print',
+        title: 'Print the test receipt',
+        body: 'Tap **Print test receipt**. It includes sample charges, a payment line, and a short visit note — like a real patient slip.',
+        paper: 'If the cut slices through text, go back and increase **cut feed**. If text is off-center, check paper width (58mm vs 80mm).',
+        requiresMockAction: true,
+      },
+      {
+        id: 'finish',
+        title: 'Confirm and finish',
+        body: 'Check that text is centered, nothing is cut off, and the cutter fires below the footer. Tap **Finish setup**.',
+        requiresMockAction: true,
+      },
+      {
+        id: 'done',
+        title: 'Printer ready',
+        body: 'Staff can print visit summaries at discharge, billing receipts after payment, and pharmacy slips at dispense — all on the same settings.',
       },
     ],
   },

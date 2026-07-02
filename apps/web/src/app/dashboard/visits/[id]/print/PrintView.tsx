@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { ReceiptShell, useReceiptPrint, WrappedLines } from '@/components/receipt/ReceiptShell'
+import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
 
 interface PrintVisit {
   id: string
@@ -25,27 +26,6 @@ interface PrintVisit {
   } | null
 }
 
-// Receipt is 58mm wide. At ~10pt monospace that's roughly 32 characters per
-// line. Every horizontal rule, every section header, every wrapped line of
-// the patient note has to fit. Keep sections short, use ASCII separators
-// instead of CSS borders (thermal printers render bitmap rules unevenly).
-const RECEIPT_WIDTH_CHARS = 32
-
-const HR_HEAVY = '='.repeat(RECEIPT_WIDTH_CHARS)
-const HR_LIGHT = '-'.repeat(RECEIPT_WIDTH_CHARS)
-
-// Center a label inside a horizontal rule of dashes, e.g. "----- DIAGNOSIS -----"
-function sectionRule(label: string): string {
-  const inner = ` ${label} `
-  const remaining = RECEIPT_WIDTH_CHARS - inner.length
-  if (remaining <= 0) return inner.slice(0, RECEIPT_WIDTH_CHARS)
-  const left = Math.floor(remaining / 2)
-  const right = remaining - left
-  return '-'.repeat(left) + inner + '-'.repeat(right)
-}
-
-// Strip markdown the LLM occasionally emits despite being told not to.
-// Removes **bold**, *italic*, `code`, and leading # headers.
 function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, '$1')
@@ -55,8 +35,6 @@ function stripMarkdown(text: string): string {
     .trim()
 }
 
-// Format a patient name for the receipt. Prefer first + last initial to keep
-// it short ("Grace N.") but fall back to display_name or "Patient".
 function formatPatientName(p: PrintVisit['patient']): string {
   if (!p) return 'Patient'
   const first = p.first_name?.trim()
@@ -68,7 +46,6 @@ function formatPatientName(p: PrintVisit['patient']): string {
   return 'Patient'
 }
 
-// Format a doctor name as "Dr. <First> <LastInitial>." for compactness.
 function formatDoctorName(d: PrintVisit['doctor']): string {
   if (!d?.display_name) return 'Not recorded'
   const parts = d.display_name.trim().split(/\s+/)
@@ -76,17 +53,8 @@ function formatDoctorName(d: PrintVisit['doctor']): string {
   return `Dr. ${parts[0]} ${parts[parts.length - 1].charAt(0)}.`
 }
 
-export function PrintView({ visit }: { visit: PrintVisit }) {
-  useEffect(() => {
-    // Auto-fire the print dialog after first paint. On thermal printers the
-    // receipt is so short that the cost of a misfire (one wasted re-print) is
-    // far less than the cost of nurse time waiting on a preview. See
-    // /plan-design-review 2026-04-09 — auto-print is correct in this context.
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => window.print())
-    })
-    return () => cancelAnimationFrame(raf)
-  }, [])
+function PrintVisitBody({ visit }: { visit: PrintVisit }) {
+  const { hrHeavy, hrLight, sectionRule, centerLine } = useReceiptPrint()
 
   const patientName = formatPatientName(visit.patient)
   const doctorName = formatDoctorName(visit.doctor)
@@ -110,8 +78,6 @@ export function PrintView({ visit }: { visit: PrintVisit }) {
   const clinicUmdpc = visit.clinic?.umdpc_number
   const noteContent = stripMarkdown(visit.patient_notes?.content || '')
 
-  // Document ID: KH-<patient_id>-<YYYYMMDD> for chain-of-custody and
-  // patient self-reference. Falls back to visit UUID prefix if no patient_id.
   const visitDateForId = visit.visit_date.slice(0, 10).replace(/-/g, '')
   const docId = visit.patient?.patient_id != null
     ? `KH-${visit.patient.patient_id}-${visitDateForId}`
@@ -119,189 +85,98 @@ export function PrintView({ visit }: { visit: PrintVisit }) {
 
   return (
     <>
-      <style>{`
-        /* Thermal printer page setup. 58mm wide, auto height (receipt scrolls).
-           2mm margin works on most ESC/POS printers; some need 0. */
-        @page { size: 58mm auto; margin: 2mm; }
+      <section>
+        <div className="bold">{centerLine(clinicName.toUpperCase())}</div>
+        {clinicPhone && <div>{centerLine(clinicPhone)}</div>}
+        {clinicUmdpc && <div>{centerLine(`UMDPC #${clinicUmdpc}`)}</div>}
+      </section>
 
-        @media screen {
-          /* Screen preview shows the receipt as a centered "paper" so staff
-             can see what will print. Mobile-friendly: shrinks to viewport. */
-          body {
-            background: #f3f4f6;
-            margin: 0;
-            font-family: ui-monospace, Menlo, Consolas, 'Courier New', monospace;
-          }
-          .receipt {
-            max-width: 320px;
-            margin: 16px auto;
-            padding: 16px;
-            background: white;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            border-radius: 4px;
-          }
-          .toolbar {
-            max-width: 320px;
-            margin: 16px auto 0;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            font-family: system-ui, sans-serif;
-          }
-          .toolbar button {
-            padding: 12px 20px;
-            background: #1E3BAA;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            min-height: 44px;
-          }
-          .toolbar button.secondary {
-            background: white;
-            color: #111827;
-            border: 1px solid #d1d5db;
-          }
-          .preview-note {
-            max-width: 320px;
-            margin: 8px auto 16px;
-            padding: 8px 12px;
-            font-family: system-ui, sans-serif;
-            font-size: 12px;
-            color: #6b7280;
-            text-align: center;
-          }
-        }
+      <div>{hrHeavy}</div>
+      <div className="bold">{centerLine('VISIT SUMMARY')}</div>
+      <div>{centerLine(visitDate)}</div>
+      <div>{hrHeavy}</div>
 
-        @media print {
-          body { background: white; margin: 0; }
-          .toolbar, .preview-note { display: none !important; }
-          .receipt {
-            margin: 0;
-            padding: 0;
-            box-shadow: none;
-            border-radius: 0;
-            max-width: none;
-          }
-        }
-
-        .receipt {
-          font-family: ui-monospace, Menlo, Consolas, 'Courier New', monospace;
-          font-size: 11px;
-          line-height: 1.35;
-          color: #000;
-          white-space: pre;
-        }
-        .receipt .center { text-align: center; }
-        .receipt .bold { font-weight: 700; }
-        .receipt .block { white-space: pre-wrap; }
-        .receipt section { page-break-inside: avoid; }
-      `}</style>
-
-      <div className="toolbar">
-        <button className="secondary" onClick={() => window.close()}>
-          Close
-        </button>
-        <button onClick={() => window.print()}>Print</button>
-      </div>
-      <div className="preview-note">
-        Preview at 58mm receipt width. Printing happens automatically.
-      </div>
-
-      <div className="receipt" lang="en">
-        {/* Letterhead */}
-        <section>
-          <div className="center bold">{clinicName.toUpperCase()}</div>
-          {clinicPhone && <div className="center">{clinicPhone}</div>}
-          {clinicUmdpc && <div className="center">UMDPC #{clinicUmdpc}</div>}
-        </section>
-
-        <div>{HR_HEAVY}</div>
-        <div className="center bold">VISIT SUMMARY</div>
-        <div className="center">{visitDate}</div>
-        <div>{HR_HEAVY}</div>
-
-        {/* Patient + doctor block */}
-        <section>
-          <div>Patient: {patientName}</div>
-          {visit.patient?.patient_id != null && (
-            <div>ID:      #{visit.patient.patient_id}</div>
-          )}
-          <div>Doctor:  {doctorName}</div>
-        </section>
-
-        {/* Diagnosis */}
-        {visit.diagnosis && visit.diagnosis.trim() && (
-          <>
-            <div>{'\n' + sectionRule('DIAGNOSIS')}</div>
-            <section>
-              <div className="block">{visit.diagnosis.trim()}</div>
-            </section>
-          </>
+      <section>
+        <div>Patient: {patientName}</div>
+        {visit.patient?.patient_id != null && (
+          <div>ID:      #{visit.patient.patient_id}</div>
         )}
+        <div>Doctor:  {doctorName}</div>
+      </section>
 
-        {/* Medications */}
-        {visit.medications && visit.medications.trim() && (
-          <>
-            <div>{'\n' + sectionRule('MEDICATIONS')}</div>
-            <section>
-              <div className="block">{visit.medications.trim()}</div>
-            </section>
-          </>
-        )}
-
-        {/* Tests ordered */}
-        {visit.tests_ordered && visit.tests_ordered.trim() && (
-          <>
-            <div>{'\n' + sectionRule('TESTS')}</div>
-            <section>
-              <div className="block">{visit.tests_ordered.trim()}</div>
-            </section>
-          </>
-        )}
-
-        {/* Follow-up */}
-        {visit.follow_up_instructions && visit.follow_up_instructions.trim() && (
-          <>
-            <div>{'\n' + sectionRule('FOLLOW UP')}</div>
-            <section>
-              <div className="block">{visit.follow_up_instructions.trim()}</div>
-            </section>
-          </>
-        )}
-
-        {/* AI-generated friendly explanation */}
-        {noteContent && (
-          <>
-            <div>{'\n' + HR_LIGHT}</div>
-            <section>
-              <div className="block">{noteContent}</div>
-            </section>
-            <div>{HR_LIGHT}</div>
-          </>
-        )}
-
-        {/* "Worse?" callout — the most important thing on the page */}
-        {clinicPhone && (
+      {visit.diagnosis?.trim() && (
+        <>
+          <div>{'\n' + sectionRule('DIAGNOSIS')}</div>
           <section>
-            <div>{'\n' + sectionRule('WORSE?')}</div>
-            <div>If your symptoms get</div>
-            <div>worse, call us right</div>
-            <div>away:</div>
-            <div className="center bold">{clinicPhone}</div>
+            <WrappedLines text={visit.diagnosis.trim()} />
           </section>
-        )}
+        </>
+      )}
 
-        {/* Footer: document ID + print timestamp */}
-        <div>{'\n' + HR_HEAVY}</div>
+      {visit.medications?.trim() && (
+        <>
+          <div>{'\n' + sectionRule('MEDICATIONS')}</div>
+          <section>
+            <WrappedLines text={visit.medications.trim()} />
+          </section>
+        </>
+      )}
+
+      {visit.tests_ordered?.trim() && (
+        <>
+          <div>{'\n' + sectionRule('TESTS')}</div>
+          <section>
+            <WrappedLines text={visit.tests_ordered.trim()} />
+          </section>
+        </>
+      )}
+
+      {visit.follow_up_instructions?.trim() && (
+        <>
+          <div>{'\n' + sectionRule('FOLLOW UP')}</div>
+          <section>
+            <WrappedLines text={visit.follow_up_instructions.trim()} />
+          </section>
+        </>
+      )}
+
+      {noteContent && (
+        <>
+          <div>{'\n' + hrLight}</div>
+          <section>
+            <WrappedLines text={noteContent} />
+          </section>
+          <div>{hrLight}</div>
+        </>
+      )}
+
+      {clinicPhone && (
         <section>
-          <div className="center">{docId}</div>
-          <div className="center">Printed {printedAt}</div>
+          <div>{'\n' + sectionRule('WORSE?')}</div>
+          <WrappedLines text="If your symptoms get worse, call us right away:" />
+          <div className="bold">{centerLine(clinicPhone)}</div>
         </section>
-        <div>{'\n\n\n'}</div>
-      </div>
+      )}
+
+      <div>{'\n' + hrHeavy}</div>
+      <section>
+        <div>{centerLine(docId)}</div>
+        <div>{centerLine(`Printed ${printedAt}`)}</div>
+      </section>
     </>
+  )
+}
+
+export function PrintView({
+  visit,
+  printSettings,
+}: {
+  visit: PrintVisit
+  printSettings: ClinicPrintSettings
+}) {
+  return (
+    <ReceiptShell lang="en" layout={printSettings} autoPrint={printSettings.autoPrint}>
+      <PrintVisitBody visit={visit} />
+    </ReceiptShell>
   )
 }

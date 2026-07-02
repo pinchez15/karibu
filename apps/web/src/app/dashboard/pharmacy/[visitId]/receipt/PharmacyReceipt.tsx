@@ -1,6 +1,7 @@
 'use client'
 
-import { ReceiptShell, HR_HEAVY, HR_LIGHT, sectionRule } from '@/components/receipt/ReceiptShell'
+import { ReceiptShell, useReceiptPrint, WrappedLines } from '@/components/receipt/ReceiptShell'
+import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
 import {
   englishSig,
   lugandaSig,
@@ -36,7 +37,15 @@ function patientName(p: ReceiptHeader['patient']): string {
   return composed || p.display_name || 'Patient'
 }
 
-export function PharmacyReceipt({ header, lines }: { header: ReceiptHeader; lines: RxLine[] }) {
+function PharmacyReceiptBody({
+  header,
+  lines,
+}: {
+  header: ReceiptHeader
+  lines: RxLine[]
+}) {
+  const { hrHeavy, hrLight, sectionRule, centerLine } = useReceiptPrint()
+
   const clinicName = header.clinic?.name || 'KaribuEHR'
   const date = new Date(header.visitDate).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -57,16 +66,16 @@ export function PharmacyReceipt({ header, lines }: { header: ReceiptHeader; line
       : `KH-RX-${header.visitId.slice(0, 8)}-${dateForId}`
 
   return (
-    <ReceiptShell>
+    <>
       <section>
-        <div className="center bold">{clinicName.toUpperCase()}</div>
-        {header.clinic?.phone && <div className="center">{header.clinic.phone}</div>}
+        <div className="bold">{centerLine(clinicName.toUpperCase())}</div>
+        {header.clinic?.phone && <div>{centerLine(header.clinic.phone)}</div>}
       </section>
 
-      <div>{HR_HEAVY}</div>
-      <div className="center bold">MEDICINE / EDDAGALA</div>
-      <div className="center">{date}</div>
-      <div>{HR_HEAVY}</div>
+      <div>{hrHeavy}</div>
+      <div className="bold">{centerLine('MEDICINE / EDDAGALA')}</div>
+      <div>{centerLine(date)}</div>
+      <div>{hrHeavy}</div>
 
       <section>
         <div>Patient: {patientName(header.patient)}</div>
@@ -82,46 +91,48 @@ export function PharmacyReceipt({ header, lines }: { header: ReceiptHeader; line
           return (
             <section key={i}>
               <div>{'\n' + sectionRule(`${i + 1}`)}</div>
-              <div className="bold block">
-                {l.name}
-                {l.strength ? ` ${l.strength}` : ''}
+              <div className="bold">
+                <WrappedLines text={`${l.name}${l.strength ? ` ${l.strength}` : ''}`} />
               </div>
-              {l.quantity && <div className="block">Qty: {l.quantity}</div>}
-              {en && (
-                <div className="block">
-                  EN: {en}
-                </div>
-              )}
-              {lg && (
-                <div className="block">
-                  LUG: {lg}
-                </div>
-              )}
+              {l.quantity && <WrappedLines text={`Qty: ${l.quantity}`} />}
+              {en && <WrappedLines text={`EN: ${en}`} />}
+              {lg && <WrappedLines text={`LUG: ${lg}`} />}
             </section>
           )
         })
       )}
 
-      <div>{'\n' + HR_LIGHT}</div>
+      <div>{'\n' + hrLight}</div>
       <section>
         {ENGLISH_SAFETY.map((s, i) => (
-          <div key={`en${i}`} className="block">
-            {s}
-          </div>
+          <WrappedLines key={`en${i}`} text={s} />
         ))}
         {LUGANDA_SAFETY.map((s, i) => (
-          <div key={`lg${i}`} className="block">
-            {s}
-          </div>
+          <WrappedLines key={`lg${i}`} text={s} />
         ))}
       </section>
 
-      <div>{'\n' + HR_HEAVY}</div>
+      <div>{'\n' + hrHeavy}</div>
       <section>
-        <div className="center">{docId}</div>
-        <div className="center">Printed {printedAt}</div>
+        <div>{centerLine(docId)}</div>
+        <div>{centerLine(`Printed ${printedAt}`)}</div>
       </section>
-      <div>{'\n\n\n'}</div>
+    </>
+  )
+}
+
+export function PharmacyReceipt({
+  header,
+  lines,
+  printSettings,
+}: {
+  header: ReceiptHeader
+  lines: RxLine[]
+  printSettings: ClinicPrintSettings
+}) {
+  return (
+    <ReceiptShell layout={printSettings} autoPrint={printSettings.autoPrint}>
+      <PharmacyReceiptBody header={header} lines={lines} />
     </ReceiptShell>
   )
 }

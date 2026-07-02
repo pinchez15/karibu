@@ -1,7 +1,10 @@
 import { redirect, notFound } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicPrintSettings } from '@/lib/clinic-print-settings'
 import { PharmacyReceipt, type RxLine, type ReceiptHeader } from './PharmacyReceipt'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PharmacyReceiptPage({
   params,
@@ -64,5 +67,7 @@ export default async function PharmacyReceiptPage({
     }
   })
 
-  return <PharmacyReceipt header={header} lines={rxLines} />
+  const [printSettings] = await Promise.all([getClinicPrintSettings(staff.clinic_id)])
+
+  return <PharmacyReceipt header={header} lines={rxLines} printSettings={printSettings} />
 }

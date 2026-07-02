@@ -1,8 +1,11 @@
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicPrintSettings } from '@/lib/clinic-print-settings'
 import { redirect, notFound } from 'next/navigation'
 import { PrintView } from './PrintView'
 import { PrintBlocker } from './PrintBlocker'
+
+export const dynamic = 'force-dynamic'
 
 type PrintData = {
   id: string
@@ -143,5 +146,5 @@ export default async function PrintPatientNotePage({
     )
   }
 
-  return <PrintView visit={result.visit as never} />
+  return <PrintView visit={result.visit as never} printSettings={await getClinicPrintSettings(staff.clinic_id)} />
 }

@@ -1,6 +1,11 @@
 'use client'
 
-import { ReceiptShell, HR_HEAVY, HR_LIGHT, sectionRule, row } from '@/components/receipt/ReceiptShell'
+import { useEffect, useMemo } from 'react'
+import {
+  ReceiptShell,
+  useReceiptPrint,
+} from '@/components/receipt/ReceiptShell'
+import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
 
 export type BillingReceiptData = {
   patient: {
@@ -18,6 +23,24 @@ export type BillingReceiptData = {
     barter_description?: string | null
     receipt_number: string | null
   }[]
+}
+
+const PENDING_PAYMENT_KEY = (patientId: string) => `karibu:billing-receipt:${patientId}`
+
+export type PendingReceiptPayment = {
+  method: string
+  amount_ugx: number
+  amount_barter_ugx: number
+  receipt_number: string | null
+  recorded_at: number
+}
+
+export function stashPendingReceiptPayment(patientId: string, payment: PendingReceiptPayment) {
+  try {
+    sessionStorage.setItem(PENDING_PAYMENT_KEY(patientId), JSON.stringify(payment))
+  } catch {
+    // sessionStorage unavailable — server data only
+  }
 }
 
 function patientName(p: BillingReceiptData['patient']): string {
@@ -38,10 +61,75 @@ const METHOD_LABEL: Record<string, string> = {
   mixed: 'Mixed',
 }
 
-export function BillingReceipt({ data }: { data: BillingReceiptData }) {
+function readPendingPayment(patientId: string): PendingReceiptPayment | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_PAYMENT_KEY(patientId))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PendingReceiptPayment
+    if (Date.now() - parsed.recorded_at > 60_000) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function clearPendingPayment(patientId: string) {
+  try {
+    sessionStorage.removeItem(PENDING_PAYMENT_KEY(patientId))
+  } catch {
+    // ignore
+  }
+}
+
+function paymentKey(p: BillingReceiptData['payments'][number]): string {
+  return `${p.method}:${p.amount_ugx}:${p.amount_barter_ugx ?? 0}:${p.receipt_number ?? ''}`
+}
+
+function BillingReceiptBody({
+  data,
+  patientId,
+}: {
+  data: BillingReceiptData
+  patientId: string
+}) {
+  const { hrHeavy, hrLight, sectionRule, centerLine, row } = useReceiptPrint()
+
+  const mergedPayments = useMemo(() => {
+    const pending = readPendingPayment(patientId)
+    if (!pending) return data.payments
+
+    const alreadyPresent = data.payments.some(
+      (p) =>
+        p.receipt_number &&
+        pending.receipt_number &&
+        p.receipt_number === pending.receipt_number,
+    )
+    if (alreadyPresent) return data.payments
+
+    return [
+      ...data.payments,
+      {
+        method: pending.method,
+        amount_ugx: pending.amount_ugx,
+        amount_barter_ugx: pending.amount_barter_ugx,
+        barter_description: null,
+        receipt_number: pending.receipt_number,
+      },
+    ]
+  }, [data.payments, patientId])
+
+  useEffect(() => {
+    const pending = readPendingPayment(patientId)
+    if (!pending) return
+    const onServer = data.payments.some(
+      (p) => p.receipt_number && pending.receipt_number && p.receipt_number === pending.receipt_number,
+    )
+    if (onServer) clearPendingPayment(patientId)
+  }, [data.payments, patientId])
+
   const clinicName = data.clinic?.name || 'KaribuEHR'
   const charged = data.charges.reduce((s, c) => s + c.amount_ugx, 0)
-  const paid = data.payments.reduce(
+  const paid = mergedPayments.reduce(
     (s, p) => s + p.amount_ugx + (p.amount_barter_ugx ?? 0),
     0,
   )
@@ -54,19 +142,18 @@ export function BillingReceipt({ data }: { data: BillingReceiptData }) {
     hour: '2-digit',
     minute: '2-digit',
   })
-  // Prefer the latest payment's receipt number as the document id.
-  const receiptNo = data.payments.map((p) => p.receipt_number).filter(Boolean).slice(-1)[0] ?? null
+  const receiptNo = mergedPayments.map((p) => p.receipt_number).filter(Boolean).slice(-1)[0] ?? null
 
   return (
-    <ReceiptShell>
+    <>
       <section>
-        <div className="center bold">{clinicName.toUpperCase()}</div>
-        {data.clinic?.phone && <div className="center">{data.clinic.phone}</div>}
+        <div className="bold">{centerLine(clinicName.toUpperCase())}</div>
+        {data.clinic?.phone && <div>{centerLine(data.clinic.phone)}</div>}
       </section>
 
-      <div>{HR_HEAVY}</div>
-      <div className="center bold">PAYMENT RECEIPT</div>
-      <div>{HR_HEAVY}</div>
+      <div>{hrHeavy}</div>
+      <div className="bold">{centerLine('PAYMENT RECEIPT')}</div>
+      <div>{hrHeavy}</div>
 
       <section>
         <div>Patient: {patientName(data.patient)}</div>
@@ -78,49 +165,59 @@ export function BillingReceipt({ data }: { data: BillingReceiptData }) {
           <div>{'\n' + sectionRule('CHARGES')}</div>
           <section>
             {data.charges.map((c, i) => (
-              <div key={i} className="block">
-                {row(c.description.slice(0, 22), ugx(c.amount_ugx))}
-              </div>
+              <div key={i}>{row(c.description, ugx(c.amount_ugx))}</div>
             ))}
           </section>
         </>
       )}
 
-      {data.payments.length > 0 && (
+      {mergedPayments.length > 0 && (
         <>
           <div>{'\n' + sectionRule('PAID')}</div>
           <section>
-            {data.payments.map((p, i) => {
+            {mergedPayments.map((p, i) => {
               const barter = p.amount_barter_ugx ?? 0
-              const label =
-                barter > 0 && p.amount_ugx > 0
-                  ? `${METHOD_LABEL[p.method] ?? p.method}`
-                  : METHOD_LABEL[p.method] ?? p.method
+              const label = METHOD_LABEL[p.method] ?? p.method
               const amt =
                 barter > 0
                   ? p.amount_ugx > 0
                     ? `${ugx(p.amount_ugx)} + ${ugx(barter)} barter`
                     : `${ugx(barter)} barter`
                   : ugx(p.amount_ugx)
-              return <div key={i}>{row(label.slice(0, 22), amt)}</div>
+              return <div key={paymentKey(p) + i}>{row(label, amt)}</div>
             })}
           </section>
         </>
       )}
 
-      <div>{'\n' + HR_LIGHT}</div>
+      <div>{'\n' + hrLight}</div>
       <section>
         <div>{row('Total bill:', `UGX ${ugx(charged)}`)}</div>
         <div>{row('Total paid:', `UGX ${ugx(paid)}`)}</div>
         <div className="bold">{row('Remaining:', `UGX ${ugx(balance)}`)}</div>
       </section>
 
-      <div>{'\n' + HR_HEAVY}</div>
+      <div>{'\n' + hrHeavy}</div>
       <section>
-        {receiptNo && <div className="center">{receiptNo}</div>}
-        <div className="center">Printed {printedAt}</div>
+        {receiptNo && <div>{centerLine(receiptNo)}</div>}
+        <div>{centerLine(`Printed ${printedAt}`)}</div>
       </section>
-      <div>{'\n\n\n'}</div>
+    </>
+  )
+}
+
+export function BillingReceipt({
+  data,
+  patientId,
+  printSettings,
+}: {
+  data: BillingReceiptData
+  patientId: string
+  printSettings: ClinicPrintSettings
+}) {
+  return (
+    <ReceiptShell layout={printSettings} autoPrint={printSettings.autoPrint}>
+      <BillingReceiptBody data={data} patientId={patientId} />
     </ReceiptShell>
   )
 }

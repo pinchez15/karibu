@@ -12,6 +12,7 @@ import {
   Home,
   ListTodo,
   Pill,
+  Printer,
   Search,
   Stethoscope,
   Users,
@@ -703,5 +704,75 @@ export function BillingMock({ activeStepId, onStepAction }: MockProps) {
         <p className="mt-2 text-[10px] text-accent">Receipt printed · balance UGX 0</p>
       )}
     </Shell>
+  )
+}
+
+export function PrinterSetupMock({ activeStepId, onStepAction }: MockProps) {
+  const h = (step: string) => activeStepId === step
+
+  return (
+    <div className="mx-auto max-w-sm rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+        <Printer className="h-4 w-4 text-cobalt" />
+        Thermal printer setup
+      </div>
+
+      {h('open-admin') && (
+        <MockBtn active className="mb-3 w-full" onClick={() => onStepAction('open-admin')}>
+          Open Admin → Thermal printer
+        </MockBtn>
+      )}
+
+      <div className="space-y-2 text-[10px]">
+        <div
+          className={cn(
+            'rounded-lg border border-line-soft p-2',
+            h('connect') && 'ring-2 ring-cobalt',
+          )}
+        >
+          <p className="font-semibold">1. Connect USB printer</p>
+          {h('connect') && (
+            <MockBtn active size="sm" className="mt-2" onClick={() => onStepAction('connect')}>
+              Mark connected
+            </MockBtn>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            'rounded-lg border border-line-soft p-2',
+            (h('test-print') || h('verify')) && 'ring-2 ring-cobalt',
+          )}
+        >
+          <p className="font-semibold">2. Print test receipt</p>
+          <p className="text-muted-foreground">58mm · sample charges + visit note</p>
+          {h('test-print') && (
+            <MockBtn active size="sm" className="mt-2" onClick={() => onStepAction('test-print')}>
+              Print test
+            </MockBtn>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            'rounded-lg border border-line-soft p-2',
+            h('finish') && 'ring-2 ring-cobalt',
+          )}
+        >
+          <p className="font-semibold">3. Confirm alignment</p>
+          {h('finish') && (
+            <MockBtn active size="sm" className="mt-2" onClick={() => onStepAction('finish')}>
+              Finish setup
+            </MockBtn>
+          )}
+        </div>
+      </div>
+
+      {activeStepId === 'done' && (
+        <p className="mt-3 text-[10px] text-accent">
+          Ready — visit slips, billing, and pharmacy use this printer.
+        </p>
+      )}
+    </div>
   )
 }

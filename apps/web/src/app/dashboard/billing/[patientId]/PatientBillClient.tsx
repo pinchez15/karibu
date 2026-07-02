@@ -17,6 +17,7 @@ import {
   type PatientPaymentRow,
   type PatientVisitOption,
 } from '../actions'
+import { stashPendingReceiptPayment } from './receipt/BillingReceipt'
 
 const CATEGORIES = [
   { value: 'consultation', label: 'Consultation' },
@@ -430,7 +431,18 @@ export function PatientBillClient({
                 setPayCash('')
                 setPayBarter('')
                 setPayBarterDesc('')
-                window.open(`/dashboard/billing/${patientId}/receipt`, '_blank', 'noopener,noreferrer')
+                stashPendingReceiptPayment(patientId, {
+                  method: payMethod,
+                  amount_ugx: cash,
+                  amount_barter_ugx: barter,
+                  receipt_number: r.receiptNumber,
+                  recorded_at: Date.now(),
+                })
+                window.open(
+                  `/dashboard/billing/${patientId}/receipt?fresh=${Date.now()}`,
+                  '_blank',
+                  'noopener,noreferrer',
+                )
                 return { success: true as const }
               })
             }

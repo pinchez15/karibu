@@ -56,7 +56,10 @@ function staffDisplayName(
 
 function billingPaths(patientId?: string) {
   revalidatePath('/dashboard/billing')
-  if (patientId) revalidatePath(`/dashboard/billing/${patientId}`)
+  if (patientId) {
+    revalidatePath(`/dashboard/billing/${patientId}`)
+    revalidatePath(`/dashboard/billing/${patientId}/receipt`)
+  }
 }
 
 /** Search patients for the billing charge picker (clinic-scoped). */
