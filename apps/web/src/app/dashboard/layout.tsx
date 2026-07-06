@@ -3,6 +3,7 @@ import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
 import { DashboardShellGate } from '@/components/dashboard-shell-gate'
 import { OnboardingGuard } from '@/components/onboarding-guard'
+import { staffRoleLabel } from '@/lib/staff-roles'
 
 /**
  * Dashboard layout — wraps every /dashboard/* page in the role-aware web shell.
@@ -43,7 +44,7 @@ export default async function DashboardLayout({
         staffRole={staff.role}
         staff={{
           displayName: staff.display_name,
-          role: roleLabel(staff.role),
+          role: staffRoleLabel(staff.role),
           initials,
         }}
       >
@@ -51,19 +52,4 @@ export default async function DashboardLayout({
       </DashboardShellGate>
     </OnboardingGuard>
   )
-}
-
-function roleLabel(role: string): string {
-  switch (role) {
-    case 'admin': return 'Admin'
-    case 'doctor': return 'Doctor'
-    case 'nurse': return 'Nurse'
-    case 'clinical_officer': return 'Clinical officer'
-    case 'midwife': return 'Midwife'
-    case 'nursing_assistant': return 'Nursing assistant'
-    case 'records_officer': return 'Records officer'
-    case 'lab_tech': return 'Lab technician'
-    case 'dispenser': return 'Dispenser'
-    default: return role
-  }
 }
