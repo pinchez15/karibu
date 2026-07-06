@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button'
 import { listAppointmentsInRange, deleteClinicEvent } from '@/app/dashboard/calendar/actions'
 import {
   CLINIC_EVENT_META,
+  CLINIC_OFFSET_MS,
+  clinicTodayStr,
+  formatClinicDateTime,
   type ClinicAppointment,
   toFullCalendarEvent,
 } from '@/lib/calendar-events'
@@ -30,11 +33,20 @@ export function ClinicCalendar({
   const [dayGridPlugin, setDayGridPlugin] = useState<PluginDef | null>(null)
   const [interactionPlugin, setInteractionPlugin] = useState<PluginDef | null>(null)
   const [formMode, setFormMode] = useState<'add' | 'edit' | null>(null)
-  const [addDate, setAddDate] = useState<Date | undefined>()
+  const [addDate, setAddDate] = useState<string | undefined>()
   const [selectedEvent, setSelectedEvent] = useState<ClinicAppointment | null>(null)
   const [, startRefresh] = useTransition()
   const [, startDelete] = useTransition()
   const rangeRef = useRef<{ from: string; to: string } | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+
+  // Bring the event detail card into view — it renders below the month grid,
+  // so on a tall calendar a click otherwise feels like nothing happened.
+  useEffect(() => {
+    if (selectedEvent) {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [selectedEvent])
 
   useEffect(() => {
     void loadDayGrid().then(setDayGridPlugin)
@@ -44,13 +56,19 @@ export function ClinicCalendar({
   const events = useMemo(() => appointments.map(toFullCalendarEvent), [appointments])
 
   const refreshRange = useCallback((from?: Date, to?: Date) => {
-    if (!from || !to) {
+    let fromIso: string
+    let toIso: string
+    if (from && to) {
+      // FullCalendar runs in UTC with clinic-shifted (+3h) event times, so the
+      // visible window is 3h ahead of the real stored instants. Shift the query
+      // back to real UTC so the fetched rows line up with what's displayed.
+      fromIso = new Date(from.getTime() - CLINIC_OFFSET_MS).toISOString()
+      toIso = new Date(to.getTime() - CLINIC_OFFSET_MS).toISOString()
+    } else {
       if (!rangeRef.current) return
-      from = new Date(rangeRef.current.from)
-      to = new Date(rangeRef.current.to)
+      fromIso = rangeRef.current.from
+      toIso = rangeRef.current.to
     }
-    const fromIso = from.toISOString()
-    const toIso = to.toISOString()
     rangeRef.current = { from: fromIso, to: toIso }
     startRefresh(async () => {
       const result = await listAppointmentsInRange(fromIso, toIso)
@@ -66,7 +84,8 @@ export function ClinicCalendar({
   )
 
   const handleDateClick = useCallback((arg: DateClickArg) => {
-    setAddDate(arg.date)
+    // timeZone="UTC" -> arg.date is UTC-midnight of the clicked clinic day.
+    setAddDate(arg.date.toISOString().slice(0, 10))
     setFormMode('add')
     setSelectedEvent(null)
   }, [])
@@ -114,7 +133,7 @@ export function ClinicCalendar({
             size="sm"
             className="gap-1.5"
             onClick={() => {
-              setAddDate(new Date())
+              setAddDate(clinicTodayStr())
               setFormMode('add')
               setSelectedEvent(null)
             }}
@@ -138,6 +157,7 @@ export function ClinicCalendar({
             dayMaxEvents={3}
             moreLinkClick="popover"
             events={events}
+            timeZone="UTC"
             datesSet={handleDatesSet}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
@@ -181,18 +201,12 @@ export function ClinicCalendar({
       )}
 
       {selectedEvent && formMode !== 'edit' && (
-        <div className="rounded-xl border border-border bg-card p-4 text-sm">
+        <div ref={detailRef} className="rounded-xl border border-border bg-card p-4 text-sm">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="font-semibold">{toFullCalendarEvent(selectedEvent).title}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {new Date(selectedEvent.scheduled_at).toLocaleString('en-GB', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatClinicDateTime(selectedEvent.scheduled_at)}
                 {' · '}
                 {CLINIC_EVENT_META[selectedEvent.event_type]?.label}
               </p>
