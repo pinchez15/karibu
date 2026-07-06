@@ -13,7 +13,12 @@ import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
 async function assertDispenser() {
   const staff = await requireStaff()
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  // Clinical officer dual-acts as dispenser when no pharmacist is on shift (migration 093).
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     throw new Error('Forbidden: dispenser role required')
   }
   return staff

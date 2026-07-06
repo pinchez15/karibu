@@ -16,7 +16,11 @@ type ActionResult = { success: true } | { success: false; error: string }
 export async function createPharmacyStockItem(formData: FormData): Promise<ActionResult> {
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not authenticated' }
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     return { success: false, error: 'Only dispensers and admins can edit stock' }
   }
 
@@ -91,7 +95,11 @@ export async function createPharmacyStockItem(formData: FormData): Promise<Actio
 export async function recordPharmacyStockMovement(formData: FormData): Promise<ActionResult> {
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not authenticated' }
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     return { success: false, error: 'Only dispensers and admins can adjust stock' }
   }
 
@@ -152,7 +160,11 @@ export async function recordPharmacyStockMovement(formData: FormData): Promise<A
 export async function setPharmacyStockActive(id: string, active: boolean): Promise<ActionResult> {
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not authenticated' }
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     return { success: false, error: 'Only dispensers and admins can edit stock' }
   }
 
@@ -175,7 +187,11 @@ export async function setPharmacyStockActive(id: string, active: boolean): Promi
 export async function setPharmacyStockUnavailable(id: string, unavailable: boolean): Promise<ActionResult> {
   const staff = await getStaff()
   if (!staff) return { success: false, error: 'Not authenticated' }
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     return { success: false, error: 'Only dispensers and admins can edit stock' }
   }
 

@@ -135,7 +135,9 @@ const UNITS: UnitDef[] = [
     label: 'Pharmacy',
     icon: Pill,
     basePaths: ['/dashboard/pharmacy'],
-    roles: ['dispenser'],
+    // Clinical officers (and admins, who see all units) dual-act as dispensers
+    // when no pharmacist is on shift — see migration 093.
+    roles: ['dispenser', 'clinical_officer'],
     items: [
       { id: 'rx-today', label: 'Dispensing', href: '/dashboard/pharmacy', icon: Pill },
       { id: 'rx-stock', label: 'Stock', href: '/dashboard/pharmacy/stock', icon: ListTodo },
