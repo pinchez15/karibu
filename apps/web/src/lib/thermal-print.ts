@@ -120,10 +120,6 @@ export function wrapText(text: string, width = RECEIPT_WIDTH_CHARS): string[] {
   return lines
 }
 
-export function cutFeed(cutFeedMm = DEFAULT_THERMAL_LAYOUT.cutFeedMm): string {
-  return '\n'.repeat(cutFeedLines(cutFeedMm))
-}
-
 export type ThermalPrintHelpers = {
   layout: ThermalPrintLayout
   hrHeavy: string
@@ -132,7 +128,6 @@ export type ThermalPrintHelpers = {
   centerLine: (text: string) => string
   row: (label: string, value: string) => string
   wrapText: (text: string) => string[]
-  cutFeed: () => string
 }
 
 export function createThermalHelpers(layout: ThermalPrintLayout): ThermalPrintHelpers {
@@ -145,6 +140,5 @@ export function createThermalHelpers(layout: ThermalPrintLayout): ThermalPrintHe
     centerLine: (text) => centerLine(text, w),
     row: (label, value) => row(label, value, w),
     wrapText: (text) => wrapText(text, w),
-    cutFeed: () => cutFeed(layout.cutFeedMm),
   }
 }

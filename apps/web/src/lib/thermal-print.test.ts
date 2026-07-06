@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_THERMAL_LAYOUT,
   RECEIPT_WIDTH_CHARS,
   centerLine,
   createThermalHelpers,
@@ -63,5 +64,11 @@ describe('thermal-print', () => {
     const helpers = createThermalHelpers(layoutFromPaperWidth(80))
     expect(helpers.hrHeavy.length).toBe(48)
     expect(helpers.sectionRule('TEST').length).toBe(48)
+  })
+
+  it('cutFeed trailing-newline function removed — helpers do not emit repeated newlines for cut feed', () => {
+    const helpers = createThermalHelpers(DEFAULT_THERMAL_LAYOUT)
+    // cutFeed was removed from ThermalPrintHelpers; the cut gap is a CSS-height-only div.
+    expect('cutFeed' in helpers).toBe(false)
   })
 })

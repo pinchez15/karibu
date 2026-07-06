@@ -68,6 +68,28 @@ export function ReceiptShell({
   const previewPx = previewWidthPx(layout.paperWidthMm)
   const paperLabel = `${layout.paperWidthMm}mm`
 
+  // Force a single continuous page sized to the receipt's content. `@page { size: Xmm auto }`
+  // is NOT honored reliably by Chromium's print/PDF engine (tall receipts paginate → the thermal
+  // driver auto-cuts mid-receipt). Measuring the rendered height and pinning an explicit @page
+  // height guarantees one page — and therefore one cut at the end — regardless of that quirk.
+  useEffect(() => {
+    const applyPageHeight = () => {
+      const body = document.querySelector('.thermal-body') as HTMLElement | null
+      const styleEl = document.getElementById('receipt-page-size')
+      if (!body || !styleEl) return
+      // CSS px are 1/96in; convert to mm and pad by the cut-feed plus a small safety margin.
+      const heightMm = Math.ceil((body.scrollHeight * 25.4) / 96) + layout.cutFeedMm + 2
+      styleEl.textContent = `@page { size: ${layout.paperWidthMm}mm ${heightMm}mm; margin: 0; }`
+    }
+    // Measure after layout settles (also covers headless page.pdf, which skips beforeprint).
+    const raf = requestAnimationFrame(() => requestAnimationFrame(applyPageHeight))
+    window.addEventListener('beforeprint', applyPageHeight)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('beforeprint', applyPageHeight)
+    }
+  }, [layout.paperWidthMm, layout.cutFeedMm, children])
+
   useEffect(() => {
     if (!autoPrint) return
     const raf = requestAnimationFrame(() => {
@@ -78,8 +100,9 @@ export function ReceiptShell({
 
   return (
     <ReceiptPrintContext.Provider value={ctx}>
+      {/* Overridden at runtime with an explicit content-sized height (see effect above). */}
+      <style id="receipt-page-size">{`@page { size: ${layout.paperWidthMm}mm auto; margin: 0; }`}</style>
       <style>{`
-        @page { size: ${layout.paperWidthMm}mm auto; margin: 0; }
 
         @media screen {
           html, body { margin: 0; padding: 0; }
@@ -154,10 +177,6 @@ export function ReceiptShell({
         }
         .receipt .bold { font-weight: 700; }
         .receipt .block { white-space: pre; }
-        .thermal-body {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
         .thermal-body section { page-break-inside: avoid; break-inside: avoid; }
         .cut-feed { height: ${layout.cutFeedMm}mm; }
       `}</style>
@@ -180,9 +199,7 @@ export function ReceiptShell({
       <div className="receipt-wrap">
         <div className="receipt thermal-body" lang={lang}>
           {children}
-          <div className="cut-feed" aria-hidden="true">
-            {ctx.cutFeed()}
-          </div>
+          <div className="cut-feed" aria-hidden="true" />
         </div>
       </div>
     </ReceiptPrintContext.Provider>
