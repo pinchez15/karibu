@@ -94,8 +94,8 @@ fun CalendarScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = KaribuLayout.contentPaddingHorizontal().dp,
-                    end = KaribuLayout.contentPaddingHorizontal().dp,
+                    start = KaribuLayout.contentPaddingHorizontal(),
+                    end = KaribuLayout.contentPaddingHorizontal(),
                     top = if (embedded) 8.dp else 12.dp,
                     bottom = KaribuLayout.bottomBarScrollPadding().dp + 72.dp,
                 ),
