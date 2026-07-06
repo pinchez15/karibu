@@ -208,4 +208,41 @@ describe('PharmacyStationClient', () => {
     })
     expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
   })
+
+  // WP3 D2: re-opening a partially-dispensed line must default the quantity to
+  // the REMAINING amount (prescribed − already dispensed), not the full
+  // prescribed amount — otherwise a re-dispense double-bills.
+  it('defaults a re-opened partial line to the remaining quantity', async () => {
+    const partialRow: (typeof PHARMACY_STATION_FIXTURE_ROWS)[number] = {
+      ...PHARMACY_STATION_FIXTURE_ROWS[2],
+      id: 'visit-partial-remaining',
+      dispensing_status: 'partial',
+      patient: { ...PHARMACY_STATION_FIXTURE_ROWS[2].patient, id: 'patient-partial' },
+      prescription_lines: [
+        {
+          ...PHARMACY_STATION_FIXTURE_ROWS[2].prescription_lines[0],
+          id: 'rx-partial-remaining-0',
+          visit_id: 'visit-partial-remaining',
+          status: 'partially_dispensed',
+          quantity_prescribed: 10,
+          quantity_unit: 'tabs',
+          quantity_dispensed_so_far: 4,
+        },
+      ],
+    }
+
+    render(
+      <PharmacyStationClient
+        initialRows={[partialRow]}
+        activeTab="to_dispense"
+        refreshOnUpdate={false}
+      />,
+    )
+
+    const line = await screen.findByTestId('rx-line-rx-partial-remaining-0')
+    const qtyInput = line.querySelector('input[type="number"]') as HTMLInputElement
+    expect(qtyInput).not.toBeNull()
+    expect(qtyInput.value).toBe('6')
+    expect(line).toHaveTextContent('already dispensed 4 of 10')
+  })
 })

@@ -5,6 +5,7 @@ import { WebTopBar } from '@/components/web-shell'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import { NewChargeForm } from './NewChargeForm'
 import { listPatientBalances } from './actions'
+import { computeBalance } from '@/lib/billing-balance'
 
 function ugx(n: number): string {
   return `UGX ${Math.round(n).toLocaleString('en-US')}`
@@ -15,8 +16,15 @@ export default async function BillingPage() {
   if (!staff) redirect('/')
 
   const patients = await listPatientBalances()
-  const withBalance = patients.filter((p) => p.balance > 0)
-  const paidUp = patients.filter((p) => p.balance <= 0)
+  // WP3 D1: derive the displayed balance through the shared util (from the RPC's
+  // charged/paid aggregates) so an overpay/prepay never shows as a negative owed
+  // amount here while the bill page shows a credit.
+  const rows = patients.map((p) => ({
+    ...p,
+    ...computeBalance([{ amount_ugx: p.charged }], [{ amount_ugx: p.paid }]),
+  }))
+  const withBalance = rows.filter((p) => p.remaining > 0)
+  const paidUp = rows.filter((p) => p.remaining <= 0)
 
   return (
     <>
@@ -49,7 +57,7 @@ export default async function BillingPage() {
                     <span className="text-muted-foreground hidden sm:inline">
                       {ugx(p.paid)} paid · {ugx(p.charged)} total
                     </span>
-                    <span className="font-semibold text-amber-ink">{ugx(p.balance)} owed</span>
+                    <span className="font-semibold text-amber-ink">{ugx(p.remaining)} owed</span>
                   </span>
                 </li>
               ))}

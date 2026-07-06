@@ -125,10 +125,34 @@ export async function getPharmacyStationQueue(
     console.error('getPharmacyStationQueue lines', linesErr)
   }
 
+  // WP3 D2: how much has already been dispensed per line, so the worksheet can
+  // default a re-dispense to the REMAINING quantity (not the full prescribed
+  // amount) and show "already dispensed X of Y". Mirrors the DB's incremental
+  // SUM in billing_charge_pharmacy_line (dispensed + partially_dispensed).
+  const lineIds = (lines ?? []).map((l) => (l as PrescriptionOrderLine).id)
+  const dispensedByLine = new Map<string, number>()
+  if (lineIds.length > 0) {
+    const { data: records, error: recErr } = await supabase
+      .from('dispense_records')
+      .select('prescription_order_id, quantity_dispensed, line_status')
+      .in('prescription_order_id', lineIds)
+      .eq('clinic_id', clinicId)
+    if (recErr) {
+      console.error('getPharmacyStationQueue dispense_records', recErr)
+    }
+    for (const r of records ?? []) {
+      const status = r.line_status as string
+      if (status !== 'dispensed' && status !== 'partially_dispensed') continue
+      const key = r.prescription_order_id as string
+      const prev = dispensedByLine.get(key) ?? 0
+      dispensedByLine.set(key, prev + Number(r.quantity_dispensed ?? 0))
+    }
+  }
+
   const byVisit = new Map<string, PrescriptionOrderLine[]>()
   for (const line of (lines ?? []) as PrescriptionOrderLine[]) {
     const list = byVisit.get(line.visit_id) ?? []
-    list.push(line)
+    list.push({ ...line, quantity_dispensed_so_far: dispensedByLine.get(line.id) ?? 0 })
     byVisit.set(line.visit_id, list)
   }
 

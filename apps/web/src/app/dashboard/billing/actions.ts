@@ -379,9 +379,12 @@ export async function updateChargeAmount(
   const qty = Math.max(1, Number(charge.quantity ?? 1))
   const unit = Math.round(amount / qty)
 
+  // WP3 D4: mark the charge as manually corrected so a later dispense/backfill
+  // (billing_charge_pharmacy_line, migration 092) does NOT overwrite the amount
+  // back to stock price × markup.
   const { error } = await supabase
     .from('charges')
-    .update({ amount_ugx: amount, unit_price_ugx: unit })
+    .update({ amount_ugx: amount, unit_price_ugx: unit, manually_adjusted: true })
     .eq('id', chargeId)
     .eq('clinic_id', staff.clinic_id)
 

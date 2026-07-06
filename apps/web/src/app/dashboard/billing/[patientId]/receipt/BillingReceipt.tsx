@@ -6,6 +6,7 @@ import {
   useReceiptPrint,
 } from '@/components/receipt/ReceiptShell'
 import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
+import { computeBalance } from '@/lib/billing-balance'
 
 export type BillingReceiptData = {
   patient: {
@@ -128,12 +129,9 @@ function BillingReceiptBody({
   }, [data.payments, patientId])
 
   const clinicName = data.clinic?.name || 'KaribuEHR'
-  const charged = data.charges.reduce((s, c) => s + c.amount_ugx, 0)
-  const paid = mergedPayments.reduce(
-    (s, p) => s + p.amount_ugx + (p.amount_barter_ugx ?? 0),
-    0,
-  )
-  const balance = charged - paid
+  // WP3 D1: same balance util as the bill screen. Never prints a negative
+  // Remaining — an unallocated payment prints as an explicit Credit line.
+  const { charged, paid, remaining, credit } = computeBalance(data.charges, mergedPayments)
 
   const printedAt = new Date().toLocaleString('en-GB', {
     day: 'numeric',
@@ -194,7 +192,11 @@ function BillingReceiptBody({
       <section>
         <div>{row('Total bill:', `UGX ${ugx(charged)}`)}</div>
         <div>{row('Total paid:', `UGX ${ugx(paid)}`)}</div>
-        <div className="bold">{row('Remaining:', `UGX ${ugx(balance)}`)}</div>
+        {credit > 0 ? (
+          <div className="bold">{row('Credit:', `UGX ${ugx(credit)}`)}</div>
+        ) : (
+          <div className="bold">{row('Remaining:', `UGX ${ugx(remaining)}`)}</div>
+        )}
       </section>
 
       <div>{'\n' + hrHeavy}</div>
