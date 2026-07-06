@@ -126,7 +126,7 @@ fun ClinicalMainShell(
                 onAddPatientNote = onAddPatientNote,
                 onRecordPatientVitals = onRecordPatientVitals,
                 onNavigateToReferral = onNavigateToReferral,
-                onNavigateToDictation = onNavigateToDictation,
+                onNavigateToDictation = { visitId -> onNavigateToDictation(visitId, false) },
                 modifier = contentModifier.fillMaxSize(),
             )
             ShellTab.Orders -> OrdersScreen(

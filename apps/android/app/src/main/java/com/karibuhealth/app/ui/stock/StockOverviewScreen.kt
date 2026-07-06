@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -255,7 +256,7 @@ private fun LabStockRow(row: LabStockItemDto) {
 private fun StockRowSurface(
     low: Boolean,
     out: Boolean,
-    content: @Composable Row.() -> Unit,
+    content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier = Modifier

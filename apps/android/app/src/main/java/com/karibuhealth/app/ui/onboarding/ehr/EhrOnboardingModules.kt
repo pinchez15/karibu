@@ -33,16 +33,20 @@ data class EhrModuleDef(
 )
 
 object EhrOnboardingModules {
-    val all: List<EhrModuleDef> = listOf(
-        recordsRegister,
-        nurseVitals,
-        clinicianNotePharmacy,
-        labResult,
-        pharmacyDispense,
-        billingPayment,
-    )
+    // lazy: these reference the module defs declared later in the object, which
+    // would otherwise be read before initialization (K2 compile error).
+    val all: List<EhrModuleDef> by lazy {
+        listOf(
+            recordsRegister,
+            nurseVitals,
+            clinicianNotePharmacy,
+            labResult,
+            pharmacyDispense,
+            billingPayment,
+        )
+    }
 
-    val byId: Map<String, EhrModuleDef> = all.associateBy { it.id }
+    val byId: Map<String, EhrModuleDef> by lazy { all.associateBy { it.id } }
 
     private val recordsRegister = EhrModuleDef(
         id = "records-register",
