@@ -19,12 +19,15 @@
 --       message is surfaced verbatim by the web composer (VisitPharmacyPanel)
 --       and by Android's send-back flow (WP2 error taxonomy).
 --
---   (b) On a successful resubmit, set visits.dispensing_status to
---       aggregate_visit_dispensing_status(p_visit_id) instead of the
---       unconditional 'not_started' reset. Already-dispensed / out-of-stock /
---       partially-dispensed lines survive the DELETE (which only removes
---       'ordered' / 'needs_clarification' lines), so the aggregate correctly
---       reports 'partial' rather than wrongly claiming the visit is untouched.
+--   (b) On a successful resubmit where lines were ALREADY dispensed, set
+--       visits.dispensing_status to aggregate_visit_dispensing_status(p_visit_id)
+--       instead of the unconditional 'not_started' reset. Already-dispensed /
+--       out-of-stock / partially-dispensed lines survive the DELETE (which only
+--       removes 'ordered' / 'needs_clarification' lines), so the aggregate
+--       correctly reports 'partial' rather than wrongly claiming the visit is
+--       untouched. A fresh or fully-redrafted order (nothing dispensed) stays
+--       'not_started' — NOT the aggregate's misleading 'in_progress' for
+--       all-'ordered' lines — so the queue keeps the "Waiting" triage chip.
 --
 -- Manual verification (run in the Supabase SQL editor as a dispenser/clinician
 -- with a visit that has structured prescription lines):
@@ -172,8 +175,20 @@ BEGIN
 
   -- WP1 D4 (b): derive the visit status from the surviving + new lines rather
   -- than blindly resetting to 'not_started'. Lines already dispensed before a
-  -- resubmit keep the visit in 'partial'.
-  v_agg_status := aggregate_visit_dispensing_status(p_visit_id);
+  -- resubmit keep the visit in 'partial'. BUT a fresh or fully-redrafted order
+  -- (nothing dispensed yet, all lines 'ordered') must stay 'not_started' so it
+  -- shows the "Waiting" triage chip — the raw aggregate reports a misleading
+  -- 'in_progress' for all-'ordered' lines. Only inherit the aggregate once real
+  -- dispensing / out-of-stock has actually happened.
+  IF EXISTS (
+    SELECT 1 FROM prescription_orders
+    WHERE visit_id = p_visit_id
+      AND status IN ('dispensed', 'partially_dispensed', 'out_of_stock')
+  ) THEN
+    v_agg_status := aggregate_visit_dispensing_status(p_visit_id);
+  ELSE
+    v_agg_status := 'not_started';
+  END IF;
 
   UPDATE visits
   SET
