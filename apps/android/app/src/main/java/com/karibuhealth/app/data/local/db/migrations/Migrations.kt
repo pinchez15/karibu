@@ -125,6 +125,19 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
             "CREATE INDEX IF NOT EXISTS index_viral_load_tests_enrollment_id " +
                 "ON viral_load_tests(enrollment_id)",
         )
+        // Each entity also declares a patient_id index; without these the created
+        // schema fails Room's post-migration validation ("Migration didn't
+        // properly handle: hts_events") and the app crashes on first launch.
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_hts_events_patient_id ON hts_events(patient_id)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_hiv_care_enrollments_patient_id " +
+                "ON hiv_care_enrollments(patient_id)",
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_tb_episodes_patient_id ON tb_episodes(patient_id)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_viral_load_tests_patient_id " +
+                "ON viral_load_tests(patient_id)",
+        )
     }
 }
 
