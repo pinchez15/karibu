@@ -154,7 +154,7 @@ fun OnboardingRoot(
                         onBack = { nav = OnboardingNav.Hub },
                         onStepChange = { guidedStep = it },
                         onCompleteModule = {
-                            viewModel.completeModule(n.moduleId, null, null) { allDone ->
+                            viewModel.completeModule(n.moduleId, 0, 0) { allDone ->
                                 if (allDone) {
                                     onFinished()
                                 } else {
