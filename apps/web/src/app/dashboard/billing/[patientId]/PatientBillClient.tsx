@@ -18,6 +18,7 @@ import {
   type PatientVisitOption,
 } from '../actions'
 import { stashPendingReceiptPayment } from './receipt/BillingReceipt'
+import { computeBalance, chargesSinceLastPayment } from '@/lib/billing-balance'
 
 const CATEGORIES = [
   { value: 'consultation', label: 'Consultation' },
@@ -73,9 +74,15 @@ export function PatientBillClient({
   const [editAmount, setEditAmount] = useState('')
 
   const activeCharges = charges.filter((c) => !c.voided)
-  const totalBill = activeCharges.reduce((sum, c) => sum + c.amount_ugx, 0)
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount_ugx + p.amount_barter_ugx, 0)
-  const remaining = Math.max(0, totalBill - totalPaid)
+  // WP3 D1: one balance function for every surface. remaining is never negative;
+  // an unallocated payment surfaces as an explicit credit (prepaid).
+  const { charged: totalBill, paid: totalPaid, remaining, credit } = computeBalance(
+    charges,
+    payments,
+  )
+  // WP3 D5: charges that landed after the last payment (payment-decoupled
+  // auto-charges) — otherwise a re-owing patient looks settled.
+  const newChargesSincePayment = chargesSinceLastPayment(charges, payments)
 
   const payCashNum = payMethod === 'barter' ? 0 : Number(payCash || 0)
   const payBarterNum =
@@ -83,7 +90,14 @@ export function PatientBillClient({
       ? 0
       : Number(payBarter || 0)
   const paymentBeingRecorded = payCashNum + payBarterNum
-  const remainingAfterPayment = Math.max(0, remaining - paymentBeingRecorded)
+  // Preview the balance after this payment through the same util (adds a synthetic
+  // paid payment) so the credit/remaining semantics match everywhere.
+  const afterPayment = computeBalance(charges, [
+    ...payments,
+    { amount_ugx: payCashNum, amount_barter_ugx: payBarterNum, status: 'paid' },
+  ])
+  const remainingAfterPayment = afterPayment.remaining
+  const creditAfterPayment = afterPayment.credit
 
   function run(fn: () => Promise<{ success: false; error: string } | { success: true }>) {
     setError(null)
@@ -128,15 +142,29 @@ export function PatientBillClient({
             <dd className="text-lg font-semibold sm:mt-1">{ugx(totalPaid)}</dd>
           </div>
           <div className="flex justify-between gap-3 sm:block">
-            <dt className="text-muted-foreground">Remaining</dt>
-            <dd className={`text-lg font-bold sm:mt-1 ${remaining > 0 ? 'text-amber-ink' : ''}`}>
-              {ugx(remaining)}
+            <dt className="text-muted-foreground">{credit > 0 ? 'Credit (prepaid)' : 'Remaining'}</dt>
+            <dd
+              className={`text-lg font-bold sm:mt-1 ${
+                credit > 0 ? 'text-green' : remaining > 0 ? 'text-amber-ink' : ''
+              }`}
+            >
+              {credit > 0 ? ugx(credit) : ugx(remaining)}
             </dd>
           </div>
         </dl>
         {remaining > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
             {ugx(totalPaid)} received of {ugx(totalBill)} billed.
+          </p>
+        )}
+        {credit > 0 && (
+          <p className="mt-2 text-xs text-green">
+            Patient has paid {ugx(credit)} more than billed — held as credit toward future charges.
+          </p>
+        )}
+        {newChargesSincePayment > 0 && (
+          <p className="mt-2 text-xs text-amber-ink" data-testid="charges-since-payment">
+            New charges added since last payment: {ugx(newChargesSincePayment)}
           </p>
         )}
       </div>
@@ -398,16 +426,25 @@ export function PatientBillClient({
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-muted-foreground">
             {paymentBeingRecorded > 0 ? (
-              <>
-                Remaining after this payment:{' '}
-                <span
-                  className={
-                    remainingAfterPayment > 0 ? 'font-semibold text-amber-ink' : 'font-semibold text-green'
-                  }
-                >
-                  {ugx(remainingAfterPayment)}
-                </span>
-              </>
+              creditAfterPayment > 0 ? (
+                <>
+                  Credit after this payment:{' '}
+                  <span className="font-semibold text-green">{ugx(creditAfterPayment)}</span>
+                </>
+              ) : (
+                <>
+                  Remaining after this payment:{' '}
+                  <span
+                    className={
+                      remainingAfterPayment > 0
+                        ? 'font-semibold text-amber-ink'
+                        : 'font-semibold text-green'
+                    }
+                  >
+                    {ugx(remainingAfterPayment)}
+                  </span>
+                </>
+              )
             ) : (
               <>
                 Amount still owed: <span className="font-semibold text-amber-ink">{ugx(remaining)}</span>
