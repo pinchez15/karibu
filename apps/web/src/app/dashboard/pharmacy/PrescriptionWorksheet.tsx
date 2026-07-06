@@ -95,12 +95,14 @@ export function PrescriptionWorksheet({
   onCompleted,
   onUpdated,
   dispenseLineFn,
+  startDispenseFn,
 }: {
   row: PharmacyStationRow
   readOnly?: boolean
   onCompleted?: (result: DispenseCompletionResult) => void
   onUpdated?: () => void
   dispenseLineFn?: typeof dispensePharmacyLine
+  startDispenseFn?: typeof startPharmacyDispense
 }) {
   const [stock, setStock] = useState<PharmacyStockRow[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -113,6 +115,7 @@ export function PrescriptionWorksheet({
   const [pending, startTransition] = useTransition()
   const lines = row.prescription_lines
   const dispenseLine = dispenseLineFn ?? dispensePharmacyLine
+  const startDispense = startDispenseFn ?? startPharmacyDispense
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>(() =>
     Object.fromEntries(lines.filter((l) => lineIsEditable(l.status)).map((l) => [l.id, defaultDraft(l)])),
   )
@@ -264,7 +267,7 @@ export function PrescriptionWorksheet({
 
     startTransition(async () => {
       if (row.dispensing_status === 'not_started') {
-        const start = await startPharmacyDispense(row.id)
+        const start = await startDispense(row.id)
         if (!start.success) {
           setLineError(start.error)
           setBusyLineId(null)
@@ -292,13 +295,11 @@ export function PrescriptionWorksheet({
       const name = prescriptionLineDisplayName(line)
       setLineMessage(`${name} — ${lineOutcomeLabel(draft.line_status)}.`)
 
+      // onCompleted decides whether the visit leaves the queue (only when fully
+      // dispensed — WP1 D2) or stays and refreshes. A single call avoids a
+      // double refetch for the partial / out-of-stock case.
       const result = { dispensingStatus: r.dispensingStatus, stockLinesDecremented: stockDecremented }
-      if (['dispensed', 'out_of_stock'].includes(r.dispensingStatus)) {
-        onCompleted?.(result)
-      } else {
-        onUpdated?.()
-        onCompleted?.(result)
-      }
+      onCompleted?.(result)
     })
   }
 
@@ -359,7 +360,19 @@ export function PrescriptionWorksheet({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {loadError && <p className="mb-2 text-xs text-amber-ink">{loadError}</p>}
+        {loadError && (
+          // WP1 D5: a swallowed stock-list failure used to let the worksheet
+          // dispense silently without decrementing stock. Surface it loudly and
+          // persistently so the pharmacist knows counts won't move.
+          <div
+            className="mb-3 rounded-md border border-amber-ink/30 bg-amber-soft px-3 py-2 text-xs text-amber-ink"
+            role="alert"
+            data-testid="stock-unavailable-banner"
+          >
+            <span className="font-semibold">Stock list unavailable</span> — dispensing
+            will not reduce stock counts.
+          </div>
+        )}
 
         {lines.length === 0 ? (
           <div className="space-y-2 text-sm">
@@ -505,7 +518,9 @@ export function PrescriptionWorksheet({
                               onClick={() => handleDispenseLine(line)}
                               disabled={busy}
                               data-testid={
-                                line.id === firstEditableLineId ? 'save-complete' : undefined
+                                line.id === firstEditableLineId
+                                  ? 'save-complete'
+                                  : `dispense-${line.id}`
                               }
                             >
                               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Dispense'}

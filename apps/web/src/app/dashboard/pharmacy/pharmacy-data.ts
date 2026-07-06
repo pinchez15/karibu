@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase'
-import { pharmacyTabForVisit } from '@/lib/validators/prescription'
+import { startOfTodayInTimezoneIso } from '@/lib/clinic-time'
 import type { PrescriptionOrderLine, PharmacyQueueTab } from '@karibu/shared'
 import { type DispensingRow } from './pharmacy-shared'
 
@@ -31,10 +31,32 @@ export type PharmacyStockResult =
 const TERMINAL = ['dispensed', 'partial', 'out_of_stock'] as const
 const ACTIVE = ['not_started', 'in_progress', 'partial', 'out_of_stock'] as const
 
-function startOfTodayIso(): string {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString()
+export type PharmacyTabFilter = {
+  /** dispensing_status values this tab includes. */
+  statuses: string[]
+  /** When set, only rows with dispensed_at >= this ISO instant are included. */
+  dispensedAfter?: string
+}
+
+/**
+ * Pure, unit-testable mapping from a tab to its query predicate (WP1 D1/D3).
+ *
+ * - `to_dispense` = the ACTIVE set (not_started, in_progress, partial,
+ *   out_of_stock). A multi-line script therefore stays on this tab until every
+ *   line resolves — it never "disappears" mid-work. No date bound.
+ * - `done_today` = the TERMINAL set, bounded to work dispensed since the
+ *   clinic's local midnight (Africa/Kampala), not the server's UTC midnight.
+ *
+ * `nowIso` is injectable only for tests; production always uses the live clock.
+ */
+export function pharmacyTabFilter(
+  tab: PharmacyQueueTab,
+  dispensedAfter: string = startOfTodayInTimezoneIso(),
+): PharmacyTabFilter {
+  if (tab === 'done_today') {
+    return { statuses: [...TERMINAL], dispensedAfter }
+  }
+  return { statuses: [...ACTIVE] }
 }
 
 export async function getPharmacyStationQueue(
@@ -73,14 +95,10 @@ export async function getPharmacyStationQueue(
     .order('pharmacy_order_submitted_at', { ascending: true })
     .limit(100)
 
-  if (tab === 'waiting') {
-    query = query.eq('dispensing_status', 'not_started')
-  } else if (tab === 'in_progress') {
-    query = query.in('dispensing_status', ['in_progress', 'partial'])
-  } else {
-    query = query
-      .in('dispensing_status', [...TERMINAL])
-      .gte('dispensed_at', startOfTodayIso())
+  const filter = pharmacyTabFilter(tab)
+  query = query.in('dispensing_status', filter.statuses)
+  if (filter.dispensedAfter) {
+    query = query.gte('dispensed_at', filter.dispensedAfter)
   }
 
   const { data: visits, error } = await query
@@ -122,39 +140,34 @@ export async function getPharmacyStationQueue(
 
 export async function getPharmacyTabCounts(clinicId: string): Promise<Record<PharmacyQueueTab, number>> {
   const supabase = createServiceClient()
-  const today = startOfTodayIso()
 
-  const [waiting, inProgress, done] = await Promise.all([
+  const toDispense = pharmacyTabFilter('to_dispense')
+  const doneToday = pharmacyTabFilter('done_today')
+
+  const [toDispenseRes, doneRes] = await Promise.all([
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
       .eq('clinic_id', clinicId)
       .not('pharmacy_order_submitted_at', 'is', null)
-      .eq('dispensing_status', 'not_started'),
+      .not('medications', 'is', null)
+      .neq('medications', '')
+      .in('dispensing_status', toDispense.statuses),
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
       .eq('clinic_id', clinicId)
       .not('pharmacy_order_submitted_at', 'is', null)
-      .in('dispensing_status', ['in_progress', 'partial']),
-    supabase
-      .from('visits')
-      .select('id', { count: 'exact', head: true })
-      .eq('clinic_id', clinicId)
-      .not('pharmacy_order_submitted_at', 'is', null)
-      .in('dispensing_status', [...TERMINAL])
-      .gte('dispensed_at', today),
+      .not('medications', 'is', null)
+      .neq('medications', '')
+      .in('dispensing_status', doneToday.statuses)
+      .gte('dispensed_at', doneToday.dispensedAfter!),
   ])
 
   return {
-    waiting: waiting.count ?? 0,
-    in_progress: inProgress.count ?? 0,
-    done_today: done.count ?? 0,
+    to_dispense: toDispenseRes.count ?? 0,
+    done_today: doneRes.count ?? 0,
   }
-}
-
-export function filterRowsForTab(rows: PharmacyStationRow[], tab: PharmacyQueueTab): PharmacyStationRow[] {
-  return rows.filter((row) => pharmacyTabForVisit(row.dispensing_status, row.dispensed_at) === tab)
 }
 
 export { ACTIVE, TERMINAL }

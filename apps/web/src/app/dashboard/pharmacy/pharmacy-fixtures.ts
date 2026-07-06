@@ -113,6 +113,39 @@ export const PHARMACY_STATION_FIXTURE_ROWS: PharmacyStationRow[] = [
       }),
     ],
   },
+  {
+    // WP1 D1/D2: a two-line script used to exercise the anti-disappearance
+    // flow — dispensing line 1 must NOT drop the visit off "To dispense".
+    id: 'visit-e2e-004',
+    visit_date: '2026-06-16',
+    diagnosis: 'Pneumonia',
+    chief_complaint: 'Cough, fever',
+    medications: 'Amoxicillin 500mg — 21 caps\nParacetamol 500mg — 20 tabs',
+    dispensing_status: 'not_started',
+    dispense_notes: null,
+    pharmacy_order_submitted_at: '2026-06-16T08:45:00.000Z',
+    dispensed_at: null,
+    patient: {
+      id: 'patient-004',
+      patient_number: 'KH-1004',
+      first_name: 'Peter',
+      last_name: 'Ochen',
+      display_name: null,
+      date_of_birth: '2001-01-10',
+      sex: 'male',
+      whatsapp_number: null,
+    },
+    prescription_lines: [
+      mockLine('visit-e2e-004', 0, 'Amoxicillin 500mg', {
+        quantity_prescribed: 21,
+        quantity_unit: 'caps',
+      }),
+      mockLine('visit-e2e-004', 1, 'Paracetamol 500mg', {
+        quantity_prescribed: 20,
+        quantity_unit: 'tabs',
+      }),
+    ],
+  },
 ]
 
 export async function mockE2eCompleteDispense() {

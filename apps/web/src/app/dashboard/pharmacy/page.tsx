@@ -11,13 +11,13 @@ import { formatOldestWait } from './pharmacy-shared'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { PharmacyQueueTab } from '@karibu/shared'
 
-const VALID_TABS: PharmacyQueueTab[] = ['waiting', 'in_progress', 'done_today']
+const VALID_TABS: PharmacyQueueTab[] = ['to_dispense', 'done_today']
 
 function parseTab(raw: string | undefined): PharmacyQueueTab {
   if (raw && VALID_TABS.includes(raw as PharmacyQueueTab)) {
     return raw as PharmacyQueueTab
   }
-  return 'waiting'
+  return 'to_dispense'
 }
 
 export default async function PharmacyPage({
@@ -45,7 +45,7 @@ export default async function PharmacyPage({
       <WorkspaceTopBar
         title="Today"
         roleLabel="PHARMACY · DISPENSING"
-        awaiting={counts.waiting + counts.in_progress}
+        awaiting={counts.to_dispense}
         oldestWaitLabel={formatOldestWait(oldestSubmitted)}
         actions={
           <Link
@@ -70,14 +70,12 @@ export default async function PharmacyPage({
                 <Pill className="h-7 w-7" />
               </div>
               <h2 className="mb-2 text-2xl font-semibold tracking-tight">
-                {tab === 'done_today' ? 'Nothing dispensed yet today' : 'No prescriptions in this queue'}
+                {tab === 'done_today' ? 'Nothing dispensed yet today' : 'No prescriptions to dispense'}
               </h2>
               <p className="text-base leading-relaxed text-body">
-                {tab === 'waiting'
-                  ? 'Visits appear here after the clinician submits structured prescriptions (note may still be open).'
-                  : tab === 'in_progress'
-                    ? 'Start a dispense from Waiting — in-progress visits show here.'
-                    : 'Completed dispenses from today will appear here for review.'}
+                {tab === 'done_today'
+                  ? 'Completed dispenses from today will appear here for review.'
+                  : 'Visits appear here after the clinician submits structured prescriptions (note may still be open). A script stays here until every line is dispensed.'}
               </p>
             </div>
           </div>

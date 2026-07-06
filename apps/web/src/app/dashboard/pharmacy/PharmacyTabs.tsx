@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils'
 import type { PharmacyQueueTab } from '@karibu/shared'
 
 const TAB_LABELS: Record<PharmacyQueueTab, string> = {
-  waiting: 'Waiting',
-  in_progress: 'In progress',
+  to_dispense: 'To dispense',
   done_today: 'Done today',
 }
 

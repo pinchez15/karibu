@@ -49,9 +49,12 @@ yarn-error.log*
 
 # Testing
 coverage/
+apps/web/test-results/
+apps/web/playwright-report/
 
 # Supabase
 packages/supabase/.temp/
+supabase/.temp/
 
 # Mobile
 *.jks
