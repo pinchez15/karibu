@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.calendar
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,7 +61,7 @@ fun AddCalendarEventSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val zone = ZoneId.systemDefault()
-    val existingInstant = existing?.let { Instant.parse(it.scheduledAt).atZone(zone) }
+    val existingInstant = existing?.let { parseServerInstant(it.scheduledAt).atZone(zone) }
 
     var eventType by remember(existing) {
         mutableStateOf(existing?.eventType ?: ClinicEventType.follow_up)
@@ -224,7 +226,7 @@ fun EventDetailSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     val zone = ZoneId.systemDefault()
-    val at = Instant.parse(event.scheduledAt).atZone(zone)
+    val at = parseServerInstant(event.scheduledAt).atZone(zone)
     val meta = ClinicCalendarEvents.meta[event.eventType]
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {

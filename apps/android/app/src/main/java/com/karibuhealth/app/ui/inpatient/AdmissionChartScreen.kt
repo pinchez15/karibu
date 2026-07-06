@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.inpatient
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -1169,7 +1171,7 @@ private fun ObservationRow(obs: AdmissionObservationEntity) {
 }
 
 private fun timeAgo(iso: String): String = try {
-    val mins = Duration.between(Instant.parse(iso), Instant.now()).toMinutes()
+    val mins = Duration.between(parseServerInstant(iso), Instant.now()).toMinutes()
     when {
         mins < 1 -> "Just now"
         mins < 60 -> "$mins min ago"

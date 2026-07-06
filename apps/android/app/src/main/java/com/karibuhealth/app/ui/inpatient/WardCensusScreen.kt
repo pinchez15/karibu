@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.inpatient
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -257,7 +259,7 @@ private fun ageString(dob: String?): String? {
 }
 
 private fun dayOfStay(admittedAt: String): String = try {
-    val days = Duration.between(Instant.parse(admittedAt), Instant.now()).toDays()
+    val days = Duration.between(parseServerInstant(admittedAt), Instant.now()).toDays()
     "Day ${days + 1}"
 } catch (_: Exception) {
     ""
@@ -266,7 +268,7 @@ private fun dayOfStay(admittedAt: String): String = try {
 private fun lastObsLabel(lastObservedAt: String?): String {
     if (lastObservedAt.isNullOrBlank()) return "No obs yet"
     return try {
-        val mins = Duration.between(Instant.parse(lastObservedAt), Instant.now()).toMinutes()
+        val mins = Duration.between(parseServerInstant(lastObservedAt), Instant.now()).toMinutes()
         when {
             mins < 1 -> "Obs just now"
             mins < 60 -> "Obs ${mins}m ago"
