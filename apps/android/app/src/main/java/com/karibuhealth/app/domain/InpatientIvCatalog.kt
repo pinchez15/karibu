@@ -1,5 +1,7 @@
 package com.karibuhealth.app.domain
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import java.time.Instant
 
 /** IV fluids and additives common at Ugandan HC III. */
@@ -39,7 +41,7 @@ object InpatientIvCatalog {
 
     fun estimateMlRemaining(volumeMl: Int, rateMlHr: Int?, startedAt: String, now: Long = System.currentTimeMillis()): Int? {
         if (rateMlHr == null || rateMlHr <= 0) return null
-        val elapsedHr = (now - Instant.parse(startedAt).toEpochMilli()) / 3_600_000.0
+        val elapsedHr = (now - parseServerInstant(startedAt).toEpochMilli()) / 3_600_000.0
         return (volumeMl - elapsedHr * rateMlHr).toInt().coerceAtLeast(0)
     }
 }

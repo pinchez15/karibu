@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.home
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -706,7 +708,7 @@ private fun StatusCard(
 
 private fun formatWaitTime(checkedInAt: String): String {
     return try {
-        val checkedIn = Instant.parse(checkedInAt)
+        val checkedIn = parseServerInstant(checkedInAt)
         val mins = ChronoUnit.MINUTES.between(checkedIn, Instant.now())
         when {
             mins < 1 -> "just now"

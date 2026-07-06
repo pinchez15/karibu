@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.patientdetail
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -783,7 +785,7 @@ private fun roleLabel(role: String): String =
 
 private fun formatDueLabel(dueAtIso: String): String {
     return runCatching {
-        val due = Instant.parse(dueAtIso)
+        val due = parseServerInstant(dueAtIso)
         val today = LocalDate.now(ZoneId.systemDefault())
         val dueDate = due.atZone(ZoneId.systemDefault()).toLocalDate()
         val days = java.time.temporal.ChronoUnit.DAYS.between(today, dueDate).toInt()
@@ -913,7 +915,7 @@ private fun formatAmount(ugx: Int): String = "%,d".format(ugx)
 // "2026-04-08" — keeps it dense and unambiguous on small phones.
 private fun formatShortDate(isoTimestamp: String): String {
     return runCatching {
-        val instant = Instant.parse(isoTimestamp)
+        val instant = parseServerInstant(isoTimestamp)
         DateTimeFormatter.ISO_LOCAL_DATE
             .withZone(ZoneId.systemDefault())
             .format(instant)
@@ -923,7 +925,7 @@ private fun formatShortDate(isoTimestamp: String): String {
 // "Wed 8 Apr 2026 · 09:21"
 private fun formatLongDate(isoTimestamp: String): String {
     return runCatching {
-        val instant = Instant.parse(isoTimestamp)
+        val instant = parseServerInstant(isoTimestamp)
         DateTimeFormatter.ofPattern("EEE d MMM yyyy · HH:mm")
             .withZone(ZoneId.systemDefault())
             .format(instant)

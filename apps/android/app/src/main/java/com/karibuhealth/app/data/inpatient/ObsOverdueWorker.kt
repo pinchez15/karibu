@@ -1,5 +1,7 @@
 package com.karibuhealth.app.data.inpatient
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -81,7 +83,7 @@ class ObsOverdueWorker @AssistedInject constructor(
         val overdue = rows.filter { row ->
             // No obs yet → measure from admission time; otherwise from last round.
             val reference = row.lastObservedAt ?: row.admission.admittedAt
-            val at = runCatching { Instant.parse(reference) }.getOrNull() ?: return@filter false
+            val at = runCatching { parseServerInstant(reference) }.getOrNull() ?: return@filter false
             Duration.between(at, now) >= threshold
         }
 

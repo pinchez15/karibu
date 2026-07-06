@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.referral
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import com.karibuhealth.app.domain.model.Patient
 import com.karibuhealth.app.domain.model.PatientVitals
 import com.karibuhealth.app.domain.model.Referral
@@ -26,7 +28,7 @@ object ReferralSummaryFormatter {
         )
         val patientNumber = patient.patientNumber ?: "PT-${patient.id.take(8)}"
         val whenReferred = runCatching {
-            Instant.parse(referral.createdAt)
+            parseServerInstant(referral.createdAt)
                 .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"))
         }.getOrDefault(referral.createdAt)

@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.calendar
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,7 +71,7 @@ fun CalendarScreen(
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     val grouped = state.appointments
-        .groupBy { Instant.parse(it.scheduledAt).atZone(zone).toLocalDate() }
+        .groupBy { parseServerInstant(it.scheduledAt).atZone(zone).toLocalDate() }
         .toSortedMap()
 
     Scaffold(
@@ -176,7 +178,7 @@ fun CalendarScreen(
     if (state.showAddSheet || state.showEditSheet) {
         AddCalendarEventSheet(
             defaultDate = state.addDefaultDate ?: state.selectedEvent?.let {
-                Instant.parse(it.scheduledAt).atZone(zone).toLocalDate()
+                parseServerInstant(it.scheduledAt).atZone(zone).toLocalDate()
             } ?: LocalDate.now(),
             existing = if (state.showEditSheet) state.selectedEvent else null,
             onDismiss = { viewModel.dismissSheets() },
@@ -211,7 +213,7 @@ fun CalendarScreen(
 private fun EventCard(event: ClinicAppointment, onClick: () -> Unit) {
     val meta = ClinicCalendarEvents.meta[event.eventType]
     val zone = ZoneId.systemDefault()
-    val time = Instant.parse(event.scheduledAt).atZone(zone).toLocalTime()
+    val time = parseServerInstant(event.scheduledAt).atZone(zone).toLocalTime()
     val timeLabel = DateTimeFormatter.ofPattern("HH:mm").format(time)
 
     Card(

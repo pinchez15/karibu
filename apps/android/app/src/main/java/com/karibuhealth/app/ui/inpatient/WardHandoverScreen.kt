@@ -1,5 +1,7 @@
 package com.karibuhealth.app.ui.inpatient
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -129,18 +131,18 @@ private fun HandoverRow(row: AdmissionCensusRow, onClick: () -> Unit) {
 
 private fun isObsOverdue(lastObservedAt: String?, admittedAt: String): Boolean {
     val ref = lastObservedAt ?: admittedAt
-    val at = runCatching { Instant.parse(ref) }.getOrNull() ?: return false
+    val at = runCatching { parseServerInstant(ref) }.getOrNull() ?: return false
     return Duration.between(at, Instant.now()).toHours() >= ObsOverdueWorker.OBS_OVERDUE_HOURS
 }
 
 private fun dayOfStay(admittedAt: String): String = runCatching {
-    "Day ${Duration.between(Instant.parse(admittedAt), Instant.now()).toDays() + 1}"
+    "Day ${Duration.between(parseServerInstant(admittedAt), Instant.now()).toDays() + 1}"
 }.getOrDefault("")
 
 private fun lastObsLabel(lastObservedAt: String?): String {
     if (lastObservedAt.isNullOrBlank()) return "No obs yet"
     return runCatching {
-        val mins = Duration.between(Instant.parse(lastObservedAt), Instant.now()).toMinutes()
+        val mins = Duration.between(parseServerInstant(lastObservedAt), Instant.now()).toMinutes()
         when {
             mins < 60 -> "Obs ${mins}m ago"
             mins < 1440 -> "Obs ${mins / 60}h ago"

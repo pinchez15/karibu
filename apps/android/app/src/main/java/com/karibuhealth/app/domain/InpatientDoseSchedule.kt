@@ -1,5 +1,7 @@
 package com.karibuhealth.app.domain
 
+import com.karibuhealth.app.util.parseServerInstant
+
 import com.karibuhealth.app.data.local.db.entity.MedicationAdministrationEntity
 import com.karibuhealth.app.data.local.db.entity.MedicationOrderEntity
 import java.time.Instant
@@ -65,7 +67,7 @@ object InpatientDoseSchedule {
             var hours = slotHours[key] ?: listOf(8, 20)
             if (key == "stat") {
                 hours = listOf(
-                    Instant.parse(order.createdAt).atZone(zone).hour,
+                    parseServerInstant(order.createdAt).atZone(zone).hour,
                 )
             }
             for (h in hours) {
@@ -125,9 +127,9 @@ object InpatientDoseSchedule {
         val slotMs = slot.toEpochMilli()
         return admins.firstOrNull { a ->
             if (a.orderId != orderId) return@firstOrNull false
-            val schedMs = a.scheduledFor?.let { Instant.parse(it).toEpochMilli() }
+            val schedMs = a.scheduledFor?.let { parseServerInstant(it).toEpochMilli() }
             if (schedMs != null && kotlin.math.abs(schedMs - slotMs) < MATCH_WINDOW_MS) return@firstOrNull true
-            kotlin.math.abs(Instant.parse(a.administeredAt).toEpochMilli() - slotMs) < MATCH_WINDOW_MS
+            kotlin.math.abs(parseServerInstant(a.administeredAt).toEpochMilli() - slotMs) < MATCH_WINDOW_MS
         }
     }
 
