@@ -288,6 +288,12 @@ BEGIN
     updated_at = NOW()
   WHERE id = p_visit_id AND clinic_id = v_clinic_id;
 
+  -- Preserve 087 behavior: ensure the per-visit base charge exists on dispense.
+  -- (For clinics with consultation_fee_ugx = 0, e.g. SSUNGA, this is a no-op
+  -- 0-UGX row; other clinics rely on it. This is NOT the rejected visit-creation
+  -- trigger — it is the existing idempotent per-dispense ensure carried from 087.)
+  PERFORM billing_ensure_consultation_charge(p_visit_id);
+
   PERFORM sync_op_record(
     p_client_op_id, v_clinic_id, 'complete_pharmacy_dispense', 'visits', p_visit_id
   );
