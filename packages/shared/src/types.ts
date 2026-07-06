@@ -927,7 +927,10 @@ export type GuardianRelationship =
   | 'relative'
   | 'neighbor';
 
-export type PharmacyQueueTab = 'waiting' | 'in_progress' | 'done_today';
+// WP1 (D1): Waiting + In progress are merged into one "To dispense" tab so a
+// multi-line script stays on the same tab until every line is resolved. The
+// second tab is "Done today". See apps/web/.../pharmacy/pharmacy-data.ts.
+export type PharmacyQueueTab = 'to_dispense' | 'done_today';
 
 export interface Payment {
   id: string;

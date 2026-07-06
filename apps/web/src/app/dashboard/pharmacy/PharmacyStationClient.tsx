@@ -43,12 +43,14 @@ export function PharmacyStationClient({
   activeTab,
   refreshOnUpdate = true,
   completeDispenseFn,
+  startDispenseFn,
 }: {
   initialRows: PharmacyStationRow[]
   initialVisitId?: string | null
   activeTab: PharmacyQueueTab
   refreshOnUpdate?: boolean
   completeDispenseFn?: typeof import('./actions').dispensePharmacyLine
+  startDispenseFn?: typeof import('./actions').startPharmacyDispense
 }) {
   const router = useRouter()
   useAutoRefresh()
@@ -127,7 +129,11 @@ export function PharmacyStationClient({
 
   const handleDispenseCompleted = useCallback(
     (visitId: string, result: DispenseCompletionResult) => {
-      if (['dispensed', 'out_of_stock'].includes(result.dispensingStatus)) {
+      // WP1 D2: only a fully dispensed visit leaves the "To dispense" tab. A
+      // partial or out-of-stock visit still needs pharmacist action, so it
+      // stays listed (with its status chip) and keeps its selection — this is
+      // the fix for scripts "disappearing" mid-work.
+      if (result.dispensingStatus === 'dispensed') {
         removeRow(visitId)
         return
       }
@@ -237,6 +243,7 @@ export function PharmacyStationClient({
         row={selectedRow}
         readOnly={readOnly}
         dispenseLineFn={completeDispenseFn}
+        startDispenseFn={startDispenseFn}
         onUpdated={() => {
           if (refreshOnUpdate) router.refresh()
         }}

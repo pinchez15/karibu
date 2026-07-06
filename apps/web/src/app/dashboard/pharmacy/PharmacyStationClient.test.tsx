@@ -49,7 +49,7 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        activeTab="waiting"
+        activeTab="to_dispense"
         refreshOnUpdate={false}
       />,
     )
@@ -63,7 +63,7 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        activeTab="waiting"
+        activeTab="to_dispense"
         refreshOnUpdate={false}
       />,
     )
@@ -78,7 +78,7 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        activeTab="waiting"
+        activeTab="to_dispense"
         refreshOnUpdate={false}
       />,
     )
@@ -93,7 +93,7 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        activeTab="waiting"
+        activeTab="to_dispense"
         refreshOnUpdate={false}
       />,
     )
@@ -109,7 +109,7 @@ describe('PharmacyStationClient', () => {
     render(
       <PharmacyStationClient
         initialRows={PHARMACY_STATION_FIXTURE_ROWS}
-        activeTab="waiting"
+        activeTab="to_dispense"
         refreshOnUpdate={false}
       />,
     )
@@ -120,5 +120,92 @@ describe('PharmacyStationClient', () => {
     await waitFor(() => {
       expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
     })
+  })
+
+  // WP1 D2: dispensing a line must not drop the visit unless it is now fully
+  // dispensed. Partial / out-of-stock visits stay listed and selected.
+  async function dispenseSelectedLine() {
+    const button = await screen.findByTestId('save-complete')
+    await userEvent.click(button)
+  }
+
+  it('keeps a visit listed and selected when the dispense returns "partial"', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'partial',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="to_dispense"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
+      expect(vi.mocked(dispensePharmacyLine)).toHaveBeenCalled()
+    })
+    expect(screen.getByTestId('queue-row-visit-e2e-001')).toBeInTheDocument()
+    expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('keeps a visit listed when the dispense returns "out_of_stock"', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'out_of_stock',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="to_dispense"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
+      expect(vi.mocked(dispensePharmacyLine)).toHaveBeenCalled()
+    })
+    expect(screen.getByTestId('queue-row-visit-e2e-001')).toBeInTheDocument()
+    expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('removes the visit and advances selection when the dispense returns "dispensed"', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'dispensed',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="to_dispense"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('queue-row-visit-e2e-001')).not.toBeInTheDocument()
+    })
+    expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
   })
 })

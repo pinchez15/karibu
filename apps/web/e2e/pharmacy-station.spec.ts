@@ -38,6 +38,34 @@ test.describe('pharmacy station workspace', () => {
     await expect(page.getByTestId('queue-row-visit-e2e-002')).toHaveCount(0)
   })
 
+  test('WP1 — a 2-line script stays on "To dispense" after line 1, leaves after line 2', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1366, height: 768 })
+    await page.goto(FIXTURE_PATH)
+    await waitForStationReady(page)
+
+    const row = page.getByTestId('queue-row-visit-e2e-004')
+    await row.click()
+    await expect(row).toHaveAttribute('aria-selected', 'true')
+
+    // Both lines are shown in the worksheet before any dispense.
+    await expect(page.getByTestId('rx-line-rx-visit-e2e-004-0')).toBeVisible()
+    await expect(page.getByTestId('rx-line-rx-visit-e2e-004-1')).toBeVisible()
+
+    // Dispense line 1 → visit must remain visible and selected (the bug fix),
+    // now flagged "Partial", with line 2 still dispensable.
+    await page.getByTestId('save-complete').click()
+    await expect(row).toHaveCount(1)
+    await expect(row).toHaveAttribute('aria-selected', 'true')
+    await expect(row.getByText('Partial')).toBeVisible()
+    await expect(page.getByTestId('dispense-rx-visit-e2e-004-1')).toBeVisible()
+
+    // Dispense line 2 → visit is fully dispensed and leaves "To dispense".
+    await page.getByTestId('dispense-rx-visit-e2e-004-1').click()
+    await expect(row).toHaveCount(0)
+  })
+
   test('Test C — collapses to list + sheet below breakpoint', async ({ page }) => {
     await page.setViewportSize({ width: STATION_COLLAPSE_BP, height: 768 })
     await page.goto(FIXTURE_PATH)
