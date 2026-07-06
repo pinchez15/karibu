@@ -2,6 +2,10 @@ import { cache } from 'react'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { createServiceClient } from './supabase'
 import type { Staff } from '@karibu/shared'
+import { DATA_REPORT_ROLES } from './staff-roles'
+
+// Re-export so existing callers that import DATA_REPORT_ROLES from auth.ts keep working.
+export { DATA_REPORT_ROLES }
 
 /**
  * Get the current staff member from Clerk auth
@@ -66,17 +70,6 @@ export async function hasRole(role: 'admin' | 'doctor' | 'nurse'): Promise<boole
 
   return staff.role === role
 }
-
-/**
- * Roles that can access the Data unit (clinic register, HMIS 105, quality reports).
- * Clinic admin retains access via canAccessDataReports.
- */
-export const DATA_REPORT_ROLES = [
-  'doctor',
-  'nurse',
-  'clinical_officer',
-  'records_officer',
-] as const
 
 export function canAccessDataReports(role: string): boolean {
   return role === 'admin' || (DATA_REPORT_ROLES as readonly string[]).includes(role)

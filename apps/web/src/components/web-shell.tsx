@@ -31,6 +31,7 @@ import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
 import { SidebarPatientSearch } from '@/components/sidebar-patient-search'
 import { activeWebShellUnitId } from '@/lib/web-shell-units'
 import { cn } from '@/lib/utils'
+import { CLINICAL_ROLES, DATA_REPORT_ROLES, BILLING_ROLES, ALL_STAFF_ROLES } from '@/lib/staff-roles'
 
 // Legacy role type — kept exported so older imports don't break. The shell now
 // derives the active *unit* from the path, not a role.
@@ -45,26 +46,6 @@ interface NavItem {
   amber?: boolean
 }
 
-/** Clinic staff who can open the Data unit (register, HMIS, quality). */
-const DATA_STAFF = ['doctor', 'nurse', 'clinical_officer', 'records_officer']
-
-// Clinical roles share OPD/Inpatient. Lab/pharmacy desks are role-scoped.
-const CLINICAL = [
-  'doctor',
-  'nurse',
-  'clinical_officer',
-  'midwife',
-  'nursing_assistant',
-  'records_officer',
-]
-
-/** Every clinic staff role that can record patient payments at the front desk. */
-const BILLING_STAFF = [
-  ...CLINICAL,
-  'lab_tech',
-  'dispenser',
-]
-
 interface UnitDef {
   id: string
   label: string
@@ -76,14 +57,6 @@ interface UnitDef {
   /** Sidebar sub-nav for this unit. */
   items: NavItem[]
 }
-
-/** Every clinic staff role — the calendar homepage is shared across the team. */
-const ALL_STAFF = [
-  'admin',
-  ...CLINICAL,
-  'lab_tech',
-  'dispenser',
-]
 
 /** Shared shortcuts on OPD and Inpatient sidebars — orders, tasks, stock, register. */
 const CLINICAL_CROSS_LINKS: NavItem[] = [
@@ -101,7 +74,7 @@ const UNITS: UnitDef[] = [
     label: 'Home',
     icon: Home,
     basePaths: ['/dashboard'],
-    roles: ALL_STAFF,
+    roles: ALL_STAFF_ROLES,
     items: [{ id: 'calendar', label: 'Calendar', href: '/dashboard', icon: Calendar }],
   },
   {
@@ -109,7 +82,7 @@ const UNITS: UnitDef[] = [
     label: 'OPD',
     icon: Stethoscope,
     basePaths: ['/dashboard/opd', '/dashboard/visits', '/dashboard/patients', '/dashboard/worklists', '/dashboard/orders', '/dashboard/review', '/dashboard/stock-overview', '/dashboard/consult', '/dashboard/referrals'],
-    roles: CLINICAL,
+    roles: CLINICAL_ROLES,
     items: [
       { id: 'opd-today', label: 'Today & queue', href: '/dashboard/opd', icon: Home },
       ...CLINICAL_CROSS_LINKS,
@@ -120,7 +93,7 @@ const UNITS: UnitDef[] = [
     label: 'Inpatient',
     icon: BedDouble,
     basePaths: ['/dashboard/inpatient'],
-    roles: CLINICAL,
+    roles: CLINICAL_ROLES,
     items: [
       { id: 'ward-census', label: 'Ward census', href: '/dashboard/inpatient', icon: BedDouble },
       { id: 'admit', label: 'Admit patient', href: '/dashboard/inpatient/admit', icon: UserPlus },
@@ -134,7 +107,7 @@ const UNITS: UnitDef[] = [
     label: 'ANC',
     icon: Baby,
     basePaths: ['/dashboard/anc'],
-    roles: CLINICAL,
+    roles: CLINICAL_ROLES,
     items: [{ id: 'anc-registry', label: 'Registry', href: '/dashboard/anc', icon: Baby }],
   },
   {
@@ -142,7 +115,7 @@ const UNITS: UnitDef[] = [
     label: 'HIV/TB',
     icon: HeartPulse,
     basePaths: ['/dashboard/hiv-tb'],
-    roles: CLINICAL,
+    roles: CLINICAL_ROLES,
     items: [{ id: 'hiv-tb-registry', label: 'Registers', href: '/dashboard/hiv-tb', icon: HeartPulse }],
   },
   {
@@ -174,7 +147,7 @@ const UNITS: UnitDef[] = [
     label: 'Billing',
     icon: CreditCard,
     basePaths: ['/dashboard/billing'],
-    roles: BILLING_STAFF,
+    roles: BILLING_ROLES,
     items: [
       { id: 'billing-payments', label: 'Payments', href: '/dashboard/billing', icon: Receipt },
       { id: 'billing-reports', label: 'Reports', href: '/dashboard/billing/reports', icon: BarChart3 },
@@ -185,7 +158,7 @@ const UNITS: UnitDef[] = [
     label: 'Data',
     icon: Database,
     basePaths: ['/dashboard/admin/reports'],
-    roles: DATA_STAFF,
+    roles: DATA_REPORT_ROLES,
     items: [
       { id: 'data-overview', label: 'Register', href: '/dashboard/admin/reports', icon: Home },
       { id: 'data-hmis', label: 'HMIS 105', href: '/dashboard/admin/reports/hmis105', icon: ClipboardList },
