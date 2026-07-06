@@ -13,6 +13,9 @@ import { searchPatients } from '@/app/dashboard/actions'
 import {
   CLINIC_EVENT_META,
   EVENT_TITLE_PRESETS,
+  clinicFieldsToUtcIso,
+  clinicTodayStr,
+  utcToClinicFields,
   type ClinicAppointment,
   type ClinicEventType,
 } from '@/lib/calendar-events'
@@ -21,16 +24,6 @@ import { cn } from '@/lib/utils'
 
 const EVENT_TYPES = Object.keys(CLINIC_EVENT_META) as ClinicEventType[]
 
-function localDateInputValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-function localTimeInputValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
 export function AddCalendarEventForm({
   defaultDate,
   event,
@@ -38,7 +31,8 @@ export function AddCalendarEventForm({
   onDeleted,
   onCancel,
 }: {
-  defaultDate?: Date
+  /** Clinic-local date "YYYY-MM-DD" to prefill when adding. */
+  defaultDate?: string
   /** When set, form edits an existing calendar event. */
   event?: ClinicAppointment
   onSaved: () => void
@@ -61,21 +55,20 @@ export function AddCalendarEventForm({
 
   useEffect(() => {
     if (event) {
-      const scheduled = new Date(event.scheduled_at)
+      const fields = utcToClinicFields(event.scheduled_at)
       setEventType(event.event_type)
       setTitle(event.title ?? '')
       setReason(event.reason ?? '')
-      setDate(localDateInputValue(scheduled))
-      setTime(localTimeInputValue(scheduled))
+      setDate(fields.date)
+      setTime(fields.time)
       setPatientId(event.patient_id)
       setPatientLabel(event.patient_name)
       return
     }
-    const d = defaultDate ?? new Date()
     setEventType('drive')
     setTitle('')
     setReason('')
-    setDate(localDateInputValue(d))
+    setDate(defaultDate ?? clinicTodayStr())
     setTime('09:00')
     setPatientId(null)
     setPatientLabel(null)
@@ -105,15 +98,15 @@ export function AddCalendarEventForm({
           setError('Pick a date and time.')
           return
         }
-        const scheduledAt = new Date(`${date}T${time}:00`)
-        if (Number.isNaN(scheduledAt.getTime())) {
+        const scheduledIso = clinicFieldsToUtcIso(date, time)
+        if (Number.isNaN(Date.parse(scheduledIso))) {
           setError('Invalid date or time.')
           return
         }
         start(async () => {
           const body = {
             event_type: eventType,
-            scheduled_at: scheduledAt.toISOString(),
+            scheduled_at: scheduledIso,
             title: needsTitle ? title : undefined,
             reason: reason || undefined,
             patient_id: patientId ?? undefined,

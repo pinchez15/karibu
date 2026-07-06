@@ -75,17 +75,63 @@ export function appointmentTitle(a: ClinicAppointment): string {
   return CLINIC_EVENT_META[a.event_type]?.shortLabel ?? 'Event'
 }
 
+// The clinic is in Uganda (Africa/Kampala), which is permanently UTC+3 with no
+// daylight saving. We render and enter the whole calendar in clinic-local time
+// so a viewer in any timezone (e.g. an admin abroad) and the clinic staff see
+// the same clock — otherwise FullCalendar shows each event in the viewer's
+// browser timezone and times/days drift.
+export const CLINIC_TZ = 'Africa/Kampala'
+export const CLINIC_OFFSET_MS = 3 * 60 * 60 * 1000
+
+/** UTC instant ISO -> naive ISO of the Kampala wall-clock (feed FullCalendar with timeZone="UTC"). */
+export function utcToClinicNaiveIso(utcIso: string): string {
+  return new Date(Date.parse(utcIso) + CLINIC_OFFSET_MS).toISOString().slice(0, 19)
+}
+
+/** Kampala wall-clock date ("2026-07-06") + time ("11:00") -> UTC instant ISO for storage. */
+export function clinicFieldsToUtcIso(dateStr: string, timeStr: string): string {
+  return new Date(`${dateStr}T${timeStr}:00+03:00`).toISOString()
+}
+
+/** UTC instant ISO -> Kampala {date,time} strings for form inputs. */
+export function utcToClinicFields(utcIso: string): { date: string; time: string } {
+  const naive = utcToClinicNaiveIso(utcIso)
+  return { date: naive.slice(0, 10), time: naive.slice(11, 16) }
+}
+
+/** Today's date in the clinic timezone as "YYYY-MM-DD". */
+export function clinicTodayStr(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CLINIC_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+/** Format a UTC instant for display in clinic-local time. */
+export function formatClinicDateTime(utcIso: string): string {
+  return new Date(utcIso).toLocaleString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: CLINIC_TZ,
+  })
+}
+
 export function toFullCalendarEvent(a: ClinicAppointment) {
   const meta = CLINIC_EVENT_META[a.event_type] ?? CLINIC_EVENT_META.admin
-  const end = a.scheduled_end
+  const endUtc = a.scheduled_end
     ? a.scheduled_end
     : new Date(new Date(a.scheduled_at).getTime() + 30 * 60 * 1000).toISOString()
 
   return {
     id: a.id,
     title: appointmentTitle(a),
-    start: a.scheduled_at,
-    end,
+    start: utcToClinicNaiveIso(a.scheduled_at),
+    end: utcToClinicNaiveIso(endUtc),
     backgroundColor: meta.color,
     borderColor: meta.color,
     textColor: meta.textColor,

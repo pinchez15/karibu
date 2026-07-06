@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { Check, Loader2, RotateCcw } from 'lucide-react'
 import {
   prescriptionLineDisplayName,
@@ -403,220 +403,200 @@ export function PrescriptionWorksheet({
             ) : null}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-line-soft">
-            <table className="w-full min-w-[640px] border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-line-soft bg-muted/50 text-left kh-meta">
-                  <th className="px-2 py-1.5 font-medium">Medication</th>
-                  <th className="w-14 px-1 py-1.5 font-medium">Rx</th>
-                  <th className="w-12 px-1 py-1.5 font-medium">Qty</th>
-                  <th className="w-14 px-1 py-1.5 font-medium">Unit</th>
-                  <th className="min-w-[140px] px-1 py-1.5 font-medium">Stock</th>
-                  <th className="w-[88px] px-1 py-1.5 font-medium">Outcome</th>
-                  <th className="w-[108px] px-2 py-1.5 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((line, index) => {
-                  const draft = drafts[line.id]
-                  const editable = !readOnly && lineIsEditable(line.status) && draft
-                  const name = prescriptionLineDisplayName(line)
-                  const busy = pending && busyLineId === line.id
-                  const showSendBack = sendBackLineId === line.id
+          <div className="space-y-2 rounded-lg border border-line-soft p-2" data-testid="rx-worksheet">
+            {lines.map((line, index) => {
+              const draft = drafts[line.id]
+              const editable = !readOnly && lineIsEditable(line.status) && draft
+              const name = prescriptionLineDisplayName(line)
+              const busy = pending && busyLineId === line.id
+              const showSendBack = sendBackLineId === line.id
 
-                  if (!editable) {
-                    return (
-                      <tr
-                        key={line.id}
-                        className="border-b border-line-soft/70 bg-muted/20"
-                        data-testid={`rx-line-${line.id}`}
+              if (!editable) {
+                return (
+                  <div
+                    key={line.id}
+                    data-testid={`rx-line-${line.id}`}
+                    className="rounded-md border border-line-soft/70 bg-muted/20 px-3 py-2"
+                  >
+                    <div className="flex items-start gap-1.5 text-xs font-medium">
+                      {line.status === 'dispensed' ? (
+                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green" aria-hidden />
+                      ) : line.status === 'needs_clarification' ? (
+                        <RotateCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-ink" aria-hidden />
+                      ) : null}
+                      <span className="break-words">{name}</span>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      Rx {prescribedShort(line)} · {lineOutcomeLabel(line.status)}
+                    </div>
+                  </div>
+                )
+              }
+
+              const stockOptions = stockOptionsForLine(line, draft)
+              const stockList = draft.substitute ? stock : stockOptions
+
+              return (
+                <div
+                  key={line.id}
+                  data-testid={`rx-line-${line.id}`}
+                  className={cn(
+                    'rounded-md border border-line-soft/70 px-3 py-2',
+                    index % 2 === 0 ? 'bg-card' : 'bg-background',
+                  )}
+                >
+                  <div className="text-xs font-medium break-words" title={name}>
+                    {name}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Rx {prescribedShort(line)}
+                    {alreadyDispensed(line) > 0 && (
+                      <>
+                        {' · '}already dispensed {alreadyDispensed(line)} of{' '}
+                        {line.quantity_prescribed ?? '—'}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-end gap-2">
+                    <label className="flex flex-col gap-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Qty
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        className={cn(field, 'w-16')}
+                        value={draft.quantity_dispensed}
+                        onChange={(e) =>
+                          updateDraft(line.id, { quantity_dispensed: e.target.value })
+                        }
+                        disabled={busy}
+                      />
+                    </label>
+                    <label className="flex flex-col gap-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Unit
+                      <input
+                        className={cn(field, 'w-16')}
+                        value={draft.quantity_unit}
+                        onChange={(e) => updateDraft(line.id, { quantity_unit: e.target.value })}
+                        disabled={busy}
+                        placeholder="tabs"
+                      />
+                    </label>
+                    <label className="flex min-w-[150px] flex-1 flex-col gap-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Stock
+                      {draft.line_status === 'out_of_stock' ? (
+                        <span className="py-1 text-xs normal-case text-muted-foreground">—</span>
+                      ) : stockList.length === 0 ? (
+                        <span className="py-1 text-xs normal-case text-muted-foreground">
+                          No match
+                        </span>
+                      ) : (
+                        <select
+                          className={cn(field, 'w-full')}
+                          value={draft.stock_item_id}
+                          onChange={(e) => updateDraft(line.id, { stock_item_id: e.target.value })}
+                          disabled={busy}
+                        >
+                          <option value="">—</option>
+                          {stockList.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {stockItemLabel(s)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </label>
+                    <label className="flex flex-col gap-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Outcome
+                      <select
+                        className={cn(field, 'w-[84px]')}
+                        value={draft.line_status}
+                        onChange={(e) =>
+                          updateDraft(line.id, {
+                            line_status: e.target.value as DispenseLineStatus,
+                          })
+                        }
+                        disabled={busy}
                       >
-                        <td className="px-2 py-1.5">
-                          <span className="inline-flex items-center gap-1.5 font-medium">
-                            {line.status === 'dispensed' ? (
-                              <Check className="h-3.5 w-3.5 text-green" aria-hidden />
-                            ) : line.status === 'needs_clarification' ? (
-                              <RotateCcw className="h-3.5 w-3.5 text-amber-ink" aria-hidden />
-                            ) : null}
-                            <span className="truncate">{name}</span>
-                          </span>
-                        </td>
-                        <td className="px-1 py-1.5 text-muted-foreground">{prescribedShort(line)}</td>
-                        <td className="px-1 py-1.5 text-muted-foreground" colSpan={3}>
-                          {lineOutcomeLabel(line.status)}
-                        </td>
-                        <td className="px-2 py-1.5" />
-                      </tr>
-                    )
-                  }
-
-                  const stockOptions = stockOptionsForLine(line, draft)
-                  const stockList = draft.substitute ? stock : stockOptions
-
-                  return (
-                    <Fragment key={line.id}>
-                      <tr
-                        className={cn(
-                          'border-b border-line-soft/70',
-                          index % 2 === 0 ? 'bg-card' : 'bg-background',
-                        )}
-                        data-testid={`rx-line-${line.id}`}
+                        <option value="dispensed">OK</option>
+                        <option value="partially_dispensed">Part</option>
+                        <option value="out_of_stock">OOS</option>
+                      </select>
+                    </label>
+                    <div className="flex items-center gap-1 pb-0.5">
+                      <button
+                        type="button"
+                        className="inline-flex h-8 items-center rounded bg-cobalt px-3 text-xs font-medium text-white disabled:opacity-60"
+                        onClick={() => handleDispenseLine(line)}
+                        disabled={busy}
+                        data-testid={
+                          line.id === firstEditableLineId ? 'save-complete' : `dispense-${line.id}`
+                        }
                       >
-                        <td className="max-w-[180px] px-2 py-1 font-medium" title={name}>
-                          <span className="block truncate">{name}</span>
-                          {alreadyDispensed(line) > 0 && (
-                            <span className="block text-[10px] font-normal text-muted-foreground">
-                              already dispensed {alreadyDispensed(line)} of{' '}
-                              {line.quantity_prescribed ?? '—'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-1 py-1 text-muted-foreground">{prescribedShort(line)}</td>
-                        <td className="px-1 py-1">
+                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Dispense'}
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-8 items-center rounded px-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setSendBackLineId(showSendBack ? null : line.id)
+                          setSendBackReason('')
+                        }}
+                        disabled={busy}
+                        title="Send this script back to clinician"
+                      >
+                        ↩
+                      </button>
+                    </div>
+                  </div>
+
+                  {(draft.substitute || showSendBack) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-3 rounded bg-muted/30 px-2 py-1.5">
+                      <label className="inline-flex items-center gap-1.5 text-[11px]">
+                        <input
+                          type="checkbox"
+                          checked={draft.substitute}
+                          onChange={(e) => updateDraft(line.id, { substitute: e.target.checked })}
+                          disabled={busy}
+                        />
+                        Substitute
+                      </label>
+                      {draft.substitute && (
+                        <input
+                          className={cn(field, 'min-w-[200px] flex-1')}
+                          value={draft.substitute_notes}
+                          onChange={(e) =>
+                            updateDraft(line.id, { substitute_notes: e.target.value })
+                          }
+                          disabled={busy}
+                          placeholder="Substitution note"
+                        />
+                      )}
+                      {showSendBack && (
+                        <>
                           <input
-                            type="number"
-                            min={0}
-                            step="any"
-                            className={cn(field, 'w-12')}
-                            value={draft.quantity_dispensed}
-                            onChange={(e) =>
-                              updateDraft(line.id, { quantity_dispensed: e.target.value })
-                            }
+                            className={cn(field, 'min-w-[200px] flex-1')}
+                            value={sendBackReason}
+                            onChange={(e) => setSendBackReason(e.target.value)}
                             disabled={busy}
+                            placeholder="Reason for send-back"
                           />
-                        </td>
-                        <td className="px-1 py-1">
-                          <input
-                            className={cn(field, 'w-14')}
-                            value={draft.quantity_unit}
-                            onChange={(e) => updateDraft(line.id, { quantity_unit: e.target.value })}
-                            disabled={busy}
-                            placeholder="tabs"
-                          />
-                        </td>
-                        <td className="px-1 py-1">
-                          {draft.line_status === 'out_of_stock' ? (
-                            <span className="text-muted-foreground">—</span>
-                          ) : stockList.length === 0 ? (
-                            <span className="text-muted-foreground">No match</span>
-                          ) : (
-                            <select
-                              className={cn(field, 'max-w-[160px]')}
-                              value={draft.stock_item_id}
-                              onChange={(e) =>
-                                updateDraft(line.id, { stock_item_id: e.target.value })
-                              }
-                              disabled={busy}
-                            >
-                              <option value="">—</option>
-                              {stockList.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {stockItemLabel(s)}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        </td>
-                        <td className="px-1 py-1">
-                          <select
-                            className={cn(field, 'w-[84px]')}
-                            value={draft.line_status}
-                            onChange={(e) =>
-                              updateDraft(line.id, {
-                                line_status: e.target.value as DispenseLineStatus,
-                              })
-                            }
+                          <button
+                            type="button"
+                            className="h-7 rounded border border-line-soft px-2 text-[11px] font-medium"
+                            onClick={() => handleSendBackLine(line)}
                             disabled={busy}
                           >
-                            <option value="dispensed">OK</option>
-                            <option value="partially_dispensed">Part</option>
-                            <option value="out_of_stock">OOS</option>
-                          </select>
-                        </td>
-                        <td className="px-2 py-1">
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              className="inline-flex h-7 items-center rounded bg-cobalt px-2 text-[11px] font-medium text-white disabled:opacity-60"
-                              onClick={() => handleDispenseLine(line)}
-                              disabled={busy}
-                              data-testid={
-                                line.id === firstEditableLineId
-                                  ? 'save-complete'
-                                  : `dispense-${line.id}`
-                              }
-                            >
-                              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Dispense'}
-                            </button>
-                            <button
-                              type="button"
-                              className="h-7 rounded px-1 text-[11px] text-muted-foreground hover:text-foreground"
-                              onClick={() => {
-                                setSendBackLineId(showSendBack ? null : line.id)
-                                setSendBackReason('')
-                              }}
-                              disabled={busy}
-                              title="Send this script back to clinician"
-                            >
-                              ↩
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {(draft.substitute || showSendBack) && (
-                        <tr key={`${line.id}-extra`} className="border-b border-line-soft/70 bg-muted/30">
-                          <td colSpan={7} className="px-2 py-1.5">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <label className="inline-flex items-center gap-1.5 text-[11px]">
-                                <input
-                                  type="checkbox"
-                                  checked={draft.substitute}
-                                  onChange={(e) =>
-                                    updateDraft(line.id, { substitute: e.target.checked })
-                                  }
-                                  disabled={busy}
-                                />
-                                Substitute
-                              </label>
-                              {draft.substitute && (
-                                <input
-                                  className={cn(field, 'min-w-[200px] flex-1')}
-                                  value={draft.substitute_notes}
-                                  onChange={(e) =>
-                                    updateDraft(line.id, { substitute_notes: e.target.value })
-                                  }
-                                  disabled={busy}
-                                  placeholder="Substitution note"
-                                />
-                              )}
-                              {showSendBack && (
-                                <>
-                                  <input
-                                    className={cn(field, 'min-w-[200px] flex-1')}
-                                    value={sendBackReason}
-                                    onChange={(e) => setSendBackReason(e.target.value)}
-                                    disabled={busy}
-                                    placeholder="Reason for send-back"
-                                  />
-                                  <button
-                                    type="button"
-                                    className="h-7 rounded border border-line-soft px-2 text-[11px] font-medium"
-                                    onClick={() => handleSendBackLine(line)}
-                                    disabled={busy}
-                                  >
-                                    Confirm send-back
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                            Confirm send-back
+                          </button>
+                        </>
                       )}
-                    </Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 

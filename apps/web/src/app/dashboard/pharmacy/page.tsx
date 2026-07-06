@@ -28,7 +28,12 @@ export default async function PharmacyPage({
   const staff = await getStaff()
   if (!staff) redirect('/')
 
-  if (staff.role !== 'dispenser' && staff.role !== 'admin') {
+  // Dispenser + admin + clinical officer (dual-acts as pharmacist) — see migration 093.
+  if (
+    staff.role !== 'dispenser' &&
+    staff.role !== 'admin' &&
+    staff.role !== 'clinical_officer'
+  ) {
     redirect('/dashboard')
   }
 

@@ -58,7 +58,7 @@ fun StaffDto.toEntity() = StaffEntity(
 fun StaffEntity.toDomain() = Staff(
     id = id, clerkUserId = clerkUserId, clinicId = clinicId,
     email = email, displayName = displayName,
-    role = StaffRole.valueOf(role),
+    role = runCatching { StaffRole.valueOf(role) }.getOrDefault(StaffRole.nurse),
     isActive = isActive, deactivatedAt = deactivatedAt,
     onboardingCompletedAt = onboardingCompletedAt,
     createdAt = createdAt, updatedAt = updatedAt,
@@ -172,13 +172,13 @@ fun VisitDto.toEntity(isSynced: Boolean = true) = VisitEntity(
 fun VisitEntity.toDomain() = Visit(
     id = id, clinicId = clinicId, patientId = patientId,
     doctorId = doctorId, nurseId = nurseId,
-    status = VisitStatus.valueOf(status),
-    queueStatus = QueueStatus.valueOf(queueStatus),
+    status = runCatching { VisitStatus.valueOf(status) }.getOrDefault(VisitStatus.pending),
+    queueStatus = runCatching { QueueStatus.valueOf(queueStatus) }.getOrDefault(QueueStatus.waiting),
     queuePosition = queuePosition,
-    priority = VisitPriority.valueOf(priority),
+    priority = runCatching { VisitPriority.valueOf(priority) }.getOrDefault(VisitPriority.normal),
     chiefComplaint = chiefComplaint, checkedInAt = checkedInAt,
     department = runCatching { Department.valueOf(department) }.getOrDefault(Department.opd),
-    reviewStatus = ReviewStatus.valueOf(reviewStatus),
+    reviewStatus = runCatching { ReviewStatus.valueOf(reviewStatus) }.getOrDefault(ReviewStatus.pending),
     reviewedBy = reviewedBy, reviewedAt = reviewedAt,
     diagnosis = diagnosis, medications = medications,
     followUpInstructions = followUpInstructions, testsOrdered = testsOrdered,
@@ -291,7 +291,9 @@ fun PatientNoteDto.toEntity() = PatientNoteEntity(
 
 fun PatientNoteEntity.toDomain() = PatientNote(
     id = id, visitId = visitId, content = content,
-    language = language, status = NoteStatus.valueOf(status),
+    language = language,
+    status = runCatching { NoteStatus.valueOf(status) }
+        .getOrDefault(if (status == "finalized") NoteStatus.signed else NoteStatus.draft),
     source = runCatching { PatientNoteSource.valueOf(source) }
         .getOrDefault(PatientNoteSource.ai_generated),
     createdAt = createdAt, updatedAt = updatedAt,
@@ -350,8 +352,8 @@ fun PaymentDto.toEntity(isSynced: Boolean = true) = PaymentEntity(
 fun PaymentEntity.toDomain() = Payment(
     id = id, visitId = visitId, clinicId = clinicId,
     patientId = patientId, amountUgx = amountUgx,
-    paymentMethod = PaymentMethod.valueOf(paymentMethod),
-    status = PaymentStatus.valueOf(status),
+    paymentMethod = runCatching { PaymentMethod.valueOf(paymentMethod) }.getOrDefault(PaymentMethod.cash),
+    status = runCatching { PaymentStatus.valueOf(status) }.getOrDefault(PaymentStatus.pending),
     receiptNumber = receiptNumber, serviceType = serviceType,
     notes = notes, collectedBy = collectedBy,
     createdAt = createdAt, updatedAt = updatedAt,
