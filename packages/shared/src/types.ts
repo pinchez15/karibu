@@ -892,6 +892,13 @@ export interface PrescriptionOrderLine {
   ordered_by: string | null;
   ordered_at: string;
   notes: string | null;
+  /**
+   * Sum of quantity_dispensed already recorded for this line (dispensed +
+   * partially_dispensed records). Populated by the pharmacy station query so the
+   * worksheet can default a re-dispense to the REMAINING quantity (WP3 D2) and
+   * show "already dispensed X of Y". Optional: undefined means "not loaded / 0".
+   */
+  quantity_dispensed_so_far?: number | null;
 }
 
 export interface PrescriptionLineInput {

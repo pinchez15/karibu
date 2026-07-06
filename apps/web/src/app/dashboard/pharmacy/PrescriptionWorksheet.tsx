@@ -48,8 +48,25 @@ function prescribedShort(line: PrescriptionOrderLine): string {
   return unit ? `${line.quantity_prescribed} ${unit}` : String(line.quantity_prescribed)
 }
 
+/** Quantity already recorded across prior dispense records for this line. */
+function alreadyDispensed(line: PrescriptionOrderLine): number {
+  const n = line.quantity_dispensed_so_far
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0
+}
+
+/**
+ * WP3 D2: a re-opened partial line must default to the REMAINING quantity, not
+ * the full prescribed amount — otherwise re-dispensing double-bills (the DB sums
+ * dispense records incrementally). Returns null when no quantity was prescribed.
+ */
+function remainingToDispense(line: PrescriptionOrderLine): number | null {
+  if (line.quantity_prescribed == null) return null
+  return Math.max(0, line.quantity_prescribed - alreadyDispensed(line))
+}
+
 function defaultDraft(line: PrescriptionOrderLine): LineDraft {
-  const qty = line.quantity_prescribed != null ? String(line.quantity_prescribed) : ''
+  const remaining = remainingToDispense(line)
+  const qty = remaining != null ? String(remaining) : ''
   return {
     prescription_order_id: line.id,
     quantity_dispensed: qty,
@@ -445,8 +462,14 @@ export function PrescriptionWorksheet({
                         )}
                         data-testid={`rx-line-${line.id}`}
                       >
-                        <td className="max-w-[180px] truncate px-2 py-1 font-medium" title={name}>
-                          {name}
+                        <td className="max-w-[180px] px-2 py-1 font-medium" title={name}>
+                          <span className="block truncate">{name}</span>
+                          {alreadyDispensed(line) > 0 && (
+                            <span className="block text-[10px] font-normal text-muted-foreground">
+                              already dispensed {alreadyDispensed(line)} of{' '}
+                              {line.quantity_prescribed ?? '—'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-1 py-1 text-muted-foreground">{prescribedShort(line)}</td>
                         <td className="px-1 py-1">
