@@ -37,6 +37,9 @@ class SyncDebugLogger @Inject constructor(
             "attempts", "status", "visitId", "localNoteId", "serverNoteId",
             "noteId", "queueEntryId", "pendingEntriesScanned", "payloadsUpdated",
             "localId", "remoteId",
+            // WP2 D6: per-run telemetry counters (no PHI — pure counts/flags).
+            "attempted", "succeeded", "transientFail", "permanentFail",
+            "skippedDependency", "bailedNoNetwork",
         )
     }
 

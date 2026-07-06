@@ -5,6 +5,7 @@ import com.karibuhealth.app.data.local.db.converter.toEntity
 import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.remote.dto.*
 import com.karibuhealth.app.data.repository.PrescriptionOrderRepository
 import com.karibuhealth.app.util.NetworkMonitor
@@ -50,11 +51,19 @@ class SyncEngine @Inject constructor(
     private val pullReconciliationService: PullReconciliationService,
     private val syncDebugLogger: SyncDebugLogger,
     private val prescriptionOrderRepository: PrescriptionOrderRepository,
+    private val authTokenStore: AuthTokenStore,
+    private val tokenRefresher: TokenRefresher,
     private val json: Json,
 ) {
     companion object {
         private const val TAG = "SyncEngine"
         private const val BACKOFF_BASE_MS = 30_000L
+        // WP2 D2: cap exponential backoff at 10 minutes so a transient failure
+        // never strands an entry for the ~16 min the raw 30s·2^5 formula reached.
+        private const val MAX_BACKOFF_MS = 600_000L
+        // WP2 D3: refresh the cached token before a run if it is older than this
+        // (Clerk JWTs expire in ~1h; foreground SessionMonitor only runs every 45m).
+        private const val PROACTIVE_REFRESH_AGE_MS = 45L * 60 * 1000
     }
 
     // Serializes queue runs in-process (worker + direct ViewModel calls), so
@@ -62,10 +71,20 @@ class SyncEngine @Inject constructor(
     private val queueMutex = Mutex()
 
     suspend fun processQueue(): Int = queueMutex.withLock {
-        if (!networkMonitor.isOnline()) {
-            Log.d(TAG, "Offline, skipping sync")
+        // WP2 D1: gate on isConnected() (any INTERNET-capable network), NOT
+        // isOnline() (which requires NET_CAPABILITY_VALIDATED). Android's
+        // validation probe flaps on congested 4G; the request itself is the only
+        // honest connectivity test. A failed attempt costs one backoff; a skipped
+        // attempt costs the clinic a day of records.
+        if (!networkMonitor.isConnected()) {
+            Log.d(TAG, "No network, skipping sync")
+            logRunSummary(0, 0, 0, 0, 0, bailedNoNetwork = true)
             return 0
         }
+
+        // WP2 D3: refresh a stale cached token before the batch so we don't burn
+        // the first entries of a run on avoidable 401s.
+        maybeProactiveRefresh()
 
         // Recover entries stranded at 'in_progress' by process death or a
         // cancelled worker. The engine is the only writer and runs are
@@ -76,7 +95,10 @@ class SyncEngine @Inject constructor(
         }
 
         val entries = syncQueueDao.getRetryable()
-        if (entries.isEmpty()) return 0
+        if (entries.isEmpty()) {
+            logRunSummary(0, 0, 0, 0, 0, bailedNoNetwork = false)
+            return 0
+        }
 
         // #region agent log
         syncDebugLogger.log(
@@ -91,16 +113,22 @@ class SyncEngine @Inject constructor(
         // #endregion
 
         val sorted = topologicalSort(entries)
-        var processedCount = 0
-        var failedCount = 0
+        var attempted = 0
+        var succeeded = 0
+        var transientFail = 0
+        var permanentFail = 0
+        var skippedDependency = 0
+        // WP2 D2/D3: at most one token refresh per queue run.
+        var didRefreshThisRun = false
 
         for (entry in sorted) {
-            if (!networkMonitor.isOnline()) break
+            if (!networkMonitor.isConnected()) break
 
             // Check dependency
             if (entry.dependsOn != null) {
                 val dependency = syncQueueDao.getById(entry.dependsOn)
                 if (dependency != null && dependency.status != "completed") {
+                    skippedDependency++
                     Log.d(TAG, "Skipping ${entry.id} -- dependency ${entry.dependsOn} not completed")
                     // #region agent log
                     syncDebugLogger.log(
@@ -120,28 +148,11 @@ class SyncEngine @Inject constructor(
                 }
             }
 
+            attempted++
             try {
-                // #region agent log
-                // PHI note: never log payload content here — payloads carry
-                // patient DTOs and transcripts. rpc name + entity ids only.
-                syncDebugLogger.log(
-                    hypothesisId = "H-A",
-                    location = "SyncEngine.kt:processQueue",
-                    message = "processing_entry",
-                    data = mapOf(
-                        "entryId" to entry.id,
-                        "operation" to entry.operationType,
-                        "entityType" to entry.entityType,
-                        "entityId" to entry.entityId,
-                        "dependsOn" to entry.dependsOn,
-                        "attempts" to entry.attempts.toString(),
-                    ),
-                )
-                // #endregion
-                syncQueueDao.update(entry.copy(status = "in_progress"))
-                processEntry(entry)
-                syncQueueDao.update(entry.copy(status = "completed", serverEntityId = entry.entityId))
-                processedCount++
+                logProcessingEntry(entry)
+                runEntry(entry)
+                succeeded++
             } catch (e: CancellationException) {
                 // The batch was cancelled (worker replaced / process going
                 // away) — this is not an op failure. Put the entry back to
@@ -152,47 +163,48 @@ class SyncEngine @Inject constructor(
                 }
                 throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Sync failed for ${entry.id}: ${e.message}")
-                // #region agent log
-                syncDebugLogger.log(
-                    hypothesisId = when (entry.operationType) {
-                        "sign_provider_note" -> "H-A"
-                        "amend_provider_note" -> "H-D"
-                        "upsert_patient_note_summary" -> "H-C"
-                        "upsert_provider_note" -> "H-B"
-                        else -> "H-E"
-                    },
-                    location = "SyncEngine.kt:processQueue",
-                    message = "sync_failed",
-                    data = mapOf(
-                        "entryId" to entry.id,
-                        "operation" to entry.operationType,
-                        "entityId" to entry.entityId,
-                        "error" to (e.message?.take(400)),
-                    ),
-                )
-                // #endregion
-                failedCount++
-                SyncMetrics.recordRpcError(entry.operationType, null, e.message)
-                val nextAttempt = entry.attempts + 1
-                val backoffMs = BACKOFF_BASE_MS * (1L shl minOf(nextAttempt, 5))
-                val nextStatus = if (nextAttempt >= entry.maxAttempts) "failed" else "pending"
-                syncQueueDao.update(
-                    entry.copy(
-                        status = nextStatus,
-                        attempts = nextAttempt,
-                        lastError = e.message,
-                        nextRetryAt = System.currentTimeMillis() + backoffMs,
-                    )
-                )
-                // Phase 6 fix: transitive failure propagation. Without this,
-                // dependents of a terminal-failed entry sit at status='pending'
-                // forever — the single-hop check at line 51 keeps refusing to
-                // process them because the parent never flips to 'completed'.
-                // Now they fail with a clear reason and the UI's failing-entries
-                // observable surfaces the whole chain for triage.
-                if (nextStatus == "failed") {
-                    markDependentsFailed(entry.id, "upstream ${entry.operationType} failed: ${e.message}")
+                when (classifySyncError(e)) {
+                    // WP2 D2: 401. Refresh the token ONCE per run, then retry the
+                    // SAME entry immediately WITHOUT spending an attempt.
+                    SyncErrorKind.AUTH -> {
+                        if (!didRefreshThisRun) {
+                            didRefreshThisRun = true
+                            val refreshed = tokenRefresher.refreshToken()
+                            SyncMetrics.recordAuth401(retrySucceeded = refreshed)
+                            if (refreshed) {
+                                try {
+                                    runEntry(entry)
+                                    succeeded++
+                                } catch (e2: CancellationException) {
+                                    withContext(NonCancellable) {
+                                        syncQueueDao.update(entry.copy(status = "pending"))
+                                    }
+                                    throw e2
+                                } catch (e2: Exception) {
+                                    // Refreshed retry still failed → transient;
+                                    // keep the retry budget, don't dead-letter.
+                                    recordTransientFailure(entry, e2)
+                                    transientFail++
+                                }
+                            } else {
+                                // Refresh itself failed → transient, NOT permanent.
+                                recordTransientFailure(entry, e)
+                                transientFail++
+                            }
+                        } else {
+                            // Already refreshed this run → treat as transient.
+                            recordTransientFailure(entry, e)
+                            transientFail++
+                        }
+                    }
+                    SyncErrorKind.PERMANENT -> {
+                        recordPermanentFailure(entry, e)
+                        permanentFail++
+                    }
+                    SyncErrorKind.TRANSIENT -> {
+                        recordTransientFailure(entry, e)
+                        transientFail++
+                    }
                 }
             }
         }
@@ -201,13 +213,147 @@ class SyncEngine @Inject constructor(
         val sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000)
         syncQueueDao.deleteCompleted(sevenDaysAgo)
 
-        if (processedCount > 0) {
+        if (succeeded > 0) {
             pullReconciliationService.reconcileAfterPull()
         }
-        SyncMetrics.recordQueueProcessed(processedCount, failedCount)
+        SyncMetrics.recordQueueProcessed(succeeded, transientFail + permanentFail)
         SyncMetrics.recordOutboxDepth(syncQueueDao.getPending().size)
 
-        return processedCount
+        // WP2 D6: one structured line per run so the next field report is
+        // diagnosable remotely.
+        logRunSummary(attempted, succeeded, transientFail, permanentFail, skippedDependency, bailedNoNetwork = false)
+
+        return succeeded
+    }
+
+    /** In_progress → RPC → completed for a single entry. Throws on RPC failure. */
+    private suspend fun runEntry(entry: SyncQueueEntry) {
+        syncQueueDao.update(entry.copy(status = "in_progress"))
+        processEntry(entry)
+        syncQueueDao.update(entry.copy(status = "completed", serverEntityId = entry.entityId))
+    }
+
+    private fun logProcessingEntry(entry: SyncQueueEntry) {
+        // #region agent log
+        // PHI note: never log payload content here — payloads carry patient
+        // DTOs and transcripts. rpc name + entity ids only.
+        syncDebugLogger.log(
+            hypothesisId = "H-A",
+            location = "SyncEngine.kt:processQueue",
+            message = "processing_entry",
+            data = mapOf(
+                "entryId" to entry.id,
+                "operation" to entry.operationType,
+                "entityType" to entry.entityType,
+                "entityId" to entry.entityId,
+                "dependsOn" to entry.dependsOn,
+                "attempts" to entry.attempts.toString(),
+            ),
+        )
+        // #endregion
+    }
+
+    /**
+     * WP2 D2: transient failure (timeout, 5xx, 408/429, refresh-failed 401, or an
+     * unclassified error). Spend one attempt, back off (capped at 10 min), and
+     * dead-letter only once the raised [SyncQueueEntry.maxAttempts] budget (10)
+     * is exhausted — cascading to dependents at that point.
+     */
+    private suspend fun recordTransientFailure(entry: SyncQueueEntry, e: Exception) {
+        Log.e(TAG, "Transient sync failure for ${entry.id}: ${e.message}")
+        logSyncFailure(entry, e)
+        SyncMetrics.recordRpcError(entry.operationType, (e as? SyncHttpException)?.code, e.message)
+        val nextAttempt = entry.attempts + 1
+        val backoffMs = minOf(BACKOFF_BASE_MS * (1L shl minOf(nextAttempt, 5)), MAX_BACKOFF_MS)
+        val nextStatus = if (nextAttempt >= entry.maxAttempts) "failed" else "pending"
+        syncQueueDao.update(
+            entry.copy(
+                status = nextStatus,
+                attempts = nextAttempt,
+                lastError = e.message,
+                nextRetryAt = System.currentTimeMillis() + backoffMs,
+            ),
+        )
+        if (nextStatus == "failed") {
+            markDependentsFailed(entry.id, "upstream ${entry.operationType} failed: ${e.message}")
+        }
+    }
+
+    /**
+     * WP2 D2: permanent failure (4xx that will never succeed on retry — 400/403/
+     * 404/409/422). Dead-letter immediately (attempts = maxAttempts) so the item
+     * surfaces under "Needs attention" instead of burning 10 retries, and cascade
+     * to dependents.
+     */
+    private suspend fun recordPermanentFailure(entry: SyncQueueEntry, e: Exception) {
+        Log.e(TAG, "Permanent sync failure for ${entry.id}: ${e.message}")
+        logSyncFailure(entry, e)
+        SyncMetrics.recordRpcError(entry.operationType, (e as? SyncHttpException)?.code, e.message)
+        syncQueueDao.update(
+            entry.copy(
+                status = "failed",
+                attempts = entry.maxAttempts,
+                lastError = e.message,
+                nextRetryAt = null,
+            ),
+        )
+        markDependentsFailed(entry.id, "upstream ${entry.operationType} failed (permanent): ${e.message}")
+    }
+
+    private fun logSyncFailure(entry: SyncQueueEntry, e: Exception) {
+        // #region agent log
+        syncDebugLogger.log(
+            hypothesisId = when (entry.operationType) {
+                "sign_provider_note" -> "H-A"
+                "amend_provider_note" -> "H-D"
+                "upsert_patient_note_summary" -> "H-C"
+                "upsert_provider_note" -> "H-B"
+                else -> "H-E"
+            },
+            location = "SyncEngine.kt:processQueue",
+            message = "sync_failed",
+            data = mapOf(
+                "entryId" to entry.id,
+                "operation" to entry.operationType,
+                "entityId" to entry.entityId,
+                "error" to (e.message?.take(400)),
+            ),
+        )
+        // #endregion
+    }
+
+    /** WP2 D3: proactively refresh a token older than 45 min before a batch. */
+    private suspend fun maybeProactiveRefresh() {
+        val fetchedAt = authTokenStore.getTokenFetchedAt() ?: return
+        val age = System.currentTimeMillis() - fetchedAt
+        if (age >= PROACTIVE_REFRESH_AGE_MS) {
+            val refreshed = tokenRefresher.refreshToken()
+            Log.d(TAG, "Proactive token refresh (age ${age / 60000}m): success=$refreshed")
+        }
+    }
+
+    /** WP2 D6: structured per-run telemetry line. */
+    private fun logRunSummary(
+        attempted: Int,
+        succeeded: Int,
+        transientFail: Int,
+        permanentFail: Int,
+        skippedDependency: Int,
+        bailedNoNetwork: Boolean,
+    ) {
+        syncDebugLogger.log(
+            hypothesisId = "H-RUN",
+            location = "SyncEngine.kt:processQueue",
+            message = "queue_run_summary",
+            data = mapOf(
+                "attempted" to attempted.toString(),
+                "succeeded" to succeeded.toString(),
+                "transientFail" to transientFail.toString(),
+                "permanentFail" to permanentFail.toString(),
+                "skippedDependency" to skippedDependency.toString(),
+                "bailedNoNetwork" to bailedNoNetwork.toString(),
+            ),
+        )
     }
 
     private suspend fun processEntry(entry: SyncQueueEntry) {
@@ -292,9 +438,7 @@ class SyncEngine @Inject constructor(
             } else {
                 ""
             }
-            throw IllegalStateException(
-                "rpc_create_patient HTTP ${response.code()} ${body.take(300)}$hint".trim(),
-            )
+            throw SyncHttpException(response.code(), body.take(300) + hint, "rpc_create_patient")
         }
 
         val serverPatient = supabaseApi.getPatientById("eq.${dto.id}").firstOrNull()
@@ -355,7 +499,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcCreateVisit(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("create_visit HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "create_visit")
         }
 
         markVisitSyncedIfQuiet(entry)
@@ -386,7 +530,7 @@ class SyncEngine @Inject constructor(
                 Log.d(TAG, "Provider note reconciled after visit_id conflict: ${dto.visitId}")
                 return
             }
-            throw IllegalStateException("upsert_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "upsert_provider_note")
         }
         reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.id)
         Log.d(TAG, "Provider note synced: ${entry.entityId}")
@@ -465,7 +609,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcSignProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("sign_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "sign_provider_note")
         }
         Log.d(TAG, "Provider note signed: ${entry.entityId}")
     }
@@ -476,7 +620,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcAmendProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("amend_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "amend_provider_note")
         }
         Log.d(TAG, "Provider note amended: ${entry.entityId}")
     }
@@ -487,7 +631,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcVoidProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("void_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "void_provider_note")
         }
         Log.d(TAG, "Provider note voided: ${entry.entityId}")
     }
@@ -498,7 +642,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcAddendProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("addend_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "addend_provider_note")
         }
         Log.d(TAG, "Provider note addended: ${entry.entityId}")
     }
@@ -509,7 +653,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcCosignProviderNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("cosign_provider_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "cosign_provider_note")
         }
         Log.d(TAG, "Provider note cosigned: ${entry.entityId}")
     }
@@ -521,7 +665,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcFinalizeClinicalEncounter(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("finalize_clinical_encounter HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "finalize_clinical_encounter")
         }
         markVisitSyncedIfQuiet(entry)
         reconcileProviderNoteByVisit(dto.visitId, localNoteId = dto.noteId)
@@ -534,7 +678,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcUpsertPatientNoteSummary(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("upsert_patient_note_summary HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "upsert_patient_note_summary")
         }
         Log.d(TAG, "Patient note summary synced: ${entry.entityId}")
     }
@@ -545,7 +689,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcUpsertVisitClinicalSummary(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("upsert_visit_clinical_summary HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "upsert_visit_clinical_summary")
         }
         markVisitSyncedIfQuiet(entry)
         Log.d(TAG, "Visit clinical summary synced: ${entry.entityId}")
@@ -558,7 +702,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcInsertPatientVitals(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("insert_patient_vitals HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "insert_patient_vitals")
         }
         patientVitalsDao.updateSyncState(entry.entityId, true)
         Log.d(TAG, "Vitals synced: ${entry.entityId}")
@@ -570,7 +714,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcMarkDocumentationComplete(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("mark_documentation_complete HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "mark_documentation_complete")
         }
         markVisitSyncedIfQuiet(entry)
         Log.d(TAG, "Documentation completion synced: ${entry.entityId}")
@@ -606,7 +750,7 @@ class SyncEngine @Inject constructor(
         }
         if (response != null && !response.isSuccessful) {
             val body = response.errorBody()?.string().orEmpty()
-            throw IllegalStateException("${rpcName ?: "queue_op"} HTTP ${response.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(response.code(), body, rpcName ?: "queue_op")
         }
     }
 
@@ -652,7 +796,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcSubmitPharmacyOrder(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_submit_pharmacy_order HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_submit_pharmacy_order")
         }
         val idMap = prescriptionOrderRepository.replaceLocalAfterSubmit(entry.entityId)
         remapPendingCompleteDispense(entry.entityId, idMap)
@@ -706,7 +850,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStartLab(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_start_lab HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_start_lab")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -718,7 +862,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordLabResult(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_lab_result HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_lab_result")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -730,7 +874,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStartLabTest(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_start_lab_test HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_start_lab_test")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -742,7 +886,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordLabTestResult(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_lab_test_result HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_lab_test_result")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -754,7 +898,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcSetDispensingStatus(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_set_dispensing_status HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_set_dispensing_status")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -766,7 +910,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordDispense(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_dispense")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -778,7 +922,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStartPharmacyDispense(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_start_pharmacy_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_start_pharmacy_dispense")
         }
         markVisitSyncedIfQuiet(entry)
     }
@@ -790,7 +934,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcCompletePharmacyDispense(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_complete_pharmacy_dispense HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_complete_pharmacy_dispense")
         }
         prescriptionOrderRepository.refreshForVisit(entry.entityId)
         markVisitSyncedIfQuiet(entry)
@@ -803,7 +947,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcSendPharmacyBackToClinician(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_send_pharmacy_back_to_clinician HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_send_pharmacy_back_to_clinician")
         }
         prescriptionOrderRepository.refreshForVisit(entry.entityId)
         markVisitSyncedIfQuiet(entry)
@@ -816,7 +960,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcCreateReferral(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_create_referral HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_create_referral")
         }
         referralDao.markSynced(entry.entityId)
     }
@@ -828,7 +972,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcAdmitPatientV2(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_admit_patient_v2 HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_admit_patient_v2")
         }
         admissionDao.markSynced(entry.entityId)
     }
@@ -840,9 +984,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordAdmissionObservation(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException(
-                "rpc_record_admission_observation HTTP ${result.code()} ${body.take(300)}".trim(),
-            )
+            throw SyncHttpException(result.code(), body, "rpc_record_admission_observation")
         }
         admissionObservationDao.markSynced(entry.entityId)
     }
@@ -853,7 +995,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcAddMedicationOrder(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_add_medication_order HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_add_medication_order")
         }
         medicationOrderDao.markSynced(entry.entityId)
     }
@@ -864,7 +1006,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStopMedicationOrder(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_stop_medication_order HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_stop_medication_order")
         }
         medicationOrderDao.markSynced(entry.entityId)
     }
@@ -875,7 +1017,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordMedicationAdmin(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_medication_admin HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_medication_admin")
         }
         medicationAdministrationDao.markSynced(entry.entityId)
     }
@@ -886,7 +1028,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStartIvInfusion(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_start_iv_infusion HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_start_iv_infusion")
         }
         ivInfusionDao.markSynced(entry.entityId)
     }
@@ -897,7 +1039,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordIvInfusionCheck(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_iv_infusion_check HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_iv_infusion_check")
         }
         ivInfusionCheckDao.markSynced(entry.entityId)
     }
@@ -908,7 +1050,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStopIvInfusion(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_stop_iv_infusion HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_stop_iv_infusion")
         }
         ivInfusionDao.markSynced(entry.entityId)
     }
@@ -919,7 +1061,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcDischargeAdmission(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_discharge_admission HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_discharge_admission")
         }
         admissionDao.markSynced(entry.entityId)
     }
@@ -930,7 +1072,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordDelivery(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_delivery HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_delivery")
         }
         deliveryDao.markSynced(entry.entityId)
     }
@@ -941,7 +1083,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordPostnatalObs(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_postnatal_obs HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_postnatal_obs")
         }
         postnatalObservationDao.markSynced(entry.entityId)
     }
@@ -952,7 +1094,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordAdmissionNote(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_admission_note HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_admission_note")
         }
         admissionNoteDao.markSynced(entry.entityId)
     }
@@ -963,7 +1105,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcStartPregnancy(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_start_pregnancy HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_start_pregnancy")
         }
         pregnancyDao.markSynced(entry.entityId)
     }
@@ -974,7 +1116,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordAncContact(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_anc_contact HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_anc_contact")
         }
         ancContactDao.markSynced(entry.entityId)
     }
@@ -985,7 +1127,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordHtsEvent(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_hts_event HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_hts_event")
         }
         htsEventDao.markSynced(entry.entityId)
     }
@@ -996,7 +1138,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcUpsertHivCare(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_upsert_hiv_care HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_upsert_hiv_care")
         }
         hivCareDao.markSynced(entry.entityId)
     }
@@ -1007,7 +1149,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordViralLoad(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_viral_load HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_viral_load")
         }
         viralLoadDao.markSynced(entry.entityId)
     }
@@ -1018,7 +1160,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcUpsertTbEpisode(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_upsert_tb_episode HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_upsert_tb_episode")
         }
         tbEpisodeDao.markSynced(entry.entityId)
     }
@@ -1029,7 +1171,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordEbolaScreening(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("rpc_record_ebola_screening HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "rpc_record_ebola_screening")
         }
         ebolaScreeningDao.markSynced(entry.entityId)
     }
@@ -1040,7 +1182,7 @@ class SyncEngine @Inject constructor(
         val result = supabaseApi.rpcRecordReviewResponse(dto)
         if (!result.isSuccessful) {
             val body = result.errorBody()?.string().orEmpty()
-            throw IllegalStateException("record_review_response HTTP ${result.code()} ${body.take(300)}".trim())
+            throw SyncHttpException(result.code(), body, "record_review_response")
         }
     }
 

@@ -43,7 +43,7 @@ private enum class PendingCodeStep {
 class ClerkAuthManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authManager: AuthManager,
-) {
+) : com.karibuhealth.app.data.sync.TokenRefresher {
     companion object {
         private const val TAG = "ClerkAuthManager"
     }
@@ -231,18 +231,29 @@ class ClerkAuthManager @Inject constructor(
         }
     }
 
-    suspend fun refreshToken() {
-        try {
-            val token = tokenFrom(
-                Clerk.session?.fetchToken(
-                    GetTokenOptions(skipCache = true)
-                )
-            )
+    /**
+     * WP2 D3: honest token refresh. Returns true only when a fresh token was
+     * obtained and persisted; false otherwise. The failure reason is always
+     * logged — this never silently no-ops (e.g. when `Clerk.session == null`).
+     */
+    override suspend fun refreshToken(): Boolean {
+        return try {
+            val session = Clerk.session
+            if (session == null) {
+                Log.w(TAG, "Token refresh skipped: no active Clerk session")
+                return false
+            }
+            val token = tokenFrom(session.fetchToken(GetTokenOptions(skipCache = true)))
             if (!token.isNullOrBlank()) {
                 authManager.refreshToken(token)
+                true
+            } else {
+                Log.w(TAG, "Token refresh returned no token")
+                false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Token refresh failed", e)
+            Log.e(TAG, "Token refresh failed: ${e.message}", e)
+            false
         }
     }
 

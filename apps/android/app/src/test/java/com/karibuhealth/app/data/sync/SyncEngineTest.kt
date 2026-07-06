@@ -1,5 +1,6 @@
 package com.karibuhealth.app.data.sync
 
+import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.db.dao.*
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
@@ -15,6 +16,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+import java.net.SocketTimeoutException
 
 class SyncEngineTest {
 
@@ -39,6 +41,8 @@ class SyncEngineTest {
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var pullReconciliationService: PullReconciliationService
     private lateinit var syncDebugLogger: SyncDebugLogger
+    private lateinit var authTokenStore: AuthTokenStore
+    private lateinit var tokenRefresher: TokenRefresher
     private lateinit var syncEngine: SyncEngine
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -68,6 +72,10 @@ class SyncEngineTest {
         networkMonitor = mockk()
         pullReconciliationService = mockk(relaxed = true)
         syncDebugLogger = mockk(relaxed = true)
+        authTokenStore = mockk(relaxed = true)
+        tokenRefresher = mockk(relaxed = true)
+        // No cached-token timestamp by default -> no proactive refresh in tests.
+        coEvery { authTokenStore.getTokenFetchedAt() } returns null
 
         syncEngine = SyncEngine(
             syncQueueDao = syncQueueDao,
@@ -94,23 +102,52 @@ class SyncEngineTest {
             pullReconciliationService = pullReconciliationService,
             syncDebugLogger = syncDebugLogger,
             prescriptionOrderRepository = prescriptionOrderRepository,
+            authTokenStore = authTokenStore,
+            tokenRefresher = tokenRefresher,
             json = json,
         )
     }
 
+    // ---------------------------------------------------------------------
+    // WP2 test #1 — the gate. The engine attempts whenever ANY network is
+    // connected (INTERNET capability), even when validation has not passed.
+    // ---------------------------------------------------------------------
+
     @Test
-    fun `processQueue returns 0 when offline`() = runTest {
-        every { networkMonitor.isOnline() } returns false
+    fun `processes entries when connected but not validated`() = runTest {
+        // isConnected true, isOnline (validated) false — would have bailed before.
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.success("".toResponseBody())
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify { supabaseApi.rpcRecordLabResult(any()) }
+    }
+
+    @Test
+    fun `bails and leaves entries untouched when not connected`() = runTest {
+        every { networkMonitor.isConnected() } returns false
 
         val result = syncEngine.processQueue()
 
         assertEquals(0, result)
         coVerify(exactly = 0) { syncQueueDao.getRetryable(any()) }
+        // Telemetry records the no-network bail (WP2 D6).
+        verify {
+            syncDebugLogger.log(
+                any(), any(), "queue_run_summary",
+                match { it["bailedNoNetwork"] == "true" }, any(),
+            )
+        }
     }
 
     @Test
     fun `processQueue returns 0 when queue is empty`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
         coEvery { syncQueueDao.getRetryable(any()) } returns emptyList()
         coEvery { syncQueueDao.getPending() } returns emptyList()
 
@@ -121,7 +158,7 @@ class SyncEngineTest {
 
     @Test
     fun `skips entry when dependency not completed`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val depEntry = makeSyncEntry("dep-1", operationType = "create_patient", status = "pending")
         val entry = makeSyncEntry("entry-1", operationType = "create_visit", dependsOn = "dep-1")
@@ -136,12 +173,12 @@ class SyncEngineTest {
 
     @Test
     fun `increments attempts on failure`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val entry = makeSyncEntry(
             "entry-1",
             operationType = "create_patient",
-            payload = "invalid json", // Will cause deserialization failure
+            payload = "invalid json", // Will cause deserialization failure (transient default)
         )
 
         coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
@@ -158,7 +195,7 @@ class SyncEngineTest {
 
     @Test
     fun `processes finalize_clinical_encounter and reconciles`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val payload = json.encodeToString(
             FinalizeClinicalEncounterRequest.serializer(),
@@ -193,13 +230,14 @@ class SyncEngineTest {
 
     @Test
     fun `marks as failed after max attempts`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val entry = makeSyncEntry(
             "entry-1",
             operationType = "create_patient",
             payload = "invalid json",
             attempts = 4, // One more will reach maxAttempts=5
+            maxAttempts = 5,
         )
 
         coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
@@ -215,7 +253,7 @@ class SyncEngineTest {
 
     @Test
     fun `resets stale in_progress entries at run start`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
         coEvery { syncQueueDao.resetInProgress() } returns 2
         coEvery { syncQueueDao.getRetryable(any()) } returns emptyList()
 
@@ -226,7 +264,7 @@ class SyncEngineTest {
 
     @Test
     fun `keeps visit is_synced false while sibling ops are still active`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
         coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
@@ -242,7 +280,7 @@ class SyncEngineTest {
 
     @Test
     fun `marks visit is_synced true when no sibling ops remain`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
         coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
@@ -257,7 +295,7 @@ class SyncEngineTest {
 
     @Test
     fun `cancellation requeues entry without counting an attempt or failing it`() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1")
         coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
@@ -270,8 +308,6 @@ class SyncEngineTest {
             // expected
         }
 
-        // Reset to pending with the SAME attempt count — cancellation is not
-        // an op failure and must not burn one of the five retry slots.
         coVerify {
             syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "pending" && it.attempts == 0 })
         }
@@ -280,7 +316,228 @@ class SyncEngineTest {
         }
     }
 
-    private fun makeLabResultEntry(id: String, visitId: String) = makeSyncEntry(
+    // ---------------------------------------------------------------------
+    // WP2 test #2 — permanent 4xx dead-letters immediately and cascades.
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `permanent 4xx marks failed at max attempts after one attempt and cascades`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        val dependent = makeSyncEntry(
+            "dep-1",
+            operationType = "record_payment",
+            dependsOn = "sync-lab-1",
+            status = "pending",
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { syncQueueDao.getDependents("sync-lab-1") } returns listOf(dependent)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(400, "bad request".toResponseBody())
+
+        syncEngine.processQueue()
+
+        // Failed immediately with attempts pinned to the max (no burning 10 retries).
+        coVerify {
+            syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "failed" && it.attempts == 10 })
+        }
+        // Dependent is cascaded to failed.
+        coVerify {
+            syncQueueDao.update(match { it.id == "dep-1" && it.status == "failed" })
+        }
+    }
+
+    @Test
+    fun `permanent 422 dead-letters immediately`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(422, "unprocessable".toResponseBody())
+
+        syncEngine.processQueue()
+
+        coVerify {
+            syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "failed" && it.attempts == 10 })
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // WP2 test #3 — transient errors retry with capped backoff.
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `transient 503 keeps entry pending with one attempt and a retry time`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(503, "unavailable".toResponseBody())
+
+        syncEngine.processQueue()
+
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "sync-lab-1" && it.status == "pending" && it.attempts == 1 && it.nextRetryAt != null
+            })
+        }
+    }
+
+    @Test
+    fun `socket timeout is transient`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } throws SocketTimeoutException("timed out")
+
+        syncEngine.processQueue()
+
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "sync-lab-1" && it.status == "pending" && it.attempts == 1 && it.nextRetryAt != null
+            })
+        }
+    }
+
+    @Test
+    fun `transient backoff never exceeds ten minutes at attempt six`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        // attempts=5 -> nextAttempt=6; uncapped backoff would be ~16 min.
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", attempts = 5, maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(503, "unavailable".toResponseBody())
+
+        val updates = mutableListOf<SyncQueueEntry>()
+        coEvery { syncQueueDao.update(capture(updates)) } just Runs
+
+        val before = System.currentTimeMillis()
+        syncEngine.processQueue()
+
+        val failed = updates.first { it.id == "sync-lab-1" && it.attempts == 6 }
+        val backoff = failed.nextRetryAt!! - before
+        assertTrue("backoff should be capped at 10 min, was $backoff ms", backoff <= 601_000L)
+        assertTrue("backoff should still be a real (capped) delay, was $backoff ms", backoff > 590_000L)
+    }
+
+    // ---------------------------------------------------------------------
+    // WP2 test #4 — 401 refresh-and-retry flow.
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `401 refreshes once then retries same entry to completion without spending an attempt`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { tokenRefresher.refreshToken() } returns true
+        // First call 401, retry succeeds.
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returnsMany listOf(
+            Response.error(401, "unauthorized".toResponseBody()),
+            Response.success("".toResponseBody()),
+        )
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify(exactly = 1) { tokenRefresher.refreshToken() }
+        // Completed with attempts still 0 (the 401 retry did not burn a slot).
+        coVerify {
+            syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "completed" && it.attempts == 0 })
+        }
+    }
+
+    @Test
+    fun `401 with failed refresh keeps entry pending as transient not dead-lettered`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val entry = makeLabResultEntry("sync-lab-1", visitId = "visit-1", maxAttempts = 10)
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { tokenRefresher.refreshToken() } returns false
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(401, "unauthorized".toResponseBody())
+
+        syncEngine.processQueue()
+
+        coVerify(exactly = 1) { tokenRefresher.refreshToken() }
+        // Transient: pending with one attempt, NOT failed/dead-lettered.
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "sync-lab-1" && it.status == "pending" && it.attempts == 1
+            })
+        }
+        coVerify(exactly = 0) {
+            syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "failed" })
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // WP2 test #5 — classifier table test (pure function).
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `classifySyncError maps codes and exceptions to the right kind`() {
+        fun http(code: Int) = classifySyncError(SyncHttpException(code, "", "op"))
+
+        assertEquals(SyncErrorKind.PERMANENT, http(400))
+        assertEquals(SyncErrorKind.AUTH, http(401))
+        assertEquals(SyncErrorKind.PERMANENT, http(403))
+        assertEquals(SyncErrorKind.PERMANENT, http(404))
+        assertEquals(SyncErrorKind.TRANSIENT, http(408))
+        assertEquals(SyncErrorKind.PERMANENT, http(409))
+        assertEquals(SyncErrorKind.PERMANENT, http(422))
+        assertEquals(SyncErrorKind.TRANSIENT, http(429))
+        assertEquals(SyncErrorKind.TRANSIENT, http(500))
+        assertEquals(SyncErrorKind.TRANSIENT, http(503))
+        assertEquals(SyncErrorKind.TRANSIENT, classifySyncError(java.io.IOException("boom")))
+        assertEquals(SyncErrorKind.TRANSIENT, classifySyncError(SocketTimeoutException("slow")))
+        // Unknown non-HTTP errors default to transient (keep the retry budget).
+        assertEquals(SyncErrorKind.TRANSIENT, classifySyncError(IllegalStateException("weird")))
+    }
+
+    // ---------------------------------------------------------------------
+    // WP2 test #6 — pending-pill vs needs-attention counts are disjoint and
+    // together cover every non-completed entry (guards D4 from double counting).
+    // These predicates mirror SyncQueueDao.getPendingCount() and
+    // getTerminallyFailedCount() SQL.
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `pending and needs-attention buckets are disjoint and cover all non-completed entries`() {
+        // getPendingCount: status IN (pending, failed) AND attempts < max_attempts
+        fun countsToPendingPill(e: SyncQueueEntry) =
+            e.status in setOf("pending", "failed") && e.attempts < e.maxAttempts
+        // getTerminallyFailedCount: status = failed AND attempts >= max_attempts
+        fun countsToNeedsAttention(e: SyncQueueEntry) =
+            e.status == "failed" && e.attempts >= e.maxAttempts
+
+        val entries = listOf(
+            makeSyncEntry("a", status = "pending", attempts = 0, maxAttempts = 10),
+            makeSyncEntry("b", status = "pending", attempts = 3, maxAttempts = 10),
+            makeSyncEntry("c", status = "failed", attempts = 4, maxAttempts = 10),   // retrying
+            makeSyncEntry("d", status = "failed", attempts = 10, maxAttempts = 10),  // dead-letter
+            makeSyncEntry("e", status = "failed", attempts = 12, maxAttempts = 10),  // dead-letter
+        )
+
+        for (e in entries) {
+            val inPill = countsToPendingPill(e)
+            val inAttention = countsToNeedsAttention(e)
+            // Disjoint: never counted twice.
+            assertFalse("entry ${e.id} counted in both buckets", inPill && inAttention)
+            // Covering: every non-completed entry lands in exactly one bucket.
+            assertTrue("entry ${e.id} counted in neither bucket", inPill || inAttention)
+        }
+
+        assertEquals(2, entries.count(::countsToNeedsAttention))
+        assertEquals(3, entries.count(::countsToPendingPill))
+    }
+
+    private fun makeLabResultEntry(
+        id: String,
+        visitId: String,
+        attempts: Int = 0,
+        maxAttempts: Int = 5,
+    ) = makeSyncEntry(
         id = id,
         operationType = "rpc_record_lab_result",
         payload = json.encodeToString(
@@ -288,6 +545,8 @@ class SyncEngineTest {
             RecordLabResultRequest(visitId = visitId, result = "MRDT positive", abnormal = true),
         ),
         entityId = visitId,
+        attempts = attempts,
+        maxAttempts = maxAttempts,
     )
 
     private fun makeSyncEntry(
@@ -297,6 +556,7 @@ class SyncEngineTest {
         payload: String = "{}",
         dependsOn: String? = null,
         attempts: Int = 0,
+        maxAttempts: Int = 5,
         entityId: String? = null,
     ) = SyncQueueEntry(
         id = id,
@@ -306,7 +566,7 @@ class SyncEngineTest {
         payload = payload,
         status = status,
         attempts = attempts,
-        maxAttempts = 5,
+        maxAttempts = maxAttempts,
         createdAt = System.currentTimeMillis(),
         dependsOn = dependsOn,
     )

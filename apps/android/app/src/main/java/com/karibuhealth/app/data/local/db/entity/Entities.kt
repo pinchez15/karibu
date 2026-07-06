@@ -346,7 +346,12 @@ data class SyncQueueEntry(
     val payload: String,
     val status: String,
     val attempts: Int = 0,
-    @ColumnInfo(name = "max_attempts") val maxAttempts: Int = 5,
+    // WP2 D2: raised 5 -> 10. Transient network failures on a bad day used to
+    // burn through 5 retries and dead-letter real patient data; permanent 4xx
+    // now short-circuit to failed immediately, so the larger budget only ever
+    // benefits genuinely transient errors. Existing rows are bumped by the
+    // v30 -> v31 Room migration.
+    @ColumnInfo(name = "max_attempts") val maxAttempts: Int = 10,
     @ColumnInfo(name = "last_error") val lastError: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "next_retry_at") val nextRetryAt: Long? = null,

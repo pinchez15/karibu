@@ -25,7 +25,10 @@ class AuthInterceptor @Inject constructor(
         if (response.code == 401 && authTokenStore.getTokenBlocking() != null) {
             response.close()
             val refreshed = runBlocking {
-                runCatching { clerkAuthManager.get().refreshToken() }.isSuccess
+                // refreshToken() now returns an honest Boolean (WP2 D3) and never
+                // throws for an ordinary refresh failure; getOrDefault guards the
+                // unexpected-throw path only.
+                runCatching { clerkAuthManager.get().refreshToken() }.getOrDefault(false)
             }
             request = buildRequest(chain, authTokenStore.getTokenBlocking())
             response = chain.proceed(request)

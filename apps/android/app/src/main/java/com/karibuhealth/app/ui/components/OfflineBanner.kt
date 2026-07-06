@@ -70,11 +70,15 @@ fun OfflineBanner(
             )
             Spacer(Modifier.width(8.dp))
             Text(
+                // WP2 D4: when there are terminally-failed entries, surface BOTH
+                // numbers so a shrinking pending count never hides the stuck ones,
+                // e.g. "61 pending · 3 need attention".
                 text = when {
-                    failedSyncCount > 0 && tappable ->
-                        "$failedSyncCount failed to sync — tap to review"
+                    failedSyncCount > 0 && pendingSyncCount > 0 ->
+                        "$pendingSyncCount pending · $failedSyncCount need attention" +
+                            (if (tappable) " — tap to review" else "")
                     failedSyncCount > 0 ->
-                        "$failedSyncCount failed to sync"
+                        "$failedSyncCount need attention" + (if (tappable) " — tap to review" else "")
                     !isOnline -> "Offline — saved on this device"
                     pendingSyncCount > 0 && tappable ->
                         "$pendingSyncCount to sync to cloud — tap for details"

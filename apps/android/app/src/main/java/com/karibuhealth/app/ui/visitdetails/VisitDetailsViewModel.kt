@@ -51,6 +51,7 @@ data class VisitDetailsUiState(
     val isSyncing: Boolean = false,
     val connectionStatus: NetworkMonitor.ConnectionStatus = NetworkMonitor.ConnectionStatus(
         isOnline = false,
+        isConnected = false,
         quality = NetworkMonitor.ConnectionQuality.offline,
         downKbps = 0,
         upKbps = 0,
