@@ -38,7 +38,7 @@ import com.karibuhealth.app.data.local.db.entity.*
         IvInfusionEntity::class,
         IvInfusionCheckEntity::class,
     ],
-    version = 30,
+    version = 31,
     exportSchema = true,
 )
 abstract class KaribuDatabase : RoomDatabase() {

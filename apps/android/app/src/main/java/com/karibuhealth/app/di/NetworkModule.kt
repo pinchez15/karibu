@@ -49,8 +49,14 @@ object NetworkModule {
                 }
             })
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            // WP2 D5: 60s -> 120s. At 2G-grade throughput (field reports of
+            // ~231 B/s) a TLS handshake plus response body can exceed 60s, which
+            // surfaced as spurious timeouts that consumed retry budget.
+            .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(120, TimeUnit.SECONDS)
+            // Transparently retry a request that failed on a dropped/half-open
+            // connection (common on flapping cellular) before it reaches the app.
+            .retryOnConnectionFailure(true)
             .build()
     }
 

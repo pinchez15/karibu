@@ -36,6 +36,7 @@ import com.karibuhealth.app.ui.pharmacy.PharmacyHomeScreen
 import com.karibuhealth.app.ui.components.KhMetaText
 import com.karibuhealth.app.ui.components.KhStatusKind
 import com.karibuhealth.app.ui.components.KhStatusPill
+import com.karibuhealth.app.ui.components.SyncDetailsSheet
 import com.karibuhealth.app.ui.theme.Amber
 import com.karibuhealth.app.ui.theme.Cobalt
 import com.karibuhealth.app.ui.theme.CobaltSoft
@@ -85,6 +86,25 @@ fun HomeScreen(
 
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    // WP2 D4: tapping the TO SYNC tile opens the sync-details sheet so the
+    // clinician can see (and rescue) stuck clinical writes.
+    var showSyncSheet by remember { mutableStateOf(false) }
+    val pendingEntries by viewModel.pendingEntries.collectAsState()
+    val failedEntries by viewModel.failedEntries.collectAsState()
+
+    if (showSyncSheet) {
+        SyncDetailsSheet(
+            entries = pendingEntries,
+            failedEntries = failedEntries,
+            onDismiss = { showSyncSheet = false },
+            onRetryAll = {
+                viewModel.retryAllSync()
+                showSyncSheet = false
+            },
+            onMarkSynced = viewModel::markEntrySynced,
+        )
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -170,6 +190,14 @@ fun HomeScreen(
                             value = uiState.pendingSyncCount.toString(),
                             modifier = Modifier.weight(1f),
                             indicatorColor = if (uiState.pendingSyncCount > 0) Amber else null,
+                            attentionCount = uiState.needsAttentionCount,
+                            onClick = if (
+                                uiState.pendingSyncCount > 0 || uiState.needsAttentionCount > 0
+                            ) {
+                                { showSyncSheet = true }
+                            } else {
+                                null
+                            },
                         )
                         StatTile(
                             label = "DONE",
@@ -338,12 +366,17 @@ private fun StatTile(
     value: String,
     modifier: Modifier = Modifier,
     indicatorColor: Color? = null,
+    // WP2 D4: terminally-failed outbox count. Rendered in error style as a
+    // second line so a shrinking "to sync" number never hides stuck writes.
+    attentionCount: Int = 0,
+    onClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, Line, RoundedCornerShape(12.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Column {
@@ -365,6 +398,14 @@ private fun StatTile(
                             .background(indicatorColor),
                     )
                 }
+            }
+            if (attentionCount > 0) {
+                Text(
+                    text = "$attentionCount need attention",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         }
     }

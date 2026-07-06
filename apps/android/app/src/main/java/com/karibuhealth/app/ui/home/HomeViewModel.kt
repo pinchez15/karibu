@@ -6,9 +6,11 @@ import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.local.datastore.RecentPatientEntry
 import com.karibuhealth.app.data.local.datastore.RecentPatientsStore
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
+import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.StaffRepository
 import com.karibuhealth.app.data.repository.VisitRepository
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.domain.model.Clinic
 import com.karibuhealth.app.domain.model.OpdPatientFilter
 import com.karibuhealth.app.domain.model.OpdPatientRow
@@ -18,9 +20,11 @@ import com.karibuhealth.app.ui.auth.ClerkAuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,6 +37,12 @@ data class HomeUiState(
     val opdPatients: List<OpdPatientRow> = emptyList(),
     val selectedFilter: OpdPatientFilter? = null,
     val pendingSyncCount: Int = 0,
+    /**
+     * WP2 D4: terminally-failed (dead-lettered) outbox entries. These drop out
+     * of [pendingSyncCount], so surfacing them here keeps the clinician from
+     * seeing "all synced" while clinical writes are actually stuck.
+     */
+    val needsAttentionCount: Int = 0,
     val searchQuery: String = "",
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
@@ -81,11 +91,19 @@ class HomeViewModel @Inject constructor(
     private val authTokenStore: AuthTokenStore,
     private val clerkAuthManager: ClerkAuthManager,
     private val syncQueueDao: SyncQueueDao,
+    private val syncEngine: SyncEngine,
     private val recentPatientsStore: RecentPatientsStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    /** WP2 D4: live outbox contents for the tappable sync-details sheet. */
+    val pendingEntries: StateFlow<List<SyncQueueEntry>> = syncQueueDao.observePending()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val failedEntries: StateFlow<List<SyncQueueEntry>> = syncQueueDao.observeTerminallyFailed()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -114,6 +132,11 @@ class HomeViewModel @Inject constructor(
             launch {
                 syncQueueDao.getPendingCount().collect { count ->
                     _uiState.update { it.copy(pendingSyncCount = count) }
+                }
+            }
+            launch {
+                syncQueueDao.getTerminallyFailedCount().collect { count ->
+                    _uiState.update { it.copy(needsAttentionCount = count) }
                 }
             }
             launch {
@@ -187,6 +210,21 @@ class HomeViewModel @Inject constructor(
     fun signOut() {
         viewModelScope.launch {
             clerkAuthManager.signOut()
+        }
+    }
+
+    /** WP2 D4: un-fail dead-lettered entries and re-run the queue. */
+    fun retryAllSync() {
+        viewModelScope.launch {
+            syncQueueDao.resetFailed()
+            syncEngine.processQueue()
+        }
+    }
+
+    /** WP2 D4: clear a single entry the user confirmed already landed on the server. */
+    fun markEntrySynced(id: String) {
+        viewModelScope.launch {
+            syncQueueDao.forceComplete(id)
         }
     }
 }

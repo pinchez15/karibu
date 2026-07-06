@@ -3,6 +3,21 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v30 -> v31: WP2 sync reliability. Raise the retry budget for existing
+// non-completed outbox rows from 5 to 10 so transient network failures on a
+// bad link stop dead-lettering real patient data before the connection
+// recovers. New rows default to 10 via the entity (see SyncQueueEntry). This
+// is data-only — no schema/column change — but Room still requires a version
+// bump + registered Migration for the new @Database(version = 31).
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "UPDATE sync_queue SET max_attempts = 10 " +
+                "WHERE status != 'completed' AND max_attempts < 10",
+        )
+    }
+}
+
 // v23 -> v24: OPD structured prescription lines (migration 064 mirror).
 // v25 -> v26: per-test lab results JSON on visits (migration 075 mirror).
 val MIGRATION_25_26 = object : Migration(25, 26) {
