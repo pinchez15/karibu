@@ -226,7 +226,29 @@ export function PrinterSetupClient({ initial }: { initial: ClinicPrintSettings }
               Print test receipt
               <ExternalLink className="h-3.5 w-3.5 opacity-60" />
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={pending}
+              onClick={() =>
+                save(false, () => {
+                  window.open(
+                    '/dashboard/settings/printer/test?long=1',
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                })
+              }
+            >
+              <Printer className="h-4 w-4" />
+              Print long test receipt
+              <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Use &quot;Print long test receipt&quot; (12 medicines) to check that the printer does not cut
+            in the middle of the slip.
+          </p>
 
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStep(1)}>
