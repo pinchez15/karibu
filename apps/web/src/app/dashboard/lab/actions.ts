@@ -1,14 +1,21 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { inngest } from '@/inngest/client'
 import { createServiceClient } from '@/lib/supabase'
 import { requireStaff } from '@/lib/auth'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
-/**
- * Lab actions — all writes via SECURITY DEFINER RPCs (migration 045).
- */
-
-type LabStatus = 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal'
+async function revalidateLabPaths(visitId: string, clinicId: string) {
+  revalidatePath('/dashboard/lab')
+  revalidatePath('/dashboard/lab/history')
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  revalidatePath('/dashboard/worklists')
+  revalidatePath('/dashboard/opd')
+  // Android-origin lab writes go through the same RPCs; web clients pick up
+  // changes via this broadcast. Offline Android stations rely on the 60s poll.
+  void broadcastClinicRefresh(clinicId)
+}
 
 async function assertLabTech() {
   const staff = await requireStaff()
@@ -18,11 +25,6 @@ async function assertLabTech() {
   return staff
 }
 
-/**
- * Ownership pre-check: the service-role client bypasses RLS, so confirm the
- * visit belongs to the caller's clinic before passing it to any RPC.
- * Throws when the visit is missing or owned by another clinic.
- */
 async function assertVisitInClinic(visitId: string, clinicId: string) {
   const supabase = createServiceClient()
   const { data } = await supabase
@@ -36,12 +38,46 @@ async function assertVisitInClinic(visitId: string, clinicId: string) {
   }
 }
 
+async function queueLabAiAssist(visitId: string, clinicId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('rpc_request_lab_ai_assist', {
+    p_visit_id: visitId,
+  })
+  if (rpcErr) {
+    console.warn('queueLabAiAssist rpc failed:', rpcErr.message)
+    return
+  }
+
+  const queued = (rpcData as { queued?: boolean })?.queued === true
+  if (!queued) return
+
+  if (process.env.NODE_ENV === 'production' && !process.env.INNGEST_EVENT_KEY) {
+    console.error(
+      'queueLabAiAssist: INNGEST_EVENT_KEY is not set in production — lab AI notes will NOT be dispatched.',
+    )
+  }
+
+  try {
+    await inngest.send({
+      name: 'note.lab-ai-assist',
+      data: {
+        visit_id: visitId,
+        clinic_id: clinicId,
+        phase: 'lab',
+      },
+    })
+  } catch (err) {
+    console.error('queueLabAiAssist: inngest.send failed for visit', visitId, err)
+  }
+}
+
 export async function startLabTest(
   visitId: string,
   testName: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -53,7 +89,7 @@ export async function startLabTest(
     p_client_op_id: crypto.randomUUID(),
   })
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
@@ -68,9 +104,11 @@ export async function recordLabTestResult(
     return { success: false, error: 'Result cannot be empty' }
   }
 
+  let clinicId: string
   try {
     const staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
+    clinicId = staff.clinic_id
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -85,17 +123,18 @@ export async function recordLabTestResult(
   })
 
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+
+  void queueLabAiAssist(visitId, clinicId)
+  await revalidateLabPaths(visitId, clinicId)
   return { success: true }
 }
 
 export async function startLabRun(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -106,7 +145,7 @@ export async function startLabRun(
     p_client_op_id: crypto.randomUUID(),
   })
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
@@ -120,8 +159,9 @@ export async function recordLabResult(
     return { success: false, error: 'Result cannot be empty' }
   }
 
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -136,17 +176,16 @@ export async function recordLabResult(
   })
 
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
 export async function reopenLabResult(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -158,8 +197,6 @@ export async function reopenLabResult(
   })
 
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }

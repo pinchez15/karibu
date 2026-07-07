@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Mic, Printer, Sparkles, CheckCircle2, Send, LogOut } from 'lucide-react'
@@ -14,19 +14,22 @@ import {
   VisitCriticalAlertBanner,
   type VisitCriticalAlert,
 } from './VisitCriticalAlertBanner'
-import type { Visit, ProviderNote, PatientNote, StaffRole, PharmacyCatalogDrug } from '@karibu/shared'
+import type { Visit, ProviderNote, PatientNote, StaffRole, PharmacyCatalogDrug, PrescriptionOrderLine } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
 import {
   parseClinicalNoteSections,
   sectionsHaveClinicalContent,
 } from '@/lib/clinical-note-sections'
+import { incorporationFor, type DictationIncorporate } from '@/lib/ai-review-helpers'
+import { useAiSuggestionsPoll } from '@/hooks/use-ai-suggestions-poll'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
 import { VitalsCard } from './VitalsCard'
 import { BookFollowUp } from './BookFollowUp'
 import { EbolaScreeningCard, type EbolaScreeningRecord } from './EbolaScreeningCard'
 import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
 import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
+import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
 
 // Friendly operational labels for queue_status — deliberately not the clinical
 // note state. A patient can be "Checked out" with the note still a draft (#6).
@@ -114,6 +117,7 @@ interface VisitDetailClientProps {
   staffId: string
   staffRole?: StaffRole
   prescribingCatalog?: PharmacyCatalogDrug[]
+  prescriptionLines?: PrescriptionOrderLine[]
   payment?: PaymentData | null
   addendums?: AddendumView[]
   amendments?: AmendmentView[]
@@ -124,11 +128,26 @@ export function VisitDetailClient({
   staffId,
   staffRole,
   prescribingCatalog,
+  prescriptionLines = [],
   payment,
   addendums = [],
   amendments = [],
 }: VisitDetailClientProps) {
   const config = getStatusDisplay(visit.status)
+  const noteEditorRef = useRef<HTMLDivElement | null>(null)
+  const [incorporatePrefill, setIncorporatePrefill] = useState<DictationIncorporate | null>(null)
+  const [careTaskOpen, setCareTaskOpen] = useState(false)
+  const pharmacyReturned = visit.dispensing_status === 'returned'
+
+  const aiSuggestions = useAiSuggestionsPoll(
+    visit.id,
+    !visit.documentation_complete,
+    visit.ai_review_suggestions ?? [],
+  )
+
+  const handleIncorporate = useCallback((suggestion: ReviewSuggestion) => {
+    setIncorporatePrefill(incorporationFor(suggestion))
+  }, [])
 
   const initialNoteSections = (() => {
     const parsed = parseClinicalNoteSections(visit.provider_notes?.structured_data ?? null, {
@@ -223,8 +242,8 @@ export function VisitDetailClient({
 
       <VitalsCard patientId={visit.patient_id} visitId={visit.id} />
 
-      {!visit.documentation_complete && (visit.ai_review_suggestions?.length ?? 0) > 0 && (
-        <AiNotesTimeline suggestions={visit.ai_review_suggestions ?? []} />
+      {!visit.documentation_complete && aiSuggestions.length > 0 && (
+        <AiNotesTimeline suggestions={aiSuggestions} onIncorporate={handleIncorporate} />
       )}
 
       <div className="bg-card border border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -236,6 +255,9 @@ export function VisitDetailClient({
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <BookFollowUp patientId={visit.patient_id} />
+          <Button type="button" variant="outline" size="sm" onClick={() => setCareTaskOpen(true)}>
+            Add task
+          </Button>
           {visit.queue_status !== 'completed' && visit.queue_status !== 'cancelled' && (
             <CheckOutButton visitId={visit.id} />
           )}
@@ -248,11 +270,36 @@ export function VisitDetailClient({
         </div>
       </div>
 
-      {/* Note editor — desktop clinicians type or dictate the note here. After
-          save, documentation_complete=true and the visit moves to 'sent';
-          AI runs automatically in the background (Inngest poller, ~60s) and
-          appears as a collapsible section beneath. Always shown until the
-          clinician marks the note complete. */}
+      {pharmacyReturned && (
+        <div className="rounded-xl border border-amber/30 bg-amber-soft p-4 text-sm">
+          <p className="text-sm font-semibold text-amber-ink">Pharmacy returned this prescription</p>
+          {visit.dispense_notes && (
+            <p className="mt-2 whitespace-pre-wrap">{visit.dispense_notes}</p>
+          )}
+          {prescriptionLines.length > 0 && (
+            <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+              {prescriptionLines.map((line) => (
+                <li key={line.id}>
+                  {(line.free_text_name || line.medication_code || 'Line').trim()} —{' '}
+                  {line.status.replace('_', ' ')}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            Edit and resubmit below when ready.
+          </p>
+        </div>
+      )}
+
+      <AddCareTaskSheet
+        open={careTaskOpen}
+        onOpenChange={setCareTaskOpen}
+        patientId={visit.patient_id}
+        visitId={visit.id}
+      />
+
+      {/* Note editor — desktop clinicians type or dictate here until sign. */}
       {!visit.documentation_complete && (
         <PendingDictationCard
           visitId={visit.id}
@@ -262,7 +309,12 @@ export function VisitDetailClient({
           labAbnormal={visit.lab_abnormal ?? false}
           labStatus={visit.lab_status}
           pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
+          pharmacyReturned={pharmacyReturned}
+          dispenseNotes={visit.dispense_notes}
           staffRole={staffRole ?? null}
+          incorporatePrefill={incorporatePrefill}
+          onIncorporateApplied={() => setIncorporatePrefill(null)}
+          editorRef={noteEditorRef}
         />
       )}
 
@@ -292,6 +344,9 @@ export function VisitDetailClient({
                 <VisitPharmacyPanel
                   visitId={visit.id}
                   alreadySubmitted={!!visit.pharmacy_order_submitted_at}
+                  pharmacyReturned={pharmacyReturned}
+                  dispenseNotes={visit.dispense_notes}
+                  prescriptionLines={prescriptionLines}
                   staffRole={staffRole ?? null}
                   prescribingCatalog={prescribingCatalog}
                 />
@@ -457,8 +512,7 @@ interface ClinicianNoteCardProps {
 /**
  * Receipt-of-record clinician note. The "Edit note" affordance reuses the
  * editor component — re-signing reuses the same provider_notes.id so the
- * row is upserted in place, and it re-runs AI review (since signClinicianNote
- * resets ai_review_status='not_started' and the poller picks it up).
+ * row is upserted in place.
  */
 function ClinicianNoteCard({
   visitId,
@@ -521,6 +575,7 @@ function DispensingBadge({ status }: { status: Visit['dispensing_status'] }) {
     dispensed: { label: 'Dispensed', cls: 'bg-green-soft text-green' },
     partial: { label: 'Partial', cls: 'bg-amber-soft text-amber-ink' },
     out_of_stock: { label: 'Out of stock', cls: 'bg-red-soft text-red' },
+    returned: { label: 'Returned', cls: 'bg-amber-soft text-amber-ink' },
   }
   const c = map[status]
   return (
