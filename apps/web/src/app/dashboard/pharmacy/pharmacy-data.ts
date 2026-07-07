@@ -31,6 +31,7 @@ export type PharmacyStockResult =
 
 const TERMINAL = ['dispensed', 'partial', 'out_of_stock'] as const
 const ACTIVE = ['not_started', 'in_progress', 'partial', 'out_of_stock'] as const
+const RETURNED = ['returned'] as const
 
 export type PharmacyTabFilter = {
   /** dispensing_status values this tab includes. */
@@ -56,6 +57,9 @@ export function pharmacyTabFilter(
 ): PharmacyTabFilter {
   if (tab === 'done_today') {
     return { statuses: [...TERMINAL], dispensedAfter }
+  }
+  if (tab === 'returned_to_clinician') {
+    return { statuses: [...RETURNED] }
   }
   return { statuses: [...ACTIVE] }
 }
@@ -178,7 +182,9 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
   const toDispense = pharmacyTabFilter('to_dispense')
   const doneToday = pharmacyTabFilter('done_today')
 
-  const [toDispenseRes, doneRes] = await Promise.all([
+  const returned = pharmacyTabFilter('returned_to_clinician')
+
+  const [toDispenseRes, returnedRes, doneRes] = await Promise.all([
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
@@ -192,6 +198,12 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
       .select('id', { count: 'exact', head: true })
       .eq('clinic_id', clinicId)
       .not('pharmacy_order_submitted_at', 'is', null)
+      .in('dispensing_status', returned.statuses),
+    supabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('clinic_id', clinicId)
+      .not('pharmacy_order_submitted_at', 'is', null)
       .not('medications', 'is', null)
       .neq('medications', '')
       .in('dispensing_status', doneToday.statuses)
@@ -200,8 +212,9 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
 
   return {
     to_dispense: toDispenseRes.count ?? 0,
+    returned_to_clinician: returnedRes.count ?? 0,
     done_today: doneRes.count ?? 0,
   }
 }
 
-export { ACTIVE, TERMINAL }
+export { ACTIVE, RETURNED, TERMINAL }

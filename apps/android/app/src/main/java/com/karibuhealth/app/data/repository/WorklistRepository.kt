@@ -285,6 +285,8 @@ private suspend fun VisitDto.toPharmacyItem(patientDao: PatientDao): NeedsPharma
         doctorId = doctorId,
         visitDate = visitDate,
         dispensedAt = dispensedAt,
+        queuePosition = queuePosition,
+        checkedInAt = checkedInAt,
     )
 }
 

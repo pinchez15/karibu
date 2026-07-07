@@ -195,6 +195,8 @@ const OPD_FILTERS: OpdPatientFilter[] = [
   'needs_vitals',
   'with_clinician',
   'awaiting_labs',
+  'results_ready',
+  'pharmacy_returned',
   'at_pharmacy',
   'done_today',
 ]

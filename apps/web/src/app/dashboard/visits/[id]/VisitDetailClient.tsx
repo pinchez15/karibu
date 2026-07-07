@@ -311,6 +311,7 @@ export function VisitDetailClient({
           pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
           pharmacyReturned={pharmacyReturned}
           dispenseNotes={visit.dispense_notes}
+          prescriptionLines={prescriptionLines}
           staffRole={staffRole ?? null}
           incorporatePrefill={incorporatePrefill}
           onIncorporateApplied={() => setIncorporatePrefill(null)}
@@ -569,7 +570,7 @@ function ClinicianNoteCard({
 
 function DispensingBadge({ status }: { status: Visit['dispensing_status'] }) {
   if (status === 'not_started') return null
-  const map: Record<Visit['dispensing_status'], { label: string; cls: string }> = {
+  const map: Record<NonNullable<Visit['dispensing_status']>, { label: string; cls: string }> = {
     not_started: { label: 'Pending', cls: 'bg-line-soft text-muted-foreground' },
     in_progress: { label: 'In progress', cls: 'bg-cobalt-soft text-cobalt' },
     dispensed: { label: 'Dispensed', cls: 'bg-green-soft text-green' },

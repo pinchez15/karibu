@@ -44,6 +44,7 @@ data class HomeUiState(
      */
     val needsAttentionCount: Int = 0,
     val searchQuery: String = "",
+    val queueSearchQuery: String = "",
     val searchResults: List<Patient> = emptyList(),
     val isSearching: Boolean = false,
     val isLoading: Boolean = true,
@@ -60,8 +61,25 @@ data class HomeUiState(
             .filter { it.bucket != OpdPatientFilter.DoneToday }
             .sortedWith(
                 compareBy<OpdPatientRow> { bucketSortKey(it.bucket) }
+                    .thenBy { prioritySortKey(it.priority) }
                     .thenBy { it.checkedInAt ?: "\uFFFF" },
             )
+
+    /** Active list filtered by queue search (name or today's number). */
+    val filteredActivePatients: List<OpdPatientRow>
+        get() {
+            val q = queueSearchQuery.trim()
+            val base = activePatients
+            val searched = if (q.isBlank()) {
+                base
+            } else {
+                base.filter { row ->
+                    row.patientName.contains(q, ignoreCase = true) ||
+                        (q.all { it.isDigit() } && row.queuePosition?.toString()?.contains(q) == true)
+                }
+            }
+            return selectedFilter?.let { filter -> searched.filter { filter.matches(it) } } ?: searched
+        }
 
     val waitingCount: Int
         get() = opdPatients.count { it.bucket == OpdPatientFilter.Waiting }
@@ -78,8 +96,18 @@ private fun bucketSortKey(bucket: OpdPatientFilter): Int = when (bucket) {
     OpdPatientFilter.NeedsVitals -> 1
     OpdPatientFilter.WithClinician -> 2
     OpdPatientFilter.AwaitingLabs -> 3
-    OpdPatientFilter.AtPharmacy -> 4
-    OpdPatientFilter.DoneToday -> 5
+    OpdPatientFilter.ResultsReady -> 4
+    OpdPatientFilter.PharmacyReturned -> 5
+    OpdPatientFilter.AtPharmacy -> 6
+    OpdPatientFilter.DoneToday -> 7
+}
+
+private fun prioritySortKey(priority: String): Int = when (priority) {
+    "urgent" -> 0
+    "high" -> 1
+    "normal" -> 2
+    "low" -> 3
+    else -> 4
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -175,6 +203,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun updateQueueSearch(query: String) {
+        _uiState.update { it.copy(queueSearchQuery = query) }
+    }
+
     fun refresh() {
         viewModelScope.launch { refreshAndAwait() }
     }
@@ -192,20 +224,24 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    suspend fun startVisitForPatient(patientId: String): String? {
+    suspend fun checkInForPatient(patientId: String): String? {
         val clinicId = authTokenStore.getClinicId() ?: return null
         val staffId = authTokenStore.getStaffId()
         return runCatching {
-            val (visit, _) = visitRepository.createVisit(
+            val (visit, _) = visitRepository.checkInPatient(
                 clinicId = clinicId,
                 patientId = patientId,
                 doctorId = staffId,
-                patientSyncEntryId = null,
             )
-            _uiState.update { it.copy(searchQuery = "", searchResults = emptyList(), isSearching = false) }
+            _uiState.update {
+                it.copy(searchQuery = "", queueSearchQuery = "", searchResults = emptyList(), isSearching = false)
+            }
             visit.id
         }.getOrNull()
     }
+
+    /** @deprecated Use [checkInForPatient] — kept for callers during migration. */
+    suspend fun startVisitForPatient(patientId: String): String? = checkInForPatient(patientId)
 
     fun signOut() {
         viewModelScope.launch {

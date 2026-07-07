@@ -27,6 +27,7 @@ data class PharmacyHomeUiState(
     val staff: Staff? = null,
     val items: List<NeedsPharmacyItem> = emptyList(),
     val selectedTab: PharmacyQueueTab = PharmacyQueueTab.Waiting,
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionVisitId: String? = null,
@@ -49,8 +50,12 @@ class PharmacyHomeViewModel @Inject constructor(
     val filteredItems: List<NeedsPharmacyItem>
         get() {
             val tab = _uiState.value.selectedTab
+            val q = _uiState.value.searchQuery.trim()
             return _uiState.value.items.filter { item ->
-                pharmacyTabForVisit(item.dispensingStatus, item.dispensedAt) == tab
+                pharmacyTabForVisit(item.dispensingStatus, item.dispensedAt) == tab &&
+                    (q.isBlank() ||
+                        item.patientName.contains(q, ignoreCase = true) ||
+                        (q.all { it.isDigit() } && item.queuePosition?.toString()?.contains(q) == true))
             }
         }
 
@@ -65,6 +70,10 @@ class PharmacyHomeViewModel @Inject constructor(
 
     fun selectTab(tab: PharmacyQueueTab) {
         _uiState.update { it.copy(selectedTab = tab) }
+    }
+
+    fun updateSearch(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun refresh() {
@@ -161,6 +170,18 @@ class PharmacyHomeViewModel @Inject constructor(
             _uiState.update { it.copy(actionVisitId = visitId) }
             runCatching {
                 visitRepository.sendPharmacyBackToClinician(visitId, reason)
+                syncEngine.processQueue()
+            }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
+            refresh()
+            _uiState.update { it.copy(actionVisitId = null) }
+        }
+    }
+
+    fun sendLineBackToClinician(visitId: String, prescriptionOrderId: String, reason: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(actionVisitId = visitId) }
+            runCatching {
+                visitRepository.sendPharmacyLineBackToClinician(visitId, prescriptionOrderId, reason)
                 syncEngine.processQueue()
             }.onFailure { e -> _uiState.update { it.copy(error = e.message) } }
             refresh()

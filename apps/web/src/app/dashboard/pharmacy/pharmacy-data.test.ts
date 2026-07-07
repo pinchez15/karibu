@@ -18,6 +18,12 @@ describe('pharmacyTabFilter', () => {
     expect(filter.dispensedAfter).toBeUndefined()
   })
 
+  it('returned_to_clinician filters only returned visits', () => {
+    const filter = pharmacyTabFilter('returned_to_clinician')
+    expect(filter.statuses).toEqual(['returned'])
+    expect(filter.dispensedAfter).toBeUndefined()
+  })
+
   it('done_today includes the TERMINAL set bounded by Kampala midnight', () => {
     vi.setSystemTime(new Date('2026-07-06T10:00:00Z'))
     const filter = pharmacyTabFilter('done_today')

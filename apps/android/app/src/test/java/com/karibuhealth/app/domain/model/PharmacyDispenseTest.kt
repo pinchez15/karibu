@@ -24,6 +24,19 @@ class PharmacyDispenseTest {
     }
 
     @Test
+    fun aggregateDispensingStatus_returnedWhenNeedsClarificationOnly() {
+        assertEquals(
+            "returned",
+            aggregateDispensingStatus(listOf("needs_clarification", "dispensed")),
+        )
+    }
+
+    @Test
+    fun pharmacyTabForVisit_nullWhenReturned() {
+        assertEquals(null, pharmacyTabForVisit("returned", null))
+    }
+
+    @Test
     fun pharmacyTabForVisit_doneTodayWhenTerminalAndTimestamp() {
         assertEquals(
             PharmacyQueueTab.DoneToday,

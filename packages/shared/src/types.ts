@@ -11,6 +11,8 @@ export type OpdPatientFilter =
   | 'needs_vitals'
   | 'with_clinician'
   | 'awaiting_labs'
+  | 'results_ready'
+  | 'pharmacy_returned'
   | 'at_pharmacy'
   | 'done_today';
 
@@ -196,7 +198,7 @@ export interface Visit {
   ai_structure_attempts: number;
   // Pharmacy MVP — workflow state for dispensing the clinician's `medications`
   // text. Set by the dispenser via /dashboard/pharmacy actions.
-  dispensing_status: 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock';
+  dispensing_status: 'not_started' | 'in_progress' | 'dispensed' | 'partial' | 'out_of_stock' | 'returned';
   dispense_notes: string | null;
   dispensed_at: string | null;
   dispensed_by: string | null;
@@ -649,6 +651,11 @@ export interface OpdPatientRow {
   pharmacy_order_submitted_at: string | null;
   note_status: ProviderNoteStatus | null;
   visit_date: string;
+  /** Today's queue number (assigned at check-in). */
+  queue_position: number | null;
+  checked_in_at: string | null;
+  priority: Visit['priority'] | null;
+  wait_minutes: number | null;
 }
 
 /** Progressive AI assist tier on ai_review_suggestions (migration 048). */
@@ -937,7 +944,7 @@ export type GuardianRelationship =
 // WP1 (D1): Waiting + In progress are merged into one "To dispense" tab so a
 // multi-line script stays on the same tab until every line is resolved. The
 // second tab is "Done today". See apps/web/.../pharmacy/pharmacy-data.ts.
-export type PharmacyQueueTab = 'to_dispense' | 'done_today';
+export type PharmacyQueueTab = 'to_dispense' | 'returned_to_clinician' | 'done_today';
 
 export interface Payment {
   id: string;

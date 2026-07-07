@@ -1,8 +1,10 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
 import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 import type {
   CareTaskStatus,
   CareTaskType,
@@ -73,6 +75,32 @@ export interface NeedsPharmacyRow {
   visit_date: string
 }
 
+export interface PharmacyReturnedRow {
+  visit_id: string
+  patient_id: string
+  patient_name: string
+  sex: 'M' | 'F' | null
+  derived_age: number | null
+  medications: string | null
+  dispense_notes: string | null
+  doctor_id: string | null
+  visit_date: string
+}
+
+export interface ResultsReadyRow {
+  visit_id: string
+  patient_id: string
+  patient_name: string
+  sex: 'M' | 'F' | null
+  derived_age: number | null
+  chief_complaint: string | null
+  lab_status: string
+  lab_results: string | null
+  lab_abnormal: boolean
+  doctor_id: string | null
+  visit_date: string
+}
+
 export interface NeedsPaymentRow {
   visit_id: string
   patient_id: string
@@ -120,6 +148,8 @@ export interface AllWorklistsResult {
   needsClinician: NeedsClinicianRow[]
   needsLab: NeedsLabRow[]
   needsPharmacy: NeedsPharmacyRow[]
+  pharmacyReturned: PharmacyReturnedRow[]
+  resultsReady: ResultsReadyRow[]
   needsPayment: NeedsPaymentRow[]
   myDrafts: MyDraftRow[]
   careTasks: CareTaskRow[]
@@ -144,6 +174,8 @@ async function getAllWorklistsImpl(
       needsClinician: [],
       needsLab: [],
       needsPharmacy: [],
+      pharmacyReturned: [],
+      resultsReady: [],
       needsPayment: [],
       myDrafts: [],
       careTasks: [],
@@ -159,6 +191,8 @@ async function getAllWorklistsImpl(
     needsClinicianRes,
     needsLabRes,
     needsPharmacyRes,
+    pharmacyReturnedRes,
+    resultsReadyRes,
     needsPaymentRes,
     myDraftsRes,
     careTasksRes,
@@ -167,6 +201,8 @@ async function getAllWorklistsImpl(
     supabase.rpc('rpc_worklist_needs_clinician', { p_clinic_id: clinicId, p_department: department }),
     supabase.rpc('rpc_worklist_needs_lab', { p_clinic_id: clinicId }),
     supabase.rpc('rpc_worklist_needs_pharmacy', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_worklist_pharmacy_returned', { p_clinic_id: clinicId }),
+    supabase.rpc('rpc_worklist_results_ready', { p_clinic_id: clinicId }),
     supabase.rpc('rpc_worklist_needs_payment', { p_clinic_id: clinicId }),
     supabase.rpc('rpc_worklist_my_drafts', { p_clinic_id: clinicId, p_staff_id: staffId }),
     supabase.rpc('rpc_worklist_care_tasks', {
@@ -184,6 +220,8 @@ async function getAllWorklistsImpl(
   log('rpc_worklist_needs_clinician', needsClinicianRes.error)
   log('rpc_worklist_needs_lab', needsLabRes.error)
   log('rpc_worklist_needs_pharmacy', needsPharmacyRes.error)
+  log('rpc_worklist_pharmacy_returned', pharmacyReturnedRes.error)
+  log('rpc_worklist_results_ready', resultsReadyRes.error)
   log('rpc_worklist_needs_payment', needsPaymentRes.error)
   log('rpc_worklist_my_drafts', myDraftsRes.error)
   log('rpc_worklist_care_tasks', careTasksRes.error)
@@ -193,6 +231,8 @@ async function getAllWorklistsImpl(
     needsClinician: (needsClinicianRes.data ?? []) as NeedsClinicianRow[],
     needsLab: (needsLabRes.data ?? []) as NeedsLabRow[],
     needsPharmacy: (needsPharmacyRes.data ?? []) as NeedsPharmacyRow[],
+    pharmacyReturned: (pharmacyReturnedRes.data ?? []) as PharmacyReturnedRow[],
+    resultsReady: (resultsReadyRes.data ?? []) as ResultsReadyRow[],
     needsPayment: (needsPaymentRes.data ?? []) as NeedsPaymentRow[],
     myDrafts: (myDraftsRes.data ?? []) as MyDraftRow[],
     careTasks: (careTasksRes.data ?? []) as CareTaskRow[],
@@ -324,4 +364,65 @@ export async function getCareTasks(
     return []
   }
   return (data ?? []) as CareTaskRow[]
+}
+
+export interface CreateCareTaskInput {
+  patientId: string
+  visitId?: string | null
+  taskType: CareTaskType
+  title: string
+  description?: string | null
+  assigneeRole?: StaffRole | null
+  dueAt?: string | null
+}
+
+export async function createCareTask(
+  input: CreateCareTaskInput,
+): Promise<{ success: true; taskId: string } | { success: false; error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Unauthorized' }
+
+  const title = input.title.trim()
+  if (!title) return { success: false, error: 'Title is required' }
+
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc('rpc_create_care_task', {
+    p_clinic_id: staff.clinic_id,
+    p_patient_id: input.patientId,
+    p_task_type: input.taskType,
+    p_title: title,
+    p_description: input.description?.trim() || null,
+    p_visit_id: input.visitId ?? null,
+    p_assignee_role: input.assigneeRole ?? null,
+    p_assignee_id: null,
+    p_due_at: input.dueAt ?? null,
+    p_client_op_id: crypto.randomUUID(),
+  })
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/worklists')
+  revalidatePath(`/dashboard/patients/${input.patientId}`)
+  if (input.visitId) revalidatePath(`/dashboard/visits/${input.visitId}`)
+  void broadcastClinicRefresh(staff.clinic_id)
+  return { success: true, taskId: data as string }
+}
+
+export async function completeCareTask(
+  taskId: string,
+  patientId?: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Unauthorized' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('rpc_complete_care_task', {
+    p_task_id: taskId,
+    p_client_op_id: crypto.randomUUID(),
+  })
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/dashboard/worklists')
+  if (patientId) revalidatePath(`/dashboard/patients/${patientId}`)
+  void broadcastClinicRefresh(staff.clinic_id)
+  return { success: true }
 }

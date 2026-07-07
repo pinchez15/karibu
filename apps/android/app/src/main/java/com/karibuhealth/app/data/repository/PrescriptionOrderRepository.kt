@@ -137,6 +137,12 @@ class PrescriptionOrderRepository @Inject constructor(
             }
         }
     }
+
+    suspend fun applyLineSendBack(orderId: String) = withContext(Dispatchers.IO) {
+        if (!orderId.startsWith("legacy-")) {
+            prescriptionOrderDao.updateStatus(orderId, "needs_clarification")
+        }
+    }
 }
 
 private fun PrescriptionOrderDto.toEntity() = PrescriptionOrderEntity(

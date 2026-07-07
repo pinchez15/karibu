@@ -16,6 +16,7 @@ import com.karibuhealth.app.data.remote.dto.RecordDispenseRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabTestResultRequest
 import com.karibuhealth.app.data.remote.dto.SendPharmacyBackRequest
+import com.karibuhealth.app.data.remote.dto.SendPharmacyLineBackRequest
 import com.karibuhealth.app.data.remote.dto.SetDispensingStatusRequest
 import com.karibuhealth.app.data.remote.dto.StartLabRequest
 import com.karibuhealth.app.data.remote.dto.StartLabTestRequest
@@ -134,7 +135,37 @@ class VisitRepository @Inject constructor(
                 visits.maxByOrNull { it.visit.checkedInAt ?: "" }
             }
             .mapNotNull { OpdPatientRow.from(it) }
-            .sortedByDescending { it.checkedInAt }
+            .sortedWith(
+                compareBy<OpdPatientRow> { prioritySortKey(it.priority) }
+                    .thenBy { it.checkedInAt ?: "\uFFFF" },
+            )
+    }
+
+    private fun prioritySortKey(priority: String): Int = when (priority) {
+        "urgent" -> 0
+        "high" -> 1
+        "normal" -> 2
+        "low" -> 3
+        else -> 4
+    }
+
+    /** Check an existing patient into today's queue (WP2 A). */
+    suspend fun checkInPatient(
+        clinicId: String,
+        patientId: String,
+        doctorId: String?,
+        chiefComplaint: String? = null,
+    ): Pair<Visit, String?> {
+        val existing = getLatestVisitForPatientToday(patientId)
+        if (existing != null && existing.queueStatus != QueueStatus.completed) {
+            return existing to null
+        }
+        return createVisit(
+            clinicId = clinicId,
+            patientId = patientId,
+            doctorId = doctorId,
+            chiefComplaint = chiefComplaint,
+        )
     }
 
     suspend fun admitPatient(
@@ -242,6 +273,7 @@ class VisitRepository @Inject constructor(
     ): Pair<Visit, String?> = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
         val today = LocalDate.now().toString()
+        val nextPosition = (visitDao.getMaxQueuePosition(clinicId, today) ?: 0) + 1
 
         val visit = Visit(
             id = UUID.randomUUID().toString(),
@@ -251,7 +283,7 @@ class VisitRepository @Inject constructor(
             nurseId = null,
             status = VisitStatus.pending,
             queueStatus = QueueStatus.waiting,
-            queuePosition = null,
+            queuePosition = nextPosition,
             priority = VisitPriority.normal,
             chiefComplaint = chiefComplaint,
             checkedInAt = now,
@@ -812,7 +844,7 @@ class VisitRepository @Inject constructor(
             localMutator = {
                 visitDao.updateDispensingState(
                     id = visitId,
-                    dispensingStatus = "not_started",
+                    dispensingStatus = "returned",
                     dispenseNotes = trimmed,
                     dispensedAt = null,
                     dispensedBy = null,
@@ -823,6 +855,51 @@ class VisitRepository @Inject constructor(
                 supabaseApi.rpcSendPharmacyBackToClinician(
                     SendPharmacyBackRequest(
                         visitId = visitId,
+                        reason = trimmed,
+                        clientOpId = it,
+                    ),
+                )
+            },
+        )
+    }
+
+    suspend fun sendPharmacyLineBackToClinician(
+        visitId: String,
+        prescriptionOrderId: String,
+        reason: String,
+    ): String? {
+        val trimmed = reason.trim()
+        if (trimmed.isEmpty()) return null
+        val now = Instant.now().toString()
+        return enqueueVisitRpc(
+            visitId = visitId,
+            operationType = "rpc_send_pharmacy_line_back_to_clinician",
+            payload = json.encodeToString(
+                SendPharmacyLineBackRequest.serializer(),
+                SendPharmacyLineBackRequest(
+                    visitId = visitId,
+                    prescriptionOrderId = prescriptionOrderId,
+                    reason = trimmed,
+                ),
+            ),
+            localMutator = {
+                prescriptionOrderRepository.applyLineSendBack(prescriptionOrderId)
+                val lines = prescriptionOrderRepository.getLinesForVisit(visitId)
+                val agg = aggregateDispensingStatus(lines.map { it.status })
+                visitDao.updateDispensingState(
+                    id = visitId,
+                    dispensingStatus = agg,
+                    dispenseNotes = trimmed,
+                    dispensedAt = null,
+                    dispensedBy = null,
+                    updatedAt = now,
+                )
+            },
+            onlineCall = {
+                supabaseApi.rpcSendPharmacyLineBackToClinician(
+                    SendPharmacyLineBackRequest(
+                        visitId = visitId,
+                        prescriptionOrderId = prescriptionOrderId,
                         reason = trimmed,
                         clientOpId = it,
                     ),
@@ -915,6 +992,13 @@ class VisitRepository @Inject constructor(
                 val decoded = json.decodeFromString(SendPharmacyBackRequest.serializer(), payload)
                 json.encodeToString(
                     SendPharmacyBackRequest.serializer(),
+                    decoded.copy(clientOpId = syncEntryId),
+                )
+            }
+            "rpc_send_pharmacy_line_back_to_clinician" -> {
+                val decoded = json.decodeFromString(SendPharmacyLineBackRequest.serializer(), payload)
+                json.encodeToString(
+                    SendPharmacyLineBackRequest.serializer(),
                     decoded.copy(clientOpId = syncEntryId),
                 )
             }

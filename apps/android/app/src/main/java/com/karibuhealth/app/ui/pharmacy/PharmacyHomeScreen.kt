@@ -60,6 +60,15 @@ fun PharmacyHomeScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = viewModel::updateSearch,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Filter by name or #") },
+                singleLine = true,
+            )
             PharmacyTabRow(
                 selected = uiState.selectedTab,
                 items = uiState.items,
@@ -109,6 +118,10 @@ fun PharmacyHomeScreen(
                 viewModel.sendBackToClinician(item.visitId, reason)
                 worksheetItem = null
             },
+            onSendLineBack = { lineId, reason ->
+                viewModel.sendLineBackToClinician(item.visitId, lineId, reason)
+                worksheetItem = null
+            },
         )
     }
 }
@@ -151,7 +164,18 @@ private fun PharmacyQueueCard(
             .clickable(onClick = onOpen),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(item.patientName, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                item.queuePosition?.takeIf { it > 0 }?.let { num ->
+                    Text(
+                        text = "#$num",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = com.karibuhealth.app.ui.theme.Cobalt,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                }
+                Text(item.patientName, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            }
             val preview = item.prescriptionLines.firstOrNull()?.displayName()
                 ?: item.medications.orEmpty().take(120)
             KhMetaText(preview)

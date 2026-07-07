@@ -207,7 +207,12 @@ fun WorklistsScreen(
                             count = uiState.careTasks.size,
                             items = uiState.careTasks,
                             rowKey = { it.taskId },
-                            rowContent = { item -> CareTaskRowBody(item = item) },
+                            rowContent = { item ->
+                                CareTaskRowBody(
+                                    item = item,
+                                    onMarkDone = { viewModel.completeCareTask(item.taskId) },
+                                )
+                            },
                             onRowClick = { openPatient(it.patientId) },
                         )
                     }
@@ -506,7 +511,7 @@ private fun DraftRowBody(item: MyDraftItem) {
 }
 
 @Composable
-private fun CareTaskRowBody(item: CareTaskItem) {
+private fun CareTaskRowBody(item: CareTaskItem, onMarkDone: () -> Unit) {
     val typeLabel = item.taskType.replace('_', ' ').replaceFirstChar { it.uppercase() }
     PrimaryRow(name = item.patientName, ageSex = null)
     SecondaryRow(item.title.ifBlank { typeLabel })
@@ -516,6 +521,10 @@ private fun CareTaskRowBody(item: CareTaskItem) {
         item.dueAt?.take(10)?.let { "Due $it" },
     ).joinToString(" · ")
     if (meta.isNotBlank()) KhMetaText(text = meta)
+    if (item.status != "completed") {
+        Spacer(Modifier.height(6.dp))
+        TextButton(onClick = onMarkDone) { Text("Mark done") }
+    }
 }
 
 @Composable

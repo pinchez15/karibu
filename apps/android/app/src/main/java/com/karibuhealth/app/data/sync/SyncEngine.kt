@@ -387,6 +387,9 @@ class SyncEngine @Inject constructor(
             "rpc_start_pharmacy_dispense" -> syncStartPharmacyDispense(entry)
             "rpc_complete_pharmacy_dispense" -> syncCompletePharmacyDispense(entry)
             "rpc_send_pharmacy_back_to_clinician" -> syncSendPharmacyBack(entry)
+            "rpc_send_pharmacy_line_back_to_clinician" -> syncSendPharmacyLineBack(entry)
+            "rpc_create_care_task" -> syncCreateCareTask(entry)
+            "rpc_complete_care_task" -> syncCompleteCareTask(entry)
             "rpc_create_referral" -> syncCreateReferral(entry)
             "rpc_admit_patient_v2" -> syncAdmitPatientV2(entry)
             "rpc_record_admission_observation" -> syncRecordAdmissionObservation(entry)
@@ -951,6 +954,41 @@ class SyncEngine @Inject constructor(
         }
         prescriptionOrderRepository.refreshForVisit(entry.entityId)
         markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncSendPharmacyLineBack(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(SendPharmacyLineBackRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_send_pharmacy_line_back_to_clinician: ${entry.entityId}")
+        val result = supabaseApi.rpcSendPharmacyLineBackToClinician(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw SyncHttpException(result.code(), body, "rpc_send_pharmacy_line_back_to_clinician")
+        }
+        prescriptionOrderRepository.refreshForVisit(entry.entityId)
+        markVisitSyncedIfQuiet(entry)
+    }
+
+    private suspend fun syncCreateCareTask(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(CreateCareTaskRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_create_care_task: ${entry.entityId}")
+        val result = supabaseApi.rpcCreateCareTask(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw SyncHttpException(result.code(), body, "rpc_create_care_task")
+        }
+    }
+
+    private suspend fun syncCompleteCareTask(entry: SyncQueueEntry) {
+        val decoded = json.decodeFromString(CompleteCareTaskRequest.serializer(), entry.payload)
+        val dto = decoded.copy(clientOpId = decoded.clientOpId ?: entry.id)
+        Log.d(TAG, "Syncing rpc_complete_care_task: ${entry.entityId}")
+        val result = supabaseApi.rpcCompleteCareTask(dto)
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw SyncHttpException(result.code(), body, "rpc_complete_care_task")
+        }
     }
 
     private suspend fun syncCreateReferral(entry: SyncQueueEntry) {

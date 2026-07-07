@@ -11,7 +11,7 @@ import { formatOldestWait } from './pharmacy-shared'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { PharmacyQueueTab } from '@karibu/shared'
 
-const VALID_TABS: PharmacyQueueTab[] = ['to_dispense', 'done_today']
+const VALID_TABS: PharmacyQueueTab[] = ['to_dispense', 'returned_to_clinician', 'done_today']
 
 function parseTab(raw: string | undefined): PharmacyQueueTab {
   if (raw && VALID_TABS.includes(raw as PharmacyQueueTab)) {

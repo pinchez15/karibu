@@ -21,10 +21,21 @@ import javax.inject.Inject
 data class LabHomeUiState(
     val staff: Staff? = null,
     val items: List<NeedsLabItem> = emptyList(),
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionKey: String? = null,
-)
+) {
+    val filteredItems: List<NeedsLabItem>
+        get() {
+            val q = searchQuery.trim()
+            if (q.isBlank()) return items
+            return items.filter { item ->
+                item.patientName.contains(q, ignoreCase = true) ||
+                    (q.all { it.isDigit() } && item.queuePosition?.toString()?.contains(q) == true)
+            }
+        }
+}
 
 @HiltViewModel
 class LabHomeViewModel @Inject constructor(
@@ -55,6 +66,10 @@ class LabHomeViewModel @Inject constructor(
             val items = worklistRepository.getNeedsLab(staff.clinicId)
             _uiState.update { it.copy(items = items, isLoading = false) }
         }
+    }
+
+    fun updateSearch(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun dismissError() {

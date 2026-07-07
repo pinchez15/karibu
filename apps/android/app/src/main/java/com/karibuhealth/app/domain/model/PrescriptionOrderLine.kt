@@ -33,7 +33,8 @@ enum class PharmacyQueueTab {
     DoneToday,
 }
 
-fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): PharmacyQueueTab {
+fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): PharmacyQueueTab? {
+    if (dispensingStatus == "returned") return null
     return when {
         dispensingStatus in listOf("dispensed", "partial", "out_of_stock") &&
             !dispensedAt.isNullOrBlank() -> PharmacyQueueTab.DoneToday
@@ -47,14 +48,17 @@ fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): Pharma
 /** Mirrors server aggregate_visit_dispensing_status for offline preview. */
 fun aggregateDispensingStatus(lineStatuses: List<String>): String {
     if (lineStatuses.isEmpty()) return "not_started"
-    val normalized = lineStatuses.map { status ->
-        when (status) {
-            "partially_dispensed" -> "partial"
-            else -> status
-        }
-    }
-    if (normalized.all { it == "dispensed" }) return "dispensed"
-    if (normalized.all { it == "out_of_stock" }) return "out_of_stock"
-    if (normalized.any { it == "dispensed" || it == "partial" }) return "partial"
+    val active = lineStatuses.filter { it != "cancelled" }
+    if (active.isEmpty()) return "not_started"
+    val dispensed = active.count { it == "dispensed" }
+    val oos = active.count { it == "out_of_stock" }
+    val needsClar = active.count { it == "needs_clarification" }
+    val open = active.count { it in listOf("ordered", "dispensing") }
+    val partial = active.count { it == "partially_dispensed" }
+    if (dispensed == active.size) return "dispensed"
+    if (oos == active.size) return "out_of_stock"
+    if (needsClar > 0 && open == 0) return "returned"
+    if (dispensed > 0 || partial > 0 || oos > 0) return "partial"
+    if (open > 0 || needsClar > 0) return "in_progress"
     return "in_progress"
 }

@@ -1016,6 +1016,34 @@ data class SendPharmacyBackRequest(
 )
 
 @Serializable
+data class SendPharmacyLineBackRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_prescription_order_id") val prescriptionOrderId: String,
+    @SerialName("p_reason") val reason: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class CreateCareTaskRequest(
+    @SerialName("p_clinic_id") val clinicId: String,
+    @SerialName("p_patient_id") val patientId: String,
+    @SerialName("p_task_type") val taskType: String,
+    @SerialName("p_title") val title: String,
+    @SerialName("p_description") val description: String? = null,
+    @SerialName("p_visit_id") val visitId: String? = null,
+    @SerialName("p_assignee_role") val assigneeRole: String? = null,
+    @SerialName("p_assignee_id") val assigneeId: String? = null,
+    @SerialName("p_due_at") val dueAt: String? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
+data class CompleteCareTaskRequest(
+    @SerialName("p_task_id") val taskId: String,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
+)
+
+@Serializable
 data class PrescriptionOrderDto(
     val id: String,
     @SerialName("visit_id") val visitId: String,
@@ -1108,6 +1136,10 @@ data class OpdPatientTodayDto(
     @SerialName("pharmacy_order_submitted_at") val pharmacyOrderSubmittedAt: String? = null,
     @SerialName("note_status") val noteStatus: String? = null,
     @SerialName("visit_date") val visitDate: String,
+    @SerialName("queue_position") val queuePosition: Int? = null,
+    @SerialName("checked_in_at") val checkedInAt: String? = null,
+    val priority: String? = null,
+    @SerialName("wait_minutes") val waitMinutes: Int? = null,
 )
 
 @Serializable

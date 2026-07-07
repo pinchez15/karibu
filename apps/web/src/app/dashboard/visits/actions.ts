@@ -499,6 +499,8 @@ export async function submitPharmacyOrder(
 
   revalidatePath('/dashboard/pharmacy')
   revalidatePath(`/dashboard/visits/${visitId}`)
+  revalidatePath('/dashboard/worklists')
+  void broadcastClinicRefresh(staff.clinic_id)
   return { success: true }
 }
 

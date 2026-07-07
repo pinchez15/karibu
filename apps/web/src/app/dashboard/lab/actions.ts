@@ -33,9 +33,7 @@ async function assertVisitInClinic(visitId: string, clinicId: string) {
     .eq('id', visitId)
     .eq('clinic_id', clinicId)
     .maybeSingle()
-  if (!data) {
-    throw new Error('Visit not found')
-  }
+  if (!data) throw new Error('Visit not found')
 }
 
 async function queueLabAiAssist(visitId: string, clinicId: string): Promise<void> {
@@ -100,9 +98,7 @@ export async function recordLabTestResult(
   abnormal: boolean,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const trimmed = result.trim()
-  if (trimmed.length < 1) {
-    return { success: false, error: 'Result cannot be empty' }
-  }
+  if (trimmed.length < 1) return { success: false, error: 'Result cannot be empty' }
 
   let clinicId: string
   try {
@@ -121,7 +117,6 @@ export async function recordLabTestResult(
     p_abnormal: abnormal,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
 
   void queueLabAiAssist(visitId, clinicId)
@@ -155,9 +150,7 @@ export async function recordLabResult(
   abnormal: boolean,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const trimmed = result.trim()
-  if (trimmed.length < 1) {
-    return { success: false, error: 'Result cannot be empty' }
-  }
+  if (trimmed.length < 1) return { success: false, error: 'Result cannot be empty' }
 
   let staff
   try {
@@ -174,7 +167,6 @@ export async function recordLabResult(
     p_abnormal: abnormal,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
   await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
@@ -195,7 +187,6 @@ export async function reopenLabResult(
     p_visit_id: visitId,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
   await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
