@@ -101,10 +101,12 @@ export async function recordLabTestResult(
   if (trimmed.length < 1) return { success: false, error: 'Result cannot be empty' }
 
   let clinicId: string
+  let recordedBy: string
   try {
     const staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
     clinicId = staff.clinic_id
+    recordedBy = staff.id
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -116,6 +118,7 @@ export async function recordLabTestResult(
     p_result: trimmed,
     p_abnormal: abnormal,
     p_client_op_id: crypto.randomUUID(),
+    p_recorded_by: recordedBy,
   })
   if (error) return { success: false, error: error.message }
 

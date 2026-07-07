@@ -376,6 +376,7 @@ export async function createCareTask(
     p_assignee_id: null,
     p_due_at: input.dueAt ?? null,
     p_client_op_id: crypto.randomUUID(),
+    p_created_by: staff.id,
   })
   if (error) return { success: false, error: error.message }
 
