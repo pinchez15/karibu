@@ -26,8 +26,22 @@ interface VisitDao {
     suspend fun getVisitForPatientOnDate(clinicId: String, patientId: String, date: String): VisitEntity?
 
     @Transaction
-    @Query("SELECT * FROM visits WHERE clinic_id = :clinicId AND visit_date = :date ORDER BY queue_position ASC")
+    @Query("""
+        SELECT * FROM visits
+        WHERE clinic_id = :clinicId
+          AND visit_date = :date
+          AND queue_status != 'completed'
+        ORDER BY queue_position ASC
+    """)
     fun getTodayQueue(clinicId: String, date: String): Flow<List<VisitWithPatient>>
+
+    /** Next today's number for offline check-in (WP2). Mirrors assign_today_number. */
+    @Query("""
+        SELECT COALESCE(MAX(queue_position), 0)
+        FROM visits
+        WHERE clinic_id = :clinicId AND visit_date = :date
+    """)
+    suspend fun getMaxQueuePosition(clinicId: String, date: String): Int?
 
     @Transaction
     @Query("SELECT * FROM visits WHERE doctor_id = :doctorId ORDER BY created_at DESC LIMIT :limit")

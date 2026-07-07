@@ -17,7 +17,8 @@ fun LabHomeScreen(
     viewModel: LabHomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val openCount = uiState.items.sumOf { LabQueue.countOpenTests(it.tests) }
+    val filteredItems = viewModel.filteredItems
+    val openCount = filteredItems.sumOf { LabQueue.countOpenTests(it.tests) }
 
     Scaffold(
         topBar = {
@@ -26,7 +27,7 @@ fun LabHomeScreen(
                     Column {
                         Text("Lab bench")
                         Text(
-                            "$openCount tests · ${uiState.items.size} patients",
+                            "$openCount tests · ${filteredItems.size} patients",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -66,16 +67,29 @@ fun LabHomeScreen(
                         }
                     }
                 }
-                if (uiState.items.isEmpty() && !uiState.isLoading) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = viewModel::updateSearch,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Filter by name or #") },
+                    singleLine = true,
+                )
+                if (filteredItems.isEmpty() && !uiState.isLoading) {
                     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            "No pending lab work. Tests appear when a clinician orders labs on a visit.",
+                            if (uiState.searchQuery.isNotBlank()) {
+                                "No patients match your filter."
+                            } else {
+                                "No pending lab work. Tests appear when a clinician orders labs on a visit."
+                            },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
                     LabQueueList(
-                        items = uiState.items,
+                        items = filteredItems,
                         busyKey = uiState.actionKey,
                         onStartTest = viewModel::startLabTest,
                         onRecordTest = viewModel::recordLabTestResult,

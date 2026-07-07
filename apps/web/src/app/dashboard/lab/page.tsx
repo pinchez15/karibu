@@ -28,6 +28,8 @@ async function getLabQueue(clinicId: string): Promise<LabVisitRow[]> {
       lab_results,
       lab_test_results,
       lab_abnormal,
+      queue_position,
+      checked_in_at,
       doctor_id,
       doctor:staff!visits_doctor_id_fkey (display_name),
       patient:patients!inner (

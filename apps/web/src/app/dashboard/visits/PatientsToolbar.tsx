@@ -13,6 +13,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
+  checkInExistingPatient,
   createPatientWithVisit,
   findPatientCandidates,
   type DobPrecision,
@@ -72,11 +73,11 @@ function candidateAgeLabel(c: DuplicateCandidate): string | null {
 
 function CandidateCard({
   candidate,
-  onUseExisting,
+  onCheckIn,
   disabled,
 }: {
   candidate: DuplicateCandidate
-  onUseExisting: (id: string) => void
+  onCheckIn: (id: string) => void
   disabled: boolean
 }) {
   const name = [candidate.first_name, candidate.last_name].filter(Boolean).join(' ') || 'Unknown'
@@ -111,10 +112,10 @@ function CandidateCard({
         <Button
           type="button"
           size="sm"
-          onClick={() => onUseExisting(candidate.id)}
+          onClick={() => onCheckIn(candidate.id)}
           disabled={disabled}
         >
-          Use this patient
+          Check in for today
         </Button>
       </div>
     </div>
@@ -254,7 +255,13 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
         setServerCandidates(result.duplicateCandidates)
       } else if (result.visitId) {
         resetForm()
+        setShowNewPatient(false)
         router.push(`/dashboard/visits/${result.visitId}`)
+      } else if (result.patientId) {
+        // Register-only: no visit today. Land on the patient chart.
+        resetForm()
+        setShowNewPatient(false)
+        router.push(`/dashboard/patients/${result.patientId}`)
       }
     })
   }
@@ -271,12 +278,28 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
     handleCreatePatient(formData)
   }
 
-  const useExisting = (id: string) => {
-    submitForm({ existing_patient_id: id })
+  // Register + check in (default) vs register only (no visit today).
+  const registerAndCheckIn = () => submitForm({ check_in: 'true' })
+  const registerOnly = () => submitForm({ check_in: 'false' })
+
+  // One-tap check-in for an already-registered patient found via duplicate
+  // detection — decoupled from creating a new record (WP2 A2).
+  const checkInCandidate = (id: string) => {
+    setError(null)
+    startCreating(async () => {
+      const result = await checkInExistingPatient(id)
+      if ('error' in result) {
+        setError(result.error)
+      } else {
+        resetForm()
+        setShowNewPatient(false)
+        router.push(`/dashboard/visits/${result.visitId}`)
+      }
+    })
   }
 
   const createAnyway = () => {
-    submitForm({ confirm_duplicate: 'true' })
+    submitForm({ confirm_duplicate: 'true', check_in: 'true' })
   }
 
   const displayCandidates = serverCandidates ?? (liveCandidates.length > 0 ? liveCandidates : null)
@@ -605,7 +628,7 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
                   <CandidateCard
                     key={c.id}
                     candidate={c}
-                    onUseExisting={useExisting}
+                    onCheckIn={checkInCandidate}
                     disabled={creating}
                   />
                 ))}
@@ -628,9 +651,23 @@ export function PatientsToolbar({ defaultDistrict = '' }: { defaultDistrict?: st
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" disabled={creating}>
-            {creating ? 'Creating...' : 'Create Patient & Start Visit'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" onClick={registerAndCheckIn} disabled={creating}>
+              {creating ? 'Saving...' : 'Register + check in'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={registerOnly}
+              disabled={creating}
+            >
+              Register only
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            &ldquo;Register + check in&rdquo; adds the patient to today&rsquo;s queue with a
+            number. &ldquo;Register only&rdquo; saves the record without a visit.
+          </p>
         </form>
       )}
     </div>

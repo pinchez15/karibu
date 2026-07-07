@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Loader2, AlertTriangle, Play } from 'lucide-react'
+import { Loader2, AlertTriangle, Play, Search } from 'lucide-react'
 import {
+  filterQueueBySearch,
   labTestSupportsPosNeg,
   type LabTestResultRow,
   type LabTestStatus,
@@ -22,6 +23,8 @@ export type LabVisitRow = {
   lab_results: string | null
   lab_test_results?: LabTestResultRow[] | null
   lab_abnormal: boolean
+  queue_position: number | null
+  checked_in_at: string | null
   doctor_id: string | null
   doctor: { display_name: string | null } | null
   patient: {
@@ -36,8 +39,17 @@ export type LabVisitRow = {
   tests: LabTestResultRow[]
 }
 
+function labVisitName(visit: LabVisitRow): string {
+  return (
+    [visit.patient.first_name, visit.patient.last_name].filter(Boolean).join(' ').trim() ||
+    visit.patient.display_name ||
+    'Unknown'
+  )
+}
+
 export function LabQueueClient({ initialRows }: { initialRows: LabVisitRow[] }) {
   useAutoRefresh()
+  const [search, setSearch] = useState('')
 
   const openTestCount = useMemo(
     () =>
@@ -48,9 +60,20 @@ export function LabQueueClient({ initialRows }: { initialRows: LabVisitRow[] }) 
     [initialRows],
   )
 
+  // WP2 D9: client-side type-ahead over rows already in memory (≤100).
+  const visibleRows = useMemo(
+    () =>
+      filterQueueBySearch(initialRows, search, (visit) => ({
+        name: labVisitName(visit),
+        todayNumber: visit.queue_position,
+        extra: [visit.patient.patient_number],
+      })),
+    [initialRows, search],
+  )
+
   return (
     <div className="bg-card border border-border rounded-xl">
-      <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">
+      <div className="px-[18px] py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-line-soft">
         <div>
           <div className="text-sm font-semibold">Pending + running</div>
           <div className="text-xs text-muted-foreground">
@@ -58,13 +81,30 @@ export function LabQueueClient({ initialRows }: { initialRows: LabVisitRow[] }) 
             {initialRows.length === 1 ? 'patient' : 'patients'} · oldest first
           </div>
         </div>
+        <div className="relative w-full max-w-[240px]">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by name or #"
+            aria-label="Filter by patient name or today's number"
+            className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </div>
       </div>
 
-      <div className="divide-y divide-line-soft">
-        {initialRows.map((visit) => (
-          <PatientLabGroup key={visit.id} visit={visit} />
-        ))}
-      </div>
+      {visibleRows.length === 0 ? (
+        <div className="px-[18px] py-12 text-center text-sm text-muted-foreground">
+          No patients match &ldquo;{search}&rdquo;.
+        </div>
+      ) : (
+        <div className="divide-y divide-line-soft">
+          {visibleRows.map((visit) => (
+            <PatientLabGroup key={visit.id} visit={visit} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -73,10 +113,7 @@ function PatientLabGroup({ visit }: { visit: LabVisitRow }) {
   const openTests = visit.tests.filter((t) => t.status === 'pending' || t.status === 'running')
   if (openTests.length === 0) return null
 
-  const fullName =
-    [visit.patient.first_name, visit.patient.last_name].filter(Boolean).join(' ').trim() ||
-    visit.patient.display_name ||
-    'Unknown'
+  const fullName = labVisitName(visit)
 
   const ageBand = formatAge(visit.patient.date_of_birth)
   const sexBand = visit.patient.sex?.[0]?.toUpperCase() ?? ''
@@ -92,12 +129,19 @@ function PatientLabGroup({ visit }: { visit: LabVisitRow }) {
   return (
     <div className="px-[18px] py-3">
       <div className="mb-3">
-        <Link
-          href={`/dashboard/patients/${visit.patient.id}`}
-          className="font-semibold text-[13px] hover:underline"
-        >
-          {fullName}
-        </Link>
+        <div className="flex items-center gap-2">
+          {visit.queue_position != null && (
+            <span className="font-mono text-[13px] font-semibold tabular-nums text-muted-foreground">
+              #{visit.queue_position}
+            </span>
+          )}
+          <Link
+            href={`/dashboard/patients/${visit.patient.id}`}
+            className="font-semibold text-[13px] hover:underline"
+          >
+            {fullName}
+          </Link>
+        </div>
         <div className="text-[11px] text-muted-foreground font-mono">{meta}</div>
         {dx && (
           <div className="text-[12px] text-body mt-1 leading-snug">

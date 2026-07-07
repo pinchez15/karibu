@@ -28,6 +28,8 @@ data class OpdPatientRow(
     val ageLabel: String?,
     val chiefComplaint: String?,
     val checkedInAt: String?,
+    /** Today's number — per clinic, per day, assigned at check-in (WP2). */
+    val queuePosition: Int?,
     val priority: String,
     val queueStatus: String,
     val bucket: OpdPatientFilter,
@@ -43,8 +45,10 @@ data class OpdPatientRow(
                 sex = dto.sex,
                 ageLabel = ageLabel,
                 chiefComplaint = dto.chiefComplaint,
-                checkedInAt = null,
-                priority = "normal",
+                // Now populated by rpc_get_opd_patients_today (migration 094).
+                checkedInAt = dto.checkedInAt,
+                queuePosition = dto.queuePosition,
+                priority = dto.priority,
                 queueStatus = dto.queueStatus,
                 bucket = deriveBucketFromRpc(dto),
             )
@@ -82,6 +86,7 @@ data class OpdPatientRow(
                 ageLabel = p.dateOfBirth?.let { formatAgeFromDob(it) },
                 chiefComplaint = v.chiefComplaint,
                 checkedInAt = v.checkedInAt,
+                queuePosition = v.queuePosition,
                 priority = v.priority,
                 queueStatus = v.queueStatus,
                 bucket = deriveBucket(v),

@@ -31,7 +31,7 @@ fun PharmacyHomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     var worksheetItem by remember { mutableStateOf<NeedsPharmacyItem?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val filtered = viewModel.filteredItems
+    val filtered = viewModel.searchFilteredItems
 
     LaunchedEffect(uiState.stockWarning) {
         uiState.stockWarning?.let { warning ->
@@ -64,6 +64,15 @@ fun PharmacyHomeScreen(
                 selected = uiState.selectedTab,
                 items = uiState.items,
                 onSelect = viewModel::selectTab,
+            )
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = viewModel::updateSearch,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Filter by name or #") },
+                singleLine = true,
             )
             PullToRefreshBox(
                 isRefreshing = uiState.isLoading,
@@ -151,7 +160,17 @@ private fun PharmacyQueueCard(
             .clickable(onClick = onOpen),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(item.patientName, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                item.queuePosition?.let { num ->
+                    Text(
+                        text = "$num",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 10.dp),
+                    )
+                }
+                Text(item.patientName, fontWeight = FontWeight.SemiBold)
+            }
             val preview = item.prescriptionLines.firstOrNull()?.displayName()
                 ?: item.medications.orEmpty().take(120)
             KhMetaText(preview)

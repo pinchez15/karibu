@@ -27,6 +27,7 @@ data class PharmacyHomeUiState(
     val staff: Staff? = null,
     val items: List<NeedsPharmacyItem> = emptyList(),
     val selectedTab: PharmacyQueueTab = PharmacyQueueTab.Waiting,
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionVisitId: String? = null,
@@ -54,6 +55,17 @@ class PharmacyHomeViewModel @Inject constructor(
             }
         }
 
+    /** Tab filter + WP2 type-ahead by name or today's number. */
+    val searchFilteredItems: List<NeedsPharmacyItem>
+        get() {
+            val q = _uiState.value.searchQuery.trim().lowercase().removePrefix("#")
+            if (q.isEmpty()) return filteredItems
+            return filteredItems.filter { item ->
+                item.patientName.lowercase().contains(q) ||
+                    item.queuePosition?.toString()?.contains(q) == true
+            }
+        }
+
     init {
         viewModelScope.launch {
             val clerkUserId = authTokenStore.getClerkUserId() ?: return@launch
@@ -65,6 +77,10 @@ class PharmacyHomeViewModel @Inject constructor(
 
     fun selectTab(tab: PharmacyQueueTab) {
         _uiState.update { it.copy(selectedTab = tab) }
+    }
+
+    fun updateSearch(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun refresh() {

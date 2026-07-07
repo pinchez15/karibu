@@ -110,6 +110,8 @@ class WorklistRepository @Inject constructor(
                 tests = open,
                 labStatus = visit.labStatus,
                 chiefComplaint = visit.chiefComplaint ?: item.chiefComplaint,
+                queuePosition = visit.queuePosition,
+                checkedInAt = visit.checkedInAt,
             )
         }
     }
@@ -154,17 +156,25 @@ class WorklistRepository @Inject constructor(
     private suspend fun enrichPharmacyLines(items: List<NeedsPharmacyItem>): List<NeedsPharmacyItem> {
         val withLines = prescriptionOrderRepository.attachLines(items)
         return withLines.map { item ->
-            if (item.prescriptionLines.isNotEmpty()) {
-                item
-            } else if (!item.medications.isNullOrBlank()) {
-                item.copy(
+            val visit = visitDao.getByIdOnce(item.visitId)
+            var enriched = item
+            if (visit != null) {
+                enriched = enriched.copy(
+                    queuePosition = visit.queuePosition,
+                    checkedInAt = visit.checkedInAt,
+                )
+            }
+            if (enriched.prescriptionLines.isNotEmpty()) {
+                enriched
+            } else if (!enriched.medications.isNullOrBlank()) {
+                enriched.copy(
                     prescriptionLines = prescriptionOrderRepository.legacyLinesFromText(
-                        item.visitId,
-                        item.medications,
+                        enriched.visitId,
+                        enriched.medications,
                     ),
                 )
             } else {
-                item
+                enriched
             }
         }
     }
@@ -285,6 +295,8 @@ private suspend fun VisitDto.toPharmacyItem(patientDao: PatientDao): NeedsPharma
         doctorId = doctorId,
         visitDate = visitDate,
         dispensedAt = dispensedAt,
+        queuePosition = queuePosition,
+        checkedInAt = checkedInAt,
     )
 }
 

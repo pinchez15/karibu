@@ -46,6 +46,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -242,6 +244,9 @@ class VisitRepository @Inject constructor(
     ): Pair<Visit, String?> = withContext(Dispatchers.IO) {
         val now = Instant.now().toString()
         val today = LocalDate.now().toString()
+        // WP2: assign today's number locally so offline visits sort identically
+        // to server-assigned numbers once synced (mirrors assign_today_number).
+        val queuePosition = (visitDao.getMaxQueuePosition(clinicId, today) ?: 0) + 1
 
         val visit = Visit(
             id = UUID.randomUUID().toString(),
@@ -251,7 +256,7 @@ class VisitRepository @Inject constructor(
             nurseId = null,
             status = VisitStatus.pending,
             queueStatus = QueueStatus.waiting,
-            queuePosition = null,
+            queuePosition = queuePosition,
             priority = VisitPriority.normal,
             chiefComplaint = chiefComplaint,
             checkedInAt = now,
@@ -306,6 +311,94 @@ class VisitRepository @Inject constructor(
         // enqueue() may dedup onto an existing pending row — always thread
         // the SURVIVING id so dependents don't point at a row that was
         // never inserted (dangling dependsOn = stuck forever).
+        val queuedId = syncQueueHelper.enqueue(syncEntry)
+        visit to queuedId
+    }
+
+    /**
+     * Check an existing patient into today's OPD queue (WP2 A2). Online: calls
+     * check_in_patient directly (server assigns today's number). Offline: creates
+     * a local visit with the next local number and queues the RPC for sync.
+     */
+    suspend fun checkInPatient(
+        clinicId: String,
+        patientId: String,
+        chiefComplaint: String? = null,
+        priority: VisitPriority = VisitPriority.normal,
+        staffId: String? = null,
+        department: Department = Department.opd,
+    ): Pair<Visit, String?> = withContext(Dispatchers.IO) {
+        val today = LocalDate.now().toString()
+        val now = Instant.now().toString()
+
+        val rpcParams = buildJsonObject {
+            put("p_clinic_id", clinicId)
+            put("p_patient_id", patientId)
+            if (!chiefComplaint.isNullOrBlank()) put("p_chief_complaint", chiefComplaint)
+            put("p_priority", priority.name)
+            staffId?.let { put("p_staff_id", it) }
+            put("p_department", department.name)
+        }
+
+        if (networkMonitor.isOnline()) {
+            try {
+                val response = supabaseApi.checkInPatient(rpcParams)
+                if (response.isSuccessful) {
+                    val visitId = response.body()?.string()?.trim('"')
+                    if (!visitId.isNullOrBlank()) {
+                        refreshVisit(visitId)
+                        val synced = visitDao.getByIdOnce(visitId)?.toDomain()
+                        if (synced != null) return@withContext synced to null
+                    }
+                }
+            } catch (_: Exception) {
+                // Fall through to offline path
+            }
+        }
+
+        val queuePosition = (visitDao.getMaxQueuePosition(clinicId, today) ?: 0) + 1
+        val visit = Visit(
+            id = UUID.randomUUID().toString(),
+            clinicId = clinicId,
+            patientId = patientId,
+            doctorId = null,
+            nurseId = null,
+            status = VisitStatus.pending,
+            queueStatus = QueueStatus.waiting,
+            queuePosition = queuePosition,
+            priority = priority,
+            chiefComplaint = chiefComplaint,
+            checkedInAt = now,
+            department = department,
+            reviewStatus = ReviewStatus.pending,
+            reviewedBy = null,
+            reviewedAt = null,
+            diagnosis = null,
+            medications = null,
+            followUpInstructions = null,
+            testsOrdered = null,
+            visitDate = today,
+            createdAt = now,
+            updatedAt = now,
+            finalizedAt = null,
+            errorMessage = null,
+            errorAt = null,
+            documentationComplete = false,
+            documentationCompletedAt = null,
+        )
+        visitDao.upsert(visit.toEntity(isSynced = false))
+
+        val escapedComplaint = chiefComplaint?.replace("\"", "\\\"") ?: ""
+        val syncEntry = SyncQueueEntry(
+            id = UUID.randomUUID().toString(),
+            operationType = "queue_op",
+            entityType = "visits",
+            entityId = visit.id,
+            payload = """{"rpc":"check_in_patient","params":{"p_patient_id":"$patientId","p_clinic_id":"$clinicId","p_chief_complaint":"$escapedComplaint","p_priority":"${priority.name}","p_staff_id":"$staffId","p_department":"${department.name}"}}""",
+            status = "pending",
+            attempts = 0,
+            createdAt = System.currentTimeMillis(),
+        )
         val queuedId = syncQueueHelper.enqueue(syncEntry)
         visit to queuedId
     }

@@ -87,6 +87,8 @@ async function getPharmacyStationQueueImpl(
       dispense_notes,
       pharmacy_order_submitted_at,
       dispensed_at,
+      queue_position,
+      checked_in_at,
       patient:patients!inner (
         id,
         patient_number,

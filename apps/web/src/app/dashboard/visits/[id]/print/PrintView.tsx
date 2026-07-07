@@ -6,6 +6,7 @@ import type { ClinicPrintSettings } from '@/lib/clinic-print-settings'
 interface PrintVisit {
   id: string
   visit_date: string
+  queue_position: number | null
   diagnosis: string | null
   medications: string | null
   follow_up_instructions: string | null
@@ -94,6 +95,9 @@ function PrintVisitBody({ visit }: { visit: PrintVisit }) {
       <div>{hrHeavy}</div>
       <div className="bold">{centerLine('VISIT SUMMARY')}</div>
       <div>{centerLine(visitDate)}</div>
+      {visit.queue_position != null && (
+        <div className="bold">{centerLine(`TODAY'S NUMBER: ${visit.queue_position}`)}</div>
+      )}
       <div>{hrHeavy}</div>
 
       <section>

@@ -21,6 +21,7 @@ import javax.inject.Inject
 data class LabHomeUiState(
     val staff: Staff? = null,
     val items: List<NeedsLabItem> = emptyList(),
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val actionKey: String? = null,
@@ -38,6 +39,17 @@ class LabHomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(LabHomeUiState())
     val uiState: StateFlow<LabHomeUiState> = _uiState.asStateFlow()
+
+    /** WP2 type-ahead by name or today's number. */
+    val filteredItems: List<NeedsLabItem>
+        get() {
+            val q = _uiState.value.searchQuery.trim().lowercase().removePrefix("#")
+            if (q.isEmpty()) return _uiState.value.items
+            return _uiState.value.items.filter { item ->
+                item.patientName.lowercase().contains(q) ||
+                    item.queuePosition?.toString()?.contains(q) == true
+            }
+        }
 
     init {
         viewModelScope.launch {
@@ -59,6 +71,10 @@ class LabHomeViewModel @Inject constructor(
 
     fun dismissError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun updateSearch(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun startLabTest(visitId: String, testName: String) {

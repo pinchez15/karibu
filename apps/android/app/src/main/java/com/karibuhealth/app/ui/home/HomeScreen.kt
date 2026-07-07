@@ -1,6 +1,8 @@
 package com.karibuhealth.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -227,11 +229,12 @@ fun HomeScreen(
                         items(uiState.searchResults, key = { "p-${it.id}" }) { patient ->
                             SearchResultCard(
                                 patient = patient,
-                                // Tap the card body to open the patient
-                                // timeline (Phase 3 patient-first UX).
-                                // "Start Visit" stays on the right for the
-                                // legacy queue-driven flow.
                                 onOpenPatient = { onSelectPatient(patient.id) },
+                                onCheckIn = {
+                                    scope.launch {
+                                        viewModel.checkInForPatient(patient.id)?.let(onNavigateToVisitDetails)
+                                    }
+                                },
                                 onStartVisit = {
                                     scope.launch {
                                         viewModel.startVisitForPatient(patient.id)?.let(onNavigateToVisitDetails)
@@ -243,7 +246,51 @@ fun HomeScreen(
                 }
 
                 if (uiState.searchQuery.isBlank()) {
-                    val patients = uiState.activePatients
+                    val patients = uiState.queueFilteredActivePatients
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            listOf(
+                                OpdPatientFilter.Waiting,
+                                OpdPatientFilter.NeedsVitals,
+                                OpdPatientFilter.WithClinician,
+                                OpdPatientFilter.AwaitingLabs,
+                                OpdPatientFilter.AtPharmacy,
+                            ).forEach { filter ->
+                                FilterChip(
+                                    selected = uiState.selectedFilter == filter,
+                                    onClick = { viewModel.selectFilter(filter) },
+                                    label = {
+                                        Text("${filter.label} (${uiState.filterCount(filter)})")
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    item {
+                        OutlinedTextField(
+                            value = uiState.queueSearchQuery,
+                            onValueChange = viewModel::updateQueueSearch,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
+                            placeholder = { Text("Filter by name or #", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Cobalt,
+                                unfocusedBorderColor = Line,
+                            ),
+                        )
+                    }
                     item {
                         Row(
                             modifier = Modifier
@@ -446,6 +493,7 @@ private fun EmptyHint(text: String) {
 private fun SearchResultCard(
     patient: Patient,
     onOpenPatient: () -> Unit,
+    onCheckIn: () -> Unit,
     onStartVisit: () -> Unit,
 ) {
     val name = listOfNotNull(patient.firstName, patient.lastName)
@@ -502,12 +550,20 @@ private fun SearchResultCard(
                 )
             }
 
-            Button(
-                onClick = onStartVisit,
-                colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
-                shape = RoundedCornerShape(10.dp),
-            ) {
-                Text("Start Visit")
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Button(
+                    onClick = onCheckIn,
+                    colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Text("Check in")
+                }
+                OutlinedButton(
+                    onClick = onStartVisit,
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Text("Start visit")
+                }
             }
         }
     }
@@ -555,6 +611,17 @@ private fun OpdPatientCard(
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        row.queuePosition?.let { num ->
+            Text(
+                text = "$num",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .widthIn(min = 28.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
         Box(
             modifier = Modifier
                 .width(3.dp)

@@ -1102,6 +1102,13 @@ data class OpdPatientTodayDto(
     @SerialName("visit_id") val visitId: String,
     @SerialName("chief_complaint") val chiefComplaint: String? = null,
     @SerialName("queue_status") val queueStatus: String,
+    // WP2 (migration 094): today's number + arrival ordering fields so the
+    // client renders "#23", the wait, and the urgent-first-then-arrival order
+    // straight from RPC data. Defaulted for backward-compat with older servers.
+    @SerialName("queue_position") val queuePosition: Int? = null,
+    val priority: String = "normal",
+    @SerialName("checked_in_at") val checkedInAt: String? = null,
+    @SerialName("wait_minutes") val waitMinutes: Int? = null,
     @SerialName("lab_status") val labStatus: String,
     @SerialName("dispensing_status") val dispensingStatus: String,
     @SerialName("documentation_complete") val documentationComplete: Boolean = false,

@@ -100,6 +100,10 @@ data class VisitStartResult(
     val patientId: String,
 )
 
+data class RegisterPatientResult(
+    val patientId: String,
+)
+
 @HiltViewModel
 class NewVisitViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
@@ -316,10 +320,40 @@ class NewVisitViewModel @Inject constructor(
         }
     }
 
-    suspend fun createPatientAndStartVisit(confirmDuplicate: Boolean = false): VisitStartResult? {
-        val state = _uiState.value
-        if (state.foundPatient != null) return startVisitForSelectedPatient()
+    suspend fun registerPatientOnly(confirmDuplicate: Boolean = false): RegisterPatientResult? {
+        _uiState.value.foundPatient?.let { patient ->
+            return RegisterPatientResult(patient.id)
+        }
+        val (patient, _) = validateAndCreatePatient(confirmDuplicate) ?: return null
+        _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
+        return RegisterPatientResult(patient.id)
+    }
 
+    suspend fun createPatientAndStartVisit(confirmDuplicate: Boolean = false): VisitStartResult? {
+        if (_uiState.value.foundPatient != null) return startVisitForSelectedPatient()
+
+        val (patient, patientSyncId) = validateAndCreatePatient(confirmDuplicate) ?: return null
+        return try {
+            val staffId = authTokenStore.getStaffId()
+            val chiefComplaint = _uiState.value.chiefComplaint.trim().takeIf { it.isNotBlank() }
+            val (visit, _) = visitRepository.createVisit(
+                clinicId = authTokenStore.getClinicId()!!,
+                patientId = patient.id,
+                doctorId = staffId,
+                chiefComplaint = chiefComplaint,
+                patientSyncEntryId = patientSyncId,
+            )
+            _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
+            VisitStartResult(visitId = visit.id, patientId = patient.id)
+        } catch (e: Exception) {
+            _uiState.update { it.copy(error = e.message ?: "Failed to start visit", isCreating = false) }
+            null
+        }
+    }
+
+    /** Validates form, resolves duplicates, and creates a new patient row. */
+    private suspend fun validateAndCreatePatient(confirmDuplicate: Boolean): Pair<Patient, String?>? {
+        val state = _uiState.value
         // Validate the new-patient form. Sex remains required for HMIS 105
         // sex banding. DOB precision (migration 038) now lets year-only and
         // age-estimate patients still land in the right HMIS age bucket via
@@ -431,17 +465,7 @@ class NewVisitViewModel @Inject constructor(
                 guardianRelationship = state.guardianRelationship.trim().takeIf { it.isNotBlank() },
                 nationalId = state.nationalId.trim().takeIf { it.isNotBlank() },
             )
-            val staffId = authTokenStore.getStaffId()
-            val chiefComplaint = state.chiefComplaint.trim().takeIf { it.isNotBlank() }
-            val (visit, _) = visitRepository.createVisit(
-                clinicId = clinicId,
-                patientId = patient.id,
-                doctorId = staffId,
-                chiefComplaint = chiefComplaint,
-                patientSyncEntryId = patientSyncId,
-            )
-            _uiState.update { it.copy(foundPatient = patient, isCreating = false) }
-            VisitStartResult(visitId = visit.id, patientId = patient.id)
+            patient to patientSyncId
         } catch (e: Exception) {
             _uiState.update { it.copy(error = e.message ?: "Failed to create patient", isCreating = false) }
             null

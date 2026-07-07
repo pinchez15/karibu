@@ -10,6 +10,10 @@ export type DispensingRow = {
   dispense_notes: string | null
   pharmacy_order_submitted_at?: string | null
   documentation_completed_at?: string | null
+  // WP2 C6: today's number + arrival time, so the dispenser can call "#23"
+  // and both staff and patient reason in the same number.
+  queue_position?: number | null
+  checked_in_at?: string | null
   patient: {
     id: string
     patient_number: string | null
