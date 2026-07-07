@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
 import { syncCriticalAlertsForVisit } from '@/lib/sync-critical-alerts'
@@ -96,22 +97,24 @@ export type PatientWithDerivedAge = Patient & {
 export async function getPatient(
   patientId: string,
 ): Promise<PatientWithDerivedAge | null> {
-  const staff = await getStaff()
-  if (!staff) return null
+  return measureServerLoader(PERF_LOADER.patientGet, async () => {
+    const staff = await getStaff()
+    if (!staff) return null
 
-  const patient = await loadPatientForStaff(patientId, staff.clinic_id)
-  if (!patient) return null
+    const patient = await loadPatientForStaff(patientId, staff.clinic_id)
+    if (!patient) return null
 
-  const p = patient as PatientWithDerivedAge
-  const derived = computeDerivedAge({
-    dob_precision: p.dob_precision,
-    date_of_birth: p.date_of_birth,
-    birth_year: p.birth_year ?? null,
-    approximate_age: p.approximate_age ?? null,
-    age_recorded_at: p.age_recorded_at ?? null,
+    const p = patient as PatientWithDerivedAge
+    const derived = computeDerivedAge({
+      dob_precision: p.dob_precision,
+      date_of_birth: p.date_of_birth,
+      birth_year: p.birth_year ?? null,
+      approximate_age: p.approximate_age ?? null,
+      age_recorded_at: p.age_recorded_at ?? null,
+    })
+    p.derived_age = derived
+    return p
   })
-  p.derived_age = derived
-  return p
 }
 
 function computeDerivedAge(input: {
@@ -155,23 +158,25 @@ export async function getPatientTimeline(
   cursor?: string,
   limit: number = 50,
 ): Promise<PatientTimelineEvent[]> {
-  const staff = await getStaff()
-  if (!staff) return []
+  return measureServerLoader(PERF_LOADER.patientTimeline, async () => {
+    const staff = await getStaff()
+    if (!staff) return []
 
-  const patient = await loadPatientForStaff(patientId, staff.clinic_id)
-  if (!patient) return []
+    const patient = await loadPatientForStaff(patientId, staff.clinic_id)
+    if (!patient) return []
 
-  const supabase = createServiceClient()
-  const { data, error } = await supabase.rpc('rpc_get_patient_timeline', {
-    p_patient_id: patientId,
-    p_cursor: cursor ?? null,
-    p_limit: limit,
+    const supabase = createServiceClient()
+    const { data, error } = await supabase.rpc('rpc_get_patient_timeline', {
+      p_patient_id: patientId,
+      p_cursor: cursor ?? null,
+      p_limit: limit,
+    })
+    if (error) {
+      console.error('rpc_get_patient_timeline failed:', error)
+      return []
+    }
+    return (data ?? []) as PatientTimelineEvent[]
   })
-  if (error) {
-    console.error('rpc_get_patient_timeline failed:', error)
-    return []
-  }
-  return (data ?? []) as PatientTimelineEvent[]
 }
 
 /**
@@ -182,24 +187,26 @@ export async function getPatientTimeline(
 export async function getPatientLatestVitals(
   patientId: string,
 ): Promise<PatientLatestVitals | null> {
-  const staff = await getStaff()
-  if (!staff) return null
+  return measureServerLoader(PERF_LOADER.patientLatestVitals, async () => {
+    const staff = await getStaff()
+    if (!staff) return null
 
-  const patient = await loadPatientForStaff(patientId, staff.clinic_id)
-  if (!patient) return null
+    const patient = await loadPatientForStaff(patientId, staff.clinic_id)
+    if (!patient) return null
 
-  const supabase = createServiceClient()
-  const { data, error } = await supabase.rpc('rpc_get_patient_latest_vitals', {
-    p_patient_id: patientId,
+    const supabase = createServiceClient()
+    const { data, error } = await supabase.rpc('rpc_get_patient_latest_vitals', {
+      p_patient_id: patientId,
+    })
+    if (error) {
+      console.error('rpc_get_patient_latest_vitals failed:', error)
+      return null
+    }
+    // RPC returns TABLE — Supabase deserialises a single-row TABLE function as
+    // an array. Pick the first row (or null when nothing was returned).
+    const rows = (data ?? []) as PatientLatestVitals[]
+    return rows[0] ?? null
   })
-  if (error) {
-    console.error('rpc_get_patient_latest_vitals failed:', error)
-    return null
-  }
-  // RPC returns TABLE — Supabase deserialises a single-row TABLE function as
-  // an array. Pick the first row (or null when nothing was returned).
-  const rows = (data ?? []) as PatientLatestVitals[]
-  return rows[0] ?? null
 }
 
 // ---------------------------------------------------------------------------

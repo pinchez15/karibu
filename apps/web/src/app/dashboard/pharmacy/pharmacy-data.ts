@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase'
 import { startOfTodayInTimezoneIso } from '@/lib/clinic-time'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import type { PrescriptionOrderLine, PharmacyQueueTab } from '@karibu/shared'
 import { type DispensingRow } from './pharmacy-shared'
 
@@ -60,6 +61,15 @@ export function pharmacyTabFilter(
 }
 
 export async function getPharmacyStationQueue(
+  clinicId: string,
+  tab: PharmacyQueueTab,
+): Promise<PharmacyStationRow[]> {
+  return measureServerLoader(PERF_LOADER.pharmacyQueue, () =>
+    getPharmacyStationQueueImpl(clinicId, tab),
+  )
+}
+
+async function getPharmacyStationQueueImpl(
   clinicId: string,
   tab: PharmacyQueueTab,
 ): Promise<PharmacyStationRow[]> {

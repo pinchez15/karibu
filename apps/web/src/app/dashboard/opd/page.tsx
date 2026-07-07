@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import { ClinicianDashboard } from '../ClinicianDashboard'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { OutOfStockItem, RoundsVisit } from '../TodayPanels'
@@ -84,17 +85,19 @@ async function getRounds(clinicId: string): Promise<RoundsVisit[]> {
 }
 
 async function getQueueData(clinicId: string): Promise<QueueItem[]> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase.rpc('get_clinic_queue', {
-    p_clinic_id: clinicId,
+  return measureServerLoader(PERF_LOADER.opdQueue, async () => {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase.rpc('get_clinic_queue', {
+      p_clinic_id: clinicId,
+    })
+
+    if (error) {
+      console.error('Failed to fetch queue:', error)
+      return []
+    }
+
+    return (data || []) as QueueItem[]
   })
-
-  if (error) {
-    console.error('Failed to fetch queue:', error)
-    return []
-  }
-
-  return (data || []) as QueueItem[]
 }
 
 async function getShowPhysicalQueue(clinicId: string): Promise<boolean> {
@@ -122,36 +125,38 @@ async function getVisitsToday(clinicId: string): Promise<number> {
 }
 
 export default async function OpdTodayPage() {
-  const staff = await getStaff()
-  if (!staff) redirect('/')
+  return measureServerLoader(PERF_LOADER.opdPage, async () => {
+    const staff = await getStaff()
+    if (!staff) redirect('/')
 
-  const now = new Date()
-  const daysBack = now.getDay()
-  const daysForward = 13 - now.getDay()
+    const now = new Date()
+    const daysBack = now.getDay()
+    const daysForward = 13 - now.getDay()
 
-  const [queue, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
-    await Promise.all([
-      getQueueData(staff.clinic_id),
-      countReviewNotesItems(staff.clinic_id),
-      getVisitsToday(staff.clinic_id),
-      getShowPhysicalQueue(staff.clinic_id),
-      loadClinicAppointments(staff.clinic_id, { daysBack, daysForward }),
-      getOutOfStock(staff.clinic_id),
-      getRounds(staff.clinic_id),
-    ])
+    const [queue, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
+      await Promise.all([
+        getQueueData(staff.clinic_id),
+        countReviewNotesItems(staff.clinic_id),
+        getVisitsToday(staff.clinic_id),
+        getShowPhysicalQueue(staff.clinic_id),
+        loadClinicAppointments(staff.clinic_id, { daysBack, daysForward }),
+        getOutOfStock(staff.clinic_id),
+        getRounds(staff.clinic_id),
+      ])
 
-  return (
-    <>
-      <RealtimeRefresher clinicId={staff.clinic_id} />
-      <ClinicianDashboard
-        queue={queue}
-        reviewCount={reviewCount}
-        visitsToday={visitsToday}
-        showPhysicalQueue={showPhysicalQueue}
-        appointments={appointments}
-        outOfStock={outOfStock}
-        rounds={rounds}
-      />
-    </>
-  )
+    return (
+      <>
+        <RealtimeRefresher clinicId={staff.clinic_id} />
+        <ClinicianDashboard
+          queue={queue}
+          reviewCount={reviewCount}
+          visitsToday={visitsToday}
+          showPhysicalQueue={showPhysicalQueue}
+          appointments={appointments}
+          outOfStock={outOfStock}
+          rounds={rounds}
+        />
+      </>
+    )
+  })
 }
