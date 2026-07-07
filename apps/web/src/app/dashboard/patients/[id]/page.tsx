@@ -3,6 +3,7 @@ import { Send } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import { WebTopBar } from '@/components/web-shell'
 import { patientDisplayName } from '@/lib/referral-summary'
 import {
@@ -26,72 +27,74 @@ export default async function PatientProfilePage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const staff = await getStaff()
-  if (!staff) redirect('/')
+  return measureServerLoader(PERF_LOADER.patientPage, async () => {
+    const staff = await getStaff()
+    if (!staff) redirect('/')
 
-  const { id: patientId } = await params
+    const { id: patientId } = await params
 
-  // Parallel fetch — these are independent reads.
-  const [patient, latestVitals, initialTimeline] = await Promise.all([
-    getPatient(patientId),
-    getPatientLatestVitals(patientId),
-    getPatientTimeline(patientId, undefined, 50),
-  ])
+    // Parallel fetch — these are independent reads.
+    const [patient, latestVitals, initialTimeline] = await Promise.all([
+      getPatient(patientId),
+      getPatientLatestVitals(patientId),
+      getPatientTimeline(patientId, undefined, 50),
+    ])
 
-  if (!patient) {
-    redirect('/dashboard/visits')
-  }
+    if (!patient) {
+      redirect('/dashboard/visits')
+    }
 
-  const supabase = createServiceClient()
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const { data: todayVisit } = await supabase
-    .from('visits')
-    .select('id')
-    .eq('clinic_id', staff.clinic_id)
-    .eq('patient_id', patientId)
-    .gte('visit_date', todayStart.toISOString().slice(0, 10))
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    const supabase = createServiceClient()
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const { data: todayVisit } = await supabase
+      .from('visits')
+      .select('id')
+      .eq('clinic_id', staff.clinic_id)
+      .eq('patient_id', patientId)
+      .gte('visit_date', todayStart.toISOString().slice(0, 10))
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-  const name = patientDisplayName(patient)
-  const patientNumber = patient.patient_number ?? `#${patientId.slice(0, 8)}`
+    const name = patientDisplayName(patient)
+    const patientNumber = patient.patient_number ?? `#${patientId.slice(0, 8)}`
 
-  return (
-    <>
-      <WebTopBar
-        title={name}
-        subtitle={patientNumber}
-        subtitleMeta={false}
-        actions={
-          <>
-            {todayVisit?.id && (
+    return (
+      <>
+        <WebTopBar
+          title={name}
+          subtitle={patientNumber}
+          subtitleMeta={false}
+          actions={
+            <>
+              {todayVisit?.id && (
+                <Link
+                  href={`/dashboard/referrals/new?visitId=${todayVisit.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-background"
+                >
+                  <Send className="h-4 w-4" />
+                  Refer
+                </Link>
+              )}
               <Link
-                href={`/dashboard/referrals/new?visitId=${todayVisit.id}`}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-background"
+                href="/dashboard/visits"
+                className="text-sm text-muted-foreground hover:text-foreground"
               >
-                <Send className="h-4 w-4" />
-                Refer
+                All patients
               </Link>
-            )}
-            <Link
-              href="/dashboard/visits"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              All patients
-            </Link>
-          </>
-        }
-      />
-      <div className="flex-1 overflow-auto px-8 py-6 max-w-4xl">
-        <PatientDetailClient
-          staffRole={staff.role}
-          patient={patient}
-          latestVitals={latestVitals}
-          initialTimeline={initialTimeline}
+            </>
+          }
         />
-      </div>
-    </>
-  )
+        <div className="flex-1 overflow-auto px-8 py-6 max-w-4xl">
+          <PatientDetailClient
+            staffRole={staff.role}
+            patient={patient}
+            latestVitals={latestVitals}
+            initialTimeline={initialTimeline}
+          />
+        </div>
+      </>
+    )
+  })
 }

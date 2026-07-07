@@ -2,6 +2,7 @@
 
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import type {
   CareTaskStatus,
   CareTaskType,
@@ -126,6 +127,14 @@ export interface AllWorklistsResult {
 
 /** Fetch all worklists with a single auth lookup + parallel RPCs. */
 export async function getAllWorklists(
+  department: string = 'opd',
+): Promise<AllWorklistsResult> {
+  return measureServerLoader(PERF_LOADER.worklistsGetAll, () =>
+    getAllWorklistsImpl(department),
+  )
+}
+
+async function getAllWorklistsImpl(
   department: string = 'opd',
 ): Promise<AllWorklistsResult> {
   const staff = await getStaff()

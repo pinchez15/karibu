@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { requireStaff } from '@/lib/auth'
+import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 
 export type BillingPatientHit = { id: string; name: string; number: number | null }
 
@@ -98,28 +99,30 @@ export async function searchBillingPatients(query: string): Promise<BillingPatie
 }
 
 export async function listPatientBalances(): Promise<PatientBalanceRow[]> {
-  let staff
-  try {
-    staff = await requireStaff()
-  } catch {
-    return []
-  }
-  const supabase = createServiceClient()
-  const { data, error } = await supabase.rpc('rpc_billing_patient_balances', {
-    p_clinic_id: staff.clinic_id,
+  return measureServerLoader(PERF_LOADER.billingPatientBalances, async () => {
+    let staff
+    try {
+      staff = await requireStaff()
+    } catch {
+      return []
+    }
+    const supabase = createServiceClient()
+    const { data, error } = await supabase.rpc('rpc_billing_patient_balances', {
+      p_clinic_id: staff.clinic_id,
+    })
+    if (error) {
+      console.error('billing: patient balances', error)
+      return []
+    }
+    return (data ?? []).map((r: Record<string, unknown>) => ({
+      patient_id: r.patient_id as string,
+      patient_name: r.patient_name as string,
+      charged: Number(r.charged ?? 0),
+      paid: Number(r.paid ?? 0),
+      balance: Number(r.balance ?? 0),
+      last_charge_at: (r.last_charge_at as string | null) ?? null,
+    }))
   })
-  if (error) {
-    console.error('billing: patient balances', error)
-    return []
-  }
-  return (data ?? []).map((r: Record<string, unknown>) => ({
-    patient_id: r.patient_id as string,
-    patient_name: r.patient_name as string,
-    charged: Number(r.charged ?? 0),
-    paid: Number(r.paid ?? 0),
-    balance: Number(r.balance ?? 0),
-    last_charge_at: (r.last_charge_at as string | null) ?? null,
-  }))
 }
 
 export async function getPatientBillingDetail(patientId: string): Promise<{
