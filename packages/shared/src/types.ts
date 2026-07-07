@@ -660,11 +660,6 @@ export interface OpdPatientRow {
   pharmacy_order_submitted_at: string | null;
   note_status: ProviderNoteStatus | null;
   visit_date: string;
-  /** Today's queue number (assigned at check-in). */
-  queue_position: number | null;
-  checked_in_at: string | null;
-  priority: Visit['priority'] | null;
-  wait_minutes: number | null;
 }
 
 /** Progressive AI assist tier on ai_review_suggestions (migration 048). */

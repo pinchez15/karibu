@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { completeCareTask } from '../actions'
+import { completeCareTask } from './actions'
 
 export function CareTaskMarkDoneButton({
   taskId,

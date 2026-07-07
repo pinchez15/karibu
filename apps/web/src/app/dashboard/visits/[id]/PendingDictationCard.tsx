@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect, useTransition, type RefObject } from 'react'
+import { useState, useRef, useCallback, useEffect, useTransition, type RefObject, type MutableRefObject } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { Loader2, Mic, Square, PenLine, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -457,7 +457,11 @@ export function PendingDictationCard({
 
   return (
     <div
-      ref={editorRef}
+      ref={(node) => {
+        if (editorRef) {
+          (editorRef as MutableRefObject<HTMLDivElement | null>).current = node
+        }
+      }}
       className={cn('space-y-4', !isReview && 'bg-card border border-border rounded-lg p-4')}
     >
       {!isReview && (
