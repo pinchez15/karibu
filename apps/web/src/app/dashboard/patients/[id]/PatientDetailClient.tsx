@@ -35,6 +35,8 @@ import {
 } from './actions'
 import { PatientEditSheet } from './PatientEditSheet'
 import { PatientProgramsCard } from './PatientProgramsCard'
+import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
+import { CareTaskMarkDoneButton } from '@/app/dashboard/worklists/CareTaskMarkDoneButton'
 import { guardianRelationshipLabel } from '@/lib/patient-demographics'
 import { VISIT_STATUS_DISPLAY } from '@/lib/visit-status'
 
@@ -117,6 +119,7 @@ const DISPENSING_STATUS_LABEL: Record<string, string> = {
   dispensed: 'Dispensed',
   partial: 'Partial dispense',
   out_of_stock: 'Out of stock',
+  returned: 'Returned from pharmacy',
 }
 
 // Match the staff role enum from packages/shared. Used to humanise role chips
@@ -536,7 +539,15 @@ function PaymentCard({ data, eventAt }: { data: PaymentEventData; eventAt: strin
   )
 }
 
-function TaskCard({ data, eventAt }: { data: TaskEventData; eventAt: string }) {
+function TaskCard({
+  data,
+  eventAt,
+  patientId,
+}: {
+  data: TaskEventData
+  eventAt: string
+  patientId: string
+}) {
   const typeLabel = TASK_TYPE_LABEL[data.task_type] ?? data.task_type
   const statusCfg = TASK_STATUS_CONFIG[data.status] ?? TASK_STATUS_CONFIG.open
   const dueLabel = formatDueAt(data.due_at)
@@ -587,11 +598,22 @@ function TaskCard({ data, eventAt }: { data: TaskEventData; eventAt: string }) {
           Open visit
         </Link>
       )}
+      {data.status !== 'completed' && (
+        <div className="mt-3">
+          <CareTaskMarkDoneButton taskId={data.task_id} patientId={patientId} />
+        </div>
+      )}
     </div>
   )
 }
 
-function TimelineEvent({ event }: { event: PatientTimelineEvent }) {
+function TimelineEvent({
+  event,
+  patientId,
+}: {
+  event: PatientTimelineEvent
+  patientId: string
+}) {
   switch (event.event_type) {
     case 'visit':
       return <VisitCard data={event.event_data} eventAt={event.event_at} />
@@ -602,7 +624,7 @@ function TimelineEvent({ event }: { event: PatientTimelineEvent }) {
     case 'payment':
       return <PaymentCard data={event.event_data} eventAt={event.event_at} />
     case 'task':
-      return <TaskCard data={event.event_data} eventAt={event.event_at} />
+      return <TaskCard data={event.event_data} eventAt={event.event_at} patientId={patientId} />
   }
 }
 
@@ -1110,6 +1132,7 @@ export function PatientDetailClient({
   // there may be more. False once a page returns fewer rows.
   const [hasMore, setHasMore] = useState(initialTimeline.length >= PAGE_LIMIT)
   const [addNoteOpen, setAddNoteOpen] = useState(false)
+  const [careTaskOpen, setCareTaskOpen] = useState(false)
   const [vitalsOpen, setVitalsOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [latestVitalsState, setLatestVitalsState] = useState(latestVitals)
@@ -1188,6 +1211,15 @@ export function PatientDetailClient({
           </Button>
           <Button
             size="sm"
+            variant="outline"
+            onClick={() => setCareTaskOpen(true)}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add task
+          </Button>
+          <Button
+            size="sm"
             onClick={() => setAddNoteOpen(true)}
             className="gap-2"
             disabled={!canSign}
@@ -1206,7 +1238,11 @@ export function PatientDetailClient({
           </p>
         )}
         {events.map((event) => (
-          <TimelineEvent key={`${event.event_type}:${event.event_id}`} event={event} />
+          <TimelineEvent
+            key={`${event.event_type}:${event.event_id}`}
+            event={event}
+            patientId={patient.id}
+          />
         ))}
       </div>
 
@@ -1237,6 +1273,12 @@ export function PatientDetailClient({
         patientId={patient.id}
         canSign={canSign}
         onSigned={() => void refresh()}
+      />
+
+      <AddCareTaskSheet
+        open={careTaskOpen}
+        onOpenChange={setCareTaskOpen}
+        patientId={patient.id}
       />
 
       <AddVitalsSheet

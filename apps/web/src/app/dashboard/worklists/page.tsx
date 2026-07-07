@@ -7,6 +7,7 @@ import {
   FileText,
   FlaskConical,
   Pill,
+  RotateCcw,
   Stethoscope,
   type LucideIcon,
 } from 'lucide-react'
@@ -23,8 +24,11 @@ import {
   type NeedsLabRow,
   type NeedsPaymentRow,
   type NeedsPharmacyRow,
+  type PharmacyReturnedRow,
+  type ResultsReadyRow,
   type NeedsVitalsRow,
 } from './actions'
+import { CareTaskMarkDoneButton } from './CareTaskMarkDoneButton'
 
 // Phase 5 worklists index — one card per RPC, top 5 rows previewed, link
 // through to the relevant detail surface. Role-specific homes (HC III rollout)
@@ -301,6 +305,48 @@ function NeedsPharmacyCard({ rows }: { rows: NeedsPharmacyRow[] }) {
   )
 }
 
+function PharmacyReturnedCard({ rows }: { rows: PharmacyReturnedRow[] }) {
+  return (
+    <WorklistCard
+      title="Pharmacy returned"
+      count={rows.length}
+      icon={RotateCcw}
+      empty="No prescriptions sent back from pharmacy."
+    >
+      {rows.slice(0, PREVIEW_LIMIT).map((r) => (
+        <PreviewRow
+          key={r.visit_id}
+          href={`/dashboard/visits/${r.visit_id}`}
+          title={r.patient_name || 'Unknown patient'}
+          meta={truncate(r.dispense_notes ?? r.medications, 90) || '—'}
+          right="returned"
+        />
+      ))}
+    </WorklistCard>
+  )
+}
+
+function ResultsReadyCard({ rows }: { rows: ResultsReadyRow[] }) {
+  return (
+    <WorklistCard
+      title="Results ready"
+      count={rows.length}
+      icon={FlaskConical}
+      empty="No lab results awaiting clinician review."
+    >
+      {rows.slice(0, PREVIEW_LIMIT).map((r) => (
+        <PreviewRow
+          key={r.visit_id}
+          href={`/dashboard/visits/${r.visit_id}`}
+          title={r.patient_name || 'Unknown patient'}
+          meta={truncate(r.lab_results ?? r.chief_complaint, 90) || '—'}
+          right={r.lab_abnormal ? 'abnormal' : r.lab_status}
+        />
+      ))}
+    </WorklistCard>
+  )
+}
+
 function NeedsPaymentCard({ rows }: { rows: NeedsPaymentRow[] }) {
   return (
     <WorklistCard
@@ -371,42 +417,32 @@ function CareTasksCard({ rows }: { rows: CareTaskRow[] }) {
         const typeLabel = TASK_TYPE_LABEL[r.task_type] ?? r.task_type
         const roleLabel = r.assignee_role ? ROLE_LABEL[r.assignee_role] : null
         return (
-          <PreviewRow
-            key={r.task_id}
-            href={`/dashboard/patients/${r.patient_id}`}
-            title={r.title}
-            meta={
-              <span className="flex flex-wrap items-center gap-2">
-                <span className="shrink-0 uppercase tracking-wide text-[10px] text-muted-foreground">
-                  {typeLabel}
-                </span>
-                <span className="truncate">{r.patient_name || 'Unknown patient'}</span>
-                {roleLabel && (
-                  <span className="text-[10px] text-muted-foreground">· {roleLabel}</span>
-                )}
-              </span>
-            }
-            right={
-              <span className="flex items-center gap-1.5">
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusCfg.bg} ${statusCfg.color}`}
-                >
-                  {statusCfg.label}
-                </span>
-                {due.text && (
-                  <span
-                    className={
-                      due.overdue
-                        ? 'text-destructive font-medium'
-                        : 'text-muted-foreground'
-                    }
-                  >
-                    {due.text}
+          <li key={r.task_id}>
+            <div className="flex items-start justify-between gap-3 px-4 py-2.5 hover:bg-secondary/40 transition-colors">
+              <Link href={`/dashboard/patients/${r.patient_id}`} className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{r.title}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                  {typeLabel} · {r.patient_name || 'Unknown patient'}
+                  {roleLabel ? ` · ${roleLabel}` : ''}
+                </p>
+              </Link>
+              <div className="shrink-0 flex flex-col items-end gap-1.5">
+                <span className="flex items-center gap-1.5">
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusCfg.bg} ${statusCfg.color}`}>
+                    {statusCfg.label}
                   </span>
+                  {due.text && (
+                    <span className={due.overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                      {due.text}
+                    </span>
+                  )}
+                </span>
+                {r.status !== 'completed' && (
+                  <CareTaskMarkDoneButton taskId={r.task_id} patientId={r.patient_id} />
                 )}
-              </span>
-            }
-          />
+              </div>
+            </div>
+          </li>
         )
       })}
     </WorklistCard>
@@ -428,6 +464,8 @@ export default async function WorklistsPage() {
     needsClinician,
     needsLab,
     needsPharmacy,
+    pharmacyReturned,
+    resultsReady,
     needsPayment,
     myDrafts,
     careTasks,
@@ -442,6 +480,8 @@ export default async function WorklistsPage() {
         <NeedsClinicianCard rows={needsClinician} />
         <NeedsLabCard rows={needsLab} />
         <NeedsPharmacyCard rows={needsPharmacy} />
+        <PharmacyReturnedCard rows={pharmacyReturned} />
+        <ResultsReadyCard rows={resultsReady} />
         <NeedsPaymentCard rows={needsPayment} />
         <MyDraftsCard rows={myDrafts} />
         <CareTasksCard rows={careTasks} />
