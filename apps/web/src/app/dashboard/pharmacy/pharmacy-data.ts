@@ -141,10 +141,6 @@ async function getPharmacyStationQueueImpl(
     console.error('getPharmacyStationQueue lines', linesErr)
   }
 
-  // WP3 D2: how much has already been dispensed per line, so the worksheet can
-  // default a re-dispense to the REMAINING quantity (not the full prescribed
-  // amount) and show "already dispensed X of Y". Mirrors the DB's incremental
-  // SUM in billing_charge_pharmacy_line (dispensed + partially_dispensed).
   const lineIds = (lines ?? []).map((l) => (l as PrescriptionOrderLine).id)
   const dispensedByLine = new Map<string, number>()
   if (lineIds.length > 0) {

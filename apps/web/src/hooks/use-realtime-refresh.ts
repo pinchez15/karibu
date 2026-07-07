@@ -16,7 +16,7 @@ import { clinicRefreshChannel, CLINIC_REFRESH_EVENT } from '@/lib/realtime'
  *
  * Pass the caller's clinicId to enable broadcast; omit it for poll-only.
  */
-export function useRealtimeRefresh(clinicId?: string | null, intervalMs = 60_000) {
+export function useRealtimeRefresh(clinicId?: string | null, intervalMs = 120_000) {
   const router = useRouter()
 
   useEffect(() => {

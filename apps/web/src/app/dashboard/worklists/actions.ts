@@ -183,59 +183,38 @@ async function getAllWorklistsImpl(
   }
 
   const supabase = createServiceClient()
-  const clinicId = staff.clinic_id
-  const staffId = staff.id
+  const { data, error } = await supabase.rpc('rpc_worklist_all', {
+    p_clinic_id: staff.clinic_id,
+    p_department: department,
+    p_staff_id: staff.id,
+  })
 
-  const [
-    needsVitalsRes,
-    needsClinicianRes,
-    needsLabRes,
-    needsPharmacyRes,
-    pharmacyReturnedRes,
-    resultsReadyRes,
-    needsPaymentRes,
-    myDraftsRes,
-    careTasksRes,
-  ] = await Promise.all([
-    supabase.rpc('rpc_worklist_needs_vitals', { p_clinic_id: clinicId, p_department: department }),
-    supabase.rpc('rpc_worklist_needs_clinician', { p_clinic_id: clinicId, p_department: department }),
-    supabase.rpc('rpc_worklist_needs_lab', { p_clinic_id: clinicId }),
-    supabase.rpc('rpc_worklist_needs_pharmacy', { p_clinic_id: clinicId }),
-    supabase.rpc('rpc_worklist_pharmacy_returned', { p_clinic_id: clinicId }),
-    supabase.rpc('rpc_worklist_results_ready', { p_clinic_id: clinicId }),
-    supabase.rpc('rpc_worklist_needs_payment', { p_clinic_id: clinicId }),
-    supabase.rpc('rpc_worklist_my_drafts', { p_clinic_id: clinicId, p_staff_id: staffId }),
-    supabase.rpc('rpc_worklist_care_tasks', {
-      p_clinic_id: clinicId,
-      p_assignee_role: null,
-      p_assignee_id: null,
-      p_task_type: null,
-    }),
-  ])
-
-  const log = (name: string, error: { message: string } | null) => {
-    if (error) console.error(`${name} failed:`, error)
+  if (error) {
+    console.error('rpc_worklist_all failed:', error)
+    return {
+      needsVitals: [],
+      needsClinician: [],
+      needsLab: [],
+      needsPharmacy: [],
+      pharmacyReturned: [],
+      resultsReady: [],
+      needsPayment: [],
+      myDrafts: [],
+      careTasks: [],
+    }
   }
-  log('rpc_worklist_needs_vitals', needsVitalsRes.error)
-  log('rpc_worklist_needs_clinician', needsClinicianRes.error)
-  log('rpc_worklist_needs_lab', needsLabRes.error)
-  log('rpc_worklist_needs_pharmacy', needsPharmacyRes.error)
-  log('rpc_worklist_pharmacy_returned', pharmacyReturnedRes.error)
-  log('rpc_worklist_results_ready', resultsReadyRes.error)
-  log('rpc_worklist_needs_payment', needsPaymentRes.error)
-  log('rpc_worklist_my_drafts', myDraftsRes.error)
-  log('rpc_worklist_care_tasks', careTasksRes.error)
 
+  const raw = (data ?? {}) as Record<string, unknown>
   return {
-    needsVitals: (needsVitalsRes.data ?? []) as NeedsVitalsRow[],
-    needsClinician: (needsClinicianRes.data ?? []) as NeedsClinicianRow[],
-    needsLab: (needsLabRes.data ?? []) as NeedsLabRow[],
-    needsPharmacy: (needsPharmacyRes.data ?? []) as NeedsPharmacyRow[],
-    pharmacyReturned: (pharmacyReturnedRes.data ?? []) as PharmacyReturnedRow[],
-    resultsReady: (resultsReadyRes.data ?? []) as ResultsReadyRow[],
-    needsPayment: (needsPaymentRes.data ?? []) as NeedsPaymentRow[],
-    myDrafts: (myDraftsRes.data ?? []) as MyDraftRow[],
-    careTasks: (careTasksRes.data ?? []) as CareTaskRow[],
+    needsVitals: (raw.needs_vitals ?? []) as NeedsVitalsRow[],
+    needsClinician: (raw.needs_clinician ?? []) as NeedsClinicianRow[],
+    needsLab: (raw.needs_lab ?? []) as NeedsLabRow[],
+    needsPharmacy: (raw.needs_pharmacy ?? []) as NeedsPharmacyRow[],
+    pharmacyReturned: (raw.pharmacy_returned ?? []) as PharmacyReturnedRow[],
+    resultsReady: (raw.results_ready ?? []) as ResultsReadyRow[],
+    needsPayment: (raw.needs_payment ?? []) as NeedsPaymentRow[],
+    myDrafts: (raw.my_drafts ?? []) as MyDraftRow[],
+    careTasks: (raw.care_tasks ?? []) as CareTaskRow[],
   }
 }
 

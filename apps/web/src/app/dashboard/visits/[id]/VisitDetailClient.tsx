@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useTransition, useRef, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Mic, Printer, Sparkles, CheckCircle2, Send, LogOut } from 'lucide-react'
 import { checkOutVisit } from './note-actions'
 import { Button } from '@/components/ui/button'
-import { DiagnosisCoder } from '@/components/DiagnosisCoder'
 import { PendingDictationCard } from './PendingDictationCard'
 import type { ReviewSuggestion } from './ReviewQuestionBanner'
 import { AiNotesTimeline } from './AiNotesTimeline'
@@ -27,9 +27,20 @@ import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './N
 import { VitalsCard } from './VitalsCard'
 import { BookFollowUp } from './BookFollowUp'
 import { EbolaScreeningCard, type EbolaScreeningRecord } from './EbolaScreeningCard'
-import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
-import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
 import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
+
+const DiagnosisCoder = dynamic(
+  () => import('@/components/DiagnosisCoder').then((m) => ({ default: m.DiagnosisCoder })),
+  { loading: () => <div className="h-24 rounded-lg bg-muted animate-pulse" /> },
+)
+const VisitPharmacyPanel = dynamic(
+  () => import('@/components/prescription/VisitPharmacyPanel').then((m) => ({ default: m.VisitPharmacyPanel })),
+  { loading: () => <div className="h-32 rounded-lg bg-muted animate-pulse" /> },
+)
+const VisitLabPanel = dynamic(
+  () => import('@/components/lab/VisitLabPanel').then((m) => ({ default: m.VisitLabPanel })),
+  { loading: () => <div className="h-32 rounded-lg bg-muted animate-pulse" /> },
+)
 
 // Friendly operational labels for queue_status — deliberately not the clinical
 // note state. A patient can be "Checked out" with the note still a draft (#6).

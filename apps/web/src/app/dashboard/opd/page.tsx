@@ -22,29 +22,29 @@ async function getOutOfStock(clinicId: string): Promise<OutOfStockItem[]> {
       .from('pharmacy_stock_items')
       .select('drug_name, is_unavailable, quantity_on_hand, unit')
       .eq('clinic_id', clinicId)
-      .eq('active', true),
+      .eq('active', true)
+      .or('is_unavailable.eq.true,quantity_on_hand.lte.0')
+      .limit(50),
     supabase
       .from('lab_stock_items')
       .select('test_name, is_unavailable, quantity_on_hand, unit')
       .eq('clinic_id', clinicId)
-      .eq('active', true),
+      .eq('active', true)
+      .or('is_unavailable.eq.true,quantity_on_hand.lte.0')
+      .limit(50),
   ])
   const items: OutOfStockItem[] = []
   for (const r of pharm.data ?? []) {
-    if (r.is_unavailable || Number(r.quantity_on_hand) <= 0) {
-      items.push({
-        label: sentenceCase(r.drug_name as string),
-        detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim(),
-      })
-    }
+    items.push({
+      label: sentenceCase(r.drug_name as string),
+      detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim(),
+    })
   }
   for (const r of lab.data ?? []) {
-    if (r.is_unavailable || Number(r.quantity_on_hand) <= 0) {
-      items.push({
-        label: `${r.test_name as string} (lab)`,
-        detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim(),
-      })
-    }
+    items.push({
+      label: `${r.test_name as string} (lab)`,
+      detail: r.is_unavailable ? 'Unavailable' : `0 ${r.unit ?? ''}`.trim(),
+    })
   }
   return items
 }
@@ -174,7 +174,7 @@ async function getVisitsToday(clinicId: string): Promise<number> {
   const today = clinicTodayIso()
   const { count } = await supabase
     .from('visits')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('clinic_id', clinicId)
     .eq('visit_date', today)
     .in('status', ['sent', 'completed'])

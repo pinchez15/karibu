@@ -11,7 +11,7 @@ export default async function DashboardPage() {
 
   const appointments = await loadClinicAppointments(staff.clinic_id, {
     daysBack: 14,
-    daysForward: 90,
+    daysForward: 28,
   })
 
   return (

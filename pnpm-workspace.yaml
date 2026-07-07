@@ -1,5 +1,6 @@
 packages:
   - 'apps/web'
+  - 'packages/ai-evals'
   - 'packages/clinical-ui'
   - 'packages/content-schema'
   - 'packages/design-system'

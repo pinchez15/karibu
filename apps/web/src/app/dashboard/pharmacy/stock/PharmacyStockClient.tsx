@@ -132,9 +132,17 @@ const STATUS_LABELS: Record<StockStatus, string> = {
 export function PharmacyStockClient({
   initialRows,
   pharmacyMarkupPercent = 10,
+  expiringBatches = [],
 }: {
   initialRows: PharmacyStockRow[]
   pharmacyMarkupPercent?: number
+  expiringBatches?: Array<{
+    drug_name: string
+    strength: string | null
+    batch_number: string | null
+    expires_at: string
+    quantity_on_hand: number
+  }>
 }) {
   const [rows] = useState(initialRows)
   const [showAdd, setShowAdd] = useState(false)
@@ -165,6 +173,25 @@ export function PharmacyStockClient({
 
   return (
     <div className="space-y-3">
+      {expiringBatches.length > 0 && (
+        <div className="rounded-xl border border-amber/30 bg-amber-soft/40 p-4">
+          <h3 className="text-sm font-semibold text-amber-ink">Expiring within 60 days</h3>
+          <ul className="mt-2 space-y-1 text-sm">
+            {expiringBatches.slice(0, 12).map((b) => (
+              <li key={`${b.drug_name}-${b.batch_number}-${b.expires_at}`} className="flex justify-between gap-4">
+                <span>
+                  {toSentenceCase(b.drug_name)}
+                  {b.strength ? ` ${b.strength}` : ''}
+                  {b.batch_number ? ` · batch ${b.batch_number}` : ''}
+                </span>
+                <span className="font-mono text-muted-foreground shrink-0">
+                  {new Date(b.expires_at).toLocaleDateString('en-GB')} · {b.quantity_on_hand}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Search name, strength, form, code…"

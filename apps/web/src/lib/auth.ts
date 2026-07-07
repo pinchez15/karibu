@@ -25,7 +25,7 @@ export const getStaff = cache(async (): Promise<Staff | null> => {
 
   const { data, error } = await supabase
     .from('staff')
-    .select('*')
+    .select('id, clerk_user_id, clinic_id, email, display_name, role, is_active, deactivated_at, onboarding_completed_at, created_at, updated_at')
     .eq('clerk_user_id', userId)
     .eq('is_active', true)
     .single()

@@ -37,7 +37,7 @@ export default async function PatientProfilePage({
     const [patient, latestVitals, initialTimeline] = await Promise.all([
       getPatient(patientId),
       getPatientLatestVitals(patientId),
-      getPatientTimeline(patientId, undefined, 50),
+      getPatientTimeline(patientId, undefined, 20),
     ])
 
     if (!patient) {

@@ -16,7 +16,8 @@
     "learn:export-packs": "pnpm --filter @karibu/learn-supabase export-packs",
     "learn:sync-manifest": "pnpm --filter @karibu/learn-supabase sync-manifest",
     "learn:upload-packs": "pnpm --filter @karibu/learn-supabase upload-packs",
-    "learn:publish-packs": "pnpm --filter @karibu/learn-supabase publish-packs"
+    "learn:publish-packs": "pnpm --filter @karibu/learn-supabase publish-packs",
+    "ai:eval": "pnpm --filter @karibu/ai-evals eval"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

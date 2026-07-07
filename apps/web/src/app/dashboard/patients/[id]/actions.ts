@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
@@ -7,6 +8,7 @@ import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
 import { syncCriticalAlertsForVisit } from '@/lib/sync-critical-alerts'
+import { logChartAccess } from '@/lib/chart-access-log'
 import type {
   Patient,
   PatientLatestVitals,
@@ -53,12 +55,13 @@ function isValidPatientNoteSource(s: string): s is ProviderNoteSource {
 
 /**
  * Confirms the patient row exists in the caller's clinic. Returns the row,
- * or null if not found / cross-clinic.
+ * or null if not found / cross-clinic. Cached per request to dedupe parallel
+ * loaders on the patient detail page (WP6).
  */
-async function loadPatientForStaff(
+const loadPatientForStaff = cache(async (
   patientId: string,
   clinicId: string,
-): Promise<Patient | null> {
+): Promise<Patient | null> => {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('patients')
@@ -67,7 +70,7 @@ async function loadPatientForStaff(
     .eq('clinic_id', clinicId)
     .maybeSingle()
   return (data as Patient | null) ?? null
-}
+})
 
 // ---------------------------------------------------------------------------
 // Reads
@@ -113,6 +116,7 @@ export async function getPatient(
       age_recorded_at: p.age_recorded_at ?? null,
     })
     p.derived_age = derived
+    void logChartAccess(staff.clinic_id, patientId, 'patient_chart')
     return p
   })
 }

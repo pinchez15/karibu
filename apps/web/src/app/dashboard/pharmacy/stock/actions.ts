@@ -70,20 +70,17 @@ export async function createPharmacyStockItem(formData: FormData): Promise<Actio
   }
 
   if (initialQty > 0) {
-    const { error: movementError } = await supabase
-      .from('pharmacy_stock_movements')
-      .insert({
-        stock_item_id: item.id,
-        clinic_id: staff.clinic_id,
-        movement_type: 'received',
-        quantity_delta: initialQty,
-        recorded_by: staff.id,
-        batch_number: batchNumber,
-        expires_at: expiresAt,
-        notes: 'Opening balance',
-      })
-    if (movementError) {
-      return { success: false, error: movementError.message }
+    const { error: receiveError } = await supabase.rpc('rpc_upsert_pharmacy_batch_on_receive', {
+      p_stock_item_id: item.id,
+      p_clinic_id: staff.clinic_id,
+      p_quantity: initialQty,
+      p_batch_number: batchNumber,
+      p_expires_at: expiresAt,
+      p_supplier: supplier,
+      p_notes: 'Opening balance',
+    })
+    if (receiveError) {
+      return { success: false, error: receiveError.message }
     }
   }
 
@@ -135,6 +132,21 @@ export async function recordPharmacyStockMovement(formData: FormData): Promise<A
     .single()
   if (itemErr || !item || item.clinic_id !== staff.clinic_id) {
     return { success: false, error: 'Stock item not found' }
+  }
+
+  if (movementType === 'received' || movementType === 'transferred_in') {
+    const { error } = await supabase.rpc('rpc_upsert_pharmacy_batch_on_receive', {
+      p_stock_item_id: stockItemId,
+      p_clinic_id: staff.clinic_id,
+      p_quantity: Math.abs(rawQty),
+      p_batch_number: batchNumber,
+      p_expires_at: expiresAt,
+      p_notes: notes,
+    })
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/dashboard/pharmacy/stock')
+    revalidatePath('/dashboard/stock-overview')
+    return { success: true }
   }
 
   const { error } = await supabase
