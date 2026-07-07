@@ -55,30 +55,28 @@ data class HomeUiState(
             opdPatients.filter { filter.matches(it) }
         } ?: opdPatients
 
-    /** Today's in-flight patients, waiting-first — excludes completed visits. */
+    /** Today's in-flight patients, urgent-first then arrival order — excludes done. */
     val activePatients: List<OpdPatientRow>
         get() = opdPatients
             .filter { it.bucket != OpdPatientFilter.DoneToday }
             .sortedWith(
-                compareBy<OpdPatientRow> { bucketSortKey(it.bucket) }
-                    .thenBy { prioritySortKey(it.priority) }
+                compareBy<OpdPatientRow> { prioritySortKey(it.priority) }
+                    .thenBy { it.queuePosition ?: Int.MAX_VALUE }
                     .thenBy { it.checkedInAt ?: "\uFFFF" },
             )
 
     /** Active list filtered by queue search (name or today's number). */
     val filteredActivePatients: List<OpdPatientRow>
         get() {
-            val q = queueSearchQuery.trim()
-            val base = activePatients
-            val searched = if (q.isBlank()) {
-                base
-            } else {
-                base.filter { row ->
-                    row.patientName.contains(q, ignoreCase = true) ||
-                        (q.all { it.isDigit() } && row.queuePosition?.toString()?.contains(q) == true)
-                }
+            val base = selectedFilter?.let { filter ->
+                activePatients.filter { filter.matches(it) }
+            } ?: activePatients
+            val q = queueSearchQuery.trim().lowercase().removePrefix("#")
+            if (q.isEmpty()) return base
+            return base.filter { row ->
+                row.patientName.lowercase().contains(q) ||
+                    row.queuePosition?.toString()?.contains(q) == true
             }
-            return selectedFilter?.let { filter -> searched.filter { filter.matches(it) } } ?: searched
         }
 
     val waitingCount: Int
@@ -187,6 +185,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun updateQueueSearch(query: String) {
+        _uiState.update { it.copy(queueSearchQuery = query) }
+    }
+
     fun updateSearch(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
 
@@ -233,6 +235,7 @@ class HomeViewModel @Inject constructor(
                 patientId = patientId,
                 doctorId = staffId,
             )
+            visitRepository.refreshOpdPatientsToday(clinicId)
             _uiState.update {
                 it.copy(searchQuery = "", queueSearchQuery = "", searchResults = emptyList(), isSearching = false)
             }

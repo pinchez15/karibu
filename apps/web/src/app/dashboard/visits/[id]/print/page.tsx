@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 type PrintData = {
   id: string
   visit_date: string
+  queue_position: number | null
   diagnosis: string | null
   medications: string | null
   follow_up_instructions: string | null
@@ -44,6 +45,7 @@ async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchR
     .select(`
       id,
       visit_date,
+      queue_position,
       diagnosis,
       medications,
       follow_up_instructions,
@@ -99,6 +101,7 @@ async function fetchPrintData(visitId: string, clinicId: string): Promise<FetchR
     visit: {
       id: visit.id,
       visit_date: visit.visit_date,
+      queue_position: (visit.queue_position as number | null) ?? null,
       diagnosis: visit.diagnosis as string | null,
       medications: visit.medications as string | null,
       follow_up_instructions: visit.follow_up_instructions as string | null,

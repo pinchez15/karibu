@@ -100,6 +100,64 @@ async function getQueueData(clinicId: string): Promise<QueueItem[]> {
   })
 }
 
+// WP2 D10: completed patients are purged from the default queue view
+// (get_clinic_queue now excludes them). They still matter for a glanceable
+// "Done today N" collapsed section, so load them separately here.
+async function getDoneTodayQueue(clinicId: string): Promise<QueueItem[]> {
+  const supabase = createServiceClient()
+  const today = clinicTodayIso()
+  const { data, error } = await supabase
+    .from('visits')
+    .select(`
+      id,
+      patient_id,
+      queue_position,
+      queue_status,
+      priority,
+      chief_complaint,
+      checked_in_at,
+      doctor_id,
+      patient:patients!inner(first_name, last_name, whatsapp_number),
+      doctor:staff!visits_doctor_id_fkey(display_name)
+    `)
+    .eq('clinic_id', clinicId)
+    .eq('visit_date', today)
+    .eq('queue_status', 'completed')
+    .order('updated_at', { ascending: false })
+    .limit(100)
+
+  if (error) {
+    console.error('Failed to fetch done-today queue:', error)
+    return []
+  }
+
+  return (data ?? []).map((v) => {
+    const p = (Array.isArray(v.patient) ? v.patient[0] : v.patient) as
+      | { first_name?: string | null; last_name?: string | null; whatsapp_number?: string | null }
+      | null
+    const d = (Array.isArray(v.doctor) ? v.doctor[0] : v.doctor) as
+      | { display_name?: string | null }
+      | null
+    const name = [p?.first_name, p?.last_name].filter(Boolean).join(' ') || null
+    return {
+      visit_id: v.id as string,
+      patient_id: v.patient_id as string,
+      patient_name: name,
+      patient_phone: p?.whatsapp_number ?? '',
+      queue_position: (v.queue_position as number | null) ?? 0,
+      queue_status: v.queue_status as QueueItem['queue_status'],
+      priority: v.priority as QueueItem['priority'],
+      chief_complaint: (v.chief_complaint as string | null) ?? null,
+      checked_in_at: (v.checked_in_at as string | null) ?? '',
+      nurse_id: null,
+      nurse_name: null,
+      doctor_id: (v.doctor_id as string | null) ?? null,
+      doctor_name: d?.display_name ?? null,
+      wait_minutes: 0,
+    } satisfies QueueItem
+  })
+}
+
 async function getShowPhysicalQueue(clinicId: string): Promise<boolean> {
   const supabase = createServiceClient()
   const { data } = await supabase
@@ -133,9 +191,10 @@ export default async function OpdTodayPage() {
     const daysBack = now.getDay()
     const daysForward = 13 - now.getDay()
 
-    const [queue, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
+    const [queue, doneToday, reviewCount, visitsToday, showPhysicalQueue, appointments, outOfStock, rounds] =
       await Promise.all([
         getQueueData(staff.clinic_id),
+        getDoneTodayQueue(staff.clinic_id),
         countReviewNotesItems(staff.clinic_id),
         getVisitsToday(staff.clinic_id),
         getShowPhysicalQueue(staff.clinic_id),
@@ -149,6 +208,7 @@ export default async function OpdTodayPage() {
         <RealtimeRefresher clinicId={staff.clinic_id} />
         <ClinicianDashboard
           queue={queue}
+          doneToday={doneToday}
           reviewCount={reviewCount}
           visitsToday={visitsToday}
           showPhysicalQueue={showPhysicalQueue}

@@ -3,9 +3,6 @@ package com.karibuhealth.app.ui.checkin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
-import com.karibuhealth.app.data.local.db.KaribuDatabase
-import com.karibuhealth.app.data.sync.SyncQueueHelper
-import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.repository.PatientRepository
 import com.karibuhealth.app.data.repository.VisitRepository
 import com.karibuhealth.app.domain.model.Patient
@@ -15,7 +12,6 @@ import com.karibuhealth.app.util.isValidUgandaPhone
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 data class CheckInUiState(
@@ -35,8 +31,6 @@ class CheckInViewModel @Inject constructor(
     private val patientRepository: PatientRepository,
     private val visitRepository: VisitRepository,
     private val authTokenStore: AuthTokenStore,
-    private val syncQueueHelper: SyncQueueHelper,
-    private val database: KaribuDatabase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckInUiState())
@@ -72,10 +66,7 @@ class CheckInViewModel @Inject constructor(
                 val staffId = authTokenStore.getStaffId() ?: throw Exception("No staff ID")
                 val state = _uiState.value
 
-                // Find or create patient. Phone-only check-in (the common queue
-                // path) doesn't capture names — the server's display_name trigger
-                // will leave display_name blank until a clinician edits it later.
-                val (patient, patientSyncId) = if (state.foundPatient != null) {
+                val (patient, _) = if (state.foundPatient != null) {
                     state.foundPatient to null
                 } else {
                     val phone = formatPhoneNumber(state.phoneNumber)
@@ -87,27 +78,18 @@ class CheckInViewModel @Inject constructor(
                     )
                 }
 
-                // Create a visit in waiting queue status
-                val (visit, _) = visitRepository.createVisit(
+                // WP2: single check-in spine via VisitRepository.checkInPatient.
+                // Removed the duplicate queue_op check_in_patient that previously
+                // ran on top of createVisit (which already created a visit row).
+                val (visit, _) = visitRepository.checkInPatient(
                     clinicId = clinicId,
                     patientId = patient.id,
-                    doctorId = null,
                     chiefComplaint = state.chiefComplaint.takeIf { it.isNotBlank() },
-                    patientSyncEntryId = patientSyncId,
+                    priority = state.priority,
+                    staffId = staffId,
                 )
 
-                // Queue the check_in RPC as a sync operation
-                val syncEntry = SyncQueueEntry(
-                    id = UUID.randomUUID().toString(),
-                    operationType = "queue_op",
-                    entityType = "visits",
-                    entityId = visit.id,
-                    payload = """{"rpc":"check_in_patient","params":{"p_patient_id":"${patient.id}","p_clinic_id":"$clinicId","p_chief_complaint":"${state.chiefComplaint}","p_priority":"${state.priority.name}","p_staff_id":"$staffId","p_department":"opd"}}""",
-                    status = "pending",
-                    attempts = 0,
-                    createdAt = System.currentTimeMillis(),
-                )
-                syncQueueHelper.enqueue(syncEntry)
+                visitRepository.refreshOpdPatientsToday(clinicId)
 
                 _uiState.update {
                     it.copy(checkedInVisitId = visit.id, isCheckingIn = false)

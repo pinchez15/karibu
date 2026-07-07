@@ -636,7 +636,11 @@ export interface ProtocolActivation {
   metadata: Record<string, unknown>;
 }
 
-/** Row from rpc_get_opd_patients_today (migration 048). */
+/**
+ * Row from rpc_get_opd_patients_today (migration 048; extended in 094 with
+ * today's number, arrival timestamp, priority, and wait so the patient-first
+ * list can render "#23", the urgent-first-then-arrival order, and the wait).
+ */
 export interface OpdPatientRow {
   patient_id: string;
   patient_name: string | null;
@@ -645,6 +649,11 @@ export interface OpdPatientRow {
   visit_id: string;
   chief_complaint: string | null;
   queue_status: QueueStatus;
+  /** Today's number — per clinic, per day, assigned at check-in (WP2). */
+  queue_position: number | null;
+  priority: VisitPriority;
+  checked_in_at: string | null;
+  wait_minutes: number | null;
   lab_status: Visit['lab_status'];
   dispensing_status: Visit['dispensing_status'];
   documentation_complete: boolean;

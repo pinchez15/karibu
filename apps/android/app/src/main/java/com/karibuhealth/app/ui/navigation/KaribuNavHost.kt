@@ -170,6 +170,9 @@ fun KaribuNavHost(
                         onVisitCreated = { visitId, patientId ->
                             navigator.goReset(NavRoute.Vitals(visitId, patientId), NavRoute.Home)
                         },
+                        onPatientRegistered = { patientId ->
+                            navigator.goReset(NavRoute.PatientDetail(patientId), NavRoute.Home)
+                        },
                     )
                 }
             }

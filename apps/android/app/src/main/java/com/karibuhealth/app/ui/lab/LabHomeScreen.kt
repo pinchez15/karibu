@@ -79,7 +79,11 @@ fun LabHomeScreen(
                 if (filtered.isEmpty() && !uiState.isLoading) {
                     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            "No pending lab work. Tests appear when a clinician orders labs on a visit.",
+                            if (uiState.searchQuery.isNotBlank()) {
+                                "No patients match your filter."
+                            } else {
+                                "No pending lab work. Tests appear when a clinician orders labs on a visit."
+                            },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

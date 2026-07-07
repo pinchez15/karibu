@@ -10,8 +10,8 @@ import {
 } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ExternalLink, X } from 'lucide-react'
-import { prescriptionLineDisplayName } from '@karibu/shared'
+import { ExternalLink, Search, X } from 'lucide-react'
+import { filterQueueBySearch, prescriptionLineDisplayName } from '@karibu/shared'
 import { MasterDetail, STATION_COLLAPSE_BP } from '@/components/master-detail'
 import { useAutoRefresh } from '@/hooks/use-auto-refresh'
 import { cn } from '@/lib/utils'
@@ -55,6 +55,7 @@ export function PharmacyStationClient({
   const router = useRouter()
   useAutoRefresh()
   const [rows, setRows] = useState(initialRows)
+  const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     if (initialVisitId && initialRows.some((r) => r.id === initialVisitId)) {
       return initialVisitId
@@ -70,6 +71,18 @@ export function PharmacyStationClient({
   const selectedRow = useMemo(
     () => rows.find((r) => r.id === selectedId) ?? null,
     [rows, selectedId],
+  )
+
+  // WP2 D9: client-side type-ahead over rows already in memory (≤100). Matches
+  // patient name, today's number, or patient number.
+  const visibleRows = useMemo(
+    () =>
+      filterQueueBySearch(rows, search, (r) => ({
+        name: patientDisplayName(r),
+        todayNumber: r.queue_position,
+        extra: [r.patient.patient_number],
+      })),
+    [rows, search],
   )
 
   const readOnly = activeTab === 'done_today'
@@ -143,15 +156,15 @@ export function PharmacyStationClient({
   )
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (rows.length === 0) return
-    const idx = rows.findIndex((r) => r.id === selectedId)
+    if (visibleRows.length === 0) return
+    const idx = visibleRows.findIndex((r) => r.id === selectedId)
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      const next = rows[Math.min(idx < 0 ? 0 : idx + 1, rows.length - 1)]
+      const next = visibleRows[Math.min(idx < 0 ? 0 : idx + 1, visibleRows.length - 1)]
       if (next) selectRow(next.id, 'keyboard')
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
-      const next = rows[Math.max(idx <= 0 ? 0 : idx - 1, 0)]
+      const next = visibleRows[Math.max(idx <= 0 ? 0 : idx - 1, 0)]
       if (next) selectRow(next.id, 'keyboard')
     }
   }
@@ -162,8 +175,21 @@ export function PharmacyStationClient({
       onKeyDown={handleListKeyDown}
       data-testid="pharmacy-queue-list"
     >
-      <div className="sticky top-0 z-10 border-b border-line-soft bg-background px-[18px] py-2">
-        <div className="grid grid-cols-[1.2fr_0.9fr_1.8fr_0.8fr] gap-3 kh-meta">
+      <div className="sticky top-0 z-10 space-y-2 border-b border-line-soft bg-background px-[18px] py-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by name or #"
+            aria-label="Filter by patient name or today's number"
+            data-testid="pharmacy-queue-search"
+            className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </div>
+        <div className="grid grid-cols-[0.4fr_1.2fr_0.9fr_1.8fr_0.8fr] gap-3 kh-meta">
+          <span>#</span>
           <span>PATIENT</span>
           <span>DIAGNOSIS</span>
           <span>PRESCRIPTIONS</span>
@@ -172,39 +198,48 @@ export function PharmacyStationClient({
       </div>
 
       <div className="min-h-0 flex-1">
-        {rows.map((row, i) => (
-          <div
-            key={row.id}
-            ref={(el) => {
-              if (el) rowRefs.current.set(row.id, el)
-              else rowRefs.current.delete(row.id)
-            }}
-            role="button"
-            tabIndex={0}
-            data-testid={`queue-row-${row.id}`}
-            aria-selected={row.id === selectedId}
-            className={cn(
-              'grid cursor-pointer grid-cols-[1.2fr_0.9fr_1.8fr_0.8fr] gap-3 border-b border-line-soft px-[18px] py-3 text-sm transition-colors',
-              row.id === selectedId ? 'bg-cobalt-soft/40' : 'hover:bg-muted/40',
-              i === rows.length - 1 && 'border-b-0',
-            )}
-            onClick={() => selectRow(row.id, 'click')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                selectRow(row.id, 'click')
-              }
-            }}
-          >
-            <div>
-              <p className="font-medium text-foreground">{patientDisplayName(row)}</p>
-              <p className="text-xs text-muted-foreground">{patientMeta(row)}</p>
-            </div>
-            <p className="truncate text-body">{row.diagnosis ?? '—'}</p>
-            <p className="truncate text-body">{rxListSummary(row)}</p>
-            <StatusPill status={row.dispensing_status} />
+        {visibleRows.length === 0 ? (
+          <div className="px-[18px] py-12 text-center text-sm text-muted-foreground">
+            {rows.length === 0 ? 'Nothing to dispense.' : `No patients match “${search}”.`}
           </div>
-        ))}
+        ) : (
+          visibleRows.map((row, i) => (
+            <div
+              key={row.id}
+              ref={(el) => {
+                if (el) rowRefs.current.set(row.id, el)
+                else rowRefs.current.delete(row.id)
+              }}
+              role="button"
+              tabIndex={0}
+              data-testid={`queue-row-${row.id}`}
+              aria-selected={row.id === selectedId}
+              className={cn(
+                'grid cursor-pointer grid-cols-[0.4fr_1.2fr_0.9fr_1.8fr_0.8fr] items-center gap-3 border-b border-line-soft px-[18px] py-3 text-sm transition-colors',
+                row.id === selectedId ? 'bg-cobalt-soft/40' : 'hover:bg-muted/40',
+                i === visibleRows.length - 1 && 'border-b-0',
+              )}
+              onClick={() => selectRow(row.id, 'click')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  selectRow(row.id, 'click')
+                }
+              }}
+            >
+              <div className="font-mono text-[15px] font-semibold tabular-nums">
+                {row.queue_position ?? '—'}
+              </div>
+              <div>
+                <p className="font-medium text-foreground">{patientDisplayName(row)}</p>
+                <p className="text-xs text-muted-foreground">{patientMeta(row)}</p>
+              </div>
+              <p className="truncate text-body">{row.diagnosis ?? '—'}</p>
+              <p className="truncate text-body">{rxListSummary(row)}</p>
+              <StatusPill status={row.dispensing_status} />
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

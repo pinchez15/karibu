@@ -1,13 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { Filter } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ChevronDown, Search } from 'lucide-react'
 import { ClinicianSearchBar } from '@/components/clinician-search-bar'
 import { WebTopBar } from '@/components/web-shell'
+import { Input } from '@/components/ui/input'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { TodayPanels, type TodayAppointment, type OutOfStockItem, type RoundsVisit } from './TodayPanels'
 import { formatClinicDate } from '@/lib/format-clinic-date'
 import { cn } from '@/lib/utils'
-import type { QueueItem } from '@karibu/shared'
+import { filterQueueBySearch, type QueueItem } from '@karibu/shared'
+
+const QUEUE_GRID = 'grid-cols-[0.5fr_1.5fr_1fr_1.6fr_0.8fr_1fr]'
 
 /**
  * Karibu clinician dashboard — designed top-level view.
@@ -20,6 +29,8 @@ import type { QueueItem } from '@karibu/shared'
 
 interface ClinicianDashboardProps {
   queue: QueueItem[]
+  /** Completed-today visits, purged from the active queue (WP2 D10). */
+  doneToday?: QueueItem[]
   reviewCount: number
   /** Visits seen today (status='completed' or 'sent' on visit_date=today). */
   visitsToday?: number
@@ -35,6 +46,7 @@ interface ClinicianDashboardProps {
 
 export function ClinicianDashboard({
   queue,
+  doneToday = [],
   reviewCount,
   visitsToday = 0,
   avgVisitMinutes,
@@ -47,6 +59,18 @@ export function ClinicianDashboard({
   const avgLabel = avgVisitMinutes
     ? `${Math.floor(avgVisitMinutes)}m ${Math.round((avgVisitMinutes - Math.floor(avgVisitMinutes)) * 60)}s`
     : '—'
+
+  const [search, setSearch] = useState('')
+  const [doneOpen, setDoneOpen] = useState(false)
+  const filteredQueue = useMemo(
+    () =>
+      filterQueueBySearch(queue, search, (item) => ({
+        name: item.patient_name,
+        todayNumber: item.queue_position,
+        extra: [item.patient_phone],
+      })),
+    [queue, search],
+  )
 
   return (
     <>
@@ -74,7 +98,7 @@ export function ClinicianDashboard({
 
         {showPhysicalQueue ? (
           <div className="bg-card border border-border rounded-xl opacity-90">
-            <div className="px-[18px] py-3.5 flex items-center justify-between border-b border-line-soft">
+            <div className="px-[18px] py-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-line-soft">
               <div>
                 <div className="text-sm font-semibold">Physical queue</div>
                 <div className="text-xs text-muted-foreground">
@@ -82,13 +106,21 @@ export function ClinicianDashboard({
                   patient search for chart-first workflow
                 </div>
               </div>
-              <button className="bg-background text-body border border-border rounded-md px-2.5 py-[5px] text-xs font-medium inline-flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5" /> Filter
-              </button>
+              <div className="relative w-full max-w-[240px]">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter by name or #"
+                  className="h-8 pl-8 text-xs"
+                  aria-label="Filter queue by name or today's number"
+                />
+              </div>
             </div>
 
             {/* Header */}
-            <div className="grid grid-cols-[1.5fr_1fr_1.6fr_0.8fr_1fr] gap-3 px-[18px] py-2 kh-meta border-b border-line-soft">
+            <div className={cn('grid gap-3 px-[18px] py-2 kh-meta border-b border-line-soft', QUEUE_GRID)}>
+              <span>#</span>
               <span>PATIENT</span>
               <span>STATUS</span>
               <span>COMPLAINT</span>
@@ -100,9 +132,13 @@ export function ClinicianDashboard({
               <div className="px-[18px] py-12 text-center text-muted-foreground text-sm">
                 No patients in the queue right now.
               </div>
+            ) : filteredQueue.length === 0 ? (
+              <div className="px-[18px] py-12 text-center text-muted-foreground text-sm">
+                No patients match &ldquo;{search}&rdquo;.
+              </div>
             ) : (
-              queue.map((item, i) => {
-                const last = i === queue.length - 1
+              filteredQueue.map((item, i) => {
+                const last = i === filteredQueue.length - 1
                 const status = mapStatus(item)
                 const cc = item.chief_complaint || '—'
                 const seenBy = item.doctor_name ?? item.nurse_name ?? '—'
@@ -116,11 +152,15 @@ export function ClinicianDashboard({
                     key={item.visit_id}
                     href={`/dashboard/visits/${item.visit_id}`}
                     className={cn(
-                      'grid grid-cols-[1.5fr_1fr_1.6fr_0.8fr_1fr] gap-3 px-[18px] py-3 text-[13px] items-center transition-colors hover:bg-background/60',
+                      'grid gap-3 px-[18px] py-3 text-[13px] items-center transition-colors hover:bg-background/60',
+                      QUEUE_GRID,
                       !last && 'border-b border-line-soft',
                       isUrgent && 'bg-amber-soft/30',
                     )}
                   >
+                    <div className="font-mono text-[15px] font-semibold tabular-nums">
+                      {item.queue_position || '—'}
+                    </div>
                     <div>
                       <div className="font-semibold">
                         {item.patient_name ?? 'Unknown patient'}
@@ -140,6 +180,47 @@ export function ClinicianDashboard({
                   </Link>
                 )
               })
+            )}
+
+            {doneToday.length > 0 && (
+              <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex w-full items-center justify-between border-t border-line-soft px-[18px] py-3 text-left text-xs font-medium text-muted-foreground hover:text-foreground">
+                    <span>Done today · {doneToday.length}</span>
+                    <ChevronDown
+                      className={cn('h-4 w-4 transition-transform', doneOpen && 'rotate-180')}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  {doneToday.map((item) => {
+                    const seenBy = item.doctor_name ?? item.nurse_name ?? '—'
+                    return (
+                      <Link
+                        key={item.visit_id}
+                        href={`/dashboard/visits/${item.visit_id}`}
+                        className={cn(
+                          'grid gap-3 px-[18px] py-2.5 text-[13px] items-center border-t border-line-soft/60 opacity-70 transition-colors hover:bg-background/60 hover:opacity-100',
+                          QUEUE_GRID,
+                        )}
+                      >
+                        <div className="font-mono text-[13px] tabular-nums text-muted-foreground">
+                          {item.queue_position || '—'}
+                        </div>
+                        <div className="font-medium">{item.patient_name ?? 'Unknown patient'}</div>
+                        <div>
+                          <StatusPill kind="waiting" label="Done" />
+                        </div>
+                        <div className="text-body">{item.chief_complaint || '—'}</div>
+                        <div className="text-muted-foreground">—</div>
+                        <div className={seenBy === '—' ? 'text-muted-foreground' : 'text-body'}>
+                          {seenBy}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         ) : null}

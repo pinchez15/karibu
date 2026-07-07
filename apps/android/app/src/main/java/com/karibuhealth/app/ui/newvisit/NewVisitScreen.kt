@@ -64,6 +64,7 @@ private val PRECISION_OPTIONS = listOf(
 fun NewVisitScreen(
     onNavigateBack: () -> Unit,
     onVisitCreated: (visitId: String, patientId: String) -> Unit,
+    onPatientRegistered: (patientId: String) -> Unit = {},
     viewModel: NewVisitViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -120,33 +121,51 @@ fun NewVisitScreen(
                     .navigationBarsPadding()
                     .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 16.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                val result = viewModel.createPatientAndStartVisit()
-                                if (result != null) {
-                                    onVisitCreated(result.visitId, result.patientId)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val result = viewModel.createPatientAndStartVisit()
+                                    if (result != null) {
+                                        onVisitCreated(result.visitId, result.patientId)
+                                    }
                                 }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !uiState.isCreating,
+                            colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(vertical = 14.dp),
+                        ) {
+                            if (uiState.isCreating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White,
+                                )
+                            } else {
+                                Text(
+                                    text = "Register + check in",
+                                    fontWeight = FontWeight.SemiBold,
+                                )
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !uiState.isCreating,
-                        colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(vertical = 14.dp),
-                    ) {
-                        if (uiState.isCreating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White,
-                            )
-                        } else {
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    val result = viewModel.registerPatientOnly()
+                                    if (result != null) {
+                                        onPatientRegistered(result.patientId)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !uiState.isCreating,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(vertical = 14.dp),
+                        ) {
                             Text(
-                                text = if (uiState.foundPatient != null)
-                                    "Continue to vitals"
-                                else
-                                    "Continue to vitals",
+                                text = "Register only",
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }

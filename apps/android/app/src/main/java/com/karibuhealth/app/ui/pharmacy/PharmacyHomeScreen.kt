@@ -31,7 +31,7 @@ fun PharmacyHomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     var worksheetItem by remember { mutableStateOf<NeedsPharmacyItem?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val filtered = viewModel.filteredItems
+    val filtered = viewModel.searchFilteredItems
 
     LaunchedEffect(uiState.stockWarning) {
         uiState.stockWarning?.let { warning ->
@@ -73,6 +73,15 @@ fun PharmacyHomeScreen(
                 selected = uiState.selectedTab,
                 items = uiState.items,
                 onSelect = viewModel::selectTab,
+            )
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = viewModel::updateSearch,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Filter by name or #") },
+                singleLine = true,
             )
             PullToRefreshBox(
                 isRefreshing = uiState.isLoading,

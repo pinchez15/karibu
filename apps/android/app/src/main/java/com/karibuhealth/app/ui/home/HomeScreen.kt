@@ -231,11 +231,12 @@ fun HomeScreen(
                         items(uiState.searchResults, key = { "p-${it.id}" }) { patient ->
                             SearchResultCard(
                                 patient = patient,
-                                // Tap the card body to open the patient
-                                // timeline (Phase 3 patient-first UX).
-                                // "Start Visit" stays on the right for the
-                                // legacy queue-driven flow.
                                 onOpenPatient = { onSelectPatient(patient.id) },
+                                onCheckIn = {
+                                    scope.launch {
+                                        viewModel.checkInForPatient(patient.id)?.let(onNavigateToVisitDetails)
+                                    }
+                                },
                                 onStartVisit = {
                                     scope.launch {
                                         viewModel.checkInForPatient(patient.id)?.let(onNavigateToVisitDetails)
@@ -490,6 +491,7 @@ private fun EmptyHint(text: String) {
 private fun SearchResultCard(
     patient: Patient,
     onOpenPatient: () -> Unit,
+    onCheckIn: () -> Unit,
     onStartVisit: () -> Unit,
 ) {
     val name = listOfNotNull(patient.firstName, patient.lastName)
@@ -546,12 +548,20 @@ private fun SearchResultCard(
                 )
             }
 
-            Button(
-                onClick = onStartVisit,
-                colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
-                shape = RoundedCornerShape(10.dp),
-            ) {
-                Text("Check in")
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Button(
+                    onClick = onCheckIn,
+                    colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Text("Check in")
+                }
+                OutlinedButton(
+                    onClick = onStartVisit,
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Text("Start visit")
+                }
             }
         }
     }

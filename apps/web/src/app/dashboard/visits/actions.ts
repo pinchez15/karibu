@@ -331,8 +331,20 @@ export async function createPatientWithVisit(formData: FormData) {
     patientId = newPatient.id
   }
 
+  // WP2 (A1): registration and check-in are decoupled. "Register + check in"
+  // (default) creates the patient AND today's visit; "Register only" creates
+  // just the patient record (e.g. the mother of a sick child registered for
+  // the catchment, with no visit today). The register-only case appears in
+  // patient search but on no queue.
+  const checkIn = formData.get('check_in') !== 'false'
+  if (!checkIn) {
+    broadcastClinicRefresh(staff.clinic_id).catch(() => {})
+    revalidatePath('/dashboard/visits')
+    return { patientId }
+  }
+
   // Check the patient into today's OPD queue so clinicians see them on Today
-  // and worklists. Raw visit inserts skip queue_position / checked_in_at.
+  // and worklists. check_in_patient assigns today's number + checked_in_at.
   const chiefComplaint = nullableTrim(formData.get('chief_complaint'))
   const { data: visitId, error: visitError } = await supabase.rpc('check_in_patient', {
     p_clinic_id: staff.clinic_id,
@@ -351,6 +363,55 @@ export async function createPatientWithVisit(formData: FormData) {
   broadcastClinicRefresh(staff.clinic_id).catch(() => {})
   revalidatePath('/dashboard/opd')
   revalidatePath('/dashboard/worklists')
+
+  return { visitId: visitId as string, patientId }
+}
+
+/**
+ * Check an already-registered patient into today's OPD queue (WP2 A2). Powers
+ * the one-tap "Check in for today" on existing-patient search results. Assigns
+ * today's number (N+1) via check_in_patient.
+ */
+export async function checkInExistingPatient(
+  patientId: string,
+  chiefComplaint?: string,
+): Promise<{ visitId: string } | { error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { error: 'Not authenticated' }
+
+  const onboardingBlock = ensureCanRegisterPatients(staff)
+  if (onboardingBlock.error) return { error: onboardingBlock.error }
+
+  const supabase = createServiceClient()
+
+  // Ownership pre-check: service-role bypasses RLS, so confirm the patient
+  // belongs to the caller's clinic before checking them in.
+  const { data: patient } = await supabase
+    .from('patients')
+    .select('id')
+    .eq('id', patientId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+  if (!patient) return { error: 'Patient not found' }
+
+  const { data: visitId, error: visitError } = await supabase.rpc('check_in_patient', {
+    p_clinic_id: staff.clinic_id,
+    p_patient_id: patientId,
+    p_chief_complaint: chiefComplaint?.trim() || null,
+    p_priority: 'normal',
+    p_staff_id: staff.id,
+    p_department: 'opd',
+  })
+
+  if (visitError || !visitId) {
+    console.error('Failed to check in patient:', visitError)
+    return { error: visitError?.message || "Failed to add patient to today's queue" }
+  }
+
+  broadcastClinicRefresh(staff.clinic_id).catch(() => {})
+  revalidatePath('/dashboard/opd')
+  revalidatePath('/dashboard/worklists')
+  revalidatePath('/dashboard/visits')
 
   return { visitId: visitId as string }
 }

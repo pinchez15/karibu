@@ -30,6 +30,7 @@ data class OpdPatientRow(
     val ageLabel: String?,
     val chiefComplaint: String?,
     val checkedInAt: String?,
+    /** Today's number — per clinic, per day, assigned at check-in (WP2). */
     val queuePosition: Int?,
     val priority: String,
     val queueStatus: String,
