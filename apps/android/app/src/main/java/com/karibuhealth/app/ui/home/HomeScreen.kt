@@ -1,6 +1,7 @@
 package com.karibuhealth.app.ui.home
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -234,7 +235,7 @@ fun HomeScreen(
                                 onOpenPatient = { onSelectPatient(patient.id) },
                                 onStartVisit = {
                                     scope.launch {
-                                        viewModel.startVisitForPatient(patient.id)?.let(onNavigateToVisitDetails)
+                                        viewModel.checkInForPatient(patient.id)?.let(onNavigateToVisitDetails)
                                     }
                                 },
                             )
@@ -243,7 +244,47 @@ fun HomeScreen(
                 }
 
                 if (uiState.searchQuery.isBlank()) {
-                    val patients = uiState.activePatients
+                    val patients = uiState.filteredActivePatients
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.queueSearchQuery,
+                                onValueChange = viewModel::updateQueueSearch,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Filter queue by name or #", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Cobalt,
+                                    unfocusedBorderColor = Line,
+                                ),
+                            )
+                        }
+                    }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = KaribuLayout.contentPaddingHorizontal(), vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OpdPatientFilter.entries.forEach { filter ->
+                                val count = uiState.filterCount(filter)
+                                if (count > 0) {
+                                    FilterChip(
+                                        selected = uiState.selectedFilter == filter,
+                                        onClick = { viewModel.selectFilter(filter) },
+                                        label = { Text("${filter.label} $count") },
+                                    )
+                                }
+                            }
+                        }
+                    }
                     item {
                         Row(
                             modifier = Modifier
@@ -507,7 +548,7 @@ private fun SearchResultCard(
                 colors = ButtonDefaults.buttonColors(containerColor = Cobalt),
                 shape = RoundedCornerShape(10.dp),
             ) {
-                Text("Start Visit")
+                Text("Check in")
             }
         }
     }
@@ -524,6 +565,8 @@ private fun OpdPatientCard(
         OpdPatientFilter.NeedsVitals -> KhStatusKind.Vitals to "Needs vitals"
         OpdPatientFilter.WithClinician -> KhStatusKind.InNote to "With clinician"
         OpdPatientFilter.AwaitingLabs -> KhStatusKind.Lab to "Awaiting labs"
+        OpdPatientFilter.ResultsReady -> KhStatusKind.Lab to "Results ready"
+        OpdPatientFilter.PharmacyReturned -> KhStatusKind.Review to "Pharmacy returned"
         OpdPatientFilter.AtPharmacy -> KhStatusKind.Ready to "At pharmacy"
         OpdPatientFilter.DoneToday -> KhStatusKind.Done to "Done"
     }
@@ -555,6 +598,19 @@ private fun OpdPatientCard(
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        row.queuePosition?.takeIf { it > 0 }?.let { num ->
+            Column(
+                modifier = Modifier.padding(start = 12.dp, end = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "#$num",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Cobalt,
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .width(3.dp)

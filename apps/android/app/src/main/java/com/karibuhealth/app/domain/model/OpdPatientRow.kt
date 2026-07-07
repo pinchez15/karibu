@@ -9,6 +9,8 @@ enum class OpdPatientFilter(val label: String) {
     NeedsVitals("Needs vitals"),
     WithClinician("With clinician"),
     AwaitingLabs("Awaiting labs"),
+    ResultsReady("Results ready"),
+    PharmacyReturned("Pharmacy returned"),
     AtPharmacy("At pharmacy"),
     DoneToday("Done today"),
     ;
@@ -28,6 +30,7 @@ data class OpdPatientRow(
     val ageLabel: String?,
     val chiefComplaint: String?,
     val checkedInAt: String?,
+    val queuePosition: Int?,
     val priority: String,
     val queueStatus: String,
     val bucket: OpdPatientFilter,
@@ -43,8 +46,9 @@ data class OpdPatientRow(
                 sex = dto.sex,
                 ageLabel = ageLabel,
                 chiefComplaint = dto.chiefComplaint,
-                checkedInAt = null,
-                priority = "normal",
+                checkedInAt = dto.checkedInAt,
+                queuePosition = dto.queuePosition,
+                priority = dto.priority ?: "normal",
                 queueStatus = dto.queueStatus,
                 bucket = deriveBucketFromRpc(dto),
             )
@@ -53,10 +57,13 @@ data class OpdPatientRow(
         /** Mirrors server filters in rpc_get_opd_patients_today (migration 048). */
         private fun deriveBucketFromRpc(dto: OpdPatientTodayDto): OpdPatientFilter {
             val atPharmacy = dto.pharmacyOrderSubmittedAt != null &&
-                dto.dispensingStatus !in listOf("dispensed", "partial", "complete")
+                dto.dispensingStatus !in listOf("dispensed", "partial", "returned", "complete")
             val labPending = dto.labStatus in listOf("pending", "running")
+            val resultsReady = dto.labStatus in listOf("done", "abnormal") && !dto.documentationComplete
             return when {
                 dto.documentationComplete -> OpdPatientFilter.DoneToday
+                dto.dispensingStatus == "returned" && !dto.documentationComplete -> OpdPatientFilter.PharmacyReturned
+                resultsReady -> OpdPatientFilter.ResultsReady
                 atPharmacy -> OpdPatientFilter.AtPharmacy
                 labPending -> OpdPatientFilter.AwaitingLabs
                 dto.queueStatus == "waiting" -> OpdPatientFilter.Waiting
@@ -82,6 +89,7 @@ data class OpdPatientRow(
                 ageLabel = p.dateOfBirth?.let { formatAgeFromDob(it) },
                 chiefComplaint = v.chiefComplaint,
                 checkedInAt = v.checkedInAt,
+                queuePosition = v.queuePosition,
                 priority = v.priority,
                 queueStatus = v.queueStatus,
                 bucket = deriveBucket(v),
@@ -91,13 +99,16 @@ data class OpdPatientRow(
         private fun deriveBucket(v: com.karibuhealth.app.data.local.db.entity.VisitEntity): OpdPatientFilter {
             val hasLabs = !v.testsOrdered.isNullOrBlank()
             val labPending = v.labStatus in listOf("pending", "running")
+            val resultsReady = v.labStatus in listOf("done", "abnormal") && !v.documentationComplete
             val atPharmacy = v.pharmacyOrderSubmittedAt != null &&
-                v.dispensingStatus !in listOf("dispensed")
+                v.dispensingStatus !in listOf("dispensed", "returned")
             val done = v.documentationComplete &&
                 (v.status in listOf("sent", "completed") || v.queueStatus == "completed")
 
             return when {
                 done -> OpdPatientFilter.DoneToday
+                v.dispensingStatus == "returned" && !v.documentationComplete -> OpdPatientFilter.PharmacyReturned
+                resultsReady -> OpdPatientFilter.ResultsReady
                 atPharmacy -> OpdPatientFilter.AtPharmacy
                 hasLabs && labPending -> OpdPatientFilter.AwaitingLabs
                 v.queueStatus == "waiting" -> OpdPatientFilter.Waiting

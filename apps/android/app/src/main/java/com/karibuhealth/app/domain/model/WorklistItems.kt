@@ -53,6 +53,8 @@ data class NeedsLabItem(
     val labStatus: String?,
     val doctorId: String?,
     val visitDate: String?,
+    val queuePosition: Int? = null,
+    val checkedInAt: String? = null,
 )
 
 /** Row in the "needs pharmacy" worklist — documented visits awaiting dispense. */
@@ -68,6 +70,8 @@ data class NeedsPharmacyItem(
     val visitDate: String?,
     val prescriptionLines: List<PrescriptionOrderLine> = emptyList(),
     val dispensedAt: String? = null,
+    val queuePosition: Int? = null,
+    val checkedInAt: String? = null,
 )
 
 /** Row in the "needs payment" worklist — sent visits awaiting payment. */

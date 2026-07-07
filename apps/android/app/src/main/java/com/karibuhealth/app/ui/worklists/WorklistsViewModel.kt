@@ -3,7 +3,8 @@ package com.karibuhealth.app.ui.worklists
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
-import com.karibuhealth.app.data.repository.WorklistRepository
+import com.karibuhealth.app.data.repository.CareTaskRepository
+import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.domain.model.CareTaskItem
 import com.karibuhealth.app.domain.model.MyDraftItem
 import com.karibuhealth.app.domain.model.NeedsClinicianItem
@@ -45,6 +46,8 @@ data class WorklistsUiState(
 @HiltViewModel
 class WorklistsViewModel @Inject constructor(
     private val worklistRepository: WorklistRepository,
+    private val careTaskRepository: CareTaskRepository,
+    private val syncEngine: SyncEngine,
     private val authTokenStore: AuthTokenStore,
 ) : ViewModel() {
 
@@ -129,6 +132,16 @@ class WorklistsViewModel @Inject constructor(
                 myDrafts = myDraftsAsync.await(),
                 careTasks = careTasksAsync.await(),
             )
+        }
+    }
+
+    fun completeCareTask(taskId: String) {
+        viewModelScope.launch {
+            runCatching {
+                careTaskRepository.completeCareTask(taskId)
+                syncEngine.processQueue()
+            }
+            fetch()
         }
     }
 }

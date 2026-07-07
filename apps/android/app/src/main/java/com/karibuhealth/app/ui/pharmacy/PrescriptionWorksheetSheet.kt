@@ -68,6 +68,7 @@ fun PrescriptionWorksheetSheet(
     onStart: () -> Unit,
     onComplete: (lines: List<DispenseLineDraft>, visitNotes: String) -> Unit,
     onSendBack: (reason: String) -> Unit,
+    onSendLineBack: (prescriptionOrderId: String, reason: String) -> Unit = { _, _ -> },
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val lines = item.prescriptionLines
@@ -76,6 +77,7 @@ fun PrescriptionWorksheetSheet(
     }
     var visitNotes by remember(item.visitId) { mutableStateOf("") }
     var sendBackReason by remember { mutableStateOf("") }
+    var sendBackLineId by remember { mutableStateOf<String?>(null) }
     var showSendBack by remember { mutableStateOf(false) }
     val canComplete = lines.isNotEmpty()
     val started = item.dispensingStatus != "not_started"
@@ -106,6 +108,10 @@ fun PrescriptionWorksheetSheet(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     itemsIndexed(drafts, key = { _, d -> d.prescriptionOrderId }) { index, draft ->
+                        val sourceLine = lines.getOrNull(index)
+                        val canSendLineBack = sourceLine?.status in listOf(
+                            "ordered", "dispensing", "partially_dispensed", "out_of_stock",
+                        )
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(draft.displayName, fontWeight = FontWeight.SemiBold)
                             if (draft.sig.isNotBlank()) {
@@ -158,6 +164,16 @@ fun PrescriptionWorksheetSheet(
                                 label = { Text("Line notes") },
                                 modifier = Modifier.fillMaxWidth(),
                             )
+                            if (canSendLineBack && sendBackLineId != draft.prescriptionOrderId) {
+                                TextButton(
+                                    onClick = {
+                                        sendBackLineId = draft.prescriptionOrderId
+                                        sendBackReason = ""
+                                        showSendBack = true
+                                    },
+                                    enabled = !busy,
+                                ) { Text("Send line to clinician") }
+                            }
                         }
                     }
                 }
@@ -172,13 +188,27 @@ fun PrescriptionWorksheetSheet(
                 OutlinedTextField(
                     value = sendBackReason,
                     onValueChange = { sendBackReason = it },
-                    label = { Text("Reason for clinician") },
+                    label = {
+                        Text(
+                            if (sendBackLineId != null) "Reason for line send-back"
+                            else "Reason for clinician",
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { showSendBack = false }) { Text("Cancel") }
+                    TextButton(onClick = { showSendBack = false; sendBackLineId = null }) { Text("Cancel") }
                     Button(
-                        onClick = { onSendBack(sendBackReason.trim()) },
+                        onClick = {
+                            val lineId = sendBackLineId
+                            if (lineId != null) {
+                                onSendLineBack(lineId, sendBackReason.trim())
+                            } else {
+                                onSendBack(sendBackReason.trim())
+                            }
+                            showSendBack = false
+                            sendBackLineId = null
+                        },
                         enabled = sendBackReason.isNotBlank() && !busy,
                     ) { Text("Send back") }
                 }

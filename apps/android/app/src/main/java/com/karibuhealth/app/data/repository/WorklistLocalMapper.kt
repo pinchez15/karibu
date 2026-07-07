@@ -60,6 +60,8 @@ private suspend fun VisitEntity.toNeedsLabItem(patientDao: PatientDao): NeedsLab
         labStatus = labStatus,
         doctorId = doctorId,
         visitDate = visitDate,
+        queuePosition = queuePosition,
+        checkedInAt = checkedInAt,
     )
 }
 
@@ -86,5 +88,7 @@ private suspend fun VisitEntity.toNeedsPharmacyItem(
             prescriptionOrderRepository.legacyLinesFromText(id, medications)
         },
         dispensedAt = dispensedAt,
+        queuePosition = queuePosition,
+        checkedInAt = checkedInAt,
     )
 }

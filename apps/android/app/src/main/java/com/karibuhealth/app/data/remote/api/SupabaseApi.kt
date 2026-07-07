@@ -287,6 +287,15 @@ interface SupabaseApi {
     @POST("rpc/rpc_send_pharmacy_back_to_clinician")
     suspend fun rpcSendPharmacyBackToClinician(@Body request: SendPharmacyBackRequest): Response<ResponseBody>
 
+    @POST("rpc/rpc_send_pharmacy_line_back_to_clinician")
+    suspend fun rpcSendPharmacyLineBackToClinician(@Body request: SendPharmacyLineBackRequest): Response<ResponseBody>
+
+    @POST("rpc/rpc_create_care_task")
+    suspend fun rpcCreateCareTask(@Body request: CreateCareTaskRequest): Response<String>
+
+    @POST("rpc/rpc_complete_care_task")
+    suspend fun rpcCompleteCareTask(@Body request: CompleteCareTaskRequest): Response<ResponseBody>
+
     @GET("prescription_orders")
     suspend fun getPrescriptionOrdersForVisits(
         @Query("visit_id") visitIdFilter: String,

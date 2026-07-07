@@ -1296,9 +1296,17 @@ private fun VisitPharmacySubmitSection(
 ) {
     val canSubmit =
         !visit.medications.isNullOrBlank() || uiState.prescriptionLines.isNotEmpty()
-    if (visit.pharmacyOrderSubmittedAt != null) return
+    val pharmacyReturned = visit.dispensingStatus == "returned"
+    if (visit.pharmacyOrderSubmittedAt != null && !pharmacyReturned) return
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (pharmacyReturned && !visit.dispenseNotes.isNullOrBlank()) {
+            Text(
+                "Pharmacy returned: ${visit.dispenseNotes}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Amber,
+            )
+        }
         if (uiState.prescriptionLines.isNotEmpty()) {
             uiState.prescriptionLines.forEach { line ->
                 val label = listOfNotNull(
@@ -1323,6 +1331,7 @@ private fun VisitPharmacySubmitSection(
         ) {
             Text(
                 if (uiState.isSendingToPharmacy) "Sending to pharmacy…"
+                else if (pharmacyReturned) "Resubmit to pharmacy"
                 else "Send to pharmacy",
             )
         }
