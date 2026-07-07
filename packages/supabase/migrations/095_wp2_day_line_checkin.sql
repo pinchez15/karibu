@@ -262,6 +262,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- the row type (fed from the deduped latest-visit CTE) and a final
 -- ORDER BY priority (urgent→normal) then checked_in_at ASC — the "up next"
 -- ordering staff and patients both reason about. Filter clauses are unchanged.
+--
+-- This RPC's return table gains columns (queue_position, priority,
+-- checked_in_at, wait_minutes) vs. its 062 definition. Postgres refuses to
+-- change a function's return type via CREATE OR REPLACE, so drop the prior
+-- definition first. Signature is (uuid, text).
+
+DROP FUNCTION IF EXISTS rpc_get_opd_patients_today(UUID, TEXT);
 
 CREATE OR REPLACE FUNCTION rpc_get_opd_patients_today(
   p_clinic_id UUID,
