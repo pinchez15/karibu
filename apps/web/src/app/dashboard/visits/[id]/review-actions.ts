@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { getStaff } from '@/lib/auth'
+import { loadVisitAiReviewSuggestions } from '@/lib/visit-ai-suggestions'
+import type { VisitAiReviewSuggestion } from '@/lib/ai-review-helpers'
 
 /**
  * Log the clinician's response to an AI review question. Drives the
@@ -43,4 +45,31 @@ export async function recordReviewResponse(
 
   revalidatePath(`/dashboard/visits/${suggestion.visit_id}`)
   return { success: true }
+}
+
+/** Lightweight poll target — suggestions only, no full page refresh. */
+export async function fetchVisitAiSuggestions(
+  visitId: string,
+): Promise<
+  | { success: true; suggestions: VisitAiReviewSuggestion[] }
+  | { success: false; error: string }
+> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+
+  const supabase = createServiceClient()
+  const { data: visit } = await supabase
+    .from('visits')
+    .select('id, documentation_complete')
+    .eq('id', visitId)
+    .eq('clinic_id', staff.clinic_id)
+    .maybeSingle()
+
+  if (!visit) return { success: false, error: 'Visit not found' }
+
+  const suggestions = await loadVisitAiReviewSuggestions(visitId, staff.clinic_id, {
+    documentationComplete: !!(visit as { documentation_complete?: boolean }).documentation_complete,
+  })
+
+  return { success: true, suggestions }
 }

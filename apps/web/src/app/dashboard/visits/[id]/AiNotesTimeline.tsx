@@ -8,13 +8,14 @@ import { ReviewQuestionBanner } from './ReviewQuestionBanner'
 
 interface AiNotesTimelineProps {
   suggestions: ReviewSuggestion[]
+  onIncorporate?: (suggestion: ReviewSuggestion) => void
 }
 
 /**
  * Collapsed “AI notes” stack on the visit timeline (docs/ai-clinical-assist.md).
  * Each note expands in place; parent already filters to timeline tier + unsigned visit.
  */
-export function AiNotesTimeline({ suggestions }: AiNotesTimelineProps) {
+export function AiNotesTimeline({ suggestions, onIncorporate }: AiNotesTimelineProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   if (suggestions.length === 0) return null
@@ -49,7 +50,11 @@ export function AiNotesTimeline({ suggestions }: AiNotesTimelineProps) {
             </button>
             {open && (
               <div className="px-3 pb-3 border-t border-border">
-                <ReviewQuestionBanner suggestion={s} compact />
+                <ReviewQuestionBanner
+                  suggestion={s}
+                  compact
+                  onIncorporate={onIncorporate}
+                />
               </div>
             )}
           </div>

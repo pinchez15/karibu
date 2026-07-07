@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect, useTransition } from 'react'
+import { useState, useRef, useCallback, useEffect, useTransition, type RefObject } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { Loader2, Mic, Square, PenLine, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import {
   appendToSection,
   sectionDisplayLabel,
 } from '@/lib/clinical-note-sections'
+import type { DictationIncorporate } from '@/lib/ai-review-helpers'
 import {
   autosaveDraftNote,
   queueDraftAiAssist,
@@ -50,7 +51,13 @@ interface PendingDictationCardProps {
   labAbnormal?: boolean
   labStatus?: string | null
   pharmacyOrderSubmitted?: boolean
+  pharmacyReturned?: boolean
+  dispenseNotes?: string | null
   staffRole?: StaffRole | null
+  /** AI Incorporate — prefill a section and scroll into view. */
+  incorporatePrefill?: DictationIncorporate | null
+  onIncorporateApplied?: () => void
+  editorRef?: RefObject<HTMLDivElement | null>
 }
 
 const AUTOSAVE_DEBOUNCE_MS = 1500
@@ -69,9 +76,17 @@ export function PendingDictationCard({
   labAbnormal = false,
   labStatus = null,
   pharmacyOrderSubmitted = false,
+  pharmacyReturned = false,
+  dispenseNotes = null,
   staffRole = null,
+  incorporatePrefill = null,
+  onIncorporateApplied,
+  editorRef,
 }: PendingDictationCardProps) {
   const { getToken } = useAuth()
+
+  const structuredDetailsRef = useRef<HTMLDetailsElement | null>(null)
+  const sectionRefs = useRef<Partial<Record<NoteSectionKey, HTMLTextAreaElement | null>>>({})
 
   const noteIdRef = useRef<string>(initialNoteId ?? crypto.randomUUID())
 
@@ -165,6 +180,27 @@ export function PendingDictationCard({
       }
     }
   }, [sections, transcript, persistDraft])
+
+  useEffect(() => {
+    if (!incorporatePrefill) return
+
+    setSections((prev) => appendToSection(prev, incorporatePrefill.section, incorporatePrefill.prefill))
+    setFocusedSection(incorporatePrefill.section)
+
+    if (incorporatePrefill.section !== 'AdditionalNote') {
+      structuredDetailsRef.current?.setAttribute('open', '')
+    }
+
+    requestAnimationFrame(() => {
+      editorRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const target =
+        incorporatePrefill.section === 'AdditionalNote'
+          ? sectionRefs.current.AdditionalNote
+          : sectionRefs.current[incorporatePrefill.section]
+      target?.focus()
+      onIncorporateApplied?.()
+    })
+  }, [incorporatePrefill, editorRef, onIncorporateApplied])
 
   const flushPendingAutosave = useCallback(async () => {
     if (autosaveTimerRef.current) {
@@ -371,13 +407,25 @@ export function PendingDictationCard({
     ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole) &&
     sections.medications.trim().length > 0 &&
     !pharmacySubmitted &&
+    !pharmacyReturned &&
+    !isRecording &&
+    !isTranscribing
+
+  const canResubmitPharmacy =
+    staffRole &&
+    ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole) &&
+    sections.medications.trim().length > 0 &&
+    pharmacyReturned &&
     !isRecording &&
     !isTranscribing
 
   const isReview = variant === 'review'
 
   return (
-    <div className={cn('space-y-4', !isReview && 'bg-card border border-border rounded-lg p-4')}>
+    <div
+      ref={editorRef}
+      className={cn('space-y-4', !isReview && 'bg-card border border-border rounded-lg p-4')}
+    >
       {!isReview && (
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">
@@ -390,6 +438,16 @@ export function PendingDictationCard({
       {isReview && (
         <div className="flex items-center justify-between gap-2">
           <AutosaveIndicator status={autosaveStatus} />
+        </div>
+      )}
+
+      {pharmacyReturned && (
+        <div className="rounded-xl border border-amber/30 bg-amber-soft p-3 text-sm">
+          <p className="text-xs font-semibold text-amber-ink mb-1">Pharmacy returned for clarification</p>
+          {dispenseNotes && <p className="whitespace-pre-wrap">{dispenseNotes}</p>}
+          <p className="text-xs text-muted-foreground mt-2">
+            Update medications below, then resubmit to pharmacy.
+          </p>
         </div>
       )}
 
@@ -433,6 +491,9 @@ export function PendingDictationCard({
           )}
         </div>
         <Textarea
+          ref={(el) => {
+            sectionRefs.current.AdditionalNote = el
+          }}
           value={sections.additionalNote}
           onChange={(e) => setSections((prev) => ({ ...prev, additionalNote: e.target.value }))}
           onFocus={() => setFocusedSection('AdditionalNote')}
@@ -447,7 +508,7 @@ export function PendingDictationCard({
         />
       </div>
 
-      <details className="rounded-lg border border-line-soft">
+      <details ref={structuredDetailsRef} className="rounded-lg border border-line-soft">
         <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Structured fields (optional)
         </summary>
@@ -473,6 +534,9 @@ export function PendingDictationCard({
               )}
             </div>
             <Textarea
+              ref={(el) => {
+                sectionRefs.current[meta.key] = el
+              }}
               value={value}
               onChange={(e) =>
                 setSections((prev) => ({ ...prev, [meta.field]: e.target.value }))
