@@ -25,7 +25,9 @@ import {
   signClinicianNote,
 } from './note-actions'
 import { submitPharmacyOrder } from '../actions'
-import type { StaffRole } from '@karibu/shared'
+import { draftLinesToRpcInput } from '@/components/prescription/PrescriptionComposer'
+import { prescriptionLinesToDrafts } from '@/components/prescription/prescription-line-mappers'
+import type { PrescriptionOrderLine, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 
 /**
@@ -50,6 +52,9 @@ interface PendingDictationCardProps {
   labAbnormal?: boolean
   labStatus?: string | null
   pharmacyOrderSubmitted?: boolean
+  pharmacyReturned?: boolean
+  dispenseNotes?: string | null
+  prescriptionLines?: PrescriptionOrderLine[]
   staffRole?: StaffRole | null
 }
 
@@ -69,6 +74,9 @@ export function PendingDictationCard({
   labAbnormal = false,
   labStatus = null,
   pharmacyOrderSubmitted = false,
+  pharmacyReturned = false,
+  dispenseNotes = null,
+  prescriptionLines = [],
   staffRole = null,
 }: PendingDictationCardProps) {
   const { getToken } = useAuth()
@@ -340,15 +348,37 @@ export function PendingDictationCard({
   }, [transcript, sections, visitId, onClose, flushPendingAutosave])
 
   const handleSendToPharmacy = useCallback(() => {
-    const meds = sections.medications.trim()
-    if (!meds) {
-      setError('Add medications in the Pharmacy section first.')
-      return
-    }
     setPharmacyPending(true)
     setError(null)
     void (async () => {
       await flushPendingAutosave()
+
+      if (pharmacyReturned && prescriptionLines.length > 0) {
+        const lines = draftLinesToRpcInput(prescriptionLinesToDrafts(prescriptionLines))
+        if (lines.length === 0) {
+          setPharmacyPending(false)
+          setError('No prescription lines to resubmit.')
+          return
+        }
+        const result = await submitPharmacyOrder(visitId, {
+          lines,
+          medicationsSummary: sections.medications.trim(),
+        })
+        setPharmacyPending(false)
+        if (!result.success) {
+          setError(result.error)
+          return
+        }
+        setPharmacySubmitted(true)
+        return
+      }
+
+      const meds = sections.medications.trim()
+      if (!meds) {
+        setPharmacyPending(false)
+        setError('Add medications in the Pharmacy section first.')
+        return
+      }
       const result = await submitPharmacyOrder(visitId, meds)
       setPharmacyPending(false)
       if (!result.success) {
@@ -357,7 +387,13 @@ export function PendingDictationCard({
       }
       setPharmacySubmitted(true)
     })()
-  }, [sections.medications, visitId, flushPendingAutosave])
+  }, [
+    sections.medications,
+    visitId,
+    flushPendingAutosave,
+    pharmacyReturned,
+    prescriptionLines,
+  ])
 
   const activeSection = recordingSection ?? transcribingSection
   const micStatus = isRecording && activeSection
@@ -369,8 +405,10 @@ export function PendingDictationCard({
   const canSubmitPharmacy =
     staffRole &&
     ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole) &&
-    sections.medications.trim().length > 0 &&
-    !pharmacySubmitted &&
+    (pharmacyReturned
+      ? prescriptionLines.length > 0 || sections.medications.trim().length > 0
+      : sections.medications.trim().length > 0) &&
+    (!pharmacySubmitted || pharmacyReturned) &&
     !isRecording &&
     !isTranscribing
 
@@ -390,6 +428,16 @@ export function PendingDictationCard({
       {isReview && (
         <div className="flex items-center justify-between gap-2">
           <AutosaveIndicator status={autosaveStatus} />
+        </div>
+      )}
+
+      {pharmacyReturned && (
+        <div className="rounded-xl border border-amber/30 bg-amber-soft p-3 text-sm">
+          <p className="text-xs font-semibold text-amber-ink mb-1">Pharmacy returned for clarification</p>
+          {dispenseNotes && <p className="whitespace-pre-wrap">{dispenseNotes}</p>}
+          <p className="text-xs text-muted-foreground mt-2">
+            Update medications below, then resubmit to pharmacy.
+          </p>
         </div>
       )}
 
@@ -487,7 +535,7 @@ export function PendingDictationCard({
             />
             {meta.key === 'Medications' && (
               <div className="pt-1">
-                {pharmacySubmitted ? (
+                {pharmacySubmitted && !pharmacyReturned ? (
                   <p className="text-sm font-medium text-green">Sent to pharmacy</p>
                 ) : (
                   <Button
@@ -499,6 +547,8 @@ export function PendingDictationCard({
                   >
                     {pharmacyPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : pharmacyReturned ? (
+                      'Resubmit to pharmacy'
                     ) : (
                       'Send to pharmacy'
                     )}

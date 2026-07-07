@@ -14,7 +14,7 @@ import {
   VisitCriticalAlertBanner,
   type VisitCriticalAlert,
 } from './VisitCriticalAlertBanner'
-import type { Visit, ProviderNote, PatientNote, StaffRole, PharmacyCatalogDrug } from '@karibu/shared'
+import type { Visit, ProviderNote, PatientNote, StaffRole, PharmacyCatalogDrug, PrescriptionOrderLine } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 import { getStatusDisplay } from '@/lib/visit-status'
 import {
@@ -114,6 +114,7 @@ interface VisitDetailClientProps {
   staffId: string
   staffRole?: StaffRole
   prescribingCatalog?: PharmacyCatalogDrug[]
+  prescriptionLines?: PrescriptionOrderLine[]
   payment?: PaymentData | null
   addendums?: AddendumView[]
   amendments?: AmendmentView[]
@@ -124,11 +125,13 @@ export function VisitDetailClient({
   staffId,
   staffRole,
   prescribingCatalog,
+  prescriptionLines = [],
   payment,
   addendums = [],
   amendments = [],
 }: VisitDetailClientProps) {
   const config = getStatusDisplay(visit.status)
+  const pharmacyReturned = visit.dispensing_status === 'returned'
 
   const initialNoteSections = (() => {
     const parsed = parseClinicalNoteSections(visit.provider_notes?.structured_data ?? null, {
@@ -223,6 +226,18 @@ export function VisitDetailClient({
 
       <VitalsCard patientId={visit.patient_id} visitId={visit.id} />
 
+      {pharmacyReturned && (
+        <div className="rounded-xl border border-amber/30 bg-amber-soft p-4 text-sm">
+          <p className="font-semibold text-amber-ink">Pharmacy returned for clarification</p>
+          {visit.dispense_notes && (
+            <p className="mt-1 whitespace-pre-wrap text-foreground">{visit.dispense_notes}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            Review the dispenser&apos;s note, update prescriptions if needed, then resubmit to pharmacy.
+          </p>
+        </div>
+      )}
+
       {!visit.documentation_complete && (visit.ai_review_suggestions?.length ?? 0) > 0 && (
         <AiNotesTimeline suggestions={visit.ai_review_suggestions ?? []} />
       )}
@@ -262,6 +277,9 @@ export function VisitDetailClient({
           labAbnormal={visit.lab_abnormal ?? false}
           labStatus={visit.lab_status}
           pharmacyOrderSubmitted={!!visit.pharmacy_order_submitted_at}
+          pharmacyReturned={pharmacyReturned}
+          dispenseNotes={visit.dispense_notes}
+          prescriptionLines={prescriptionLines}
           staffRole={staffRole ?? null}
         />
       )}
@@ -292,6 +310,9 @@ export function VisitDetailClient({
                 <VisitPharmacyPanel
                   visitId={visit.id}
                   alreadySubmitted={!!visit.pharmacy_order_submitted_at}
+                  pharmacyReturned={pharmacyReturned}
+                  dispenseNotes={visit.dispense_notes}
+                  prescriptionLines={prescriptionLines}
                   staffRole={staffRole ?? null}
                   prescribingCatalog={prescribingCatalog}
                 />
@@ -515,12 +536,13 @@ function ClinicianNoteCard({
 
 function DispensingBadge({ status }: { status: Visit['dispensing_status'] }) {
   if (status === 'not_started') return null
-  const map: Record<Visit['dispensing_status'], { label: string; cls: string }> = {
+  const map: Record<NonNullable<Visit['dispensing_status']>, { label: string; cls: string }> = {
     not_started: { label: 'Pending', cls: 'bg-line-soft text-muted-foreground' },
     in_progress: { label: 'In progress', cls: 'bg-cobalt-soft text-cobalt' },
     dispensed: { label: 'Dispensed', cls: 'bg-green-soft text-green' },
     partial: { label: 'Partial', cls: 'bg-amber-soft text-amber-ink' },
     out_of_stock: { label: 'Out of stock', cls: 'bg-red-soft text-red' },
+    returned: { label: 'Returned', cls: 'bg-amber-soft text-amber-ink' },
   }
   const c = map[status]
   return (
