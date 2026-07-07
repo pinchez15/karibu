@@ -132,6 +132,8 @@ const OPD_FILTER_OPTIONS = [
   { value: 'needs_vitals', label: 'Needs vitals' },
   { value: 'with_clinician', label: 'With clinician' },
   { value: 'awaiting_labs', label: 'Awaiting labs' },
+  { value: 'results_ready', label: 'Results ready' },
+  { value: 'pharmacy_returned', label: 'Pharmacy returned' },
   { value: 'at_pharmacy', label: 'At pharmacy' },
   { value: 'done_today', label: 'Done today' },
 ] as const

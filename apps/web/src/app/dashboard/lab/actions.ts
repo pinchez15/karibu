@@ -3,12 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase'
 import { requireStaff } from '@/lib/auth'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
 
-/**
- * Lab actions — all writes via SECURITY DEFINER RPCs (migration 045).
- */
-
-type LabStatus = 'not_ordered' | 'pending' | 'running' | 'done' | 'abnormal'
+async function revalidateLabPaths(visitId: string, clinicId: string) {
+  revalidatePath('/dashboard/lab')
+  revalidatePath('/dashboard/lab/history')
+  revalidatePath(`/dashboard/visits/${visitId}`)
+  revalidatePath('/dashboard/worklists')
+  revalidatePath('/dashboard/opd')
+  // Android-origin lab writes use the same RPCs; web clients refresh via broadcast.
+  void broadcastClinicRefresh(clinicId)
+}
 
 async function assertLabTech() {
   const staff = await requireStaff()
@@ -18,11 +23,6 @@ async function assertLabTech() {
   return staff
 }
 
-/**
- * Ownership pre-check: the service-role client bypasses RLS, so confirm the
- * visit belongs to the caller's clinic before passing it to any RPC.
- * Throws when the visit is missing or owned by another clinic.
- */
 async function assertVisitInClinic(visitId: string, clinicId: string) {
   const supabase = createServiceClient()
   const { data } = await supabase
@@ -31,17 +31,16 @@ async function assertVisitInClinic(visitId: string, clinicId: string) {
     .eq('id', visitId)
     .eq('clinic_id', clinicId)
     .maybeSingle()
-  if (!data) {
-    throw new Error('Visit not found')
-  }
+  if (!data) throw new Error('Visit not found')
 }
 
 export async function startLabTest(
   visitId: string,
   testName: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -53,7 +52,7 @@ export async function startLabTest(
     p_client_op_id: crypto.randomUUID(),
   })
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
@@ -64,13 +63,13 @@ export async function recordLabTestResult(
   abnormal: boolean,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const trimmed = result.trim()
-  if (trimmed.length < 1) {
-    return { success: false, error: 'Result cannot be empty' }
-  }
+  if (trimmed.length < 1) return { success: false, error: 'Result cannot be empty' }
 
+  let clinicId: string
   try {
     const staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
+    clinicId = staff.clinic_id
   } catch (e) {
     return { success: false, error: (e as Error).message }
   }
@@ -83,19 +82,17 @@ export async function recordLabTestResult(
     p_abnormal: abnormal,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+  await revalidateLabPaths(visitId, clinicId)
   return { success: true }
 }
 
 export async function startLabRun(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -106,7 +103,7 @@ export async function startLabRun(
     p_client_op_id: crypto.randomUUID(),
   })
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
@@ -116,12 +113,11 @@ export async function recordLabResult(
   abnormal: boolean,
 ): Promise<{ success: true } | { success: false; error: string }> {
   const trimmed = result.trim()
-  if (trimmed.length < 1) {
-    return { success: false, error: 'Result cannot be empty' }
-  }
+  if (trimmed.length < 1) return { success: false, error: 'Result cannot be empty' }
 
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -134,19 +130,17 @@ export async function recordLabResult(
     p_abnormal: abnormal,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
 
 export async function reopenLabResult(
   visitId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
+  let staff
   try {
-    const staff = await assertLabTech()
+    staff = await assertLabTech()
     await assertVisitInClinic(visitId, staff.clinic_id)
   } catch (e) {
     return { success: false, error: (e as Error).message }
@@ -156,10 +150,7 @@ export async function reopenLabResult(
     p_visit_id: visitId,
     p_client_op_id: crypto.randomUUID(),
   })
-
   if (error) return { success: false, error: error.message }
-  revalidatePath('/dashboard/lab')
-  revalidatePath('/dashboard/lab/history')
-  revalidatePath(`/dashboard/visits/${visitId}`)
+  await revalidateLabPaths(visitId, staff.clinic_id)
   return { success: true }
 }
