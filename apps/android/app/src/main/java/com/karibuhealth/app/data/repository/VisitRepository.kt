@@ -361,6 +361,8 @@ class VisitRepository @Inject constructor(
     ): Pair<Visit, String?> = withContext(Dispatchers.IO) {
         val today = LocalDate.now().toString()
         val now = Instant.now().toString()
+        val visitId = UUID.randomUUID().toString()
+        val opId = UUID.randomUUID().toString()
 
         val rpcParams = buildJsonObject {
             put("p_clinic_id", clinicId)
@@ -369,16 +371,18 @@ class VisitRepository @Inject constructor(
             put("p_priority", priority.name)
             staffId?.let { put("p_staff_id", it) }
             put("p_department", department.name)
+            put("p_visit_id", visitId)
+            put("p_client_op_id", opId)
         }
 
         if (networkMonitor.isOnline()) {
             try {
                 val response = supabaseApi.checkInPatient(rpcParams)
                 if (response.isSuccessful) {
-                    val visitId = response.body()?.string()?.trim('"')
-                    if (!visitId.isNullOrBlank()) {
-                        refreshVisit(visitId)
-                        val synced = visitDao.getByIdOnce(visitId)?.toDomain()
+                    val returnedId = response.body()?.string()?.trim('"')
+                    if (!returnedId.isNullOrBlank()) {
+                        refreshVisit(returnedId)
+                        val synced = visitDao.getByIdOnce(returnedId)?.toDomain()
                         if (synced != null) return@withContext synced to null
                     }
                 }
@@ -389,7 +393,7 @@ class VisitRepository @Inject constructor(
 
         val queuePosition = (visitDao.getMaxQueuePosition(clinicId, today) ?: 0) + 1
         val visit = Visit(
-            id = UUID.randomUUID().toString(),
+            id = visitId,
             clinicId = clinicId,
             patientId = patientId,
             doctorId = null,
@@ -419,13 +423,19 @@ class VisitRepository @Inject constructor(
         )
         visitDao.upsert(visit.toEntity(isSynced = false))
 
-        val escapedComplaint = chiefComplaint?.replace("\"", "\\\"") ?: ""
+        val queuePayload = buildJsonObject {
+            put("rpc", "check_in_patient")
+            put("params", rpcParams)
+        }
         val syncEntry = SyncQueueEntry(
-            id = UUID.randomUUID().toString(),
+            id = opId,
             operationType = "queue_op",
             entityType = "visits",
             entityId = visit.id,
-            payload = """{"rpc":"check_in_patient","params":{"p_patient_id":"$patientId","p_clinic_id":"$clinicId","p_chief_complaint":"$escapedComplaint","p_priority":"${priority.name}","p_staff_id":"$staffId","p_department":"${department.name}"}}""",
+            payload = json.encodeToString(
+                kotlinx.serialization.json.JsonObject.serializer(),
+                queuePayload,
+            ),
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
