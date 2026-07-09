@@ -2,8 +2,82 @@
 -- Move sync_op_already_applied gates before entity existence checks so offline
 -- replays short-circuit as no-ops instead of raising 400s. Fix rpc_create_care_task
 -- replay lookup to use sync_operations.id (not the nonexistent client_op_id column).
+--
+-- COMMUTATION NOTE: migration 102 (queue auto-complete) redefines four of the
+-- functions below (rpc_complete_pharmacy_dispense, rpc_record_lab_test_result,
+-- rpc_record_lab_result, rpc_finalize_clinical_encounter). To keep 101 and 102
+-- order-independent, BOTH files define the identical final body for those four
+-- (gate-first + appended PERFORM maybe_complete_visit_queue), and both create
+-- the helper with CREATE OR REPLACE. Whichever applies last, the end state is
+-- the same. If you edit one of these four functions, edit it in BOTH files.
 
 BEGIN;
+
+-- =============================================================================
+-- 1. maybe_complete_visit_queue — the shared auto-complete check
+-- =============================================================================
+-- Internal helper (no GRANT, matching the existing internal-helper pattern —
+-- e.g. billing_ensure_consultation_charge, migrations/077:42-71): only called
+-- via PERFORM from within other SECURITY DEFINER RPCs that have already
+-- authorized the caller for this visit's clinic, so it does not re-assert
+-- staff/clinic membership itself.
+
+CREATE OR REPLACE FUNCTION maybe_complete_visit_queue(p_visit_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_visit RECORD;
+  v_lab_done BOOLEAN;
+  v_pharmacy_done BOOLEAN;
+BEGIN
+  SELECT id, queue_status, documentation_complete, lab_status,
+         dispensing_status, pharmacy_order_submitted_at
+    INTO v_visit
+    FROM visits
+   WHERE id = p_visit_id;
+
+  IF v_visit.id IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Idempotent no-op: already completed (or cancelled — never resurrect a
+  -- cancelled visit into the completed queue). Do not touch updated_at.
+  IF v_visit.queue_status IS NOT DISTINCT FROM 'completed'
+     OR v_visit.queue_status IS NOT DISTINCT FROM 'cancelled' THEN
+    RETURN;
+  END IF;
+
+  IF COALESCE(v_visit.documentation_complete, FALSE) IS NOT TRUE THEN
+    RETURN;
+  END IF;
+
+  -- Lab done-or-absent: no tests ordered, or every ordered test reached a
+  -- terminal state (done / abnormal).
+  v_lab_done := v_visit.lab_status IN ('not_ordered', 'done', 'abnormal');
+
+  -- Pharmacy done-or-absent: fully dispensed, or no pharmacy order was ever
+  -- submitted. 'in_progress' / 'partial' / 'out_of_stock' are NOT terminal —
+  -- they still need a pharmacist action, so the queue stays open through
+  -- those states.
+  v_pharmacy_done := v_visit.dispensing_status = 'dispensed'
+    OR (v_visit.dispensing_status = 'not_started'
+        AND v_visit.pharmacy_order_submitted_at IS NULL);
+
+  IF NOT (v_lab_done AND v_pharmacy_done) THEN
+    RETURN;
+  END IF;
+
+  -- Payment is deliberately NOT a condition above (locked product decision:
+  -- payment is decoupled from clinical closure).
+  UPDATE visits
+     SET queue_status = 'completed',
+         updated_at = NOW()
+   WHERE id = p_visit_id
+     AND queue_status IS DISTINCT FROM 'completed'
+     AND queue_status IS DISTINCT FROM 'cancelled';
+END;
+$$;
 
 -- =============================================================================
 -- 1. rpc_create_care_task — fix broken replay column (gate order already correct)
@@ -221,7 +295,7 @@ BEGIN
     p_client_op_id, v_clinic_id, 'submit_pharmacy_order', 'visits', p_visit_id
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- 3. rpc_complete_pharmacy_dispense — gate before visit-not-found (base: 098)
@@ -393,6 +467,8 @@ BEGIN
   PERFORM sync_op_record(
     p_client_op_id, v_clinic_id, 'complete_pharmacy_dispense', 'visits', p_visit_id
   );
+
+  PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -517,6 +593,8 @@ BEGIN
   END IF;
 
   PERFORM sync_op_record(p_client_op_id, v_clinic_id, 'record_lab_test_result', 'visits', p_visit_id);
+
+  PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -584,7 +662,7 @@ BEGIN
 
   PERFORM sync_op_record(p_client_op_id, v_clinic_id, 'start_lab_test', 'visits', p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- 6. rpc_start_lab — gate before visit-not-found (base: 045)
@@ -618,7 +696,7 @@ BEGIN
 
   PERFORM sync_op_record(p_client_op_id, v_clinic_id, 'start_lab', 'visits', p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- 7. rpc_record_lab_result — gate before visit-not-found (base: 045)
@@ -664,8 +742,10 @@ BEGIN
   WHERE id = p_visit_id AND clinic_id = v_clinic_id;
 
   PERFORM sync_op_record(p_client_op_id, v_clinic_id, 'record_lab_result', 'visits', p_visit_id);
+
+  PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- 8. rpc_record_dispense — gate before visit-not-found (base: 045)
@@ -740,7 +820,7 @@ BEGIN
 
   PERFORM sync_op_record(p_client_op_id, v_clinic_id, 'record_dispense', 'visits', p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- 9. rpc_finalize_clinical_encounter — gate before visit-not-found (base: 050)
@@ -849,8 +929,10 @@ BEGIN
   PERFORM sync_op_record(
     p_client_op_id, v_clinic_id, 'finalize_clinical_encounter', 'visits', p_visit_id
   );
+
+  PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- rpc_record_payment (063): gate already precedes visit lookup — no change.
 
