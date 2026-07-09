@@ -205,10 +205,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun updateQueueSearch(query: String) {
-        _uiState.update { it.copy(queueSearchQuery = query) }
-    }
-
     fun refresh() {
         viewModelScope.launch { refreshAndAwait() }
     }

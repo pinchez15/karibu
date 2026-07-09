@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
 import com.karibuhealth.app.data.repository.CareTaskRepository
+import com.karibuhealth.app.data.repository.WorklistRepository
 import com.karibuhealth.app.data.sync.SyncEngine
 import com.karibuhealth.app.domain.model.CareTaskItem
 import com.karibuhealth.app.domain.model.MyDraftItem

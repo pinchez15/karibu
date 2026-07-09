@@ -1143,10 +1143,6 @@ data class OpdPatientTodayDto(
     @SerialName("pharmacy_order_submitted_at") val pharmacyOrderSubmittedAt: String? = null,
     @SerialName("note_status") val noteStatus: String? = null,
     @SerialName("visit_date") val visitDate: String,
-    @SerialName("queue_position") val queuePosition: Int? = null,
-    @SerialName("checked_in_at") val checkedInAt: String? = null,
-    val priority: String? = null,
-    @SerialName("wait_minutes") val waitMinutes: Int? = null,
 )
 
 @Serializable
