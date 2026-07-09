@@ -19,10 +19,9 @@ export default async function AdmissionChartPage({
   const chart = await loadAdmissionChart(id, staff.clinic_id)
   if (!chart) notFound()
 
-  if (chart.admission.status !== 'active') {
-    redirect('/dashboard/inpatient')
-  }
-
+  // Closed admissions (discharged/transferred) render read-only — B1 links
+  // here from the Discharged tab. AdmissionChartClient hides write actions
+  // itself based on admission.status.
   return (
     <AdmissionChartClient
       admission={chart.admission}

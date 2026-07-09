@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
-import { ArrowLeft, MoreVertical } from 'lucide-react'
+import { ArrowLeft, MoreVertical, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -81,12 +81,16 @@ export function AdmissionChartClient(props: ChartProps) {
   const ageYears = ageYearsFromDob(admission.patient.date_of_birth)
   const latestObs = props.observations[0] ?? null
   const isMaternity = admission.ward === 'maternity'
+  // B1/B3: closed (discharged/transferred) admissions render read-only — the
+  // ward reporting/print work needs to view them, but ordering, discharge,
+  // and referral only make sense for an active admission.
+  const isActive = admission.status === 'active'
 
   const tabDefs = (
     [
       ['rounds', 'Rounds'],
       ['meds', 'All meds'],
-      ['orders', 'Lab / Rx'],
+      ...(isActive ? [['orders', 'Lab / Rx'] as const] : []),
       ...(isMaternity ? [['maternity', 'Maternity'] as const] : []),
       ['notes', 'Notes'],
     ] as const
@@ -133,20 +137,29 @@ export function AdmissionChartClient(props: ChartProps) {
               .join(' · ')}
           </p>
         </div>
-        <div className="relative">
-          <button type="button" onClick={() => setMenuOpen((v) => !v)} className="rounded-md p-2 text-muted-foreground hover:bg-background">
-            <MoreVertical className="h-5 w-5" />
-          </button>
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-md border border-border bg-card py-1 shadow-lg">
-                <button type="button" className="w-full px-3 py-2 text-left text-sm hover:bg-background" onClick={() => { setMenuOpen(false); setShowRefer(true) }}>Refer out</button>
-                <button type="button" className="w-full px-3 py-2 text-left text-sm hover:bg-background" onClick={() => { setMenuOpen(false); setShowDischarge(true) }}>Discharge</button>
-              </div>
-            </>
-          )}
-        </div>
+        <Link
+          href={`/dashboard/inpatient/${admission.id}/print?full=1`}
+          className="rounded-md p-1.5 text-muted-foreground hover:bg-background"
+          title="Print full chart"
+        >
+          <Printer className="h-5 w-5" />
+        </Link>
+        {isActive && (
+          <div className="relative">
+            <button type="button" onClick={() => setMenuOpen((v) => !v)} className="rounded-md p-2 text-muted-foreground hover:bg-background">
+              <MoreVertical className="h-5 w-5" />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-md border border-border bg-card py-1 shadow-lg">
+                  <button type="button" className="w-full px-3 py-2 text-left text-sm hover:bg-background" onClick={() => { setMenuOpen(false); setShowRefer(true) }}>Refer out</button>
+                  <button type="button" className="w-full px-3 py-2 text-left text-sm hover:bg-background" onClick={() => { setMenuOpen(false); setShowDischarge(true) }}>Discharge</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Admission reason — always visible */}
@@ -169,32 +182,36 @@ export function AdmissionChartClient(props: ChartProps) {
         </div>
       )}
 
-      {/* Clinical dock — vitals, due meds, IVs (no scroll) */}
-      <div className="shrink-0 px-4 py-3 space-y-2 border-b border-border bg-card/50">
-        <QuickVitalsBar
-          admissionId={admission.id}
-          latest={latestObs}
-          onSaved={refresh}
-          onError={setError}
-        />
-        <div className="grid gap-2 lg:grid-cols-2">
-          <DueNowPanel
+      {/* Clinical dock — vitals, due meds, IVs (no scroll). Active admissions only. */}
+      {isActive ? (
+        <div className="shrink-0 px-4 py-3 space-y-2 border-b border-border bg-card/50">
+          <QuickVitalsBar
             admissionId={admission.id}
-            orders={props.medicationOrders}
-            admins={props.medicationAdmins}
-            onRefresh={refresh}
-            onError={setError}
-            onAddMed={() => setShowMed(true)}
-          />
-          <IvDripPanel
-            admissionId={admission.id}
-            infusions={props.ivInfusions}
-            checks={props.ivInfusionChecks}
-            onRefresh={refresh}
+            latest={latestObs}
+            onSaved={refresh}
             onError={setError}
           />
+          <div className="grid gap-2 lg:grid-cols-2">
+            <DueNowPanel
+              admissionId={admission.id}
+              orders={props.medicationOrders}
+              admins={props.medicationAdmins}
+              onRefresh={refresh}
+              onError={setError}
+              onAddMed={() => setShowMed(true)}
+            />
+            <IvDripPanel
+              admissionId={admission.id}
+              infusions={props.ivInfusions}
+              checks={props.ivInfusionChecks}
+              onRefresh={refresh}
+              onError={setError}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <DischargeSummaryBanner admission={admission} />
+      )}
 
       {/* Tabs — only this section scrolls */}
       <div className="flex shrink-0 border-b border-border px-4 gap-1 pt-1">
@@ -218,6 +235,7 @@ export function AdmissionChartClient(props: ChartProps) {
           <RoundsTab
             admissionId={admission.id}
             observations={props.observations}
+            readOnly={!isActive}
             onSaved={refresh}
             onError={setError}
           />
@@ -227,6 +245,7 @@ export function AdmissionChartClient(props: ChartProps) {
             admissionId={admission.id}
             orders={props.medicationOrders.filter((o) => o.active)}
             admins={props.medicationAdmins}
+            readOnly={!isActive}
             onAdd={() => setShowMed(true)}
             onStop={(orderId) => {
               void stopMedicationOrder(admission.id, orderId).then((r) => {
@@ -236,7 +255,7 @@ export function AdmissionChartClient(props: ChartProps) {
             }}
           />
         )}
-        {tab === 'orders' && props.visit && (
+        {tab === 'orders' && isActive && props.visit && (
           <OrdersTab visit={props.visit} staffRole={props.staffRole} onSubmitted={refresh} />
         )}
         {tab === 'maternity' && isMaternity && (
@@ -247,14 +266,52 @@ export function AdmissionChartClient(props: ChartProps) {
           />
         )}
         {tab === 'notes' && (
-          <NotesTab notes={props.notes} onAdd={() => setShowNote(true)} />
+          <NotesTab notes={props.notes} readOnly={!isActive} onAdd={() => setShowNote(true)} />
         )}
       </div>
 
-      <AddMedicationSheet open={showMed} onOpenChange={setShowMed} admissionId={admission.id} onSaved={() => { setShowMed(false); refresh() }} onError={setError} />
-      <AddNoteSheet open={showNote} onOpenChange={setShowNote} admissionId={admission.id} onSaved={() => { setShowNote(false); refresh() }} onError={setError} />
-      <DischargeSheet open={showDischarge} onOpenChange={setShowDischarge} admissionId={admission.id} onDone={() => { router.push('/dashboard/inpatient'); router.refresh() }} onError={setError} />
-      <ReferSheet open={showRefer} onOpenChange={setShowRefer} admissionId={admission.id} onDone={() => { router.push('/dashboard/inpatient'); router.refresh() }} onError={setError} />
+      {isActive && (
+        <>
+          <AddMedicationSheet open={showMed} onOpenChange={setShowMed} admissionId={admission.id} onSaved={() => { setShowMed(false); refresh() }} onError={setError} />
+          <AddNoteSheet open={showNote} onOpenChange={setShowNote} admissionId={admission.id} onSaved={() => { setShowNote(false); refresh() }} onError={setError} />
+          <DischargeSheet open={showDischarge} onOpenChange={setShowDischarge} admissionId={admission.id} onDone={() => { router.push('/dashboard/inpatient'); router.refresh() }} onError={setError} />
+          <ReferSheet open={showRefer} onOpenChange={setShowRefer} admissionId={admission.id} onDone={() => { router.push('/dashboard/inpatient'); router.refresh() }} onError={setError} />
+        </>
+      )}
+    </div>
+  )
+}
+
+function DischargeSummaryBanner({ admission }: { admission: AdmissionDetail }) {
+  const fmt = (iso: string | null) => {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    return Number.isNaN(d.getTime())
+      ? '—'
+      : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+  const statusLabel = admission.status === 'transferred' ? 'Transferred' : 'Discharged'
+
+  return (
+    <div className="shrink-0 px-4 py-3 border-b border-border bg-secondary/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {statusLabel} · {fmt(admission.discharged_at)}
+          </p>
+          <p className="text-sm text-foreground capitalize">
+            {admission.outcome ?? 'Outcome not recorded'}
+            {admission.disposition ? ` · ${admission.disposition}` : ''}
+          </p>
+        </div>
+        <Link
+          href={`/dashboard/inpatient/${admission.id}/print`}
+          className="inline-flex items-center gap-1.5 rounded-md bg-cobalt px-3 py-1.5 text-xs font-semibold text-white hover:bg-cobalt/90"
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Print discharge summary
+        </Link>
+      </div>
     </div>
   )
 }
@@ -262,11 +319,13 @@ export function AdmissionChartClient(props: ChartProps) {
 function RoundsTab({
   admissionId,
   observations,
+  readOnly,
   onSaved,
   onError,
 }: {
   admissionId: string
   observations: AdmissionObservation[]
+  readOnly?: boolean
   onSaved: () => void
   onError: (msg: string) => void
 }) {
@@ -298,24 +357,26 @@ function RoundsTab({
 
   return (
     <div className="space-y-3 max-w-xl">
-      <div className="rounded-lg border border-border p-3 space-y-2">
-        <p className="text-xs font-semibold">Full round (AVPU + danger signs)</p>
-        <div className="flex gap-2">
-          {(['A', 'V', 'P', 'U'] as const).map((v) => (
-            <button key={v} type="button" onClick={() => setAvpu(avpu === v ? null : v)} className={cn('rounded-md border px-3 py-1 text-sm', avpu === v ? 'border-cobalt bg-cobalt-soft text-cobalt' : 'border-border')}>{v}</button>
-          ))}
+      {!readOnly && (
+        <div className="rounded-lg border border-border p-3 space-y-2">
+          <p className="text-xs font-semibold">Full round (AVPU + danger signs)</p>
+          <div className="flex gap-2">
+            {(['A', 'V', 'P', 'U'] as const).map((v) => (
+              <button key={v} type="button" onClick={() => setAvpu(avpu === v ? null : v)} className={cn('rounded-md border px-3 py-1 text-sm', avpu === v ? 'border-cobalt bg-cobalt-soft text-cobalt' : 'border-border')}>{v}</button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-1 text-xs">
+            {([['notFeeding', 'Not feeding'], ['vomiting', 'Vomiting all'], ['convulsions', 'Convulsions'], ['lethargic', 'Lethargic']] as const).map(([k, label]) => (
+              <label key={k} className="flex items-center gap-1.5">
+                <input type="checkbox" checked={flags[k]} onChange={(e) => setFlags((f) => ({ ...f, [k]: e.target.checked }))} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Round note" className="h-8 text-sm" />
+          <Button size="sm" disabled={pending} onClick={saveFullRound}>Save round details</Button>
         </div>
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          {([['notFeeding', 'Not feeding'], ['vomiting', 'Vomiting all'], ['convulsions', 'Convulsions'], ['lethargic', 'Lethargic']] as const).map(([k, label]) => (
-            <label key={k} className="flex items-center gap-1.5">
-              <input type="checkbox" checked={flags[k]} onChange={(e) => setFlags((f) => ({ ...f, [k]: e.target.checked }))} />
-              {label}
-            </label>
-          ))}
-        </div>
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Round note" className="h-8 text-sm" />
-        <Button size="sm" disabled={pending} onClick={saveFullRound}>Save round details</Button>
-      </div>
+      )}
       <div className="space-y-2">
         {observations.length === 0 ? (
           <p className="text-sm text-muted-foreground">No observations yet.</p>
@@ -330,18 +391,20 @@ function RoundsTab({
 function MedsTab({
   orders,
   admins,
+  readOnly,
   onAdd,
   onStop,
 }: {
   admissionId: string
   orders: MedicationOrder[]
   admins: MedicationAdmin[]
+  readOnly?: boolean
   onAdd: () => void
   onStop: (orderId: string) => void
 }) {
   return (
     <div className="space-y-2 max-w-xl">
-      <Button variant="outline" size="sm" onClick={onAdd}>Add medication</Button>
+      {!readOnly && <Button variant="outline" size="sm" onClick={onAdd}>Add medication</Button>}
       {orders.length === 0 ? (
         <p className="text-sm text-muted-foreground">No active medications.</p>
       ) : (
@@ -351,7 +414,9 @@ function MedsTab({
             <div key={o.id} className="rounded-lg border border-border p-3 text-sm">
               <div className="flex justify-between gap-2">
                 <span className="font-semibold">{o.drug_name}</span>
-                <button type="button" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => onStop(o.id)}>Stop</button>
+                {!readOnly && (
+                  <button type="button" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => onStop(o.id)}>Stop</button>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">{[o.dose, o.route, o.frequency].filter(Boolean).join(' · ')}</p>
               {last && <p className="text-[10px] text-muted-foreground mt-1">Last: {last.status} {timeAgo(last.administered_at)}</p>}
@@ -384,10 +449,10 @@ function OrdersTab({
   )
 }
 
-function NotesTab({ notes, onAdd }: { notes: AdmissionNote[]; onAdd: () => void }) {
+function NotesTab({ notes, readOnly, onAdd }: { notes: AdmissionNote[]; readOnly?: boolean; onAdd: () => void }) {
   return (
     <div className="space-y-2 max-w-xl">
-      <Button variant="outline" size="sm" onClick={onAdd}>Add note</Button>
+      {!readOnly && <Button variant="outline" size="sm" onClick={onAdd}>Add note</Button>}
       {notes.length === 0 ? (
         <p className="text-sm text-muted-foreground">No progress notes yet.</p>
       ) : (
