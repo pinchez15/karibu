@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.FinalizeClinicalEncounterRequest
 import com.karibuhealth.app.data.remote.dto.RecordLabResultRequest
+import com.karibuhealth.app.data.remote.dto.SubmitLabOrderSyncPayload
 import com.karibuhealth.app.util.NetworkMonitor
 import io.mockk.*
 import kotlinx.coroutines.CancellationException
@@ -584,6 +585,66 @@ class SyncEngineTest {
         coVerify(exactly = 0) {
             syncQueueDao.update(match { it.id == "sync-lab-1" && it.status == "failed" })
         }
+    }
+
+    @Test
+    fun `topologicalSortRunsCreatorBeforeOrder`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val visitId = "visit-1"
+        val checkInPayload =
+            """{"rpc":"check_in_patient","params":{"p_patient_id":"p1","p_clinic_id":"c1","p_priority":"normal","p_department":"opd"}}"""
+        val checkInEntry = makeSyncEntry(
+            id = "checkin-1",
+            operationType = "queue_op",
+            entityId = visitId,
+            payload = checkInPayload,
+        ).copy(createdAt = 100L)
+        val orderPayload = json.encodeToString(
+            SubmitLabOrderSyncPayload.serializer(),
+            SubmitLabOrderSyncPayload(
+                visitId = visitId,
+                testsOrdered = "CBC",
+                labStatus = "pending",
+                labTestResultsJson = "[]",
+                clientOpId = "order-1",
+            ),
+        )
+        val orderEntry = makeSyncEntry(
+            id = "order-1",
+            operationType = "submit_lab_order",
+            entityId = visitId,
+            payload = orderPayload,
+            dependsOn = "checkin-1",
+        ).copy(createdAt = 50L)
+
+        val states = mutableMapOf(
+            "checkin-1" to checkInEntry,
+            "order-1" to orderEntry,
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(orderEntry, checkInEntry)
+        coEvery { syncQueueDao.getById(any()) } answers { states[firstArg()] }
+        coEvery { syncQueueDao.update(any()) } answers {
+            val updated = firstArg<SyncQueueEntry>()
+            states[updated.id] = updated
+        }
+        coEvery { syncQueueDao.getPending() } returns emptyList()
+        coEvery { syncQueueDao.countActiveForEntity(any(), any()) } returns 0
+
+        val callOrder = mutableListOf<String>()
+        coEvery { supabaseApi.checkInPatient(any()) } answers {
+            callOrder.add("check_in")
+            Response.success("\"$visitId\"".toResponseBody())
+        }
+        coEvery { supabaseApi.updateVisit(any(), any()) } answers {
+            callOrder.add("submit_lab_order")
+            emptyList()
+        }
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(2, result)
+        assertEquals(listOf("check_in", "submit_lab_order"), callOrder)
     }
 
     // ---------------------------------------------------------------------

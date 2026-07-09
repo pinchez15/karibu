@@ -10,6 +10,7 @@ import com.karibuhealth.app.data.local.db.entity.PatientNoteEntity
 import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.remote.api.SupabaseApi
+import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.remote.dto.AddendProviderNoteRequest
 import com.karibuhealth.app.data.remote.dto.AmendProviderNoteRequest
@@ -40,6 +41,7 @@ class NoteRepository @Inject constructor(
     private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
     private val syncQueueHelper: SyncQueueHelper,
+    private val syncDependencyResolver: SyncDependencyResolver,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val json: Json,
@@ -52,12 +54,6 @@ class NoteRepository @Inject constructor(
 
     fun getPatientNote(visitId: String): Flow<PatientNote?> =
         patientNoteDao.getByVisitId(visitId).map { it?.toDomain() }
-
-    private suspend fun getPendingVisitSyncDependency(visitId: String): String? {
-        return syncQueueDao.getByEntityAndOperation(visitId, "create_visit")
-            ?.takeIf { it.status != "completed" }
-            ?.id
-    }
 
     /**
      * Flip the local visit row back to synced ONLY when no active outbox
@@ -171,7 +167,7 @@ class NoteRepository @Inject constructor(
 
         // Visit-tied path: linearize against any pending create_visit sync.
         val effectivePredecessor = predecessorSyncId
-            ?: entity.visitId?.let { getPendingVisitSyncDependency(it) }
+            ?: entity.visitId?.let { syncDependencyResolver.pendingVisitDependency(it) }
 
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
@@ -604,7 +600,7 @@ class NoteRepository @Inject constructor(
             clientOpId = syncEntryId,
         )
 
-        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+        val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
@@ -669,7 +665,7 @@ class NoteRepository @Inject constructor(
             content = content,
         )
 
-        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+        val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
@@ -732,7 +728,7 @@ class NoteRepository @Inject constructor(
             testsOrdered = testsOrdered,
             structuredData = structuredData,
         )
-        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+        val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
         if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {

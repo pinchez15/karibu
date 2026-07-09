@@ -7,8 +7,10 @@ import com.karibuhealth.app.data.local.db.dao.PatientVitalsDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.datastore.AuthTokenStore
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.PatientVitalsCreateDto
+import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.domain.model.PatientVitals
 import com.karibuhealth.app.util.NetworkMonitor
@@ -27,8 +29,10 @@ class VitalsRepository @Inject constructor(
     private val patientVitalsDao: PatientVitalsDao,
     private val syncQueueDao: SyncQueueDao,
     private val syncQueueHelper: SyncQueueHelper,
+    private val syncDependencyResolver: SyncDependencyResolver,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val authTokenStore: AuthTokenStore,
     private val json: Json,
 ) {
@@ -42,13 +46,6 @@ class VitalsRepository @Inject constructor(
         withContext(Dispatchers.IO) {
             patientVitalsDao.getLatestByVisitOnce(visitId)?.toDomain()
         }
-
-    private suspend fun getPendingVisitSyncDependency(visitId: String?): String? {
-        if (visitId == null) return null
-        return syncQueueDao.getByEntityAndOperation(visitId, "create_visit")
-            ?.takeIf { it.status != "completed" }
-            ?.id
-    }
 
     /**
      * Record a vitals reading. Patient is required; visit_id is optional
@@ -93,11 +90,12 @@ class VitalsRepository @Inject constructor(
         patientVitalsDao.upsert(vitals.toEntity(isSynced = false))
 
         val rpcBody = vitals.toCreateDto()
-        val effectivePredecessor = predecessorSyncId ?: getPendingVisitSyncDependency(visitId)
+        val effectivePredecessor = predecessorSyncId
+            ?: visitId?.let { syncDependencyResolver.pendingVisitDependency(it) }
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcInsertPatientVitals(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcInsertPatientVitals(rpcBody) }
                 if (response.isSuccessful) {
                     patientVitalsDao.updateSyncState(vitals.id, true)
                     return@withContext vitals to null

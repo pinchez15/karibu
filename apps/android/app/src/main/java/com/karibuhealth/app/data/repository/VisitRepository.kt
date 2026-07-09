@@ -27,6 +27,7 @@ import com.karibuhealth.app.data.remote.dto.GetOpdPatientsTodayRequest
 import com.karibuhealth.app.data.remote.dto.SubmitLabOrderSyncPayload
 import com.karibuhealth.app.data.remote.dto.SubmitPharmacyOrderRequest
 import com.karibuhealth.app.data.remote.dto.VisitCreateRpcDto
+import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.sync.VisitMerge
 import com.karibuhealth.app.domain.LabQueue
@@ -61,6 +62,7 @@ class VisitRepository @Inject constructor(
     private val visitDao: VisitDao,
     private val syncQueueDao: SyncQueueDao,
     private val syncQueueHelper: SyncQueueHelper,
+    private val syncDependencyResolver: SyncDependencyResolver,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
     private val prescriptionOrderRepository: PrescriptionOrderRepository,
@@ -486,7 +488,7 @@ class VisitRepository @Inject constructor(
             clientOpId = syncEntryId,
         )
 
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isOnline() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
             try {
                 val response = supabaseApi.rpcSubmitPharmacyOrder(rpcBody)
                 if (response.isSuccessful) {
@@ -499,6 +501,7 @@ class VisitRepository @Inject constructor(
             }
         }
 
+        val visitDependency = syncDependencyResolver.pendingVisitDependency(visitId)
         val syncEntry = SyncQueueEntry(
             id = syncEntryId,
             operationType = "rpc_submit_pharmacy_order",
@@ -508,6 +511,7 @@ class VisitRepository @Inject constructor(
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
+            dependsOn = visitDependency,
         )
         syncQueueHelper.enqueue(syncEntry)
     }
@@ -694,7 +698,7 @@ class VisitRepository @Inject constructor(
             )
             val payloadJson = json.encodeToString(SubmitLabOrderSyncPayload.serializer(), payload)
 
-            if (networkMonitor.isOnline()) {
+            if (networkMonitor.isOnline() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
                 runCatching {
                     supabaseApi.updateVisit(
                         visitId,
@@ -711,6 +715,7 @@ class VisitRepository @Inject constructor(
                 }
             }
 
+            val visitDependency = syncDependencyResolver.pendingVisitDependency(visitId)
             val syncEntry = SyncQueueEntry(
                 id = syncEntryId,
                 operationType = "submit_lab_order",
@@ -720,6 +725,7 @@ class VisitRepository @Inject constructor(
                 status = "pending",
                 attempts = 0,
                 createdAt = System.currentTimeMillis(),
+                dependsOn = visitDependency,
             )
             syncQueueHelper.enqueue(syncEntry)
             Result.success(Unit)
@@ -1023,7 +1029,9 @@ class VisitRepository @Inject constructor(
         visitDao.updateSyncState(visitId, false)
         val syncEntryId = UUID.randomUUID().toString()
 
-        if (networkMonitor.isOnline()) {
+        val visitDependency = syncDependencyResolver.pendingVisitDependency(visitId)
+
+        if (networkMonitor.isOnline() && visitDependency == null) {
             try {
                 val response = onlineCall(syncEntryId)
                 if (response.isSuccessful) {
@@ -1116,6 +1124,7 @@ class VisitRepository @Inject constructor(
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
+            dependsOn = visitDependency,
         )
         syncQueueHelper.enqueue(syncEntry)
     }
@@ -1140,7 +1149,10 @@ class VisitRepository @Inject constructor(
 
         val rpcBody = MarkDocumentationCompleteDto(visitId = visitId)
 
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        val effectivePredecessor = predecessorSyncId
+            ?: syncDependencyResolver.pendingVisitDependency(visitId)
+
+        if (networkMonitor.isOnline() && effectivePredecessor == null) {
             try {
                 val response = supabaseApi.rpcMarkDocumentationComplete(rpcBody)
                 if (response.isSuccessful) {
@@ -1161,7 +1173,7 @@ class VisitRepository @Inject constructor(
             status = "pending",
             attempts = 0,
             createdAt = System.currentTimeMillis(),
-            dependsOn = predecessorSyncId,
+            dependsOn = effectivePredecessor,
         )
         syncQueueHelper.enqueue(syncEntry)
     }
