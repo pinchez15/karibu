@@ -15,6 +15,26 @@ export type CensusRow = {
   last_observed_at: string | null
 }
 
+/** rpc_discharged_admissions row — same shape as rpc_active_admissions (CensusRow)
+ *  plus the close-out fields. Ordered discharged_at DESC by the RPC. */
+export type DischargedRow = CensusRow & {
+  discharged_at: string
+  outcome: string
+  disposition: string | null
+  discharge_notes: string | null
+  /** 'discharged' | 'transferred' — admissions.status at close-out. */
+  status: string
+}
+
+export type DischargeOutcomeFilter =
+  | 'all'
+  | 'recovered'
+  | 'improved'
+  | 'unchanged'
+  | 'referred'
+  | 'absconded'
+  | 'died'
+
 export type AdmissionDetail = {
   id: string
   patient_id: string
@@ -33,6 +53,12 @@ export type AdmissionDetail = {
   presenting_status: string | null
   admitted_at: string
   status: string
+  /** Close-out fields — null while status is 'active'. See migration 055. */
+  discharged_at: string | null
+  outcome: string | null
+  disposition: string | null
+  discharge_notes: string | null
+  discharged_by_staff: { display_name: string | null } | null
   patient: {
     id: string
     first_name: string | null

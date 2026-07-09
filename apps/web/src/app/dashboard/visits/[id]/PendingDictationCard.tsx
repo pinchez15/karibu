@@ -28,6 +28,7 @@ import {
 import { submitPharmacyOrder } from '../actions'
 import { draftLinesToRpcInput } from '@/components/prescription/PrescriptionComposer'
 import { prescriptionLinesToDrafts } from '@/components/prescription/prescription-line-mappers'
+import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
 import type { PrescriptionOrderLine, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 
@@ -119,6 +120,17 @@ export function PendingDictationCard({
   const draftAiQueuedRef = useRef(false)
   const lastSavedTranscriptRef = useRef<string>(sectionsToClinicianText(sections))
   const inFlightAutosaveRef = useRef<Promise<void> | null>(null)
+  // "Latest ref" for flushPendingAutosave so the unmount cleanup and the
+  // pagehide/visibilitychange listener (registered once, deps: []) can
+  // always reach the current closure without re-subscribing on every
+  // keystroke. Assigning during render is intentional here (see React's
+  // "latest ref" pattern) — it has no rendering side effects.
+  const flushPendingAutosaveRef = useRef<() => Promise<void>>(async () => {})
+  // Guards against the unmount cleanup and the pagehide/visibilitychange
+  // listener both firing a teardown flush for the same pending edit. Reset
+  // whenever new dirty content is scheduled so a later hide/unmount still
+  // gets its own flush.
+  const teardownFlushedRef = useRef(false)
 
   const transcript = sectionsToClinicianText(sections)
   const wordCount = transcript.trim().split(/\s+/).filter(Boolean).length
@@ -173,6 +185,10 @@ export function PendingDictationCard({
     if (trimmed.length < 3) return
     if (trimmed === lastSavedTranscriptRef.current.trim()) return
 
+    // New unsaved content is scheduled — re-arm the teardown-flush guard so
+    // a later hide/unmount (after this one already fired once) still flushes.
+    teardownFlushedRef.current = false
+
     autosaveTimerRef.current = setTimeout(() => {
       void persistDraft(sections)
     }, AUTOSAVE_DEBOUNCE_MS)
@@ -222,6 +238,8 @@ export function PendingDictationCard({
       }
     }
   }, [sections, transcript, persistDraft])
+
+  flushPendingAutosaveRef.current = flushPendingAutosave
 
   const transcribeBlob = useCallback(
     async (blob: Blob, target: NoteSectionKey) => {
@@ -335,9 +353,39 @@ export function PendingDictationCard({
   useEffect(() => {
     return () => {
       isRecordingRef.current = false
-      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
       if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
       streamRef.current?.getTracks().forEach((t) => t.stop())
+      // Navigating away (or any unmount) within the 1500ms autosave debounce
+      // window used to CANCEL the pending save via clearTimeout alone,
+      // silently dropping whatever the clinician just typed. Flush instead
+      // of just clearing — fire-and-forget, cleanup functions can't be async.
+      if (!teardownFlushedRef.current) {
+        teardownFlushedRef.current = true
+        void flushPendingAutosaveRef.current()
+      }
+    }
+  }, [])
+
+  // Covers the tab-close / browser-navigation case, which the unmount
+  // cleanup above doesn't see (React never unmounts before the page goes
+  // away). Best-effort only: server actions can't use navigator.sendBeacon,
+  // so this is a plain async call that may be aborted if the browser tears
+  // the page down before the request completes — it still fixes the far
+  // more common in-app navigation case via the unmount cleanup.
+  useEffect(() => {
+    const flushOnHide = () => {
+      if (teardownFlushedRef.current) return
+      teardownFlushedRef.current = true
+      void flushPendingAutosaveRef.current()
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushOnHide()
+    }
+    window.addEventListener('pagehide', flushOnHide)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.removeEventListener('pagehide', flushOnHide)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])
 
@@ -444,6 +492,9 @@ export function PendingDictationCard({
     !pharmacyReturned &&
     !isRecording &&
     !isTranscribing
+
+  const canOrderLabs =
+    staffRole != null && ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole)
 
   const canResubmitPharmacy =
     staffRole &&
@@ -615,6 +666,17 @@ export function PendingDictationCard({
       })}
         </div>
       </details>
+
+      {canOrderLabs && (
+        <details className="rounded-lg border border-line-soft">
+          <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Order lab tests
+          </summary>
+          <div className="px-3 pb-3 pt-1">
+            <VisitLabPanel visitId={visitId} staffRole={staffRole ?? null} />
+          </div>
+        </details>
+      )}
 
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

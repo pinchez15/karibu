@@ -194,6 +194,7 @@ fun VisitDetailsScreen(
                     visit = visit,
                     visitId = visitId,
                     hasLocalDraft = uiState.hasLocalDraft,
+                    pendingSyncCount = uiState.pendingSyncCount,
                     onNavigateToDictation = onNavigateToDictation,
                     onNavigateToReview = onNavigateToReview,
                 )
@@ -1022,18 +1023,27 @@ private fun SyncCard(
  * Status-driven bottom actions on visit-detail. Payment is handled by
  * billing / front desk (Billing home + needs_payment worklist), not here.
  *
- *   pending + !doc complete → primary "Write note"
- *   pending +  doc complete → primary disabled "AI checking…"
- *   sent                    → primary "Edit note"
- *   review                  → primary "Review notes"
- *   error                   → primary "Edit and retry"
- *   completed               → primary "Edit note"
+ *   pending + !doc complete                        → primary "Write note"
+ *   pending +  doc complete + pending outbox > 0    → primary disabled "Waiting to sync…"
+ *   pending +  doc complete + pending outbox == 0   → primary disabled "AI checking…"
+ *   sent                                            → primary "Edit note"
+ *   review                                          → primary "Review notes"
+ *   error                                           → primary "Edit and retry"
+ *   completed                                       → primary "Edit note"
+ *
+ * The doc-complete-but-pending sub-state used to always read "AI checking…",
+ * which lied indefinitely when the doc-complete/sign RPC was still sitting
+ * in the local sync outbox (e.g. airplane mode) — the AI never started
+ * because the request hadn't left the device yet. `pendingSyncCount` (from
+ * `SyncQueueDao.getPendingCountForVisit`) distinguishes "waiting on the
+ * network" from "waiting on the server".
  */
 @Composable
 private fun VisitDetailsBottomAction(
     visit: Visit,
     visitId: String,
     hasLocalDraft: Boolean,
+    pendingSyncCount: Int,
     onNavigateToDictation: (String, Boolean, DictationIncorporate?) -> Unit,
     onNavigateToReview: (String) -> Unit,
 ) {
@@ -1054,7 +1064,7 @@ private fun VisitDetailsBottomAction(
         }
         visit.status == VisitStatus.pending && docComplete -> {
             primary = BottomActionConfig(
-                label = "AI checking…",
+                label = pendingDocCompleteLabel(pendingSyncCount),
                 onClick = {},
                 icon = null,
                 enabled = false,
@@ -1159,6 +1169,17 @@ private data class BottomActionConfig(
     val icon: androidx.compose.ui.graphics.vector.ImageVector?,
     val enabled: Boolean,
 )
+
+/**
+ * Label for the disabled primary action while a visit is `pending` with
+ * `documentationComplete = true`. Distinguishes "still in the local outbox"
+ * (nothing has reached the server yet, so the AI hasn't started) from
+ * "genuinely with the AI" (the sign RPC synced; the server is structuring
+ * the note). Extracted so the mapping is unit-testable without standing up
+ * the full Composable or ViewModel.
+ */
+internal fun pendingDocCompleteLabel(pendingSyncCount: Int): String =
+    if (pendingSyncCount > 0) "Waiting to sync…" else "AI checking…"
 
 private fun hasAnyReading(v: PatientVitals): Boolean {
     return v.tempC != null || v.bpSystolic != null || v.bpDiastolic != null ||

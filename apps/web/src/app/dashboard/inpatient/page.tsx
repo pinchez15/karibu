@@ -3,17 +3,31 @@ import Link from 'next/link'
 import { getStaff } from '@/lib/auth'
 import { WebTopBar } from '@/components/web-shell'
 import { WardCensusClient } from '@/components/inpatient/WardCensusClient'
-import { loadActiveAdmissions } from './actions'
+import { DischargedAdmissionsClient } from '@/components/inpatient/DischargedAdmissionsClient'
+import { InpatientSectionTabs } from '@/components/inpatient/InpatientSectionTabs'
+import { loadActiveAdmissions, loadDischargedAdmissions } from './actions'
 import { Plus } from 'lucide-react'
 
 const CLINICAL = new Set(['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife', 'nursing_assistant'])
+
+/** B1 default window for the Discharged tab: last 30 days. */
+function defaultDischargedRange(): { from: string; to: string } {
+  const to = new Date()
+  const from = new Date()
+  from.setDate(from.getDate() - 30)
+  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) }
+}
 
 export default async function InpatientPage() {
   const staff = await getStaff()
   if (!staff) redirect('/')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
-  const rows = await loadActiveAdmissions(staff.clinic_id)
+  const { from, to } = defaultDischargedRange()
+  const [rows, dischargedRows] = await Promise.all([
+    loadActiveAdmissions(staff.clinic_id),
+    loadDischargedAdmissions(staff.clinic_id, from, to),
+  ])
 
   return (
     <>
@@ -38,7 +52,18 @@ export default async function InpatientPage() {
           </div>
         }
       />
-      <WardCensusClient rows={rows} />
+      <InpatientSectionTabs
+        active={<WardCensusClient rows={rows} />}
+        discharged={
+          <DischargedAdmissionsClient
+            clinicId={staff.clinic_id}
+            initialRows={dischargedRows}
+            initialFrom={from}
+            initialTo={to}
+          />
+        }
+        dischargedCount={dischargedRows.length}
+      />
     </>
   )
 }

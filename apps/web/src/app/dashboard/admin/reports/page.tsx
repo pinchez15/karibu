@@ -167,6 +167,12 @@ export default async function ReportsOverviewPage() {
               href="/dashboard/admin/reports/care-delivered"
             />
             <ReportTile
+              tag="COMPLIANCE"
+              title="Inpatient monthly summary (HMIS 108 alignment pending verification)"
+              desc="Admissions, discharge outcomes, deliveries, and bed-days by month."
+              href="/dashboard/admin/reports/inpatient-monthly"
+            />
+            <ReportTile
               tag="FINANCIAL"
               title="Clinic profitability"
               desc="Revenue and charges by service line this month."

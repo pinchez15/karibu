@@ -10,6 +10,7 @@ import type {
   AdmissionObservation,
   CensusRow,
   DeliveryDetail,
+  DischargedRow,
   InpatientVisitContext,
   IvInfusion,
   IvInfusionCheck,
@@ -60,6 +61,31 @@ export async function loadActiveAdmissions(clinicId: string): Promise<CensusRow[
   return (data ?? []) as CensusRow[]
 }
 
+/**
+ * Discharged/transferred admissions in a date range (B1 — Discharged tab).
+ * Default range on dashboard/inpatient is the last 30 days; callers may widen
+ * it or filter by outcome. Ordered discharged_at DESC by the RPC.
+ */
+export async function loadDischargedAdmissions(
+  clinicId: string,
+  from: string,
+  to: string,
+  outcome?: string | null,
+): Promise<DischargedRow[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc('rpc_discharged_admissions', {
+    p_clinic_id: clinicId,
+    p_from: from,
+    p_to: to,
+    p_outcome: outcome && outcome !== 'all' ? outcome : null,
+  })
+  if (error) {
+    console.error('rpc_discharged_admissions failed:', error)
+    return []
+  }
+  return (data ?? []) as DischargedRow[]
+}
+
 export async function loadAdmissionChart(admissionId: string, clinicId: string) {
   const supabase = createServiceClient()
 
@@ -70,6 +96,8 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
       id, patient_id, clinic_id, ward, bed_label, chief_complaint,
       admission_type, weight_kg, provisional_dx, gravida, para, edd,
       gestation_weeks, hiv_status, presenting_status, admitted_at, status,
+      discharged_at, outcome, disposition, discharge_notes,
+      discharged_by_staff:staff!admissions_discharged_by_fkey(display_name),
       patient:patients(id, first_name, last_name, display_name, date_of_birth, sex, patient_number)
     `,
     )
@@ -81,6 +109,10 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
 
   const patient = Array.isArray(admission.patient) ? admission.patient[0] : admission.patient
   if (!patient) return null
+
+  const dischargedByStaff = Array.isArray(admission.discharged_by_staff)
+    ? admission.discharged_by_staff[0] ?? null
+    : (admission.discharged_by_staff as { display_name: string | null } | null)
 
   const obsPromise = supabase.rpc('rpc_admission_observations', { p_admission_id: admissionId })
   const ordersPromise = supabase.rpc('rpc_admission_medication_orders', { p_admission_id: admissionId })
@@ -128,6 +160,7 @@ export async function loadAdmissionChart(admissionId: string, clinicId: string) 
     admission: {
       ...admission,
       patient,
+      discharged_by_staff: dischargedByStaff,
     } as AdmissionDetail,
     observations: (observations ?? []) as AdmissionObservation[],
     medicationOrders: (orders ?? []) as MedicationOrder[],

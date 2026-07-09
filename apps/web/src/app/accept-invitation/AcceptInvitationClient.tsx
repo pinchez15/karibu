@@ -9,9 +9,36 @@ import { Input } from '@/components/ui/input'
 
 const MIN_PASSWORD = 8
 
+const PASSWORD_HELPER_TEXT = `At least ${MIN_PASSWORD} characters. Avoid common or previously leaked passwords — a short phrase works well.`
+
+/**
+ * Maps known Clerk password error codes to plain-language messages a
+ * clinic staff member can act on. Falls back to Clerk's raw message for
+ * anything else (kept honest rather than swallowed).
+ *
+ * Pure by design so the mapping is unit-testable without constructing a
+ * fake Clerk error object.
+ */
+export function clerkPasswordErrorMessage(code: string | undefined, rawMessage: string): string {
+  if (code === 'form_password_pwned') {
+    return 'This password appears in a public data breach — pick a different one (a short phrase works well).'
+  }
+  if (code === 'form_password_length_too_short') {
+    return `Use at least ${MIN_PASSWORD} characters.`
+  }
+  return rawMessage
+}
+
 function clerkErrorMessage(err: unknown): string {
-  const anyErr = err as { errors?: Array<{ message?: string }> }
-  return anyErr.errors?.[0]?.message ?? (err instanceof Error ? err.message : 'Something went wrong')
+  const anyErr = err as { errors?: Array<{ code?: string; message?: string }> }
+  const first = anyErr.errors?.[0]
+  const rawMessage = first?.message ?? (err instanceof Error ? err.message : 'Something went wrong')
+  if (first?.code) {
+    // Log the error code (never the password) so a remote "wasn't accepting
+    // my password" report is diagnosable without reproducing locally.
+    console.error('Clerk sign-up error code:', first.code)
+  }
+  return clerkPasswordErrorMessage(first?.code, rawMessage)
 }
 
 function AcceptInvitationInner() {
@@ -148,6 +175,7 @@ function AcceptInvitationInner() {
               className="mt-1 bg-white text-ink"
               minLength={MIN_PASSWORD}
             />
+            <p className="mt-1 text-xs text-white/70">{PASSWORD_HELPER_TEXT}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-white/90">Confirm password</label>
