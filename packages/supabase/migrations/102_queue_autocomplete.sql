@@ -23,6 +23,15 @@
 -- This is additive only: every function below is re-created with its
 -- existing body preserved byte-for-byte (SECURITY DEFINER, search_path, and
 -- grants unchanged) plus one appended `PERFORM maybe_complete_visit_queue(...)`
+-- call at the end of the success path.
+--
+-- COMMUTATION NOTE: four of these functions (rpc_complete_pharmacy_dispense,
+-- rpc_record_lab_test_result, rpc_record_lab_result,
+-- rpc_finalize_clinical_encounter) are ALSO redefined by migration 101
+-- (WP-E replay tolerance, gate-first reordering). Their definitions here are
+-- textually identical to 101's (gate-first + appended PERFORM), so the two
+-- migrations are order-independent. If you edit one of these four, edit it
+-- in BOTH files.
 -- call at the end of the success path. Source of each copied body (latest
 -- definition found by grep across all prior migrations):
 --
@@ -127,7 +136,7 @@ END;
 $$;
 
 -- =============================================================================
--- 2. rpc_finalize_clinical_encounter — body verbatim from 050 + appended call
+-- 2. rpc_finalize_clinical_encounter — identical to 101 (gate-first + appended call)
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION rpc_finalize_clinical_encounter(
@@ -152,14 +161,17 @@ DECLARE
   v_summary_id UUID;
 BEGIN
   SELECT clinic_id INTO v_clinic_id FROM visits WHERE id = p_visit_id;
-  IF v_clinic_id IS NULL THEN
-    RAISE EXCEPTION 'Visit not found';
-  END IF;
 
-  PERFORM assert_staff_in_clinic(v_clinic_id);
+  IF v_clinic_id IS NOT NULL THEN
+    PERFORM assert_staff_in_clinic(v_clinic_id);
+  END IF;
 
   IF sync_op_already_applied(p_client_op_id) THEN
     RETURN;
+  END IF;
+
+  IF v_clinic_id IS NULL THEN
+    RAISE EXCEPTION 'Visit not found';
   END IF;
 
   v_role := get_current_staff_role();
@@ -234,7 +246,7 @@ BEGIN
 
   PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION rpc_finalize_clinical_encounter(
   UUID, UUID, UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, UUID
@@ -274,13 +286,13 @@ BEGIN
 
   PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION rpc_mark_documentation_complete(UUID)
   TO anon, authenticated;
 
 -- =============================================================================
--- 4. rpc_record_lab_result — body verbatim from 045 + appended call
+-- 4. rpc_record_lab_result — identical to 101 (gate-first + appended call)
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION rpc_record_lab_result(
@@ -295,9 +307,14 @@ DECLARE
   v_trimmed TEXT;
 BEGIN
   SELECT clinic_id INTO v_clinic_id FROM visits WHERE id = p_visit_id;
-  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
-  PERFORM assert_staff_in_clinic(v_clinic_id);
+
+  IF v_clinic_id IS NOT NULL THEN
+    PERFORM assert_staff_in_clinic(v_clinic_id);
+  END IF;
+
   IF sync_op_already_applied(p_client_op_id) THEN RETURN; END IF;
+
+  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
 
   IF get_current_staff_role() NOT IN ('admin', 'lab_tech') THEN
     RAISE EXCEPTION 'Unauthorized role';
@@ -322,12 +339,12 @@ BEGIN
 
   PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION rpc_record_lab_result(UUID, TEXT, BOOLEAN, UUID) TO anon, authenticated;
 
 -- =============================================================================
--- 5. rpc_record_lab_test_result — body verbatim from 099 + appended call
+-- 5. rpc_record_lab_test_result — identical to 101 (gate-first + appended call)
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION rpc_record_lab_test_result(
@@ -363,13 +380,15 @@ BEGIN
   SELECT clinic_id, patient_id, doctor_id, tests_ordered, lab_test_results
   INTO v_clinic_id, v_patient_id, v_doctor_id, v_tests_ordered, v_results
   FROM visits WHERE id = p_visit_id;
-  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
-  PERFORM assert_staff_in_clinic(v_clinic_id);
+
+  IF v_clinic_id IS NOT NULL THEN
+    PERFORM assert_staff_in_clinic(v_clinic_id);
+  END IF;
+
   IF sync_op_already_applied(p_client_op_id) THEN RETURN; END IF;
 
-  -- Authenticated clients record as themselves; a service-role web action
-  -- supplies the acting lab tech id via p_recorded_by. Role gate is enforced
-  -- by the web action (assertLabTech) for service-role callers.
+  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
+
   IF karibu_is_service_role() THEN
     v_actor := p_recorded_by;
   ELSE
@@ -440,7 +459,7 @@ BEGIN
         v_doctor_id,
         NULL,
         NULL,
-        COALESCE(v_doctor_id, v_actor)  -- p_created_by: doctor, else recording lab tech
+        COALESCE(v_doctor_id, v_actor)
       );
     END IF;
   END IF;
@@ -456,7 +475,7 @@ GRANT EXECUTE ON FUNCTION rpc_record_lab_test_result(
 ) TO anon, authenticated;
 
 -- =============================================================================
--- 6. rpc_complete_pharmacy_dispense — body verbatim from 098 + appended call
+-- 6. rpc_complete_pharmacy_dispense — identical to 101 (gate-first + appended call)
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION rpc_complete_pharmacy_dispense(
@@ -486,9 +505,14 @@ DECLARE
   v_already NUMERIC;
 BEGIN
   SELECT clinic_id INTO v_clinic_id FROM visits WHERE id = p_visit_id;
-  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
-  PERFORM assert_staff_in_clinic(v_clinic_id);
+
+  IF v_clinic_id IS NOT NULL THEN
+    PERFORM assert_staff_in_clinic(v_clinic_id);
+  END IF;
+
   IF sync_op_already_applied(p_client_op_id) THEN RETURN; END IF;
+
+  IF v_clinic_id IS NULL THEN RAISE EXCEPTION 'Visit not found'; END IF;
 
   IF p_lines IS NULL OR jsonb_typeof(p_lines) <> 'array' OR jsonb_array_length(p_lines) = 0 THEN
     RAISE EXCEPTION 'At least one dispense line required';
@@ -675,7 +699,7 @@ BEGIN
 
   PERFORM maybe_complete_visit_queue(p_visit_id);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION rpc_set_dispensing_status(UUID, TEXT, TEXT, UUID) TO anon, authenticated;
 
