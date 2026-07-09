@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitEntity
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
@@ -61,6 +62,8 @@ class VisitRepositoryOrderDependencyTest {
             syncDependencyResolver = syncDependencyResolver,
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
+            // Real executor with a relaxed refresher: passes non-401 responses through.
+            directWriteExecutor = DirectWriteExecutor(mockk(relaxed = true)),
             prescriptionOrderRepository = prescriptionOrderRepository,
             json = json,
         )
@@ -103,7 +106,7 @@ class VisitRepositoryOrderDependencyTest {
 
     @Test
     fun offlineLabOrderChainsToVisitCreator() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
 
         val (_, checkInEntryId) = repository.checkInPatient(
             clinicId = "clinic-1",
@@ -131,7 +134,7 @@ class VisitRepositoryOrderDependencyTest {
 
     @Test
     fun orderAfterDeadVisitCreatorIsBlocked() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
 
         val (_, checkInEntryId) = repository.checkInPatient(
             clinicId = "clinic-1",
@@ -157,7 +160,7 @@ class VisitRepositoryOrderDependencyTest {
 
     @Test
     fun directOrderSkippedWhenVisitPending() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
 
         val (_, checkInEntryId) = repository.checkInPatient(
             clinicId = "clinic-1",
@@ -165,7 +168,7 @@ class VisitRepositoryOrderDependencyTest {
             department = Department.opd,
         )
         val visitId = storedVisit!!.id
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         repository.submitLabOrder(visitId, listOf("CBC"))
 
@@ -178,7 +181,7 @@ class VisitRepositoryOrderDependencyTest {
 
     @Test
     fun directRpcSkippedWhenVisitCreatorPending() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
 
         val (_, checkInEntryId) = repository.checkInPatient(
             clinicId = "clinic-1",
@@ -186,7 +189,7 @@ class VisitRepositoryOrderDependencyTest {
             department = Department.opd,
         )
         val visitId = storedVisit!!.id
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val syncEntrySlot = slot<SyncQueueEntry>()
         coEvery { syncQueueDao.insert(capture(syncEntrySlot)) } answers {

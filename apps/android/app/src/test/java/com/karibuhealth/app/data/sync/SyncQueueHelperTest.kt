@@ -138,7 +138,7 @@ class SyncQueueHelperTest {
     }
 
     @Test
-    fun `enqueueOntoDeadParentIsBlockedImmediately`() = runTest {
+    fun `enqueueOntoDeadCreatePatientParentIsBlocked`() = runTest {
         val parent = makeEntry(
             id = "parent-id",
             entityId = "patient-1",
