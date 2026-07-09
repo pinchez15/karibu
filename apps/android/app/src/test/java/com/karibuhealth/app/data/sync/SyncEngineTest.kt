@@ -11,6 +11,8 @@ import io.mockk.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Before
@@ -534,6 +536,43 @@ class SyncEngineTest {
 
         assertEquals(2, entries.count(::countsToNeedsAttention))
         assertEquals(3, entries.count(::countsToPendingPill))
+    }
+
+    @Test
+    fun `queuedCheckInMarksVisitSyncedWhenQuiet`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val visitId = "visit-checkin-1"
+        val payload = buildJsonObject {
+            put("rpc", "check_in_patient")
+            put(
+                "params",
+                buildJsonObject {
+                    put("p_clinic_id", "clinic-1")
+                    put("p_patient_id", "patient-1")
+                    put("p_visit_id", visitId)
+                    put("p_client_op_id", "op-checkin-1")
+                },
+            )
+        }
+        val entry = makeSyncEntry(
+            id = "op-checkin-1",
+            operationType = "queue_op",
+            entityId = visitId,
+            payload = json.encodeToString(
+                kotlinx.serialization.json.JsonObject.serializer(),
+                payload,
+            ),
+        )
+
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.checkInPatient(any()) } returns Response.success("".toResponseBody())
+        coEvery { syncQueueDao.countActiveForEntity(visitId, "op-checkin-1") } returns 0
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify { visitDao.updateSyncState(visitId, true) }
     }
 
     private fun makeLabResultEntry(

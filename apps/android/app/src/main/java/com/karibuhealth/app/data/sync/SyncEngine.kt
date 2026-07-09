@@ -738,6 +738,8 @@ class SyncEngine @Inject constructor(
         // without ever leaving the device.
         val rpcParams = payload["params"]?.jsonObject
             ?: kotlinx.serialization.json.JsonObject(emptyMap())
+        // Legacy queue rows (pre-WP-B) omit p_visit_id; they still execute but
+        // may create a server visit with a fresh id — WP-A reconciler recovers.
 
         val response = when (rpcName) {
             "assign_to_nurse" -> supabaseApi.assignToNurse(rpcParams)
@@ -754,6 +756,9 @@ class SyncEngine @Inject constructor(
         if (response != null && !response.isSuccessful) {
             val body = response.errorBody()?.string().orEmpty()
             throw SyncHttpException(response.code(), body, rpcName ?: "queue_op")
+        }
+        if (rpcName == "check_in_patient" && response != null && response.isSuccessful) {
+            markVisitSyncedIfQuiet(entry)
         }
     }
 
