@@ -9,6 +9,7 @@ import com.karibuhealth.app.data.local.db.entity.HtsEventEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.TbEpisodeEntity
 import com.karibuhealth.app.data.local.db.entity.ViralLoadTestEntity
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ClinicOnlyRequest
 import com.karibuhealth.app.data.remote.dto.RecentHtsRequest
@@ -36,6 +37,7 @@ class HivTbRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun observeRecentHts(clinicId: String): Flow<List<HtsEventEntity>> =
@@ -57,7 +59,7 @@ class HivTbRepository @Inject constructor(
         viralLoadDao.observeForEnrollment(enrollmentId)
 
     suspend fun refreshRegistry(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val hts = supabaseApi.rpcRecentHtsEvents(RecentHtsRequest(clinicId, 50))
@@ -160,7 +162,7 @@ class HivTbRepository @Inject constructor(
         val syncEntry = syncEntry("rpc_record_hts_event", "hts_event", id, request)
         htsEventDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordHtsEvent(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordHtsEvent(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) htsEventDao.markSynced(id)
             else throw IllegalStateException("rpc_record_hts_event HTTP ${resp.code()}")
         }
@@ -217,7 +219,7 @@ class HivTbRepository @Inject constructor(
         val syncEntry = syncEntry("rpc_upsert_hiv_care", "hiv_care", id, request)
         hivCareDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcUpsertHivCare(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcUpsertHivCare(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) hivCareDao.markSynced(id)
             else throw IllegalStateException("rpc_upsert_hiv_care HTTP ${resp.code()}")
         }
@@ -254,7 +256,7 @@ class HivTbRepository @Inject constructor(
         val syncEntry = syncEntry("rpc_record_viral_load", "viral_load", id, request)
         viralLoadDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordViralLoad(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordViralLoad(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) viralLoadDao.markSynced(id)
             else throw IllegalStateException("rpc_record_viral_load HTTP ${resp.code()}")
         }
@@ -310,7 +312,7 @@ class HivTbRepository @Inject constructor(
         val syncEntry = syncEntry("rpc_upsert_tb_episode", "tb_episode", id, request)
         tbEpisodeDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcUpsertTbEpisode(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcUpsertTbEpisode(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) tbEpisodeDao.markSynced(id)
             else throw IllegalStateException("rpc_upsert_tb_episode HTTP ${resp.code()}")
         }
@@ -318,7 +320,7 @@ class HivTbRepository @Inject constructor(
     }
 
     private suspend fun pushOrQueue(syncEntry: SyncQueueEntry, push: suspend () -> Unit) {
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             if (!runCatching { push() }.isSuccess) syncQueueHelper.enqueue(syncEntry)
         } else {
             syncQueueHelper.enqueue(syncEntry)

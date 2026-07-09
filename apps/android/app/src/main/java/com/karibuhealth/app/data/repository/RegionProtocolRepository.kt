@@ -4,6 +4,7 @@ import com.karibuhealth.app.data.local.datastore.OutbreakProtocolStore
 import com.karibuhealth.app.data.local.db.dao.EbolaScreeningDao
 import com.karibuhealth.app.data.local.db.entity.EbolaScreeningEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveProtocolsRequest
 import com.karibuhealth.app.data.remote.dto.RecordEbolaScreeningRequest
@@ -31,6 +32,7 @@ class RegionProtocolRepository @Inject constructor(
     private val ebolaScreeningDao: EbolaScreeningDao,
     private val syncQueueHelper: SyncQueueHelper,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun observeActiveProtocols(): Flow<Set<String>> =
@@ -47,7 +49,7 @@ class RegionProtocolRepository @Inject constructor(
      * is kept so a clinic stays on protocol until it can next reach the server).
      */
     suspend fun refreshProtocols(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             try {
                 val rows = supabaseApi.rpcActiveProtocolsForClinic(ActiveProtocolsRequest(clinicId))
@@ -66,7 +68,7 @@ class RegionProtocolRepository @Inject constructor(
         ebolaScreeningDao.observeLatestForVisit(visitId)
 
     suspend fun refreshVisitScreening(visitId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 supabaseApi.rpcVisitEbolaScreening(VisitEbolaScreeningRequest(visitId)).firstOrNull()?.let { d ->
@@ -115,9 +117,9 @@ class RegionProtocolRepository @Inject constructor(
             status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
         )
         ebolaScreeningDao.upsert(entity)
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             val ok = runCatching {
-                val resp = supabaseApi.rpcRecordEbolaScreening(request.copy(clientOpId = id))
+                val resp = directWriteExecutor.run { supabaseApi.rpcRecordEbolaScreening(request.copy(clientOpId = id)) }
                 if (resp.isSuccessful) ebolaScreeningDao.markSynced(id) else error("HTTP ${resp.code()}")
             }.isSuccess
             if (!ok) syncQueueHelper.enqueue(syncEntry)

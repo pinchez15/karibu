@@ -26,7 +26,7 @@ class CalendarRepository @Inject constructor(
         from: Instant,
         to: Instant,
     ): List<ClinicAppointment> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcListAppointments(
                 ListAppointmentsRequest(
@@ -47,7 +47,7 @@ class CalendarRepository @Inject constructor(
         reason: String?,
         scheduledEnd: Instant?,
     ): String = withContext(Dispatchers.IO) {
-        require(networkMonitor.isOnline()) { "Calendar requires an internet connection" }
+        require(networkMonitor.isConnected()) { "Calendar requires an internet connection" }
         val resp = supabaseApi.rpcCreateAppointment(
             CreateAppointmentRequest(
                 clinicId = clinicId,
@@ -76,7 +76,7 @@ class CalendarRepository @Inject constructor(
         reason: String?,
         scheduledEnd: Instant?,
     ) = withContext(Dispatchers.IO) {
-        require(networkMonitor.isOnline()) { "Calendar requires an internet connection" }
+        require(networkMonitor.isConnected()) { "Calendar requires an internet connection" }
         val resp = supabaseApi.rpcUpdateAppointment(
             UpdateAppointmentRequest(
                 clinicId = clinicId,
@@ -95,7 +95,7 @@ class CalendarRepository @Inject constructor(
     }
 
     suspend fun cancelAppointment(clinicId: String, appointmentId: String) = withContext(Dispatchers.IO) {
-        require(networkMonitor.isOnline()) { "Calendar requires an internet connection" }
+        require(networkMonitor.isConnected()) { "Calendar requires an internet connection" }
         val resp = supabaseApi.rpcCancelAppointment(
             CancelAppointmentRequest(clinicId = clinicId, appointmentId = appointmentId),
         )

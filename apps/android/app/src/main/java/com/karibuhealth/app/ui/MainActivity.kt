@@ -29,6 +29,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import com.karibuhealth.app.data.inpatient.ObsOverdueWorker
 import com.karibuhealth.app.data.sync.PullSyncManager
+import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.data.sync.SyncWorker
 import com.karibuhealth.app.util.SessionMonitor
 import com.karibuhealth.app.ui.components.OfflineBanner
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var pullSyncManager: PullSyncManager
     @Inject lateinit var sessionMonitor: SessionMonitor
+    @Inject lateinit var syncQueueHelper: SyncQueueHelper
 
     private val requestNotificationsPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best-effort */ }
@@ -85,6 +87,7 @@ class MainActivity : ComponentActivity() {
         // Pull fresh data each time app comes to foreground
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                syncQueueHelper.scheduleImmediateSync()
                 pullSyncManager.pullAll()
             }
         }

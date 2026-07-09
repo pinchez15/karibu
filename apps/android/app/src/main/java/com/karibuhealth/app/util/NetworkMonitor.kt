@@ -100,6 +100,39 @@ class NetworkMonitor @Inject constructor(
         }
     }.distinctUntilChanged()
 
+    /**
+     * WP-C: reconnect drain and cloudReady gates use this, not [isOnlineFlow].
+     */
+    val isConnectedFlow: Flow<Boolean> = callbackFlow {
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                trySend(currentStatus().isConnected)
+            }
+
+            override fun onLost(network: Network) {
+                trySend(false)
+            }
+
+            override fun onCapabilitiesChanged(
+                network: Network,
+                capabilities: NetworkCapabilities,
+            ) {
+                trySend(statusFromCapabilities(capabilities).isConnected)
+            }
+        }
+
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager.registerNetworkCallback(request, callback)
+        trySend(isConnected())
+
+        awaitClose {
+            connectivityManager.unregisterNetworkCallback(callback)
+        }
+    }.distinctUntilChanged()
+
     val connectionStatusFlow: Flow<ConnectionStatus> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {

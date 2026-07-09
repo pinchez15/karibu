@@ -57,7 +57,7 @@ class WorklistRepository @Inject constructor(
         clinicId: String,
         department: String? = null,
     ): List<NeedsVitalsItem> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcWorklistNeedsVitals(
                 WorklistRequest(clinicId = clinicId, department = department),
@@ -69,7 +69,7 @@ class WorklistRepository @Inject constructor(
         clinicId: String,
         department: String? = null,
     ): List<NeedsClinicianItem> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcWorklistNeedsClinician(
                 WorklistRequest(clinicId = clinicId, department = department),
@@ -78,7 +78,7 @@ class WorklistRepository @Inject constructor(
     }
 
     suspend fun getNeedsLab(clinicId: String): List<NeedsLabItem> = withContext(Dispatchers.IO) {
-        val base = if (networkMonitor.isOnline()) {
+        val base = if (networkMonitor.isConnected()) {
             runCatching {
                 supabaseApi.rpcWorklistNeedsLab(
                     WorklistClinicOnlyRequest(clinicId = clinicId),
@@ -92,7 +92,7 @@ class WorklistRepository @Inject constructor(
 
     private suspend fun enrichLabItems(clinicId: String, items: List<NeedsLabItem>): List<NeedsLabItem> {
         return items.mapNotNull { item ->
-            if (networkMonitor.isOnline()) {
+            if (networkMonitor.isConnected()) {
                 runCatching {
                     supabaseApi.getVisitById("eq.${item.visitId}").firstOrNull()?.let { dto ->
                         visitDao.upsert(dto.toEntity())
@@ -118,7 +118,7 @@ class WorklistRepository @Inject constructor(
 
     suspend fun getNeedsPharmacy(clinicId: String): List<NeedsPharmacyItem> =
         withContext(Dispatchers.IO) {
-            val raw = if (networkMonitor.isOnline()) {
+            val raw = if (networkMonitor.isConnected()) {
                 runCatching {
                     supabaseApi.rpcWorklistNeedsPharmacy(
                         WorklistClinicOnlyRequest(clinicId = clinicId),
@@ -134,7 +134,7 @@ class WorklistRepository @Inject constructor(
     suspend fun getPharmacyDoneToday(clinicId: String): List<NeedsPharmacyItem> =
         withContext(Dispatchers.IO) {
             val today = LocalDate.now().toString()
-            val raw = if (networkMonitor.isOnline()) {
+            val raw = if (networkMonitor.isConnected()) {
                 runCatching {
                     supabaseApi.getVisits("eq.$clinicId", "eq.$today")
                         .filter { visit ->
@@ -181,7 +181,7 @@ class WorklistRepository @Inject constructor(
 
     suspend fun getNeedsPayment(clinicId: String): List<NeedsPaymentItem> =
         withContext(Dispatchers.IO) {
-            if (!networkMonitor.isOnline()) return@withContext emptyList()
+            if (!networkMonitor.isConnected()) return@withContext emptyList()
             runCatching {
                 supabaseApi.rpcWorklistNeedsPayment(
                     WorklistClinicOnlyRequest(clinicId = clinicId),
@@ -193,7 +193,7 @@ class WorklistRepository @Inject constructor(
         clinicId: String,
         staffId: String? = null,
     ): List<MyDraftItem> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcWorklistMyDrafts(
                 MyDraftsRequest(clinicId = clinicId, staffId = staffId),
@@ -207,7 +207,7 @@ class WorklistRepository @Inject constructor(
         assigneeId: String? = null,
         taskType: String? = null,
     ): List<CareTaskItem> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcWorklistCareTasks(
                 CareTasksWorklistRequest(

@@ -5,8 +5,10 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitEntity
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.VisitDto
+import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
 import com.karibuhealth.app.util.NetworkMonitor
 import io.mockk.*
@@ -48,8 +50,11 @@ class VisitRepositoryCheckInTest {
             visitDao = visitDao,
             syncQueueDao = syncQueueDao,
             syncQueueHelper = syncQueueHelper,
+            syncDependencyResolver = SyncDependencyResolver(syncQueueDao),
             supabaseApi = supabaseApi,
             networkMonitor = networkMonitor,
+            // Real executor with a relaxed refresher: passes non-401 responses through.
+            directWriteExecutor = DirectWriteExecutor(mockk(relaxed = true)),
             prescriptionOrderRepository = prescriptionOrderRepository,
             json = json,
         )
@@ -57,7 +62,7 @@ class VisitRepositoryCheckInTest {
 
     @Test
     fun directCheckInSendsVisitIdAndOpId() = runTest {
-        every { networkMonitor.isOnline() } returns true
+        every { networkMonitor.isConnected() } returns true
 
         val paramsSlot = slot<JsonObject>()
         var storedVisit: VisitEntity? = null
@@ -102,7 +107,7 @@ class VisitRepositoryCheckInTest {
 
     @Test
     fun offlineCheckInQueuesSameVisitId() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
         coEvery { visitDao.getMaxQueuePosition(any(), any()) } returns 0
 
         val entrySlot = slot<SyncQueueEntry>()
@@ -125,7 +130,7 @@ class VisitRepositoryCheckInTest {
 
     @Test
     fun payloadSurvivesHostileChiefComplaint() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
         coEvery { visitDao.getMaxQueuePosition(any(), any()) } returns 0
 
         val hostile = "line1\nline2 \"quoted\" \\slash"
@@ -144,7 +149,7 @@ class VisitRepositoryCheckInTest {
 
     @Test
     fun nullStaffIdOmittedFromPayload() = runTest {
-        every { networkMonitor.isOnline() } returns false
+        every { networkMonitor.isConnected() } returns false
         coEvery { visitDao.getMaxQueuePosition(any(), any()) } returns 0
 
         val entrySlot = slot<SyncQueueEntry>()

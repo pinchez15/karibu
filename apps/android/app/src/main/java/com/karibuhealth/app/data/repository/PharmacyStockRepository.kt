@@ -22,7 +22,7 @@ class PharmacyStockRepository @Inject constructor(
     private val networkMonitor: NetworkMonitor,
 ) {
     suspend fun refreshStock(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.getPharmacyStockItems("eq.$clinicId")

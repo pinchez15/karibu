@@ -75,6 +75,38 @@ class SyncQueueHelperTest {
     }
 
     @Test
+    fun `enqueueOntoDeadParentIsBlockedImmediately`() = runTest {
+        val deadParent = makeEntry(
+            id = "parent-1",
+            entityId = "visit-1",
+            operationType = "queue_op",
+            status = "failed",
+        ).copy(attempts = 10, lastError = "Visit not found")
+        coEvery { syncQueueDao.getById("parent-1") } returns deadParent
+        coEvery { syncQueueDao.getByEntityAndOperation("visit-1", "submit_lab_order") } returns null
+
+        val child = makeEntry(
+            id = "child-1",
+            entityId = "visit-1",
+            operationType = "submit_lab_order",
+        ).copy(dependsOn = "parent-1")
+
+        helper.enqueue(child)
+
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "child-1" &&
+                    it.status == "failed" &&
+                    it.attempts == 10 &&
+                    it.lastError!!.startsWith("blocked:")
+            })
+        }
+        verify(exactly = 0) {
+            workManager.enqueueUniqueWork(any(), any(), any<androidx.work.OneTimeWorkRequest>())
+        }
+    }
+
+    @Test
     fun `enqueue inserts fresh row when existing entry already completed`() = runTest {
         val completed = makeEntry(
             id = "done-id",
@@ -106,7 +138,7 @@ class SyncQueueHelperTest {
     }
 
     @Test
-    fun `enqueueOntoDeadParentIsBlockedImmediately`() = runTest {
+    fun `enqueueOntoDeadCreatePatientParentIsBlocked`() = runTest {
         val parent = makeEntry(
             id = "parent-id",
             entityId = "patient-1",
@@ -189,13 +221,14 @@ class SyncQueueHelperTest {
         entityId: String,
         operationType: String,
         payload: String = "{}",
+        status: String = "pending",
     ) = SyncQueueEntry(
         id = id,
         operationType = operationType,
         entityType = "visits",
         entityId = entityId,
         payload = payload,
-        status = "pending",
+        status = status,
         attempts = 0,
         createdAt = System.currentTimeMillis(),
     )

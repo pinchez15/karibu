@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.converter.*
 import com.karibuhealth.app.data.local.db.dao.PatientDao
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.FindDuplicateCandidatesRequest
 import com.karibuhealth.app.data.remote.dto.toRpcRequest
@@ -36,6 +37,7 @@ class PatientRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun searchPatients(clinicId: String, query: String): Flow<List<Patient>> =
@@ -92,7 +94,7 @@ class PatientRepository @Inject constructor(
         age: Int? = null,
         sex: String? = null,
     ): List<DuplicateCandidate> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcFindDuplicateCandidates(
                 FindDuplicateCandidatesRequest(
@@ -177,9 +179,11 @@ class PatientRepository @Inject constructor(
 
         val syncEntryId = UUID.randomUUID().toString()
 
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             try {
-                val response = supabaseApi.rpcCreatePatient(createDto.toRpcRequest(clientOpId = syncEntryId))
+                val response = directWriteExecutor.run {
+                    supabaseApi.rpcCreatePatient(createDto.toRpcRequest(clientOpId = syncEntryId))
+                }
                 if (response.isSuccessful) {
                     val serverPatient = supabaseApi.getPatientById("eq.${patient.id}").firstOrNull()
                     if (serverPatient != null) {
@@ -212,7 +216,7 @@ class PatientRepository @Inject constructor(
     }
 
     suspend fun refreshPatients(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             try {
                 val remote = supabaseApi.getPatients("eq.$clinicId")
@@ -252,7 +256,7 @@ class PatientRepository @Inject constructor(
         cursor: String? = null,
         limit: Int = 50,
     ): List<PatientTimelineEvent> = withContext(Dispatchers.IO) {
-        if (!networkMonitor.isOnline()) return@withContext emptyList()
+        if (!networkMonitor.isConnected()) return@withContext emptyList()
         runCatching {
             supabaseApi.rpcGetPatientTimeline(
                 GetPatientTimelineRequest(
@@ -272,7 +276,7 @@ class PatientRepository @Inject constructor(
      */
     suspend fun getPatientLatestVitals(patientId: String): PatientLatestVitals? =
         withContext(Dispatchers.IO) {
-            if (!networkMonitor.isOnline()) return@withContext null
+            if (!networkMonitor.isConnected()) return@withContext null
             runCatching {
                 supabaseApi.rpcGetPatientLatestVitals(
                     GetPatientLatestVitalsRequest(patientId = patientId),

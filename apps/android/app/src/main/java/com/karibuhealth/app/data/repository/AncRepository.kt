@@ -6,6 +6,7 @@ import com.karibuhealth.app.data.local.db.dao.PregnancyRegistryRow
 import com.karibuhealth.app.data.local.db.entity.AncContactEntity
 import com.karibuhealth.app.data.local.db.entity.PregnancyEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActivePregnanciesRequest
 import com.karibuhealth.app.data.remote.dto.PregnancyContactsRequest
@@ -35,6 +36,7 @@ class AncRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun observeRegistry(clinicId: String): Flow<List<PregnancyRegistryRow>> =
@@ -46,7 +48,7 @@ class AncRepository @Inject constructor(
         ancContactDao.observeForPregnancy(pregnancyId)
 
     suspend fun refreshRegistry(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcActivePregnancies(ActivePregnanciesRequest(clinicId))
@@ -67,7 +69,7 @@ class AncRepository @Inject constructor(
     }
 
     suspend fun refreshContacts(pregnancyId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcPregnancyContacts(PregnancyContactsRequest(pregnancyId))
@@ -126,7 +128,7 @@ class AncRepository @Inject constructor(
         )
         pregnancyDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcStartPregnancy(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcStartPregnancy(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) pregnancyDao.markSynced(id)
             else throw IllegalStateException("rpc_start_pregnancy HTTP ${resp.code()}")
         }
@@ -180,7 +182,7 @@ class AncRepository @Inject constructor(
         )
         ancContactDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordAncContact(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordAncContact(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) ancContactDao.markSynced(id)
             else throw IllegalStateException("rpc_record_anc_contact HTTP ${resp.code()}")
         }
@@ -188,7 +190,7 @@ class AncRepository @Inject constructor(
     }
 
     private suspend fun pushOrQueue(syncEntry: SyncQueueEntry, push: suspend () -> Unit) {
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             if (!runCatching { push() }.isSuccess) syncQueueHelper.enqueue(syncEntry)
         } else {
             syncQueueHelper.enqueue(syncEntry)

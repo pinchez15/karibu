@@ -3,6 +3,7 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.ReferralDao
 import com.karibuhealth.app.data.local.db.entity.ReferralEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.CreateReferralRequest
 import com.karibuhealth.app.data.remote.dto.ReferralTodayRowDto
@@ -28,6 +29,7 @@ class ReferralRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun observeActiveToday(clinicId: String): Flow<List<Referral>> {
@@ -38,7 +40,7 @@ class ReferralRepository @Inject constructor(
     }
 
     suspend fun refreshToday(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcListReferralsToday(
@@ -128,11 +130,13 @@ class ReferralRepository @Inject constructor(
         )
 
         referralDao.upsert(entity)
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             runCatching {
-                val response = supabaseApi.rpcCreateReferral(
-                    request.copy(clientOpId = syncEntry.id),
-                )
+                val response = directWriteExecutor.run {
+                    supabaseApi.rpcCreateReferral(
+                        request.copy(clientOpId = syncEntry.id),
+                    )
+                }
                 if (response.isSuccessful) {
                     referralDao.markSynced(id)
                 } else {

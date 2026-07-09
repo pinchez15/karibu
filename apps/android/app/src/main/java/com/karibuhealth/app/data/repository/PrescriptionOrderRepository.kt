@@ -40,7 +40,7 @@ class PrescriptionOrderRepository @Inject constructor(
         }
 
     suspend fun refreshForVisits(visitIds: List<String>) {
-        if (visitIds.isEmpty() || !networkMonitor.isOnline()) return
+        if (visitIds.isEmpty() || !networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val filter = "in.(${visitIds.joinToString(",")})"
@@ -100,7 +100,7 @@ class PrescriptionOrderRepository @Inject constructor(
     suspend fun replaceLocalAfterSubmit(visitId: String): Map<String, String> =
         withContext(Dispatchers.IO) {
             val before = prescriptionOrderDao.getForVisit(visitId)
-            if (!networkMonitor.isOnline()) return@withContext emptyMap()
+            if (!networkMonitor.isConnected()) return@withContext emptyMap()
             val remote = runCatching {
                 supabaseApi.getPrescriptionOrdersForVisits("eq.$visitId")
             }.getOrElse { emptyList() }

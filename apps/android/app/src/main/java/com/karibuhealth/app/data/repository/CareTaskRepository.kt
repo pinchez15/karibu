@@ -3,6 +3,7 @@ package com.karibuhealth.app.data.repository
 import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.util.NetworkMonitor
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.CompleteCareTaskRequest
 import com.karibuhealth.app.data.remote.dto.CreateCareTaskRequest
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 class CareTaskRepository @Inject constructor(
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val syncQueueHelper: SyncQueueHelper,
     private val syncQueueDao: SyncQueueDao,
     private val json: Json,
@@ -49,11 +51,13 @@ class CareTaskRepository @Inject constructor(
             ),
         )
 
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             try {
-                val response = supabaseApi.rpcCreateCareTask(
-                    json.decodeFromString(CreateCareTaskRequest.serializer(), payload),
-                )
+                val response = directWriteExecutor.run {
+                    supabaseApi.rpcCreateCareTask(
+                        json.decodeFromString(CreateCareTaskRequest.serializer(), payload),
+                    )
+                }
                 if (response.isSuccessful) return@withContext response.body()
             } catch (_: Exception) {
                 // queue below
@@ -82,11 +86,13 @@ class CareTaskRepository @Inject constructor(
             CompleteCareTaskRequest(taskId = taskId, clientOpId = syncEntryId),
         )
 
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             try {
-                val response = supabaseApi.rpcCompleteCareTask(
-                    CompleteCareTaskRequest(taskId = taskId, clientOpId = syncEntryId),
-                )
+                val response = directWriteExecutor.run {
+                    supabaseApi.rpcCompleteCareTask(
+                        CompleteCareTaskRequest(taskId = taskId, clientOpId = syncEntryId),
+                    )
+                }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // queue below
