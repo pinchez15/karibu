@@ -20,6 +20,7 @@ import com.karibuhealth.app.data.local.db.entity.PostnatalObservationEntity
 import com.karibuhealth.app.data.local.db.entity.IvInfusionCheckEntity
 import com.karibuhealth.app.data.local.db.entity.IvInfusionEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.ActiveAdmissionsRequest
 import com.karibuhealth.app.data.remote.dto.AddMedicationOrderRequest
@@ -71,6 +72,7 @@ class InpatientRepository @Inject constructor(
     private val syncQueueHelper: SyncQueueHelper,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun observeCensus(clinicId: String): Flow<List<AdmissionCensusRow>> =
@@ -83,7 +85,7 @@ class InpatientRepository @Inject constructor(
         admissionObservationDao.observeForAdmission(admissionId)
 
     suspend fun refreshCensus(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcActiveAdmissions(ActiveAdmissionsRequest(clinicId))
@@ -125,7 +127,7 @@ class InpatientRepository @Inject constructor(
     }
 
     suspend fun refreshObservations(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcAdmissionObservations(
@@ -228,7 +230,7 @@ class InpatientRepository @Inject constructor(
 
         admissionDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcAdmitPatientV2(request.copy(clientOpId = admissionId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcAdmitPatientV2(request.copy(clientOpId = admissionId)) }
             if (resp.isSuccessful) admissionDao.markSynced(admissionId) else throw IllegalStateException(
                 "rpc_admit_patient_v2 HTTP ${resp.code()}",
             )
@@ -310,7 +312,7 @@ class InpatientRepository @Inject constructor(
 
         admissionObservationDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordAdmissionObservation(request.copy(clientOpId = obsId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordAdmissionObservation(request.copy(clientOpId = obsId)) }
             if (resp.isSuccessful) admissionObservationDao.markSynced(obsId) else throw IllegalStateException(
                 "rpc_record_admission_observation HTTP ${resp.code()}",
             )
@@ -327,7 +329,7 @@ class InpatientRepository @Inject constructor(
         medicationAdministrationDao.observeForAdmission(admissionId)
 
     suspend fun refreshMedications(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val orders = supabaseApi.rpcAdmissionMedicationOrders(AdmissionMedicationsRequest(admissionId))
@@ -390,7 +392,7 @@ class InpatientRepository @Inject constructor(
         )
         medicationOrderDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcAddMedicationOrder(request.copy(clientOpId = orderId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcAddMedicationOrder(request.copy(clientOpId = orderId)) }
             if (resp.isSuccessful) medicationOrderDao.markSynced(orderId)
             else throw IllegalStateException("rpc_add_medication_order HTTP ${resp.code()}")
         }
@@ -409,7 +411,7 @@ class InpatientRepository @Inject constructor(
             status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
         )
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcStopMedicationOrder(request.copy(clientOpId = orderId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcStopMedicationOrder(request.copy(clientOpId = orderId)) }
             if (resp.isSuccessful) medicationOrderDao.markSynced(orderId)
             else throw IllegalStateException("rpc_stop_medication_order HTTP ${resp.code()}")
         }
@@ -447,7 +449,7 @@ class InpatientRepository @Inject constructor(
         )
         medicationAdministrationDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordMedicationAdmin(request.copy(clientOpId = adminId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordMedicationAdmin(request.copy(clientOpId = adminId)) }
             if (resp.isSuccessful) medicationAdministrationDao.markSynced(adminId)
             else throw IllegalStateException("rpc_record_medication_admin HTTP ${resp.code()}")
         }
@@ -481,7 +483,7 @@ class InpatientRepository @Inject constructor(
             status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
         )
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcDischargeAdmission(request.copy(clientOpId = admissionId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcDischargeAdmission(request.copy(clientOpId = admissionId)) }
             if (resp.isSuccessful) admissionDao.markSynced(admissionId)
             else throw IllegalStateException("rpc_discharge_admission HTTP ${resp.code()}")
         }
@@ -494,7 +496,7 @@ class InpatientRepository @Inject constructor(
         deliveryDao.observeForAdmission(admissionId)
 
     suspend fun refreshDelivery(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 supabaseApi.rpcAdmissionDelivery(AdmissionDeliveryRequest(admissionId)).firstOrNull()?.let { d ->
@@ -560,7 +562,7 @@ class InpatientRepository @Inject constructor(
         )
         deliveryDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordDelivery(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordDelivery(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) deliveryDao.markSynced(id)
             else throw IllegalStateException("rpc_record_delivery HTTP ${resp.code()}")
         }
@@ -573,7 +575,7 @@ class InpatientRepository @Inject constructor(
         postnatalObservationDao.observeForAdmission(admissionId)
 
     suspend fun refreshPostnatal(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val rows = supabaseApi.rpcAdmissionPostnatalObs(AdmissionPostnatalRequest(admissionId))
@@ -637,7 +639,7 @@ class InpatientRepository @Inject constructor(
         )
         postnatalObservationDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordPostnatalObs(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordPostnatalObs(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) postnatalObservationDao.markSynced(id)
             else throw IllegalStateException("rpc_record_postnatal_obs HTTP ${resp.code()}")
         }
@@ -650,7 +652,7 @@ class InpatientRepository @Inject constructor(
         admissionNoteDao.observeForAdmission(admissionId)
 
     suspend fun refreshNotes(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val rows = supabaseApi.rpcAdmissionNotes(AdmissionNotesRequest(admissionId))
@@ -689,7 +691,7 @@ class InpatientRepository @Inject constructor(
         )
         admissionNoteDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordAdmissionNote(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordAdmissionNote(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) admissionNoteDao.markSynced(id)
             else throw IllegalStateException("rpc_record_admission_note HTTP ${resp.code()}")
         }
@@ -705,7 +707,7 @@ class InpatientRepository @Inject constructor(
         ivInfusionCheckDao.observeForAdmission(admissionId)
 
     suspend fun refreshIvInfusions(admissionId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             runCatching {
                 val remote = supabaseApi.rpcAdmissionIvInfusions(AdmissionIvRequest(admissionId))
@@ -771,7 +773,7 @@ class InpatientRepository @Inject constructor(
         )
         ivInfusionDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcStartIvInfusion(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcStartIvInfusion(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) ivInfusionDao.markSynced(id)
             else throw IllegalStateException("rpc_start_iv_infusion HTTP ${resp.code()}")
         }
@@ -806,7 +808,7 @@ class InpatientRepository @Inject constructor(
         )
         ivInfusionCheckDao.upsert(entity)
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcRecordIvInfusionCheck(request.copy(clientOpId = id))
+            val resp = directWriteExecutor.run { supabaseApi.rpcRecordIvInfusionCheck(request.copy(clientOpId = id)) }
             if (resp.isSuccessful) ivInfusionCheckDao.markSynced(id)
             else throw IllegalStateException("rpc_record_iv_infusion_check HTTP ${resp.code()}")
         }
@@ -826,7 +828,7 @@ class InpatientRepository @Inject constructor(
             status = "pending", attempts = 0, lastError = null, createdAt = System.currentTimeMillis(),
         )
         pushOrQueue(syncEntry) {
-            val resp = supabaseApi.rpcStopIvInfusion(request.copy(clientOpId = infusionId))
+            val resp = directWriteExecutor.run { supabaseApi.rpcStopIvInfusion(request.copy(clientOpId = infusionId)) }
             if (resp.isSuccessful) ivInfusionDao.markSynced(infusionId)
             else throw IllegalStateException("rpc_stop_iv_infusion HTTP ${resp.code()}")
         }
@@ -835,7 +837,7 @@ class InpatientRepository @Inject constructor(
 
     /** Try the RPC immediately when online; otherwise (or on failure) enqueue the outbox row. */
     private suspend fun pushOrQueue(syncEntry: SyncQueueEntry, push: suspend () -> Unit) {
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             val ok = runCatching { push() }.isSuccess
             if (!ok) syncQueueHelper.enqueue(syncEntry)
         } else {

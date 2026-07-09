@@ -31,7 +31,7 @@ class CatalogRepository @Inject constructor(
         }
 
     suspend fun refreshCatalog(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             try {
                 val dto = supabaseApi.rpcGetClinicCatalog(GetClinicCatalogRequest(clinicId))

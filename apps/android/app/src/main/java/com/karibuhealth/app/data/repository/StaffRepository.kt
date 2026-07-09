@@ -43,7 +43,7 @@ class StaffRepository @Inject constructor(
         clinicDao.getById(clinicId).map { it?.toDomain() }
 
     suspend fun fetchAndCacheStaff(clerkUserId: String): Staff? {
-        if (!networkMonitor.isOnline()) {
+        if (!networkMonitor.isConnected()) {
             return getStaffByClerkIdOnce(clerkUserId)
         }
 

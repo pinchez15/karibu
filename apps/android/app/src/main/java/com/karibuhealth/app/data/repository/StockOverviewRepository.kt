@@ -37,7 +37,7 @@ class StockOverviewRepository @Inject constructor(
                 updatedAt = entity.updatedAt,
             )
         }
-        val lab = if (networkMonitor.isOnline()) {
+        val lab = if (networkMonitor.isConnected()) {
             runCatching {
                 supabaseApi.getLabStockItems("eq.$clinicId")
             }.getOrDefault(emptyList())

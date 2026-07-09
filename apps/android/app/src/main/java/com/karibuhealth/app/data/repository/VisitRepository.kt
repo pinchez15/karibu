@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.dao.VisitDao
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
 import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.MarkDocumentationCompleteDto
 import com.karibuhealth.app.data.remote.dto.CompletePharmacyDispenseRequest
@@ -65,6 +66,7 @@ class VisitRepository @Inject constructor(
     private val syncDependencyResolver: SyncDependencyResolver,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val prescriptionOrderRepository: PrescriptionOrderRepository,
     private val json: Json,
 ) {
@@ -204,7 +206,7 @@ class VisitRepository @Inject constructor(
 
     suspend fun refreshOpdPatientsToday(clinicId: String) {
         withContext(Dispatchers.IO) {
-            if (!networkMonitor.isOnline()) {
+            if (!networkMonitor.isConnected()) {
                 opdPatientsCache.value = loadOpdPatientsLocal(clinicId)
                 return@withContext
             }
@@ -318,9 +320,9 @@ class VisitRepository @Inject constructor(
         // patientSyncEntryId is non-null, the patient is still queued, so we
         // must queue too — otherwise the FK on the server-side INSERT would
         // fail. Same logic for any other chain prerequisite.
-        if (networkMonitor.isOnline() && patientSyncEntryId == null) {
+        if (networkMonitor.isConnected() && patientSyncEntryId == null) {
             try {
-                val response = supabaseApi.rpcCreateVisit(rpcDto)
+                val response = directWriteExecutor.run { supabaseApi.rpcCreateVisit(rpcDto) }
                 if (response.isSuccessful) {
                     visitDao.updateSyncState(visit.id, true)
                     return@withContext visit to null
@@ -377,9 +379,9 @@ class VisitRepository @Inject constructor(
             put("p_client_op_id", opId)
         }
 
-        if (networkMonitor.isOnline()) {
+        if (networkMonitor.isConnected()) {
             try {
-                val response = supabaseApi.checkInPatient(rpcParams)
+                val response = directWriteExecutor.run { supabaseApi.checkInPatient(rpcParams) }
                 if (response.isSuccessful) {
                     val returnedId = response.body()?.string()?.trim('"')
                     if (!returnedId.isNullOrBlank()) {
@@ -488,9 +490,9 @@ class VisitRepository @Inject constructor(
             clientOpId = syncEntryId,
         )
 
-        if (networkMonitor.isOnline() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
+        if (networkMonitor.isConnected() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
             try {
-                val response = supabaseApi.rpcSubmitPharmacyOrder(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcSubmitPharmacyOrder(rpcBody) }
                 if (response.isSuccessful) {
                     prescriptionOrderRepository.replaceLocalAfterSubmit(visitId)
                     markVisitSyncedIfQuiet(visitId)
@@ -698,7 +700,7 @@ class VisitRepository @Inject constructor(
             )
             val payloadJson = json.encodeToString(SubmitLabOrderSyncPayload.serializer(), payload)
 
-            if (networkMonitor.isOnline() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
+            if (networkMonitor.isConnected() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
                 runCatching {
                     supabaseApi.updateVisit(
                         visitId,
@@ -750,7 +752,7 @@ class VisitRepository @Inject constructor(
                 labStatus = local.labStatus,
             )
         }
-        if (!networkMonitor.isOnline()) {
+        if (!networkMonitor.isConnected()) {
             val (visit, _) = createVisit(
                 clinicId = clinicId,
                 patientId = patientId,
@@ -1031,9 +1033,9 @@ class VisitRepository @Inject constructor(
 
         val visitDependency = syncDependencyResolver.pendingVisitDependency(visitId)
 
-        if (networkMonitor.isOnline() && visitDependency == null) {
+        if (networkMonitor.isConnected() && visitDependency == null) {
             try {
-                val response = onlineCall(syncEntryId)
+                val response = directWriteExecutor.run { onlineCall(syncEntryId) }
                 if (response.isSuccessful) {
                     markVisitSyncedIfQuiet(visitId)
                     return@withContext null
@@ -1152,9 +1154,9 @@ class VisitRepository @Inject constructor(
         val effectivePredecessor = predecessorSyncId
             ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcMarkDocumentationComplete(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcMarkDocumentationComplete(rpcBody) }
                 if (response.isSuccessful) {
                     markVisitSyncedIfQuiet(visitId)
                     return@withContext null
@@ -1183,7 +1185,7 @@ class VisitRepository @Inject constructor(
         val now = Instant.now().toString()
         visitDao.updateQueueStatus(visitId, QueueStatus.completed.name, now)
         visitDao.updateSyncState(visitId, false)
-        if (!networkMonitor.isOnline()) {
+        if (!networkMonitor.isConnected()) {
             throw IllegalStateException("Check-out requires an internet connection")
         }
         val response = supabaseApi.rpcCheckOutVisit(
@@ -1204,7 +1206,7 @@ class VisitRepository @Inject constructor(
     }
 
     suspend fun refreshTodayVisits(clinicId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             try {
                 val today = LocalDate.now().toString()
@@ -1221,7 +1223,7 @@ class VisitRepository @Inject constructor(
     }
 
     suspend fun refreshVisit(visitId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         withContext(Dispatchers.IO) {
             try {
                 val remote = supabaseApi.getVisitById("eq.$visitId")
