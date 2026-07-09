@@ -479,6 +479,10 @@ class SyncEngine @Inject constructor(
      * keeps refusing to process them because the parent never flips to
      * 'completed'. Cycles are structurally impossible (single-parent
      * dependsOn + topological insertion order).
+     *
+     * Blocked dependents are marked `status='failed'`, `attempts=maxAttempts`,
+     * and `lastError='blocked: …'`. The `blocked:` prefix is the machine-readable
+     * discriminator between "blocked by upstream" and "exhausted own retries".
      */
     private suspend fun markDependentsFailed(entryId: String, reason: String) {
         val dependents = syncQueueDao.getDependents(entryId)
@@ -488,8 +492,10 @@ class SyncEngine @Inject constructor(
             syncQueueDao.update(
                 dep.copy(
                     status = "failed",
-                    lastError = reason,
-                )
+                    attempts = dep.maxAttempts,
+                    lastError = "blocked: $reason",
+                    nextRetryAt = null,
+                ),
             )
             markDependentsFailed(dep.id, "upstream ${dep.operationType} failed: $reason")
         }
@@ -738,6 +744,8 @@ class SyncEngine @Inject constructor(
         // without ever leaving the device.
         val rpcParams = payload["params"]?.jsonObject
             ?: kotlinx.serialization.json.JsonObject(emptyMap())
+        // Legacy queue rows (pre-WP-B) omit p_visit_id; they still execute but
+        // may create a server visit with a fresh id — WP-A reconciler recovers.
 
         val response = when (rpcName) {
             "assign_to_nurse" -> supabaseApi.assignToNurse(rpcParams)
@@ -754,6 +762,9 @@ class SyncEngine @Inject constructor(
         if (response != null && !response.isSuccessful) {
             val body = response.errorBody()?.string().orEmpty()
             throw SyncHttpException(response.code(), body, rpcName ?: "queue_op")
+        }
+        if (rpcName == "check_in_patient" && response != null && response.isSuccessful) {
+            markVisitSyncedIfQuiet(entry)
         }
     }
 

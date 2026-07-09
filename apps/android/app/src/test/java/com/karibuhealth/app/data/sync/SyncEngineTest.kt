@@ -11,6 +11,8 @@ import io.mockk.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Before
@@ -351,6 +353,115 @@ class SyncEngineTest {
         }
     }
 
+    // ---------------------------------------------------------------------
+    // WP-A — cascaded failures are terminally failed (blocked:), not pending.
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `cascadeMarksDependentsTerminallyFailed`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val parent = makeLabResultEntry("parent-1", visitId = "visit-1", maxAttempts = 10)
+        val child = makeSyncEntry(
+            "child-1",
+            operationType = "record_payment",
+            dependsOn = "parent-1",
+            status = "pending",
+            maxAttempts = 10,
+        )
+        val grandchild = makeSyncEntry(
+            "grandchild-1",
+            operationType = "rpc_create_referral",
+            dependsOn = "child-1",
+            status = "pending",
+            maxAttempts = 10,
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(parent)
+        coEvery { syncQueueDao.getDependents("parent-1") } returns listOf(child)
+        coEvery { syncQueueDao.getDependents("child-1") } returns listOf(grandchild)
+        coEvery { syncQueueDao.getDependents("grandchild-1") } returns emptyList()
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(422, "unprocessable".toResponseBody())
+
+        syncEngine.processQueue()
+
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "child-1" &&
+                    it.status == "failed" &&
+                    it.attempts == 10 &&
+                    it.lastError.orEmpty().startsWith("blocked:")
+            })
+        }
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "grandchild-1" &&
+                    it.status == "failed" &&
+                    it.attempts == 10 &&
+                    it.lastError.orEmpty().startsWith("blocked:")
+            })
+        }
+    }
+
+    @Test
+    fun `blockedChildrenAreNotRetriedNorCounted`() {
+        val blocked = makeSyncEntry(
+            "blocked-1",
+            status = "failed",
+            attempts = 10,
+            maxAttempts = 10,
+            lastError = "blocked: upstream create_patient failed",
+        )
+        val retryable = makeSyncEntry("retry-1", status = "pending", attempts = 0, maxAttempts = 10)
+
+        fun countsToRetryable(e: SyncQueueEntry) =
+            e.status in setOf("pending", "failed") &&
+                e.attempts < e.maxAttempts &&
+                (e.nextRetryAt == null || e.nextRetryAt <= System.currentTimeMillis())
+        fun countsToPendingPill(e: SyncQueueEntry) =
+            e.status in setOf("pending", "failed") && e.attempts < e.maxAttempts
+        fun countsToNeedsAttention(e: SyncQueueEntry) =
+            e.status == "failed" && e.attempts >= e.maxAttempts
+
+        assertFalse(countsToRetryable(blocked))
+        assertFalse(countsToPendingPill(blocked))
+        assertTrue(countsToNeedsAttention(blocked))
+        assertTrue(countsToRetryable(retryable))
+        assertTrue(countsToPendingPill(retryable))
+        assertFalse(countsToNeedsAttention(retryable))
+    }
+
+    @Test
+    fun `retryAllRoundTripReblocksChildren`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val parent = makeLabResultEntry("parent-1", visitId = "visit-1", maxAttempts = 10)
+        val child = makeSyncEntry(
+            "child-1",
+            operationType = "record_payment",
+            dependsOn = "parent-1",
+            status = "pending",
+            attempts = 0,
+            maxAttempts = 10,
+        )
+        // After resetFailed the parent is pending again; only the parent is
+        // retryable on this run — cascade re-blocks the child when it perm-fails.
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(parent)
+        coEvery { syncQueueDao.getDependents("parent-1") } returns listOf(child)
+        coEvery { syncQueueDao.getDependents("child-1") } returns emptyList()
+        coEvery { supabaseApi.rpcRecordLabResult(any()) } returns Response.error(422, "unprocessable".toResponseBody())
+
+        syncEngine.processQueue()
+
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "child-1" &&
+                    it.status == "failed" &&
+                    it.attempts == 10 &&
+                    it.lastError.orEmpty().startsWith("blocked:")
+            })
+        }
+    }
+
     @Test
     fun `permanent 422 dead-letters immediately`() = runTest {
         every { networkMonitor.isConnected() } returns true
@@ -536,6 +647,43 @@ class SyncEngineTest {
         assertEquals(3, entries.count(::countsToPendingPill))
     }
 
+    @Test
+    fun `queuedCheckInMarksVisitSyncedWhenQuiet`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+
+        val visitId = "visit-checkin-1"
+        val payload = buildJsonObject {
+            put("rpc", "check_in_patient")
+            put(
+                "params",
+                buildJsonObject {
+                    put("p_clinic_id", "clinic-1")
+                    put("p_patient_id", "patient-1")
+                    put("p_visit_id", visitId)
+                    put("p_client_op_id", "op-checkin-1")
+                },
+            )
+        }
+        val entry = makeSyncEntry(
+            id = "op-checkin-1",
+            operationType = "queue_op",
+            entityId = visitId,
+            payload = json.encodeToString(
+                kotlinx.serialization.json.JsonObject.serializer(),
+                payload,
+            ),
+        )
+
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { supabaseApi.checkInPatient(any()) } returns Response.success("".toResponseBody())
+        coEvery { syncQueueDao.countActiveForEntity(visitId, "op-checkin-1") } returns 0
+
+        val result = syncEngine.processQueue()
+
+        assertEquals(1, result)
+        coVerify { visitDao.updateSyncState(visitId, true) }
+    }
+
     private fun makeLabResultEntry(
         id: String,
         visitId: String,
@@ -562,6 +710,8 @@ class SyncEngineTest {
         attempts: Int = 0,
         maxAttempts: Int = 5,
         entityId: String? = null,
+        lastError: String? = null,
+        nextRetryAt: Long? = null,
     ) = SyncQueueEntry(
         id = id,
         operationType = operationType,
@@ -573,5 +723,7 @@ class SyncEngineTest {
         maxAttempts = maxAttempts,
         createdAt = System.currentTimeMillis(),
         dependsOn = dependsOn,
+        lastError = lastError,
+        nextRetryAt = nextRetryAt,
     )
 }

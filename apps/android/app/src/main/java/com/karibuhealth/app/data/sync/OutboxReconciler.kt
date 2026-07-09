@@ -38,7 +38,7 @@ class OutboxReconciler @Inject constructor(
     }
 
     suspend fun reconcilePendingWithLocalState() {
-        val pending = syncQueueDao.getPending()
+        val pending = syncQueueDao.getActiveForReconciliation()
         var cleared = 0
         for (entry in pending) {
             val alreadyOnServer = when (entry.operationType) {
@@ -61,6 +61,9 @@ class OutboxReconciler @Inject constructor(
             }
             if (alreadyOnServer) {
                 syncQueueDao.forceComplete(entry.id)
+                // One hop only — grandchildren revive on a later pass once their
+                // direct parent completes and is reconciled in turn.
+                syncQueueDao.reviveBlockedDependents(entry.id)
                 cleared++
             }
         }

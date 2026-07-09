@@ -12,6 +12,9 @@ interface SyncQueueDao {
     @Query("SELECT * FROM sync_queue WHERE status = 'pending' ORDER BY created_at ASC")
     suspend fun getPending(): List<SyncQueueEntry>
 
+    @Query("SELECT * FROM sync_queue WHERE status IN ('pending', 'failed') ORDER BY created_at ASC")
+    suspend fun getActiveForReconciliation(): List<SyncQueueEntry>
+
     @Query("""
         SELECT * FROM sync_queue
         WHERE status IN ('pending', 'failed')
@@ -146,4 +149,11 @@ interface SyncQueueDao {
      */
     @Query("UPDATE sync_queue SET status = 'completed' WHERE id = :id")
     suspend fun forceComplete(id: String)
+
+    @Query("""
+        UPDATE sync_queue
+        SET status = 'pending', attempts = 0, last_error = NULL, next_retry_at = NULL
+        WHERE depends_on = :parentId AND status = 'failed' AND last_error LIKE 'blocked:%'
+    """)
+    suspend fun reviveBlockedDependents(parentId: String): Int
 }

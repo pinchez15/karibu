@@ -68,7 +68,7 @@ class OutboxReconcilerTest {
         val pending = mutationOps.mapIndexed { i, op ->
             makeEntry(id = "e-$i", operationType = op, entityType = "visits", entityId = "visit-1")
         }
-        coEvery { syncQueueDao.getPending() } returns pending
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns pending
         coEvery { visitDao.getByIdOnce("visit-1") } returns syncedVisit()
 
         reconciler.reconcilePendingWithLocalState()
@@ -89,7 +89,7 @@ class OutboxReconcilerTest {
         val pending = noteOps.mapIndexed { i, op ->
             makeEntry(id = "n-$i", operationType = op, entityType = "provider_notes", entityId = "note-1")
         }
-        coEvery { syncQueueDao.getPending() } returns pending
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns pending
 
         reconciler.reconcilePendingWithLocalState()
 
@@ -103,7 +103,7 @@ class OutboxReconcilerTest {
             makeEntry("c-2", "create_visit", "visits", "visit-1"),
             makeEntry("c-3", "insert_patient_vitals", "patient_vitals", "vitals-1"),
         )
-        coEvery { syncQueueDao.getPending() } returns pending
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns pending
         coEvery { patientDao.getByIdOnce("patient-1") } returns syncedPatient()
         coEvery { visitDao.getByIdOnce("visit-1") } returns syncedVisit()
         coEvery { patientVitalsDao.getByIdOnce("vitals-1") } returns syncedVitals()
@@ -118,7 +118,7 @@ class OutboxReconcilerTest {
     @Test
     fun `does not clear create ops when entity is not synced`() = runTest {
         val unsyncedVisit: VisitEntity = mockk { every { isSynced } returns false }
-        coEvery { syncQueueDao.getPending() } returns listOf(
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns listOf(
             makeEntry("c-1", "create_visit", "visits", "visit-1"),
         )
         coEvery { visitDao.getByIdOnce("visit-1") } returns unsyncedVisit
@@ -130,7 +130,7 @@ class OutboxReconcilerTest {
 
     @Test
     fun `clears check_in_patient queue op when visit is synced but not other queue rpcs`() = runTest {
-        coEvery { syncQueueDao.getPending() } returns listOf(
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns listOf(
             makeEntry(
                 id = "q-1",
                 operationType = "queue_op",
@@ -152,6 +152,30 @@ class OutboxReconcilerTest {
 
         coVerify(exactly = 1) { syncQueueDao.forceComplete("q-1") }
         coVerify(exactly = 0) { syncQueueDao.forceComplete("q-2") }
+    }
+
+    @Test
+    fun `failedCreateVisitWithSyncedEntityIsForceCompleted`() = runTest {
+        val failedVisit = makeEntry("c-1", "create_visit", "visits", "visit-1")
+            .copy(status = "failed", attempts = 10, lastError = "timeout")
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns listOf(failedVisit)
+        coEvery { visitDao.getByIdOnce("visit-1") } returns syncedVisit()
+
+        reconciler.reconcilePendingWithLocalState()
+
+        coVerify { syncQueueDao.forceComplete("c-1") }
+    }
+
+    @Test
+    fun `forceCompleteRevivesBlockedDependents`() = runTest {
+        val parent = makeEntry("c-1", "create_visit", "visits", "visit-1")
+        coEvery { syncQueueDao.getActiveForReconciliation() } returns listOf(parent)
+        coEvery { visitDao.getByIdOnce("visit-1") } returns syncedVisit()
+
+        reconciler.reconcilePendingWithLocalState()
+
+        coVerify { syncQueueDao.forceComplete("c-1") }
+        coVerify { syncQueueDao.reviveBlockedDependents("c-1") }
     }
 
     private fun makeEntry(
