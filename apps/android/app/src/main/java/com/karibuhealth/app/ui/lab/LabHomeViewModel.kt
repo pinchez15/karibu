@@ -87,10 +87,6 @@ class LabHomeViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
-    fun updateSearch(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
-    }
-
     fun startLabTest(visitId: String, testName: String) {
         viewModelScope.launch {
             val key = "$visitId:$testName"
