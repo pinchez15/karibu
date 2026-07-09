@@ -3,6 +3,19 @@ package com.karibuhealth.app.data.local.db.migrations
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+// v31 -> v32: WP-A sync queue accounting. Re-baseline historical cascade-limbo
+// rows (failed with attempts < max_attempts) so they leave the pending count
+// and surface under Needs attention with the blocked: prefix.
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "UPDATE sync_queue SET attempts = max_attempts, " +
+                "last_error = COALESCE('blocked: ' || last_error, 'blocked: legacy cascade') " +
+                "WHERE status = 'failed' AND attempts < max_attempts",
+        )
+    }
+}
+
 // v30 -> v31: WP2 sync reliability. Raise the retry budget for existing
 // non-completed outbox rows from 5 to 10 so transient network failures on a
 // bad link stop dead-lettering real patient data before the connection

@@ -102,6 +102,14 @@ fun SyncDetailsSheet(
                     // toward the pending banner, so this is the only place the
                     // clinician can see (and rescue) them.
                     if (failedEntries.isNotEmpty()) {
+                        val roots = failedEntries.filter { !isBlockedByUpstream(it) }
+                        // One-hop grouping only: children whose dependsOn matches a
+                        // visible root are collapsed under that root.
+                        val blockedChildren = failedEntries.filter { isBlockedByUpstream(it) }
+                        val orphanedBlocked = blockedChildren.filter { child ->
+                            roots.none { it.id == child.dependsOn }
+                        }
+
                         item(key = "needs-attention-header") {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
@@ -117,11 +125,36 @@ fun SyncDetailsSheet(
                                 )
                             }
                         }
-                        items(failedEntries, key = { it.id }) { entry ->
+                        items(roots, key = { it.id }) { entry ->
                             SyncEntryRow(
                                 entry = entry,
                                 onMarkSynced = { onMarkSynced(entry.id) },
                             )
+                            val blockedCount = blockedChildren.count { it.dependsOn == entry.id }
+                            if (blockedCount > 0) {
+                                Text(
+                                    text = "…and $blockedCount dependent record${if (blockedCount == 1) "" else "s"} blocked by this",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
+                                )
+                            }
+                        }
+                        if (orphanedBlocked.isNotEmpty()) {
+                            item(key = "blocked-orphans-header") {
+                                Text(
+                                    text = "Blocked (${orphanedBlocked.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                            items(orphanedBlocked, key = { "orphan-${it.id}" }) { entry ->
+                                SyncEntryRow(
+                                    entry = entry,
+                                    onMarkSynced = { onMarkSynced(entry.id) },
+                                )
+                            }
                         }
                         item(key = "needs-attention-retry") {
                             Button(
@@ -204,6 +237,9 @@ fun SyncDetailsSheet(
         }
     }
 }
+
+private fun isBlockedByUpstream(entry: SyncQueueEntry): Boolean =
+    entry.lastError.orEmpty().startsWith("blocked:")
 
 @Composable
 private fun SyncEntryRow(

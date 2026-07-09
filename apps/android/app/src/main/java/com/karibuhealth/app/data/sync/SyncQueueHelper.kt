@@ -19,22 +19,40 @@ class SyncQueueHelper @Inject constructor(
 ) {
     suspend fun enqueue(entry: SyncQueueEntry): String {
         val existing = syncQueueDao.getByEntityAndOperation(entry.entityId, entry.operationType)
-        val id = if (existing != null && existing.status != "completed") {
-            syncQueueDao.update(
-                existing.copy(
-                    payload = entry.payload,
-                    status = "pending",
-                    attempts = 0,
-                    lastError = null,
-                    nextRetryAt = null,
-                    dependsOn = entry.dependsOn ?: existing.dependsOn,
-                ),
+        val (id, row) = if (existing != null && existing.status != "completed") {
+            val updated = existing.copy(
+                payload = entry.payload,
+                status = "pending",
+                attempts = 0,
+                lastError = null,
+                nextRetryAt = null,
+                dependsOn = entry.dependsOn ?: existing.dependsOn,
             )
-            existing.id
+            syncQueueDao.update(updated)
+            existing.id to updated
         } else {
             syncQueueDao.insert(entry)
-            entry.id
+            entry.id to entry
         }
+
+        // Cascade-on-arrival: a failed parent blocks this row immediately so it
+        // never inflates the pending banner or burns retries behind a dead gate.
+        row.dependsOn?.let { parentId ->
+            val parent = syncQueueDao.getById(parentId)
+            if (parent != null && parent.status == "failed") {
+                syncQueueDao.update(
+                    row.copy(
+                        id = id,
+                        status = "failed",
+                        attempts = row.maxAttempts,
+                        lastError = "blocked: upstream ${parent.operationType} already failed",
+                        nextRetryAt = null,
+                    ),
+                )
+                return id
+            }
+        }
+
         scheduleImmediateSync()
         return id
     }

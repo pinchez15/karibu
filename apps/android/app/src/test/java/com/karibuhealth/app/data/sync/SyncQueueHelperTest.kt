@@ -105,6 +105,85 @@ class SyncQueueHelperTest {
         }
     }
 
+    @Test
+    fun `enqueueOntoDeadParentIsBlockedImmediately`() = runTest {
+        val parent = makeEntry(
+            id = "parent-id",
+            entityId = "patient-1",
+            operationType = "create_patient",
+        ).copy(status = "failed", attempts = 10, lastError = "permanent failure")
+        coEvery { syncQueueDao.getByEntityAndOperation("visit-1", "create_visit") } returns null
+        coEvery { syncQueueDao.getById("parent-id") } returns parent
+
+        val entry = makeEntry(
+            id = "child-id",
+            entityId = "visit-1",
+            operationType = "create_visit",
+        ).copy(dependsOn = "parent-id")
+
+        val returned = helper.enqueue(entry)
+
+        assertEquals("child-id", returned)
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "child-id" &&
+                    it.status == "failed" &&
+                    it.attempts == it.maxAttempts &&
+                    it.lastError.orEmpty().startsWith("blocked:")
+            })
+        }
+        verify(exactly = 0) {
+            workManager.enqueueUniqueWork(any(), any(), any<androidx.work.OneTimeWorkRequest>())
+        }
+    }
+
+    @Test
+    fun `autosaveReuseDoesNotResurrectBlockedRow`() = runTest {
+        val parent = makeEntry(
+            id = "parent-id",
+            entityId = "patient-1",
+            operationType = "create_patient",
+        ).copy(status = "failed", attempts = 10, lastError = "permanent failure")
+        val blocked = makeEntry(
+            id = "note-id",
+            entityId = "visit-1",
+            operationType = "upsert_provider_note",
+            payload = """{"old":"draft"}""",
+        ).copy(
+            status = "failed",
+            attempts = 10,
+            lastError = "blocked: upstream create_visit failed",
+            dependsOn = "parent-id",
+        )
+        coEvery {
+            syncQueueDao.getByEntityAndOperation("visit-1", "upsert_provider_note")
+        } returns blocked
+        coEvery { syncQueueDao.getById("parent-id") } returns parent
+
+        val autosave = makeEntry(
+            id = "new-note-id",
+            entityId = "visit-1",
+            operationType = "upsert_provider_note",
+            payload = """{"new":"draft"}""",
+        ).copy(dependsOn = "parent-id")
+
+        val returned = helper.enqueue(autosave)
+
+        assertEquals("note-id", returned)
+        coVerify {
+            syncQueueDao.update(match {
+                it.id == "note-id" &&
+                    it.payload == """{"new":"draft"}""" &&
+                    it.status == "failed" &&
+                    it.attempts == it.maxAttempts &&
+                    it.lastError.orEmpty().startsWith("blocked:")
+            })
+        }
+        verify(exactly = 0) {
+            workManager.enqueueUniqueWork(any(), any(), any<androidx.work.OneTimeWorkRequest>())
+        }
+    }
+
     private fun makeEntry(
         id: String,
         entityId: String,
