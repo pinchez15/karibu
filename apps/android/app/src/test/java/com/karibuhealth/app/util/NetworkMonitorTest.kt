@@ -26,6 +26,14 @@ class NetworkMonitorTest {
     }
 
     @Test
+    fun internetWithoutValidatedIsConnectedNotOnline() {
+        val status = NetworkMonitor.statusFromCapabilities(caps(internet = true, validated = false))
+
+        assertTrue("connected when INTERNET present", status.isConnected)
+        assertFalse("not online until VALIDATED", status.isOnline)
+    }
+
+    @Test
     fun `internet but not validated is connected but not online`() {
         val status = NetworkMonitor.statusFromCapabilities(caps(internet = true, validated = false))
 

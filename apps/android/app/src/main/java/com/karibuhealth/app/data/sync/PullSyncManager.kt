@@ -37,10 +37,10 @@ class PullSyncManager @Inject constructor(
         observeJob = scope.launch {
             // Watch for network reconnection
             var wasOffline = false
-            networkMonitor.isOnlineFlow
+            networkMonitor.isConnectedFlow
                 .distinctUntilChanged()
-                .collect { isOnline ->
-                    if (isOnline && wasOffline) {
+                .collect { isConnected ->
+                    if (isConnected && wasOffline) {
                         Log.d(TAG, "Network reconnected, triggering sync after debounce")
                         delay(RECONNECT_DEBOUNCE_MS)
 
@@ -55,7 +55,7 @@ class PullSyncManager @Inject constructor(
                         // Pull fresh data
                         pullAll()
                     }
-                    wasOffline = !isOnline
+                    wasOffline = !isConnected
                 }
         }
     }

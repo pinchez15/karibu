@@ -9,6 +9,7 @@ import com.karibuhealth.app.data.local.db.dao.SyncQueueDao
 import com.karibuhealth.app.data.local.db.entity.PatientNoteEntity
 import com.karibuhealth.app.data.local.db.entity.ProviderNoteEntity
 import com.karibuhealth.app.data.local.db.entity.SyncQueueEntry
+import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.sync.SyncDependencyResolver
 import com.karibuhealth.app.data.sync.SyncQueueHelper
@@ -44,6 +45,7 @@ class NoteRepository @Inject constructor(
     private val syncDependencyResolver: SyncDependencyResolver,
     private val supabaseApi: SupabaseApi,
     private val networkMonitor: NetworkMonitor,
+    private val directWriteExecutor: DirectWriteExecutor,
     private val json: Json,
 ) {
     fun getProviderNote(visitId: String): Flow<ProviderNote?> =
@@ -169,9 +171,9 @@ class NoteRepository @Inject constructor(
         val effectivePredecessor = predecessorSyncId
             ?: entity.visitId?.let { syncDependencyResolver.pendingVisitDependency(it) }
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcUpsertProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcUpsertProviderNote(rpcBody) }
                 if (response.isSuccessful) {
                     val merged = mergeProviderNoteFromServer(entity.visitId, entity.id) ?: entity
                     return@withContext merged.toDomain() to null
@@ -275,9 +277,9 @@ class NoteRepository @Inject constructor(
         )
 
         val rpcBody = SignProviderNoteRequest(id = noteId)
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        if (networkMonitor.isConnected() && predecessorSyncId == null) {
             try {
-                val response = supabaseApi.rpcSignProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcSignProviderNote(rpcBody) }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -337,9 +339,9 @@ class NoteRepository @Inject constructor(
             transcript = transcript,
             reason = reason,
         )
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        if (networkMonitor.isConnected() && predecessorSyncId == null) {
             try {
-                val response = supabaseApi.rpcAmendProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcAmendProviderNote(rpcBody) }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -386,9 +388,9 @@ class NoteRepository @Inject constructor(
         )
 
         val rpcBody = VoidProviderNoteRequest(id = noteId, reason = reason)
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        if (networkMonitor.isConnected() && predecessorSyncId == null) {
             try {
-                val response = supabaseApi.rpcVoidProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcVoidProviderNote(rpcBody) }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -443,9 +445,9 @@ class NoteRepository @Inject constructor(
         }
 
         val rpcBody = AddendProviderNoteRequest(id = noteId, addendumText = addendumText)
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        if (networkMonitor.isConnected() && predecessorSyncId == null) {
             try {
-                val response = supabaseApi.rpcAddendProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcAddendProviderNote(rpcBody) }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -496,9 +498,9 @@ class NoteRepository @Inject constructor(
         }
 
         val rpcBody = CosignProviderNoteRequest(id = noteId)
-        if (networkMonitor.isOnline() && predecessorSyncId == null) {
+        if (networkMonitor.isConnected() && predecessorSyncId == null) {
             try {
-                val response = supabaseApi.rpcCosignProviderNote(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcCosignProviderNote(rpcBody) }
                 if (response.isSuccessful) return@withContext null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -602,9 +604,9 @@ class NoteRepository @Inject constructor(
 
         val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcFinalizeClinicalEncounter(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcFinalizeClinicalEncounter(rpcBody) }
                 if (response.isSuccessful) {
                     markVisitSyncedIfQuiet(visitId)
                     return@withContext null
@@ -667,9 +669,9 @@ class NoteRepository @Inject constructor(
 
         val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcUpsertPatientNoteSummary(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcUpsertPatientNoteSummary(rpcBody) }
                 if (response.isSuccessful) return@withContext entity.toDomain() to null
             } catch (_: Exception) {
                 // Fall through to queue
@@ -730,9 +732,9 @@ class NoteRepository @Inject constructor(
         )
         val effectivePredecessor = predecessorSyncId ?: syncDependencyResolver.pendingVisitDependency(visitId)
 
-        if (networkMonitor.isOnline() && effectivePredecessor == null) {
+        if (networkMonitor.isConnected() && effectivePredecessor == null) {
             try {
-                val response = supabaseApi.rpcUpsertVisitClinicalSummary(rpcBody)
+                val response = directWriteExecutor.run { supabaseApi.rpcUpsertVisitClinicalSummary(rpcBody) }
                 if (response.isSuccessful) {
                     markVisitSyncedIfQuiet(visitId)
                     return@withContext null
@@ -759,7 +761,7 @@ class NoteRepository @Inject constructor(
     }
 
     suspend fun refreshNotes(visitId: String) {
-        if (!networkMonitor.isOnline()) return
+        if (!networkMonitor.isConnected()) return
         try {
             val providerNotes = supabaseApi.getProviderNote("eq.$visitId")
             providerNotes.firstOrNull()?.let { providerNoteDao.upsert(it.toEntity()) }

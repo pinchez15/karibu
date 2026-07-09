@@ -23,6 +23,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Audit Android repository online gates
+        run: ./scripts/audit-android-online-gate.sh
+
       - name: Run unit tests
         working-directory: apps/android
         run: ./gradlew testDebugUnitTest
