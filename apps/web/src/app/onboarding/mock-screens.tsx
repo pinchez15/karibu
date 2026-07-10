@@ -58,12 +58,21 @@ function Shell({
   activeUnit = 'opd',
   children,
   sidebarHighlight,
+  onSidebarSelect,
   topTitle,
 }: {
   unit: string
   activeUnit?: string
   children: React.ReactNode
   sidebarHighlight?: string
+  /**
+   * Makes the highlighted sidebar item clickable. Without this, a step whose
+   * coach text says "tap the highlighted button" had NO tappable target on
+   * screens >= sm where the sidebar shows — the sm:hidden fallback button was
+   * the only handler, soft-locking step 1 of onboarding on laptops/tablets
+   * (field report 2026-07-10).
+   */
+  onSidebarSelect?: (id: string) => void
   topTitle?: string
 }) {
   return (
@@ -98,20 +107,27 @@ function Shell({
             <p className="px-1 text-[10px] font-semibold text-foreground">Ssunga HC III</p>
             <p className="mb-2 px-1 text-[9px] font-semibold text-cobalt">{unit}</p>
             <nav className="space-y-0.5">
-              {OPD_NAV.map(({ id, label, icon: Icon }) => (
-                <div
-                  key={id}
-                  className={cn(
-                    'flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px]',
-                    sidebarHighlight === id
-                      ? 'bg-cobalt-soft font-semibold text-cobalt'
-                      : 'text-muted-foreground',
-                  )}
-                >
-                  <Icon className="h-3 w-3 shrink-0" />
-                  {label}
-                </div>
-              ))}
+              {OPD_NAV.map(({ id, label, icon: Icon }) => {
+                const isTarget = sidebarHighlight === id && onSidebarSelect != null
+                const classes = cn(
+                  'flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-[10px]',
+                  sidebarHighlight === id
+                    ? 'bg-cobalt-soft font-semibold text-cobalt'
+                    : 'text-muted-foreground',
+                  isTarget && 'ring-2 ring-cobalt ring-offset-1',
+                )
+                return isTarget ? (
+                  <button key={id} type="button" className={classes} onClick={() => onSidebarSelect(id)}>
+                    <Icon className="h-3 w-3 shrink-0" />
+                    {label}
+                  </button>
+                ) : (
+                  <div key={id} className={classes}>
+                    <Icon className="h-3 w-3 shrink-0" />
+                    {label}
+                  </div>
+                )
+              })}
             </nav>
           </aside>
         )}
@@ -215,7 +231,12 @@ export function RecordsDeskMock({ activeStepId, onStepAction }: MockProps) {
   const h = (step: string) => activeStepId === step
 
   return (
-    <Shell unit="OPD" sidebarHighlight={h('open-patients') ? 'patients' : undefined} topTitle="Patients">
+    <Shell
+      unit="OPD"
+      sidebarHighlight={h('open-patients') ? 'patients' : undefined}
+      onSidebarSelect={h('open-patients') ? () => onStepAction('open-patients') : undefined}
+      topTitle="Patients"
+    >
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-semibold">Patients</span>
         <span className="text-[10px] text-muted-foreground">142 patients</span>
