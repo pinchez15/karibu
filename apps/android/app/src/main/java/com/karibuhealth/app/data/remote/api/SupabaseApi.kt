@@ -72,20 +72,20 @@ interface SupabaseApi {
         @Query("select") select: String = "*",
     ): List<VisitDto>
 
-    @POST("visits")
-    suspend fun insertVisit(@Body body: Map<String, @JvmSuppressWildcards Any?>): Response<ResponseBody>
-
     // Visit creation goes through the SECURITY DEFINER RPC instead of a direct
     // INSERT — direct inserts were returning 404 from PostgREST's INSERT-with-
-    // RETURNING flow even with Prefer: return=minimal.
+    // RETURNING flow even with Prefer: return=minimal. Migration 105 also
+    // accepts p_admission_id for inpatient-linked visits (the old direct
+    // POST /visits could never be sent: Map<String, Any?> bodies are
+    // unserializable by the kotlinx converter).
     @POST("rpc/rpc_create_visit")
     suspend fun rpcCreateVisit(@Body request: VisitCreateRpcDto): Response<ResponseBody>
 
-    @PATCH("visits")
-    suspend fun updateVisit(
-        @Query("id") id: String,
-        @Body update: Map<String, @JvmSuppressWildcards Any?>,
-    ): List<VisitDto>
+    // Migration 105: replaces the direct PATCH /visits for lab ordering
+    // (same unserializable-Map-body failure — submit_lab_order ops never
+    // left the device).
+    @POST("rpc/rpc_submit_lab_order")
+    suspend fun rpcSubmitLabOrder(@Body request: SubmitLabOrderRequest): Response<ResponseBody>
 
     // Provider Notes
     @GET("provider_notes")

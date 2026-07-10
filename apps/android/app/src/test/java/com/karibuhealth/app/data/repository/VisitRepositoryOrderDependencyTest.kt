@@ -172,7 +172,7 @@ class VisitRepositoryOrderDependencyTest {
 
         repository.submitLabOrder(visitId, listOf("CBC"))
 
-        coVerify(exactly = 0) { supabaseApi.updateVisit(any(), any()) }
+        coVerify(exactly = 0) { supabaseApi.rpcSubmitLabOrder(any()) }
         val labEntry = queueByEntityOp[visitId to "submit_lab_order"]
         assertNotNull(labEntry)
         assertEquals(checkInEntryId, labEntry!!.dependsOn)

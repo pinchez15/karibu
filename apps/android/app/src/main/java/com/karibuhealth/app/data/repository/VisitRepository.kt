@@ -10,6 +10,7 @@ import com.karibuhealth.app.data.local.db.entity.VisitWithPatient
 import com.karibuhealth.app.data.remote.DirectWriteExecutor
 import com.karibuhealth.app.data.remote.api.SupabaseApi
 import com.karibuhealth.app.data.remote.dto.MarkDocumentationCompleteDto
+import com.karibuhealth.app.data.remote.dto.SubmitLabOrderRequest
 import com.karibuhealth.app.data.remote.dto.CompletePharmacyDispenseRequest
 import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
 import com.karibuhealth.app.data.remote.dto.medicationsSummary
@@ -702,16 +703,21 @@ class VisitRepository @Inject constructor(
 
             if (networkMonitor.isConnected() && syncDependencyResolver.pendingVisitDependency(visitId) == null) {
                 runCatching {
-                    supabaseApi.updateVisit(
-                        visitId,
-                        mapOf(
-                            "tests_ordered" to testsOrdered,
-                            "lab_status" to "pending",
-                            "lab_test_results" to Json.parseToJsonElement(encoded),
-                        ),
-                    )
-                    markVisitSyncedIfQuiet(visitId)
-                    return@withContext Result.success(Unit)
+                    val response = directWriteExecutor.run {
+                        supabaseApi.rpcSubmitLabOrder(
+                            SubmitLabOrderRequest(
+                                visitId = visitId,
+                                testsOrdered = testsOrdered,
+                                labStatus = "pending",
+                                labTestResults = Json.parseToJsonElement(encoded),
+                                clientOpId = syncEntryId,
+                            ),
+                        )
+                    }
+                    if (response.isSuccessful) {
+                        markVisitSyncedIfQuiet(visitId)
+                        return@withContext Result.success(Unit)
+                    }
                 }.onFailure {
                     // Queue for sync when the direct write fails offline mid-flight.
                 }
@@ -776,18 +782,21 @@ class VisitRepository @Inject constructor(
             }
             val visitId = UUID.randomUUID().toString()
             val today = LocalDate.now().toString()
-            val body = mapOf(
-                "id" to visitId,
-                "clinic_id" to clinicId,
-                "patient_id" to patientId,
-                "admission_id" to admissionId,
-                "visit_date" to today,
-                "department" to "opd",
-                "status" to "pending",
-                "queue_status" to "waiting",
-                "priority" to "normal",
-            )
-            val resp = supabaseApi.insertVisit(body)
+            // Migration 105: rpc_create_visit accepts p_admission_id. The old
+            // direct POST /visits could never be sent (Map<String, Any?>
+            // bodies are unserializable by the kotlinx converter).
+            val resp = directWriteExecutor.run {
+                supabaseApi.rpcCreateVisit(
+                    VisitCreateRpcDto(
+                        id = visitId,
+                        clinicId = clinicId,
+                        patientId = patientId,
+                        visitDate = today,
+                        department = "opd",
+                        admissionId = admissionId,
+                    ),
+                )
+            }
             if (!resp.isSuccessful) return@runCatching null
             val dto = supabaseApi.getVisitById("eq.$visitId").firstOrNull() ?: return@runCatching null
             visitDao.upsert(dto.toEntity())

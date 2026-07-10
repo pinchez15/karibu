@@ -2,6 +2,7 @@ package com.karibuhealth.app.data.remote.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
@@ -318,6 +319,7 @@ data class ProviderNoteDto(
     @SerialName("visit_id") val visitId: String? = null,
     val transcript: String? = null,
     @SerialName("note_content") val noteContent: String? = null,
+    @Serializable(with = FlexibleJsonString::class)
     @SerialName("structured_data") val structuredData: String? = null,
     // Lifecycle: draft | signed | amended | voided.
     val status: String = "draft",
@@ -402,6 +404,20 @@ data class VisitCreateRpcDto(
     @SerialName("p_chief_complaint") val chiefComplaint: String? = null,
     @SerialName("p_visit_date") val visitDate: String,
     @SerialName("p_department") val department: String = "opd",
+    // Migration 105: link inpatient-created visits to their admission.
+    @SerialName("p_admission_id") val admissionId: String? = null,
+)
+
+// Migration 105: replaces the direct PATCH /visits for lab ordering — the
+// Map<String, Any?> body could never be serialized by the kotlinx converter,
+// so submit_lab_order ops never left the device (1.0.32 field report).
+@Serializable
+data class SubmitLabOrderRequest(
+    @SerialName("p_visit_id") val visitId: String,
+    @SerialName("p_tests_ordered") val testsOrdered: String,
+    @SerialName("p_lab_status") val labStatus: String = "pending",
+    @SerialName("p_lab_test_results") val labTestResults: JsonElement? = null,
+    @SerialName("p_client_op_id") val clientOpId: String? = null,
 )
 
 // SyncQueue payload for "upsert_provider_note" via rpc_upsert_provider_note.

@@ -444,13 +444,22 @@ class SyncEngine @Inject constructor(
             throw SyncHttpException(response.code(), body.take(300) + hint, "rpc_create_patient")
         }
 
-        val serverPatient = supabaseApi.getPatientById("eq.${dto.id}").firstOrNull()
-        if (serverPatient != null) {
-            patientDao.upsert(serverPatient.toEntity(isSynced = true))
-            if (serverPatient.id != entry.entityId) {
-                propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
+        // Best-effort read-back: the write above already landed, so a failure
+        // here (network blip, response-decode mismatch) must NOT fail the
+        // entry — that was the upsert_provider_note bug in the 1.0.32 field
+        // report, where landed writes retried forever on a broken read-back.
+        runCatching {
+            val serverPatient = supabaseApi.getPatientById("eq.${dto.id}").firstOrNull()
+            if (serverPatient != null) {
+                patientDao.upsert(serverPatient.toEntity(isSynced = true))
+                if (serverPatient.id != entry.entityId) {
+                    propagateRemoteId(entry.id, entry.entityId, serverPatient.id)
+                }
+            } else {
+                patientDao.updateSyncState(dto.id, true)
             }
-        } else {
+        }.onFailure { e ->
+            Log.w(TAG, "create_patient read-back failed (write landed): ${e.message}")
             patientDao.updateSyncState(dto.id, true)
         }
     }
@@ -548,8 +557,20 @@ class SyncEngine @Inject constructor(
     /**
      * After a successful visit-tied upsert (or a 409 we treated as success), align
      * local Room id with the canonical server row for that visit.
+     *
+     * Best-effort by design: the WRITE already landed by the time this runs, so
+     * a read-back failure (network blip, response-decode mismatch like the
+     * jsonb-object structured_data in the 1.0.32 field report) must never fail
+     * the sync entry. Without this guard, landed notes retried forever.
      */
     private suspend fun reconcileProviderNoteByVisit(visitId: String?, localNoteId: String) {
+        runCatching { reconcileProviderNoteByVisitOrThrow(visitId, localNoteId) }
+            .onFailure { e ->
+                Log.w(TAG, "provider-note read-back failed (write landed): ${e.message}")
+            }
+    }
+
+    private suspend fun reconcileProviderNoteByVisitOrThrow(visitId: String?, localNoteId: String) {
         if (visitId.isNullOrBlank()) return
         val server = supabaseApi.getProviderNote(visitId = "eq.$visitId").firstOrNull()
         // #region agent log
@@ -821,14 +842,22 @@ class SyncEngine @Inject constructor(
         val decoded = json.decodeFromString(SubmitLabOrderSyncPayload.serializer(), entry.payload)
         val visitId = decoded.visitId
         Log.d(TAG, "Syncing submit_lab_order: $visitId")
-        supabaseApi.updateVisit(
-            visitId,
-            mapOf(
-                "tests_ordered" to decoded.testsOrdered,
-                "lab_status" to decoded.labStatus,
-                "lab_test_results" to Json.parseToJsonElement(decoded.labTestResultsJson),
+        // Migration 105: the old direct PATCH /visits could never be sent —
+        // Map<String, Any?> bodies are unserializable by the kotlinx
+        // converter, so these ops piled up retrying forever (1.0.32 report).
+        val result = supabaseApi.rpcSubmitLabOrder(
+            SubmitLabOrderRequest(
+                visitId = visitId,
+                testsOrdered = decoded.testsOrdered,
+                labStatus = decoded.labStatus,
+                labTestResults = Json.parseToJsonElement(decoded.labTestResultsJson),
+                clientOpId = decoded.clientOpId ?: entry.id,
             ),
         )
+        if (!result.isSuccessful) {
+            val body = result.errorBody()?.string().orEmpty()
+            throw SyncHttpException(result.code(), body, "rpc_submit_lab_order")
+        }
         markVisitSyncedIfQuiet(entry)
     }
 

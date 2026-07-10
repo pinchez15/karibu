@@ -636,9 +636,9 @@ class SyncEngineTest {
             callOrder.add("check_in")
             Response.success("\"$visitId\"".toResponseBody())
         }
-        coEvery { supabaseApi.updateVisit(any(), any()) } answers {
+        coEvery { supabaseApi.rpcSubmitLabOrder(any()) } answers {
             callOrder.add("submit_lab_order")
-            emptyList()
+            Response.success("".toResponseBody())
         }
 
         val result = syncEngine.processQueue()
@@ -743,6 +743,100 @@ class SyncEngineTest {
 
         assertEquals(1, result)
         coVerify { visitDao.updateSyncState(visitId, true) }
+    }
+
+    // ---------------------------------------------------------------------
+    // 1.0.32 field-report hotfix — serialization-stuck ops
+    // ---------------------------------------------------------------------
+
+    @Test
+    fun `submit_lab_order routes through rpc and completes`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+        val payload = json.encodeToString(
+            SubmitLabOrderSyncPayload.serializer(),
+            SubmitLabOrderSyncPayload(
+                visitId = "visit-9",
+                testsOrdered = "Malaria RDT",
+                labStatus = "pending",
+                labTestResultsJson = "[]",
+                clientOpId = "op-9",
+            ),
+        )
+        val entry = makeSyncEntry(
+            id = "sync-9",
+            operationType = "submit_lab_order",
+            payload = payload,
+            entityId = "visit-9",
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { syncQueueDao.getPending() } returns emptyList()
+        val request = slot<com.karibuhealth.app.data.remote.dto.SubmitLabOrderRequest>()
+        coEvery { supabaseApi.rpcSubmitLabOrder(capture(request)) } returns
+            Response.success("".toResponseBody())
+
+        val processed = syncEngine.processQueue()
+
+        assertEquals(1, processed)
+        assertEquals("op-9", request.captured.clientOpId)
+        assertEquals("Malaria RDT", request.captured.testsOrdered)
+        coVerify { syncQueueDao.update(match { it.id == "sync-9" && it.status == "completed" }) }
+    }
+
+    @Test
+    fun `provider note read-back failure does not fail a landed upsert`() = runTest {
+        // The write lands (200) but the read-back explodes — exactly the
+        // jsonb-object structured_data decode failure from the field report.
+        every { networkMonitor.isConnected() } returns true
+        val payload = json.encodeToString(
+            com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto.serializer(),
+            com.karibuhealth.app.data.remote.dto.ProviderNoteUpsertDto(
+                id = "note-1",
+                visitId = "visit-1",
+                transcript = "fever 2 days",
+            ),
+        )
+        val entry = makeSyncEntry(
+            id = "sync-note-1",
+            operationType = "upsert_provider_note",
+            payload = payload,
+            entityId = "note-1",
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { syncQueueDao.getPending() } returns emptyList()
+        coEvery { supabaseApi.rpcUpsertProviderNote(any()) } returns
+            Response.success("".toResponseBody())
+        coEvery { supabaseApi.getProviderNote(any(), any()) } throws
+            kotlinx.serialization.SerializationException(
+                "Unexpected JSON token at offset 471: Expected beginning of the string, but got {",
+            )
+
+        val processed = syncEngine.processQueue()
+
+        assertEquals(1, processed)
+        coVerify { syncQueueDao.update(match { it.id == "sync-note-1" && it.status == "completed" }) }
+    }
+
+    @Test
+    fun `create_patient read-back failure does not fail a landed create`() = runTest {
+        every { networkMonitor.isConnected() } returns true
+        val entry = makeSyncEntry(
+            id = "sync-pat-1",
+            operationType = "create_patient",
+            payload = """{"id":"pat-1","clinic_id":"clinic-1","first_name":"Test","last_name":"Patient"}""",
+            entityId = "pat-1",
+        )
+        coEvery { syncQueueDao.getRetryable(any()) } returns listOf(entry)
+        coEvery { syncQueueDao.getPending() } returns emptyList()
+        coEvery { supabaseApi.rpcCreatePatient(any()) } returns
+            Response.success("".toResponseBody())
+        coEvery { supabaseApi.getPatientById(any()) } throws
+            kotlinx.serialization.SerializationException("decode mismatch")
+
+        val processed = syncEngine.processQueue()
+
+        assertEquals(1, processed)
+        coVerify { patientDao.updateSyncState("pat-1", true) }
+        coVerify { syncQueueDao.update(match { it.id == "sync-pat-1" && it.status == "completed" }) }
     }
 
     private fun makeLabResultEntry(
