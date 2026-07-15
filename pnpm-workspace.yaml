@@ -6,3 +6,4 @@ packages:
   - 'packages/design-system'
   - 'packages/shared'
   - 'packages/supabase'
+  - 'packages/supabase-demo'

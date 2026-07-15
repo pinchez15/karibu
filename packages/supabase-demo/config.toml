@@ -1,0 +1,37 @@
+# Supabase CLI project config for the DEMO environment (karibu-demo).
+#
+# This directory is a standalone Supabase project dir so it can be linked to the
+# demo project ref independently of packages/supabase (production):
+#
+#   cd packages/supabase-demo && supabase link --project-ref <demo-ref>
+#
+# Ports are offset +100 from packages/supabase so a local demo stack never
+# collides with the main local dev stack.
+
+project_id = "karibu-demo"
+
+[api]
+enabled = true
+port = 54421
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54422
+shadow_port = 54420
+major_version = 15
+
+[studio]
+enabled = true
+port = 54423
+api_url = "http://localhost"
+
+[storage]
+enabled = true
+file_size_limit = "100MiB"
+
+[auth]
+# Same model as production: auth is Clerk, not Supabase Auth.
+enabled = true
+enable_signup = false

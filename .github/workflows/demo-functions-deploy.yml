@@ -1,0 +1,46 @@
+name: Demo edge functions deploy
+
+# Deploys packages/supabase/functions to the DEMO Supabase project.
+# Manual trigger only (Actions tab -> run workflow). Guarded: refuses to run
+# against the production project ref, and requires the demo ref pinned in
+# packages/supabase-demo/demo-project-ref.
+#
+# Required repository secret: SUPABASE_ACCESS_TOKEN (personal access token
+# from supabase.com -> Account Settings -> Access Tokens).
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Deploy functions to demo
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve demo project ref
+        id: ref
+        run: echo "ref=$(tr -d '[:space:]' < packages/supabase-demo/demo-project-ref)" >> "$GITHUB_OUTPUT"
+
+      - name: Guard against misconfiguration
+        run: |
+          REF="${{ steps.ref.outputs.ref }}"
+          if [[ "$REF" == *REPLACE* || -z "$REF" ]]; then
+            echo "demo-project-ref is not pinned — edit packages/supabase-demo/demo-project-ref" >&2
+            exit 1
+          fi
+          if [[ "$REF" == "sopirdewhhpxdxpwwosn" ]]; then
+            echo "REFUSING: demo-project-ref contains the PRODUCTION project ref" >&2
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy all edge functions
+        working-directory: packages/supabase
+        run: supabase functions deploy --project-ref "${{ steps.ref.outputs.ref }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

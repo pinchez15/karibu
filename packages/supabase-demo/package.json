@@ -1,0 +1,25 @@
+{
+  "name": "@karibu/supabase-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Sandboxed demo EHR backend: consolidated schema baseline + PHI-free seeds + guarded reset. See docs/demo-environment-plan.md.",
+  "scripts": {
+    "build-baseline": "scripts/build-baseline.sh",
+    "generate-census": "tsx scripts/demo-seed/generate-census.ts",
+    "build-reference-seed": "scripts/build-reference-seed.sh",
+    "baseline": "tsx scripts/db-run.ts baseline",
+    "seed": "tsx scripts/db-run.ts seed",
+    "reset": "tsx scripts/db-run.ts reset"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

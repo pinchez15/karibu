@@ -1,0 +1,50 @@
+name: Demo nightly reset
+
+# Resets the DEMO EHR environment (packages/supabase-demo) to its seeded
+# baseline: truncates clinical data, clears recorded audio, reseeds with
+# NOW()-relative dates, and unlocks onboarding for any staff created that day.
+#
+# The underlying script is hard-guarded: it refuses any connection string
+# containing the production project ref, and requires the demo ref pinned in
+# packages/supabase-demo/demo-project-ref. It cannot touch production.
+#
+# Skips quietly until the DEMO_DB_URL repository secret is configured.
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # 00:00 Africa/Kampala (UTC+3)
+  workflow_dispatch: {}
+
+jobs:
+  reset:
+    name: Reset demo environment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check configuration
+        id: check
+        run: echo "configured=${{ secrets.DEMO_DB_URL != '' }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.configured == 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          version: 10.18.0
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.check.outputs.configured == 'true'
+        run: pnpm install --frozen-lockfile --filter @karibu/supabase-demo
+
+      - name: Reset demo database
+        if: steps.check.outputs.configured == 'true'
+        run: pnpm demo:reset
+        env:
+          DEMO_DB_URL: ${{ secrets.DEMO_DB_URL }}
