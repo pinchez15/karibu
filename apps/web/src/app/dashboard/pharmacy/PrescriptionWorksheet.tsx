@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { Check, Loader2, RotateCcw } from 'lucide-react'
 import {
   prescriptionLineDisplayName,
@@ -79,6 +79,22 @@ function defaultDraft(line: PrescriptionOrderLine): LineDraft {
   }
 }
 
+/**
+ * PHARM-2: fingerprint of the server-side state that should invalidate a
+ * pharmacist's in-progress draft for a line. Refreshed props with the SAME
+ * fingerprint (poll / another line's dispense / another user's action) must
+ * NOT reseed the draft — only a real advance of this line (status change,
+ * dispensed-so-far moved, prescription amended) may.
+ */
+function lineSnapshot(line: PrescriptionOrderLine): string {
+  return [
+    line.status,
+    alreadyDispensed(line),
+    line.quantity_prescribed ?? '',
+    line.quantity_unit ?? '',
+  ].join('|')
+}
+
 // PHARM-5/R3: keep this in lock-step with the RPC's dispensable set
 // (rpc_complete_pharmacy_dispense: status IN ordered/dispensing/
 // partially_dispensed/out_of_stock). `out_of_stock` is included so a restocked
@@ -141,6 +157,15 @@ export function PrescriptionWorksheet({
   const [drafts, setDrafts] = useState<Record<string, LineDraft>>(() =>
     Object.fromEntries(lines.filter((l) => lineIsEditable(l.status)).map((l) => [l.id, defaultDraft(l)])),
   )
+  // PHARM-2: which visit the current draft/notes state was seeded for, the
+  // per-line server fingerprints behind each draft, and the last server value
+  // of the counselling notes. Refs (not state) — reconciliation bookkeeping.
+  const seededRowIdRef = useRef(row.id)
+  const lineSnapshotsRef = useRef<Record<string, string> | null>(null)
+  if (lineSnapshotsRef.current === null) {
+    lineSnapshotsRef.current = Object.fromEntries(lines.map((l) => [l.id, lineSnapshot(l)]))
+  }
+  const serverNotesRef = useRef(row.dispense_notes ?? '')
 
   const firstEditableLineId = useMemo(
     () => lines.find((l) => lineIsEditable(l.status))?.id ?? null,
@@ -152,17 +177,64 @@ export function PrescriptionWorksheet({
     [lines],
   )
 
+  // PHARM-2 root-cause fix: this effect used to reseed EVERY draft whenever
+  // `lines` changed identity — and `lines` gets a new identity on every
+  // router.refresh() (45s useAutoRefresh poll, post-dispense refresh, and the
+  // broadcastClinicRefresh push fired by ANY staff mutation clinic-wide). That
+  // wiped half-typed quantities mid-dispense. Now: a full reset happens only
+  // when the worksheet switches to a DIFFERENT visit; a same-visit refresh
+  // reconciles per line, reseeding a draft only when that line's server state
+  // meaningfully advanced (see lineSnapshot). Errors/messages are also kept on
+  // a same-visit refresh so a failed submit stays visible.
   useEffect(() => {
-    setVisitNotes(row.dispense_notes ?? '')
-    setLineError(null)
-    setLineMessage(null)
-    setSendBackLineId(null)
-    setSendBackReason('')
-    setDrafts(
-      Object.fromEntries(
-        lines.filter((l) => lineIsEditable(l.status)).map((l) => [l.id, defaultDraft(l)]),
-      ),
-    )
+    if (seededRowIdRef.current !== row.id) {
+      seededRowIdRef.current = row.id
+      serverNotesRef.current = row.dispense_notes ?? ''
+      lineSnapshotsRef.current = Object.fromEntries(lines.map((l) => [l.id, lineSnapshot(l)]))
+      setVisitNotes(row.dispense_notes ?? '')
+      setLineError(null)
+      setLineMessage(null)
+      setSendBackLineId(null)
+      setSendBackReason('')
+      setDrafts(
+        Object.fromEntries(
+          lines.filter((l) => lineIsEditable(l.status)).map((l) => [l.id, defaultDraft(l)]),
+        ),
+      )
+      return
+    }
+
+    const snapshots = Object.fromEntries(lines.map((l) => [l.id, lineSnapshot(l)]))
+    const prevSnapshots = lineSnapshotsRef.current ?? {}
+    lineSnapshotsRef.current = snapshots
+
+    setDrafts((prev) => {
+      const next: Record<string, LineDraft> = {}
+      let reseeded = false
+      for (const line of lines) {
+        if (!lineIsEditable(line.status)) continue
+        const existing = prev[line.id]
+        if (existing && prevSnapshots[line.id] === snapshots[line.id]) {
+          // Unchanged on the server — keep the pharmacist's in-progress entry.
+          next[line.id] = existing
+        } else {
+          // New line, or this line advanced (e.g. its own dispense landed):
+          // reseed so PHARM-5 remaining-balance defaults apply.
+          next[line.id] = defaultDraft(line)
+          reseeded = true
+        }
+      }
+      if (!reseeded && Object.keys(next).length === Object.keys(prev).length) return prev
+      return next
+    })
+
+    // Adopt counselling notes only when the SERVER value actually changed
+    // (e.g. a dispense saved them) — never on a mere refresh mid-typing.
+    const serverNotes = row.dispense_notes ?? ''
+    if (serverNotes !== serverNotesRef.current) {
+      serverNotesRef.current = serverNotes
+      setVisitNotes(serverNotes)
+    }
   }, [row.id, row.dispense_notes, lines])
 
   useEffect(() => {
@@ -184,6 +256,7 @@ export function PrescriptionWorksheet({
     if (stock.length === 0) return
     setDrafts((prev) => {
       const next = { ...prev }
+      let changed = false
       for (const line of lines) {
         if (!lineIsEditable(line.status)) continue
         const draft = next[line.id]
@@ -195,8 +268,11 @@ export function PrescriptionWorksheet({
           stock_item_id: stockId,
           stock_quantity: draft.quantity_dispensed || draft.stock_quantity,
         }
+        changed = true
       }
-      return next
+      // PHARM-2: don't churn draft identity on every refresh — this effect
+      // re-runs whenever `lines` changes identity (each poll/refresh).
+      return changed ? next : prev
     })
   }, [stock, lines])
 
