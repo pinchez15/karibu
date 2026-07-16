@@ -62,6 +62,7 @@ check "web:draftLinesToRpcInput" \
   "draftLinesToRpcInput" \
   "apps/web/src" \
   "apps/web/src/components/prescription/PrescriptionComposer.tsx" \
+  "apps/web/src/components/prescription/PrescriptionComposer.test.tsx" \
   "apps/web/src/components/prescription/VisitPharmacyPanel.tsx" \
   "apps/web/src/app/dashboard/visits/[id]/PendingDictationCard.tsx"
 
