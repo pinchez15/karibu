@@ -42,16 +42,31 @@ data class DispenseLineDraft(
     val notes: String,
 )
 
-fun defaultDraft(line: PrescriptionOrderLine): DispenseLineDraft = DispenseLineDraft(
-    prescriptionOrderId = line.id,
-    displayName = line.displayName(),
-    medicationCode = line.medicationCode,
-    sig = line.sigSummary(),
-    quantityDispensed = line.quantityPrescribed?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }.orEmpty(),
-    quantityUnit = line.quantityUnit.orEmpty(),
-    lineStatus = "dispensed",
-    notes = "",
-)
+private fun Double.asQtyString(): String =
+    if (this % 1.0 == 0.0) toInt().toString() else toString()
+
+fun defaultDraft(line: PrescriptionOrderLine): DispenseLineDraft {
+    // PHARM-5 (R2) remainder unblock. `quantity_dispensed_so_far` now rides the
+    // prescription-orders pull (prescription_orders_with_dispensed view), so a
+    // `partially_dispensed` line can be finished on the tablet: default Qty to the
+    // REMAINING balance (quantityPrescribed − quantityDispensedSoFar, clamped ≥ 0),
+    // never above remaining — so we can't enqueue an over-dispense the server's
+    // `>=`-safe guard would reject. A fresh line defaults to the full prescribed
+    // amount (remaining == prescribed when nothing has been dispensed yet). Lines
+    // with an unknown prescribed quantity (legacy_text) pre-fill nothing and the
+    // operator enters the amount manually.
+    val remaining = line.remainingToDispense()
+    return DispenseLineDraft(
+        prescriptionOrderId = line.id,
+        displayName = line.displayName(),
+        medicationCode = line.medicationCode,
+        sig = line.sigSummary(),
+        quantityDispensed = remaining?.asQtyString().orEmpty(),
+        quantityUnit = (line.dispenseUnit ?: line.quantityUnit).orEmpty(),
+        lineStatus = "dispensed",
+        notes = "",
+    )
+}
 
 private val LINE_STATUS_OPTIONS = listOf(
     "dispensed" to "Dispensed",
@@ -79,7 +94,10 @@ fun PrescriptionWorksheetSheet(
     var sendBackReason by remember { mutableStateOf("") }
     var sendBackLineId by remember { mutableStateOf<String?>(null) }
     var showSendBack by remember { mutableStateOf(false) }
-    val canComplete = lines.isNotEmpty()
+    // PHARM-5 (R2): partials are no longer blocked — any line (incl. a partial's
+    // remaining balance) can be handed over, so completion is possible whenever
+    // there are lines to dispense.
+    val canComplete = drafts.isNotEmpty()
     val started = item.dispensingStatus != "not_started"
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -116,6 +134,21 @@ fun PrescriptionWorksheetSheet(
                             Text(draft.displayName, fontWeight = FontWeight.SemiBold)
                             if (draft.sig.isNotBlank()) {
                                 Text(draft.sig, style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (sourceLine?.status == "partially_dispensed") {
+                                // PHARM-5 (R2): a partial now defaults Qty to the remaining
+                                // balance owed; dispensing it auto-completes the line server-side.
+                                val remaining = sourceLine.remainingToDispense()
+                                Text(
+                                    if (remaining != null) {
+                                        "Partly dispensed — ${remaining.asQtyString()} " +
+                                            "${draft.quantityUnit.ifBlank { "unit" }} remaining."
+                                    } else {
+                                        "Partly dispensed — enter the remaining amount to hand over."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 LINE_STATUS_OPTIONS.forEach { (value, label) ->
@@ -221,7 +254,14 @@ fun PrescriptionWorksheetSheet(
                         Text("Send back")
                     }
                     Button(
-                        onClick = { onComplete(drafts, visitNotes.trim()) },
+                        // PHARM-5 (R2): partials are unblocked — every draft (including a
+                        // partial's remaining balance, defaulted from quantity_dispensed_so_far)
+                        // is submitted. A full remaining dispense auto-completes the line
+                        // server-side; the Qty default never exceeds remaining, so the
+                        // `>=`-safe over-dispense guard can't reject it.
+                        onClick = {
+                            onComplete(drafts, visitNotes.trim())
+                        },
                         enabled = canComplete && !busy,
                     ) { Text("Hand over & complete") }
                 }

@@ -23,6 +23,7 @@ import {
 import type { PharmacyQueueTab } from '@karibu/shared'
 import { PrescriptionWorksheet, type DispenseCompletionResult } from './PrescriptionWorksheet'
 import type { PharmacyStationRow } from './pharmacy-data'
+import { dispensingStatusOnTab } from './pharmacy-tabs'
 import { patientDisplayName, patientMeta, StatusPill } from './pharmacy-shared'
 
 type SelectSource = 'click' | 'keyboard' | 'auto_advance'
@@ -142,17 +143,21 @@ export function PharmacyStationClient({
 
   const handleDispenseCompleted = useCallback(
     (visitId: string, result: DispenseCompletionResult) => {
-      // WP1 D2: only a fully dispensed visit leaves the "To dispense" tab. A
-      // partial or out-of-stock visit still needs pharmacist action, so it
-      // stays listed (with its status chip) and keeps its selection — this is
-      // the fix for scripts "disappearing" mid-work.
-      if (result.dispensingStatus === 'dispensed') {
+      // PHARM-5: a visit leaves the current tab once its new dispensing_status no
+      // longer belongs to that tab, and stays otherwise.
+      //   - To dispense: drops off when it becomes `partial` (→ Partial tab) or
+      //     `dispensed` (→ Done today); stays while `out_of_stock`/in-progress.
+      //   - Partial: drops off once fully `dispensed`; stays while a balance is
+      //     still owed.
+      // This replaces the old "only leaves when fully dispensed" rule, which
+      // kept partials in To dispense (the dual-membership bug).
+      if (!dispensingStatusOnTab(activeTab, result.dispensingStatus)) {
         removeRow(visitId)
         return
       }
       if (refreshOnUpdate) router.refresh()
     },
-    [refreshOnUpdate, router, removeRow],
+    [activeTab, refreshOnUpdate, router, removeRow],
   )
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {

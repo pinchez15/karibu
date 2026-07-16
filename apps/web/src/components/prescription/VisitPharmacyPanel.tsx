@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   PrescriptionComposer,
+  draftLinesSubmitError,
   draftLinesToRpcInput,
   type DraftPrescriptionLine,
 } from '@/components/prescription/PrescriptionComposer'
@@ -88,14 +89,15 @@ export function VisitPharmacyPanel({
         type="button"
         variant="outline"
         size="sm"
-        disabled={pending || draftLinesToRpcInput(drafts).length === 0}
+        disabled={pending || draftLinesSubmitError(drafts) !== null}
         onClick={() => {
           setError(null)
-          const lines = draftLinesToRpcInput(drafts)
-          if (lines.length === 0) {
-            setError('Add at least one medication line.')
+          const blocker = draftLinesSubmitError(drafts)
+          if (blocker) {
+            setError(blocker)
             return
           }
+          const lines = draftLinesToRpcInput(drafts)
           startTransition(async () => {
             const result = await submitPharmacyOrder(visitId, {
               lines,

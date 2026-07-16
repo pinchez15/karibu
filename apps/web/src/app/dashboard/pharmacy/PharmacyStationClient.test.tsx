@@ -122,14 +122,14 @@ describe('PharmacyStationClient', () => {
     })
   })
 
-  // WP1 D2: dispensing a line must not drop the visit unless it is now fully
-  // dispensed. Partial / out-of-stock visits stay listed and selected.
   async function dispenseSelectedLine() {
     const button = await screen.findByTestId('save-complete')
     await userEvent.click(button)
   }
 
-  it('keeps a visit listed and selected when the dispense returns "partial"', async () => {
+  // PHARM-5: on "To dispense", a visit that becomes `partial` now LEAVES this
+  // tab (it moves to the Partial tab) — the old dual-membership kept it here.
+  it('removes the visit from "To dispense" when the dispense returns "partial"', async () => {
     const { dispensePharmacyLine } = await import('./actions')
     vi.mocked(dispensePharmacyLine).mockResolvedValue({
       success: true,
@@ -150,10 +150,65 @@ describe('PharmacyStationClient', () => {
     await dispenseSelectedLine()
 
     await waitFor(() => {
+      expect(screen.queryByTestId('queue-row-visit-e2e-001')).not.toBeInTheDocument()
+    })
+    // Selection advances to the next queued visit.
+    expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // PHARM-5 dispense-remainder flow: on the Partial tab, a still-partial
+  // dispense keeps the visit; dispensing the remainder (→ "dispensed") drops it.
+  it('keeps a visit on the Partial tab while a balance is still owed', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'partial',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="partial"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
       expect(vi.mocked(dispensePharmacyLine)).toHaveBeenCalled()
     })
     expect(screen.getByTestId('queue-row-visit-e2e-001')).toBeInTheDocument()
     expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('removes a visit from the Partial tab when the remainder is dispensed', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'dispensed',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="partial"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('queue-row-visit-e2e-001')).not.toBeInTheDocument()
+    })
+    expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
   })
 
   it('keeps a visit listed when the dispense returns "out_of_stock"', async () => {

@@ -11,7 +11,12 @@ import { formatOldestWait } from './pharmacy-shared'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
 import type { PharmacyQueueTab } from '@karibu/shared'
 
-const VALID_TABS: PharmacyQueueTab[] = ['to_dispense', 'returned_to_clinician', 'done_today']
+const VALID_TABS: PharmacyQueueTab[] = [
+  'to_dispense',
+  'partial',
+  'returned_to_clinician',
+  'done_today',
+]
 
 function parseTab(raw: string | undefined): PharmacyQueueTab {
   if (raw && VALID_TABS.includes(raw as PharmacyQueueTab)) {
@@ -75,12 +80,18 @@ export default async function PharmacyPage({
                 <Pill className="h-7 w-7" />
               </div>
               <h2 className="mb-2 text-2xl font-semibold tracking-tight">
-                {tab === 'done_today' ? 'Nothing dispensed yet today' : 'No prescriptions to dispense'}
+                {tab === 'done_today'
+                  ? 'Nothing dispensed yet today'
+                  : tab === 'partial'
+                    ? 'No partial dispenses'
+                    : 'No prescriptions to dispense'}
               </h2>
               <p className="text-base leading-relaxed text-body">
                 {tab === 'done_today'
                   ? 'Completed dispenses from today will appear here for review.'
-                  : 'Visits appear here after the clinician submits structured prescriptions (note may still be open). A script stays here until every line is dispensed.'}
+                  : tab === 'partial'
+                    ? 'When a script is only partly dispensed, it moves here so you can dispense the remaining balance.'
+                    : 'Visits appear here after the clinician submits structured prescriptions (note may still be open). A script stays here until every line is dispensed.'}
               </p>
             </div>
           </div>

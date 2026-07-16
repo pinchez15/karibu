@@ -38,7 +38,7 @@ test.describe('pharmacy station workspace', () => {
     await expect(page.getByTestId('queue-row-visit-e2e-002')).toHaveCount(0)
   })
 
-  test('WP1 — a 2-line script stays on "To dispense" after line 1, leaves after line 2', async ({
+  test('PHARM-5 — a partial script leaves "To dispense", finishes on the "Partial" tab', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1366, height: 768 })
@@ -53,16 +53,19 @@ test.describe('pharmacy station workspace', () => {
     await expect(page.getByTestId('rx-line-rx-visit-e2e-004-0')).toBeVisible()
     await expect(page.getByTestId('rx-line-rx-visit-e2e-004-1')).toBeVisible()
 
-    // Dispense line 1 → visit must remain visible and selected (the bug fix),
-    // now flagged "Partial", with line 2 still dispensable.
+    // Dispense line 1 → visit becomes "partial" and LEAVES the "To dispense"
+    // tab (PHARM-5 de-dup): it is no longer working-queue work.
     await page.getByTestId('save-complete').click()
-    await expect(row).toHaveCount(1)
-    await expect(row).toHaveAttribute('aria-selected', 'true')
-    await expect(row.getByText('Partial')).toBeVisible()
-    await expect(page.getByTestId('dispense-rx-visit-e2e-004-1')).toBeVisible()
+    await expect(row).toHaveCount(0)
 
-    // Dispense line 2 → visit is fully dispensed and leaves "To dispense".
-    await page.getByTestId('dispense-rx-visit-e2e-004-1').click()
+    // It now lives on the "Partial" tab — dispense the remaining balance there.
+    await page.getByTestId('pharmacy-tab-partial').click()
+    await expect(row).toHaveCount(1)
+    await row.click()
+    await expect(row).toHaveAttribute('aria-selected', 'true')
+
+    // Dispensing the remainder completes the visit → it leaves the Partial tab.
+    await page.getByTestId('save-complete').click()
     await expect(row).toHaveCount(0)
   })
 
