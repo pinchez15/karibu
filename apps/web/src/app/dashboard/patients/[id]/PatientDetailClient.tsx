@@ -20,19 +20,21 @@ import type {
   PatientLatestVitals,
   PatientTimelineEvent,
   PaymentEventData,
+  PharmacyCatalogDrug,
   ProviderNoteSource,
   StaffRole,
   TaskEventData,
   VisitEventData,
   VitalEventData,
 } from '@karibu/shared'
-import type { PatientWithDerivedAge } from './actions'
+import type { ActiveVisitSummary, PatientWithDerivedAge } from './actions'
 import {
   autosaveDraftPatientNote,
   getPatientTimeline,
   recordPatientVitals,
   signPatientNote,
 } from './actions'
+import { ChartVisitActions } from './ChartVisitActions'
 import { PatientEditSheet } from './PatientEditSheet'
 import { PatientProgramsCard } from './PatientProgramsCard'
 import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
@@ -1119,11 +1121,15 @@ export function PatientDetailClient({
   patient: initialPatient,
   latestVitals,
   initialTimeline,
+  activeVisit = null,
+  prescribingCatalog,
 }: {
   staffRole: StaffRole
   patient: PatientWithDerivedAge
   latestVitals: PatientLatestVitals | null
   initialTimeline: PatientTimelineEvent[]
+  activeVisit?: ActiveVisitSummary | null
+  prescribingCatalog?: PharmacyCatalogDrug[]
 }) {
   const [patient, setPatient] = useState(initialPatient)
   const [events, setEvents] = useState<PatientTimelineEvent[]>(initialTimeline)
@@ -1185,7 +1191,14 @@ export function PatientDetailClient({
 
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Timeline</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ChartVisitActions
+            patientId={patient.id}
+            staffRole={staffRole}
+            activeVisit={activeVisit}
+            prescribingCatalog={prescribingCatalog}
+            onOrderSubmitted={() => void refresh()}
+          />
           {latestPrintableVisit && (
             <Button size="sm" variant="outline" className="gap-2" asChild>
               <a

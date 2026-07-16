@@ -9,6 +9,9 @@ import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
 import { syncCriticalAlertsForVisit } from '@/lib/sync-critical-alerts'
 import { logChartAccess } from '@/lib/chart-access-log'
+import { broadcastClinicRefresh } from '@/lib/realtime-server'
+import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
+import { CLINICAL_ROLES as CLINICAL_DESK_ROLES } from '@/lib/staff-roles'
 import type {
   Patient,
   PatientLatestVitals,
@@ -559,4 +562,182 @@ export async function updatePatientDemographics(
   const updated = await getPatient(patientId)
   if (!updated) return { error: 'Patient not found after update' }
   return { patient: updated }
+}
+
+// ---------------------------------------------------------------------------
+// Writes — chart-initiated visits (Start visit / New script / Order lab)
+// ---------------------------------------------------------------------------
+
+/**
+ * Roles that may open a visit from the patient chart: the clinical desk roles
+ * (staff-roles.ts CLINICAL_ROLES, which includes records officers — they check
+ * patients in at the front desk today) plus the clinic in-charge. Lab and
+ * pharmacy stations are excluded; their surfaces are order queues, not charts.
+ */
+const VISIT_START_ROLES = new Set<string>(['admin', ...CLINICAL_DESK_ROLES])
+
+/**
+ * Matches start_visit_self_triage's lead-clinician allowlist (migration 063).
+ * Roles outside this set can still start a visit; it just stays in Waiting.
+ */
+const SELF_TRIAGE_ROLES = new Set<string>([
+  'admin',
+  'doctor',
+  'nurse',
+  'clinical_officer',
+  'midwife',
+])
+
+/** Today's still-open visit for a patient, as the chart toolbar sees it. */
+export type ActiveVisitSummary = {
+  id: string
+  status: string
+  pharmacy_order_submitted_at: string | null
+}
+
+/**
+ * Clinic-local (Africa/Kampala) calendar date, matching the DB's
+ * kampala_today() used by check_in_patient to stamp visits.visit_date.
+ */
+function kampalaTodayDateString(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kampala' }).format(
+    new Date(),
+  )
+}
+
+/**
+ * Latest visit for the patient dated today (Kampala) that isn't completed.
+ * This is the visit the chart actions reuse instead of minting a duplicate.
+ */
+async function findActiveVisitToday(
+  supabase: ReturnType<typeof createServiceClient>,
+  clinicId: string,
+  patientId: string,
+): Promise<ActiveVisitSummary | null> {
+  const { data } = await supabase
+    .from('visits')
+    .select('id, status, pharmacy_order_submitted_at')
+    .eq('clinic_id', clinicId)
+    .eq('patient_id', patientId)
+    .eq('visit_date', kampalaTodayDateString())
+    .neq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return (data as ActiveVisitSummary | null) ?? null
+}
+
+/**
+ * Ensure the patient has a visit for today, creating one when needed. Powers
+ * the chart's Start visit / New script / Order lab actions.
+ *
+ * - Reuses today's open (non-completed) visit — the chart never creates a
+ *   same-day duplicate.
+ * - Creation goes through the same check_in_patient RPC as the queue toolbar
+ *   (migration 100), passing the caller-supplied `client_op_id` so a retried
+ *   action can't double-create the visit.
+ * - Because the clinician is acting on the patient right now (not front-desk
+ *   intake), a freshly created visit is claimed via start_visit_self_triage
+ *   (migration 063: waiting → with_doctor, doctor_id = caller). claim_patient
+ *   is NOT used: it requires queue_status='ready_for_doctor' and would always
+ *   fail on a fresh check-in ('waiting'). Claiming is best-effort — if the RPC
+ *   rejects (role outside its allowlist, replayed op already claimed), the
+ *   visit still exists on the Waiting queue and the action succeeds.
+ */
+export async function ensureVisitForChartAction(input: {
+  patient_id: string
+  client_op_id?: string | null
+}): Promise<
+  | {
+      success: true
+      visitId: string
+      created: boolean
+      claimed: boolean
+      pharmacyOrderSubmitted: boolean
+    }
+  | { success: false; error: string }
+> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  if (!VISIT_START_ROLES.has(staff.role)) {
+    return { success: false, error: 'Your role cannot start visits.' }
+  }
+
+  const onboardingBlock = ensureCanRegisterPatients(staff)
+  if (onboardingBlock.error) {
+    return { success: false, error: onboardingBlock.error }
+  }
+
+  const patient = await loadPatientForStaff(input.patient_id, staff.clinic_id)
+  if (!patient) return { success: false, error: 'Patient not found' }
+
+  const supabase = createServiceClient()
+
+  const existing = await findActiveVisitToday(
+    supabase,
+    staff.clinic_id,
+    input.patient_id,
+  )
+  if (existing) {
+    return {
+      success: true,
+      visitId: existing.id,
+      created: false,
+      claimed: false,
+      pharmacyOrderSubmitted: existing.pharmacy_order_submitted_at !== null,
+    }
+  }
+
+  const { data: visitId, error: checkInError } = await supabase.rpc(
+    'check_in_patient',
+    {
+      p_clinic_id: staff.clinic_id,
+      p_patient_id: input.patient_id,
+      p_chief_complaint: null,
+      p_priority: 'normal',
+      p_staff_id: staff.id,
+      p_department: 'opd',
+      p_visit_id: null,
+      p_client_op_id: input.client_op_id ?? null,
+    },
+  )
+  if (checkInError || !visitId) {
+    console.error('ensureVisitForChartAction: check_in_patient failed:', checkInError)
+    return {
+      success: false,
+      error: checkInError?.message || 'Failed to start a visit',
+    }
+  }
+
+  let claimed = false
+  if (SELF_TRIAGE_ROLES.has(staff.role)) {
+    const { error: claimError } = await supabase.rpc('start_visit_self_triage', {
+      p_visit_id: visitId,
+      p_clinician_id: staff.id,
+    })
+    if (claimError) {
+      // Non-fatal: the visit exists either way (e.g. a replayed op was already
+      // claimed, or a nurse picked it up between the two RPCs).
+      console.error(
+        'ensureVisitForChartAction: start_visit_self_triage failed (non-fatal):',
+        claimError,
+      )
+    } else {
+      claimed = true
+    }
+  }
+
+  broadcastClinicRefresh(staff.clinic_id).catch(() => {})
+  revalidatePath('/dashboard/opd')
+  revalidatePath('/dashboard/worklists')
+  revalidatePath('/dashboard/visits')
+  revalidatePath(`/dashboard/patients/${input.patient_id}`)
+
+  return {
+    success: true,
+    visitId: visitId as string,
+    created: true,
+    claimed,
+    pharmacyOrderSubmitted: false,
+  }
 }

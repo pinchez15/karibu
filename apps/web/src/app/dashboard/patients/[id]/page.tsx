@@ -3,6 +3,7 @@ import { Send } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getStaff } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase'
+import { getClinicPrescribingCatalog } from '@/lib/clinic-catalog'
 import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import { WebTopBar } from '@/components/web-shell'
 import { patientDisplayName } from '@/lib/referral-summary'
@@ -33,12 +34,15 @@ export default async function PatientProfilePage({
 
     const { id: patientId } = await params
 
-    // Parallel fetch — these are independent reads.
-    const [patient, latestVitals, initialTimeline] = await Promise.all([
-      getPatient(patientId),
-      getPatientLatestVitals(patientId),
-      getPatientTimeline(patientId, undefined, 20),
-    ])
+    // Parallel fetch — these are independent reads. The prescribing catalog
+    // feeds the chart's "New script" sheet and is unstable_cache'd (5 min).
+    const [patient, latestVitals, initialTimeline, prescribingCatalog] =
+      await Promise.all([
+        getPatient(patientId),
+        getPatientLatestVitals(patientId),
+        getPatientTimeline(patientId, undefined, 20),
+        getClinicPrescribingCatalog(staff.clinic_id),
+      ])
 
     if (!patient) {
       redirect('/dashboard/visits')
@@ -49,13 +53,26 @@ export default async function PatientProfilePage({
     todayStart.setHours(0, 0, 0, 0)
     const { data: todayVisit } = await supabase
       .from('visits')
-      .select('id')
+      .select('id, status, pharmacy_order_submitted_at')
       .eq('clinic_id', staff.clinic_id)
       .eq('patient_id', patientId)
       .gte('visit_date', todayStart.toISOString().slice(0, 10))
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    // Today's still-open visit, if any — the chart actions reuse it instead
+    // of creating a duplicate. The server action re-checks; this only feeds
+    // the toolbar's "Open today's visit" affordance.
+    const activeVisit =
+      todayVisit && todayVisit.status !== 'completed'
+        ? {
+            id: todayVisit.id as string,
+            status: todayVisit.status as string,
+            pharmacy_order_submitted_at:
+              (todayVisit.pharmacy_order_submitted_at as string | null) ?? null,
+          }
+        : null
 
     const name = patientDisplayName(patient)
     const patientNumber = patient.patient_number ?? `#${patientId.slice(0, 8)}`
@@ -92,6 +109,8 @@ export default async function PatientProfilePage({
             patient={patient}
             latestVitals={latestVitals}
             initialTimeline={initialTimeline}
+            activeVisit={activeVisit}
+            prescribingCatalog={prescribingCatalog}
           />
         </div>
       </>
