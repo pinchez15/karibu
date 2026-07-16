@@ -7,6 +7,10 @@ import { getStaff, requireStaff } from '@/lib/auth'
 import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
 import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
+import {
+  PrescriptionLineInputSchema,
+  type PrescriptionLineInput,
+} from '@/lib/validators/prescription'
 
 export type DobPrecision = 'exact' | 'year_only' | 'age_estimate' | 'unknown'
 
@@ -485,18 +489,7 @@ export async function submitPharmacyOrder(
   input:
     | string
     | {
-        lines: Array<{
-          medication_code?: string | null
-          free_text_name?: string | null
-          dose_text?: string | null
-          route_text?: string | null
-          frequency_text?: string | null
-          duration_text?: string | null
-          quantity_prescribed?: number | null
-          quantity_unit?: string | null
-          notes?: string | null
-          source?: string
-        }>
+        lines: PrescriptionLineInput[]
         medicationsSummary?: string
       },
 ): Promise<{ success: true } | { success: false; error: string }> {
@@ -543,16 +536,27 @@ export async function submitPharmacyOrder(
     if (!input.lines.length) {
       return { success: false, error: 'Add at least one prescription line' }
     }
+    // Validate every line against the structured schema. This throws on any
+    // non-human source (e.g. ai_suggested) and on malformed enums — the RPC
+    // gate is the true barrier, but parsing here fails fast with a clear error.
+    let lines: PrescriptionLineInput[]
+    try {
+      lines = input.lines.map((line) => PrescriptionLineInputSchema.parse(line))
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : 'Invalid prescription line'
+      return { success: false, error: `Invalid prescription line: ${message}` }
+    }
     const summary =
       input.medicationsSummary?.trim() ||
-      input.lines
+      lines
         .map((l) => l.free_text_name || l.medication_code)
         .filter(Boolean)
         .join('\n')
     const { error } = await supabase.rpc('rpc_submit_pharmacy_order', {
       p_visit_id: visitId,
       p_medications: summary,
-      p_lines: input.lines,
+      p_lines: lines,
       p_client_op_id: null,
     })
     if (error) return { success: false, error: error.message }
