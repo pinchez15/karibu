@@ -296,7 +296,10 @@ interface SupabaseApi {
     @POST("rpc/rpc_complete_care_task")
     suspend fun rpcCompleteCareTask(@Body request: CompleteCareTaskRequest): Response<ResponseBody>
 
-    @GET("prescription_orders")
+    // PHARM-4/5 (migration 107): read from the view so quantity_dispensed_so_far
+    // (SUM of dispense_records.prescribed_equivalent) comes down with the line —
+    // the Android dispenser needs it for the remaining-balance default (spec R2).
+    @GET("prescription_orders_with_dispensed")
     suspend fun getPrescriptionOrdersForVisits(
         @Query("visit_id") visitIdFilter: String,
         @Query("select") select: String = "*",

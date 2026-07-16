@@ -73,13 +73,19 @@ fun PharmacyPickerSheet(
     var drugQuery by remember { mutableStateOf("") }
     var selectedDrug by remember { mutableStateOf<HcDrugCatalog.Drug?>(null) }
     var strength by remember { mutableStateOf<String?>(null) }
+    // PHARM-4 structured entry: numeric dose + dose_unit; computed/overridable qty.
+    var doseAmountText by remember { mutableStateOf("") }
+    var doseUnit by remember { mutableStateOf(HcDrugCatalog.DoseUnit.TAB) }
+    var orderMode by remember { mutableStateOf(HcDrugCatalog.OrderMode.SCHEDULED) }
     var quantityText by remember { mutableStateOf("") }
+    var quantityOverridden by remember { mutableStateOf(false) }
     var frequency by remember { mutableStateOf<HcDrugCatalog.Frequency?>(null) }
     var route by remember { mutableStateOf<HcDrugCatalog.Route?>(null) }
     var durationDays by remember { mutableStateOf<Int?>(null) }
-    var customDurationText by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     var pendingSig by remember { mutableStateOf("") }
+    // Structured fields captured on confirm (parsed from the selected strength).
+    var pendingLine by remember { mutableStateOf<PrescriptionLineRpc?>(null) }
 
     val catalogViewModel: CatalogViewModel = hiltViewModel()
     LaunchedEffect(Unit) { catalogViewModel.ensureLoaded() }
@@ -153,11 +159,30 @@ fun PharmacyPickerSheet(
             strength = d.strengths.firstOrNull()
             frequency = d.defaultFrequency
             route = d.defaultRoute
-            quantityText = ""
             durationDays = null
-            customDurationText = ""
             notes = ""
+            quantityText = ""
+            quantityOverridden = false
+            // PRN drugs default to a clinician-entered total; everything else computes.
+            orderMode = if (d.defaultFrequency == HcDrugCatalog.Frequency.PRN) {
+                HcDrugCatalog.OrderMode.FIXED_QUANTITY
+            } else {
+                HcDrugCatalog.OrderMode.SCHEDULED
+            }
         }
+    }
+
+    // Parse the selected catalog strength into structured strength/form/dispense
+    // hints and seed sensible dose defaults (spec R5). Re-runs when strength changes.
+    val parsedStrength = remember(strength) { HcDrugCatalog.parseStrength(strength) }
+    LaunchedEffect(strength) {
+        doseUnit = parsedStrength.defaultDoseUnit ?: HcDrugCatalog.DoseUnit.TAB
+        doseAmountText = when (parsedStrength.defaultDoseUnit) {
+            HcDrugCatalog.DoseUnit.TAB, HcDrugCatalog.DoseUnit.CAP -> "1"
+            null -> "1"
+            else -> ""
+        }
+        quantityOverridden = false
     }
 
     ModalBottomSheet(
@@ -303,6 +328,45 @@ fun PharmacyPickerSheet(
 
                 RxPickerStep.Sig -> {
                     val drug = selectedDrug ?: return@Column
+                    val dispenseUnit = parsedStrength.dispenseUnit ?: defaultDispenseFor(doseUnit)
+                    val doseAmount = doseAmountText.trim().toDoubleOrNull()
+                    val isScheduled = orderMode == HcDrugCatalog.OrderMode.SCHEDULED
+                    val isStat = frequency?.code.equals("STAT", ignoreCase = true)
+                    val showDuration = isScheduled && !isStat &&
+                        frequency != HcDrugCatalog.Frequency.PRN
+
+                    // Deterministic computed quantity (spec R5). For scheduled orders we
+                    // push the computed number into the editable Qty field until the
+                    // clinician overrides it; for fixed_quantity (PRN) the clinician types
+                    // the total directly. Either way the final number is human-confirmed.
+                    val computed = if (doseAmount != null && doseAmount > 0.0) {
+                        HcDrugCatalog.computePrescriptionQuantity(
+                            HcDrugCatalog.QuantityComputeInput(
+                                orderMode = orderMode,
+                                frequencyCode = frequency?.code,
+                                durationDays = durationDays,
+                                doseAmount = doseAmount,
+                                doseUnit = doseUnit,
+                                strengthAmount = parsedStrength.strengthAmount,
+                                dispenseUnit = dispenseUnit,
+                                fixedQuantity = quantityText.trim().toDoubleOrNull(),
+                                containerSize = parsedStrength.containerSize,
+                            ),
+                        )
+                    } else {
+                        null
+                    }
+                    val computedQtyStr = if (isScheduled) {
+                        computed?.quantity?.let { formatQty(it) }
+                    } else {
+                        null
+                    }
+                    LaunchedEffect(computedQtyStr, isScheduled) {
+                        if (isScheduled && !quantityOverridden && computedQtyStr != null) {
+                            quantityText = computedQtyStr
+                        }
+                    }
+
                     drug.warning?.let { warn ->
                         Text(
                             text = "⚠ $warn",
@@ -326,13 +390,47 @@ fun PharmacyPickerSheet(
                             }
                         }
                         item {
-                            OutlinedTextField(
-                                value = quantityText,
-                                onValueChange = { quantityText = it },
-                                label = { Text("Quantity (e.g. 1 tab, 5 mL)") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
+                            DropdownPickerRow(
+                                label = "Order type",
+                                value = if (isScheduled) "Scheduled — auto quantity" else "PRN / fixed quantity",
+                                options = listOf("Scheduled — auto quantity", "PRN / fixed quantity"),
+                                onSelect = { picked ->
+                                    orderMode = if (picked.startsWith("Scheduled")) {
+                                        HcDrugCatalog.OrderMode.SCHEDULED
+                                    } else {
+                                        HcDrugCatalog.OrderMode.FIXED_QUANTITY
+                                    }
+                                    quantityOverridden = false
+                                },
                             )
+                        }
+                        item {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = doseAmountText,
+                                    onValueChange = {
+                                        doseAmountText = it
+                                        quantityOverridden = false
+                                    },
+                                    label = { Text("Dose amount") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Box(modifier = Modifier.weight(1f)) {
+                                    DropdownPickerRow(
+                                        label = "Dose unit",
+                                        value = doseUnit.code,
+                                        options = HcDrugCatalog.DoseUnit.entries.map { it.code },
+                                        onSelect = { picked ->
+                                            HcDrugCatalog.DoseUnit.fromCode(picked)?.let {
+                                                doseUnit = it
+                                                quantityOverridden = false
+                                            }
+                                        },
+                                    )
+                                }
+                            }
                         }
                         item {
                             DropdownPickerRow(
@@ -350,40 +448,69 @@ fun PharmacyPickerSheet(
                                 value = frequency?.code ?: "—",
                                 options = HcDrugCatalog.Frequency.entries.map { it.label },
                                 onSelect = { picked ->
-                                    frequency = HcDrugCatalog.Frequency.entries.firstOrNull { it.label == picked }
+                                    val f = HcDrugCatalog.Frequency.entries.firstOrNull { it.label == picked }
+                                    frequency = f
+                                    // Keep order mode consistent with the frequency choice:
+                                    // PRN -> clinician-entered total; anything else -> computed.
+                                    if (f == HcDrugCatalog.Frequency.PRN) {
+                                        orderMode = HcDrugCatalog.OrderMode.FIXED_QUANTITY
+                                    } else if (orderMode == HcDrugCatalog.OrderMode.FIXED_QUANTITY) {
+                                        orderMode = HcDrugCatalog.OrderMode.SCHEDULED
+                                    }
+                                    quantityOverridden = false
                                 },
                             )
+                        }
+                        if (showDuration) {
+                            item {
+                                DropdownPickerRow(
+                                    label = "Duration",
+                                    value = durationDays?.let { "${it} days" } ?: "—",
+                                    options = HcDrugCatalog.durations.map { it.label },
+                                    onSelect = { picked ->
+                                        durationDays = HcDrugCatalog.durations
+                                            .firstOrNull { it.label == picked }?.days
+                                        quantityOverridden = false
+                                    },
+                                )
+                            }
                         }
                         item {
-                            DropdownPickerRow(
-                                label = "Duration",
-                                value = when {
-                                    durationDays != null -> "${durationDays}d"
-                                    customDurationText.isNotBlank() -> customDurationText
-                                    else -> "—"
+                            OutlinedTextField(
+                                value = quantityText,
+                                onValueChange = {
+                                    quantityText = it
+                                    quantityOverridden = true
                                 },
-                                options = HcDrugCatalog.durations.map { it.label } + "Custom…",
-                                onSelect = { picked ->
-                                    val matched = HcDrugCatalog.durations.firstOrNull { it.label == picked }
-                                    if (matched != null) {
-                                        durationDays = matched.days
-                                        customDurationText = ""
-                                    } else {
-                                        durationDays = null
-                                    }
+                                label = {
+                                    Text(
+                                        if (isScheduled) "Quantity (${dispenseUnit.code}) — computed"
+                                        else "Total quantity (${dispenseUnit.code})",
+                                    )
                                 },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        if (durationDays == null) {
+                        if (computed != null && isScheduled) {
                             item {
-                                OutlinedTextField(
-                                    value = customDurationText,
-                                    onValueChange = { customDurationText = it },
-                                    label = { Text("Custom duration (optional)") },
-                                    placeholder = { Text("e.g. until follow-up") },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
+                                val upd = computed.unitsPerDose
+                                val total = computed.totalDoses
+                                if (upd != null && total != null) {
+                                    Text(
+                                        "= ${formatQty(upd)} ${dispenseUnit.code}/dose × $total doses",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                if (computed.needsConfirmation) {
+                                    Text(
+                                        "⚠ Please double-check this quantity before confirming.",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Amber,
+                                    )
+                                }
                             }
                         }
                         item {
@@ -399,20 +526,53 @@ fun PharmacyPickerSheet(
                         }
                     }
                     Spacer(Modifier.height(10.dp))
+                    val finalQty = quantityText.trim().toDoubleOrNull()
                     Button(
                         onClick = {
+                            val durForLine = if (showDuration) durationDays else null
+                            val qtySource = if (isScheduled && !quantityOverridden) {
+                                HcDrugCatalog.QuantitySource.COMPUTED
+                            } else {
+                                HcDrugCatalog.QuantitySource.OVERRIDDEN
+                            }
+                            pendingLine = PrescriptionLineRpc(
+                                medicationCode = drug.code,
+                                freeTextName = drug.name,
+                                doseText = strength,
+                                routeText = route?.code,
+                                frequencyText = frequency?.code,
+                                durationText = durForLine?.let { "${it}d" },
+                                quantityPrescribed = finalQty,
+                                // "unit" is never null now (spec R5): dispense unit == quantity unit.
+                                quantityUnit = dispenseUnit.code,
+                                notes = notes.trim().ifBlank { null },
+                                source = "manual",
+                                // Canonical frequency_code is UPPERCASE (DB CHECK requires it).
+                                frequencyCode = frequency?.code?.uppercase(),
+                                durationDays = durForLine,
+                                doseAmount = doseAmount,
+                                doseUnit = doseUnit.code,
+                                strengthAmount = parsedStrength.strengthAmount,
+                                strengthUnit = parsedStrength.strengthUnit,
+                                form = parsedStrength.form,
+                                orderMode = orderMode.code,
+                                quantitySource = qtySource.code,
+                                dispenseUnit = dispenseUnit.code,
+                            )
                             pendingSig = HcDrugCatalog.formatSig(
                                 drug = drug,
                                 strength = strength,
-                                quantityText = quantityText.trim().ifBlank { null },
+                                quantityText = finalQty?.let { "${formatQty(it)} ${dispenseUnit.code}" },
                                 frequency = frequency,
                                 route = route,
-                                durationDays = durationDays,
-                                notes = notes.trim().ifBlank { customDurationText.trim().ifBlank { null } },
+                                durationDays = durForLine,
+                                notes = notes.trim().ifBlank { null },
                             )
                             step = RxPickerStep.Confirm
                         },
-                        enabled = strength != null || drug.strengths.isEmpty(),
+                        enabled = (strength != null || drug.strengths.isEmpty()) &&
+                            doseAmount != null && doseAmount > 0.0 &&
+                            finalQty != null && finalQty > 0.0,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                     ) {
@@ -481,27 +641,15 @@ fun PharmacyPickerSheet(
                     Spacer(Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            val drug = selectedDrug ?: return@Button
-                            val durationLabel = durationDays?.let { "${it}d" }
-                                ?: customDurationText.trim().ifBlank { null }
+                            val line = pendingLine ?: return@Button
                             onConfirm(
                                 PharmacyPickerResult(
                                     displaySig = pendingSig,
-                                    line = PrescriptionLineRpc(
-                                        medicationCode = drug.code,
-                                        freeTextName = drug.name,
-                                        doseText = strength,
-                                        routeText = route?.code,
-                                        frequencyText = frequency?.code,
-                                        durationText = durationLabel,
-                                        quantityPrescribed = quantityText.trim().toDoubleOrNull(),
-                                        quantityUnit = null,
-                                        notes = notes.trim().ifBlank { null },
-                                        source = "manual",
-                                    ),
+                                    line = line,
                                 ),
                             )
                         },
+                        enabled = pendingLine != null,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                     ) {
@@ -513,6 +661,21 @@ fun PharmacyPickerSheet(
         }
     }
 }
+
+/** Fallback dispense unit when the catalog strength didn't parse one out. */
+private fun defaultDispenseFor(doseUnit: HcDrugCatalog.DoseUnit): HcDrugCatalog.DispenseUnit =
+    when (doseUnit) {
+        HcDrugCatalog.DoseUnit.TAB -> HcDrugCatalog.DispenseUnit.TAB
+        HcDrugCatalog.DoseUnit.CAP -> HcDrugCatalog.DispenseUnit.CAP
+        HcDrugCatalog.DoseUnit.ML -> HcDrugCatalog.DispenseUnit.ML
+        HcDrugCatalog.DoseUnit.DROP -> HcDrugCatalog.DispenseUnit.DROP
+        HcDrugCatalog.DoseUnit.PUFF -> HcDrugCatalog.DispenseUnit.PUFF
+        HcDrugCatalog.DoseUnit.MG -> HcDrugCatalog.DispenseUnit.TAB
+    }
+
+/** Trim a computed quantity to a tidy string (drops a trailing .0). */
+private fun formatQty(value: Double): String =
+    if (value % 1.0 == 0.0) value.toInt().toString() else value.toString()
 
 @Composable
 private fun DropdownPickerRow(

@@ -7,6 +7,7 @@ import com.karibuhealth.app.data.remote.dto.CompleteDispenseLineRpc
 import com.karibuhealth.app.data.remote.dto.CompletePharmacyDispenseRequest
 import com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc
 import com.karibuhealth.app.data.remote.dto.PrescriptionOrderDto
+import com.karibuhealth.app.domain.catalog.HcDrugCatalog
 import com.karibuhealth.app.domain.model.NeedsPharmacyItem
 import com.karibuhealth.app.domain.model.PrescriptionOrderLine
 import com.karibuhealth.app.util.NetworkMonitor
@@ -85,6 +86,17 @@ class PrescriptionOrderRepository @Inject constructor(
                 quantityUnit = line.quantityUnit,
                 status = "ordered",
                 notes = line.notes,
+                frequencyCode = line.frequencyCode,
+                frequencyPerDay = HcDrugCatalog.frequencyPerDay(line.frequencyCode),
+                durationDays = line.durationDays,
+                doseAmount = line.doseAmount,
+                doseUnit = line.doseUnit,
+                strengthAmount = line.strengthAmount,
+                strengthUnit = line.strengthUnit,
+                form = line.form,
+                orderMode = line.orderMode,
+                quantitySource = line.quantitySource,
+                dispenseUnit = line.dispenseUnit,
             )
         }
         if (entities.isNotEmpty()) {
@@ -161,6 +173,18 @@ private fun PrescriptionOrderDto.toEntity() = PrescriptionOrderEntity(
     quantityUnit = quantityUnit,
     status = status,
     notes = notes,
+    frequencyCode = frequencyCode,
+    frequencyPerDay = frequencyPerDay,
+    durationDays = durationDays,
+    doseAmount = doseAmount,
+    doseUnit = doseUnit,
+    strengthAmount = strengthAmount,
+    strengthUnit = strengthUnit,
+    form = form,
+    orderMode = orderMode,
+    quantitySource = quantitySource,
+    dispenseUnit = dispenseUnit,
+    quantityDispensedSoFar = quantityDispensedSoFar,
 )
 
 private fun PrescriptionOrderEntity.toDomain() = PrescriptionOrderLine(
@@ -176,4 +200,16 @@ private fun PrescriptionOrderEntity.toDomain() = PrescriptionOrderLine(
     status = status,
     notes = notes,
     sortOrder = sortOrder,
+    frequencyCode = frequencyCode,
+    frequencyPerDay = frequencyPerDay,
+    durationDays = durationDays,
+    doseAmount = doseAmount,
+    doseUnit = doseUnit,
+    strengthAmount = strengthAmount,
+    strengthUnit = strengthUnit,
+    form = form,
+    orderMode = orderMode,
+    quantitySource = quantitySource,
+    dispenseUnit = dispenseUnit,
+    quantityDispensedSoFar = quantityDispensedSoFar,
 )

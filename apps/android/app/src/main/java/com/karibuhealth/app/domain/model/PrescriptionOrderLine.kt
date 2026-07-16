@@ -13,6 +13,20 @@ data class PrescriptionOrderLine(
     val status: String = "ordered",
     val notes: String? = null,
     val sortOrder: Int = 0,
+    // PHARM-4 structured fields (migration 107).
+    val frequencyCode: String? = null,
+    val frequencyPerDay: Int? = null,
+    val durationDays: Int? = null,
+    val doseAmount: Double? = null,
+    val doseUnit: String? = null,
+    val strengthAmount: Double? = null,
+    val strengthUnit: String? = null,
+    val form: String? = null,
+    val orderMode: String? = null,
+    val quantitySource: String? = null,
+    val dispenseUnit: String? = null,
+    // PHARM-5 R2: cumulative dispensed-so-far (SUM prescribed_equivalent) from the pull.
+    val quantityDispensedSoFar: Double? = null,
 ) {
     fun displayName(): String =
         freeTextName?.takeIf { it.isNotBlank() }
@@ -25,6 +39,19 @@ data class PrescriptionOrderLine(
         frequencyText?.takeIf { it.isNotBlank() },
         durationText?.takeIf { it.isNotBlank() },
     ).joinToString(" · ")
+
+    /**
+     * PHARM-5 R2 — remaining balance owed on this line, in the prescribed dispense
+     * unit: quantityPrescribed − quantityDispensedSoFar, clamped to ≥ 0. Null when
+     * the prescribed quantity is unknown (legacy_text lines), so callers fall back
+     * to the operator's manual entry rather than pre-filling a bogus number.
+     */
+    fun remainingToDispense(): Double? {
+        val prescribed = quantityPrescribed ?: return null
+        val dispensed = quantityDispensedSoFar ?: 0.0
+        val remaining = prescribed - dispensed
+        return if (remaining < 0.0) 0.0 else remaining
+    }
 }
 
 enum class PharmacyQueueTab {

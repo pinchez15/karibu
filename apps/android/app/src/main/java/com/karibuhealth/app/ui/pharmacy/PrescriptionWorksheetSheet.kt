@@ -40,50 +40,31 @@ data class DispenseLineDraft(
     val quantityUnit: String,
     val lineStatus: String,
     val notes: String,
-    /**
-     * PHARM-5 (R2) interim safety valve: true when this line is already
-     * `partially_dispensed` and Android cannot yet compute the remaining balance, so
-     * re-dispense must be blocked. Blocked drafts are never submitted.
-     */
-    val isPartialBlocked: Boolean = false,
 )
 
+private fun Double.asQtyString(): String =
+    if (this % 1.0 == 0.0) toInt().toString() else toString()
+
 fun defaultDraft(line: PrescriptionOrderLine): DispenseLineDraft {
-    // PHARM-5 (R2) interim safety valve. A `partially_dispensed` line has an UNKNOWN
-    // remaining balance on Android: the prescription-orders pull does not yet expose
-    // `quantity_dispensed_so_far`. Defaulting Qty to the full `quantityPrescribed` (the old
-    // behaviour) would enqueue a guaranteed over-dispense that the server's `>=`-safe guard
-    // rejects with a permanent 400 — i.e. sync-queue poison (see
-    // project_sync_pending_root_cause). So for a partial line we pre-fill NOTHING and mark
-    // the draft blocked; the UI disables its dispense controls and it is excluded from the
-    // submitted op. Finishing the partial happens on the web dispenser for now.
-    //
-    // TODO(PHARM-5 deferred remainder — depends on Agent C's server change):
-    //   Expose dispensed-so-far to Android, then unblock partial re-dispense:
-    //     1. Add `quantity_dispensed_so_far` to the prescription-orders pull:
-    //        PrescriptionOrderDto (data/remote/dto/Dtos.kt), PrescriptionOrderEntity
-    //        (+ Room migration/version bump), PrescriptionOrderLine, and the mapping path.
-    //     2. Default `quantityDispensed` to the REMAINING balance
-    //        (quantityPrescribed - quantity_dispensed_so_far) instead of "".
-    //     3. Remove the `isPartialBlocked` gate here and in the worksheet UI.
-    //   Blocked on Agent C exposing dispensed-so-far in the pull. See spec.md R2.
-    val blocked = line.status == "partially_dispensed"
+    // PHARM-5 (R2) remainder unblock. `quantity_dispensed_so_far` now rides the
+    // prescription-orders pull (prescription_orders_with_dispensed view), so a
+    // `partially_dispensed` line can be finished on the tablet: default Qty to the
+    // REMAINING balance (quantityPrescribed − quantityDispensedSoFar, clamped ≥ 0),
+    // never above remaining — so we can't enqueue an over-dispense the server's
+    // `>=`-safe guard would reject. A fresh line defaults to the full prescribed
+    // amount (remaining == prescribed when nothing has been dispensed yet). Lines
+    // with an unknown prescribed quantity (legacy_text) pre-fill nothing and the
+    // operator enters the amount manually.
+    val remaining = line.remainingToDispense()
     return DispenseLineDraft(
         prescriptionOrderId = line.id,
         displayName = line.displayName(),
         medicationCode = line.medicationCode,
         sig = line.sigSummary(),
-        quantityDispensed = if (blocked) {
-            ""
-        } else {
-            line.quantityPrescribed
-                ?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() }
-                .orEmpty()
-        },
-        quantityUnit = line.quantityUnit.orEmpty(),
+        quantityDispensed = remaining?.asQtyString().orEmpty(),
+        quantityUnit = (line.dispenseUnit ?: line.quantityUnit).orEmpty(),
         lineStatus = "dispensed",
         notes = "",
-        isPartialBlocked = blocked,
     )
 }
 
@@ -113,9 +94,10 @@ fun PrescriptionWorksheetSheet(
     var sendBackReason by remember { mutableStateOf("") }
     var sendBackLineId by remember { mutableStateOf<String?>(null) }
     var showSendBack by remember { mutableStateOf(false) }
-    // PHARM-5 (R2): blocked partial lines cannot be dispensed on Android, so completion is
-    // only possible when at least one non-blocked line remains to hand over.
-    val canComplete = drafts.any { !it.isPartialBlocked }
+    // PHARM-5 (R2): partials are no longer blocked — any line (incl. a partial's
+    // remaining balance) can be handed over, so completion is possible whenever
+    // there are lines to dispense.
+    val canComplete = drafts.isNotEmpty()
     val started = item.dispensingStatus != "not_started"
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -153,23 +135,25 @@ fun PrescriptionWorksheetSheet(
                             if (draft.sig.isNotBlank()) {
                                 Text(draft.sig, style = MaterialTheme.typography.bodySmall)
                             }
-                            if (draft.isPartialBlocked) {
-                                // PHARM-5 (R2) interim safety valve: block re-dispense of a
-                                // partial line — Android can't yet compute the remaining
-                                // balance, so any dispense here would be a doomed full-qty op.
+                            if (sourceLine?.status == "partially_dispensed") {
+                                // PHARM-5 (R2): a partial now defaults Qty to the remaining
+                                // balance owed; dispensing it auto-completes the line server-side.
+                                val remaining = sourceLine.remainingToDispense()
                                 Text(
-                                    "Partly dispensed already. Finish this partial on the web " +
-                                        "dispenser — the remaining balance isn't available on the " +
-                                        "tablet yet.",
+                                    if (remaining != null) {
+                                        "Partly dispensed — ${remaining.asQtyString()} " +
+                                            "${draft.quantityUnit.ifBlank { "unit" }} remaining."
+                                    } else {
+                                        "Partly dispensed — enter the remaining amount to hand over."
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 LINE_STATUS_OPTIONS.forEach { (value, label) ->
                                     FilterChip(
                                         selected = draft.lineStatus == value,
-                                        enabled = !draft.isPartialBlocked,
                                         onClick = {
                                             drafts = drafts.toMutableList().also {
                                                 it[index] = draft.copy(lineStatus = value)
@@ -182,7 +166,6 @@ fun PrescriptionWorksheetSheet(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedTextField(
                                     value = draft.quantityDispensed,
-                                    enabled = !draft.isPartialBlocked,
                                     onValueChange = { v ->
                                         drafts = drafts.toMutableList().also {
                                             it[index] = draft.copy(quantityDispensed = v)
@@ -194,7 +177,6 @@ fun PrescriptionWorksheetSheet(
                                 )
                                 OutlinedTextField(
                                     value = draft.quantityUnit,
-                                    enabled = !draft.isPartialBlocked,
                                     onValueChange = { v ->
                                         drafts = drafts.toMutableList().also {
                                             it[index] = draft.copy(quantityUnit = v)
@@ -207,7 +189,6 @@ fun PrescriptionWorksheetSheet(
                             }
                             OutlinedTextField(
                                 value = draft.notes,
-                                enabled = !draft.isPartialBlocked,
                                 onValueChange = { v ->
                                     drafts = drafts.toMutableList().also {
                                         it[index] = draft.copy(notes = v)
@@ -273,11 +254,13 @@ fun PrescriptionWorksheetSheet(
                         Text("Send back")
                     }
                     Button(
-                        // PHARM-5 (R2): never enqueue a blocked partial line — it would be a
-                        // guaranteed-rejected full-qty op (sync poison). Submit only the
-                        // dispensable lines.
+                        // PHARM-5 (R2): partials are unblocked — every draft (including a
+                        // partial's remaining balance, defaulted from quantity_dispensed_so_far)
+                        // is submitted. A full remaining dispense auto-completes the line
+                        // server-side; the Qty default never exceeds remaining, so the
+                        // `>=`-safe over-dispense guard can't reject it.
                         onClick = {
-                            onComplete(drafts.filterNot { it.isPartialBlocked }, visitNotes.trim())
+                            onComplete(drafts, visitNotes.trim())
                         },
                         enabled = canComplete && !busy,
                     ) { Text("Hand over & complete") }
