@@ -72,6 +72,38 @@ describe('computeBalance', () => {
     expect(r.paid).toBe(4000)
     expect(r.remaining).toBe(0)
   })
+
+  // BILL-1 regression: "total paid" is the SUM of every partial payment, and
+  // remaining shrinks with each one — never recomputed from only the latest.
+  it('sums multiple partial payments into total paid', () => {
+    const r = computeBalance(
+      [{ amount_ugx: 36200 }],
+      [
+        { amount_ugx: 3000, created_at: '2026-07-14T09:00:00Z' },
+        { amount_ugx: 2000, amount_barter_ugx: 1000, created_at: '2026-07-15T09:00:00Z' },
+      ],
+    )
+    expect(r.charged).toBe(36200)
+    expect(r.paid).toBe(6000)
+    expect(r.remaining).toBe(30200)
+    expect(r.credit).toBe(0)
+  })
+
+  // BILL-1 regression: multi-visit bills pool per patient — charges from
+  // several visits plus a voided line, against payments across days.
+  it('pools charges across visits and excludes voided lines from the pool', () => {
+    const r = computeBalance(
+      [
+        { amount_ugx: 15000 }, // visit 1: pharmacy + consultation
+        { amount_ugx: 14200 }, // visit 2: pharmacy (substituted) + consultation
+        { amount_ugx: 7000 }, // visit 3: lab + consultation
+        { amount_ugx: 7777, voided: true },
+      ],
+      [{ amount_ugx: 6000 }],
+    )
+    expect(r.charged).toBe(36200)
+    expect(r.remaining).toBe(30200)
+  })
 })
 
 describe('chargesSinceLastPayment', () => {
