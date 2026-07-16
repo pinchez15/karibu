@@ -880,9 +880,34 @@ export type PrescriptionOrderStatus =
   | 'cancelled'
   | 'needs_clarification';
 
+/**
+ * Source as STORED on a row (read model). Legacy/historical rows may carry
+ * `ai_suggested`/`manual_confirmed`, which the DB CHECK retains for back-compat.
+ * NOTE: these two are NOT writable — the RPC gate (migration 107) rejects any
+ * submit whose source is not in {manual, legacy_text}. Use PrescriptionSourceInput
+ * for anything a client constructs.
+ */
 export type PrescriptionSource = 'manual' | 'manual_confirmed' | 'ai_suggested' | 'legacy_text';
 
+/**
+ * The only sources a client may submit (§0 invariant — AI has recording power,
+ * not prescribing power). `legacy_text` is server-assigned to the free-text
+ * fallback path; composer/picker always emit `manual`.
+ */
+export type PrescriptionSourceInput = 'manual' | 'legacy_text';
+
 export type DispenseLineStatus = 'dispensed' | 'partially_dispensed' | 'out_of_stock';
+
+// PHARM-4 structured prescribing enums (canonical values live in
+// packages/shared/src/pharmacy-catalog.ts as runtime const arrays).
+export type PrescriptionFrequencyCode =
+  | 'OD' | 'BID' | 'TID' | 'QID' | 'Q4H' | 'Q6H' | 'Q8H' | 'Q12H'
+  | 'HS' | 'STAT' | 'PRN' | 'AC' | 'PC';
+export type PrescriptionDoseUnit = 'mg' | 'mL' | 'tab' | 'cap' | 'drop' | 'puff';
+export type PrescriptionDispenseUnit =
+  | 'tab' | 'cap' | 'mL' | 'bottle' | 'inhaler' | 'sachet' | 'vial' | 'drop' | 'puff' | 'dose';
+export type PrescriptionOrderMode = 'scheduled' | 'fixed_quantity';
+export type PrescriptionQuantitySource = 'computed' | 'overridden';
 
 export interface PrescriptionOrderLine {
   id: string;
@@ -892,22 +917,38 @@ export interface PrescriptionOrderLine {
   sort_order: number;
   medication_code: string | null;
   free_text_name: string | null;
+  // Derived text (for print/summary) — assembled from the structured fields
+  // below by migration 107; source of truth is the structured columns.
   dose_text: string | null;
   route_text: string | null;
   frequency_text: string | null;
   duration_text: string | null;
   quantity_prescribed: number | null;
   quantity_unit: string | null;
+  // --- PHARM-4 structured fields (migration 107; nullable for legacy rows) ---
+  frequency_code?: PrescriptionFrequencyCode | null;
+  frequency_per_day?: number | null;
+  duration_days?: number | null;
+  dose_amount?: number | null;
+  dose_unit?: PrescriptionDoseUnit | null;
+  strength_amount?: number | null;
+  strength_unit?: string | null;
+  form?: string | null;
+  order_mode?: PrescriptionOrderMode | null;
+  quantity_source?: PrescriptionQuantitySource | null;
+  dispense_unit?: PrescriptionDispenseUnit | null;
   status: PrescriptionOrderStatus;
   source: PrescriptionSource;
   ordered_by: string | null;
   ordered_at: string;
   notes: string | null;
   /**
-   * Sum of quantity_dispensed already recorded for this line (dispensed +
-   * partially_dispensed records). Populated by the pharmacy station query so the
-   * worksheet can default a re-dispense to the REMAINING quantity (WP3 D2) and
-   * show "already dispensed X of Y". Optional: undefined means "not loaded / 0".
+   * Sum of prescribed-equivalent quantity already recorded for this line
+   * (dispensed + partially_dispensed records). Populated by the pharmacy
+   * station query (web) and by the `prescription_orders_with_dispensed` view
+   * (Android pull path, migration 107) so the worksheet can default a
+   * re-dispense to the REMAINING quantity and show "already dispensed X of Y".
+   * Optional: undefined means "not loaded / 0".
    */
   quantity_dispensed_so_far?: number | null;
 }
@@ -915,14 +956,27 @@ export interface PrescriptionOrderLine {
 export interface PrescriptionLineInput {
   medication_code?: string | null;
   free_text_name?: string | null;
+  // Derived text — optional on input; the RPC re-derives from structured fields.
   dose_text?: string | null;
   route_text?: string | null;
   frequency_text?: string | null;
   duration_text?: string | null;
   quantity_prescribed?: number | null;
   quantity_unit?: string | null;
+  // --- PHARM-4 structured input fields ---
+  frequency_code?: PrescriptionFrequencyCode | null;
+  duration_days?: number | null;
+  dose_amount?: number | null;
+  dose_unit?: PrescriptionDoseUnit | null;
+  strength_amount?: number | null;
+  strength_unit?: string | null;
+  form?: string | null;
+  order_mode?: PrescriptionOrderMode | null;
+  quantity_source?: PrescriptionQuantitySource | null;
+  dispense_unit?: PrescriptionDispenseUnit | null;
   notes?: string | null;
-  source?: PrescriptionSource;
+  /** Human sources only — the RPC rejects anything else (§0 invariant). */
+  source?: PrescriptionSourceInput;
 }
 
 export interface CompleteDispenseLineInput {

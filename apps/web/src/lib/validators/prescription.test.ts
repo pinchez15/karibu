@@ -1,5 +1,69 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateDispensingStatus, pharmacyTabForVisit } from '@/lib/validators/prescription'
+import {
+  aggregateDispensingStatus,
+  pharmacyTabForVisit,
+  PrescriptionLineInputSchema,
+} from '@/lib/validators/prescription'
+
+describe('PrescriptionLineInputSchema — §0 AI-source gate', () => {
+  it('accepts a structured manual line', () => {
+    const parsed = PrescriptionLineInputSchema.parse({
+      medication_code: 'AMOX',
+      dose_amount: 500,
+      dose_unit: 'mg',
+      strength_amount: 500,
+      frequency_code: 'TID',
+      duration_days: 7,
+      order_mode: 'scheduled',
+      dispense_unit: 'cap',
+      quantity_prescribed: 21,
+      quantity_source: 'computed',
+      source: 'manual',
+    })
+    expect(parsed.frequency_code).toBe('TID')
+    expect(parsed.source).toBe('manual')
+  })
+
+  it('throws when source is ai_suggested', () => {
+    expect(() =>
+      PrescriptionLineInputSchema.parse({
+        medication_code: 'PARA',
+        dose_amount: 1,
+        dose_unit: 'tab',
+        source: 'ai_suggested',
+      }),
+    ).toThrow()
+  })
+
+  it('throws when source is manual_confirmed', () => {
+    expect(() =>
+      PrescriptionLineInputSchema.parse({
+        medication_code: 'PARA',
+        source: 'manual_confirmed',
+      }),
+    ).toThrow()
+  })
+
+  it('rejects a non-integer duration', () => {
+    expect(() =>
+      PrescriptionLineInputSchema.parse({
+        medication_code: 'PARA',
+        duration_days: 5.5,
+        source: 'manual',
+      }),
+    ).toThrow()
+  })
+
+  it('rejects an unknown dose_unit', () => {
+    expect(() =>
+      PrescriptionLineInputSchema.parse({
+        medication_code: 'PARA',
+        dose_unit: 'teaspoon',
+        source: 'manual',
+      }),
+    ).toThrow()
+  })
+})
 
 describe('aggregateDispensingStatus', () => {
   it('returns dispensed when all lines dispensed', () => {

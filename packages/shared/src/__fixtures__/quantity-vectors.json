@@ -1,0 +1,215 @@
+{
+  "_comment": "Golden vectors for the canonical prescription quantity computation. Consumed by BOTH packages/shared/src/pharmacy-catalog.test.ts (TS) and the Kotlin HcDrugCatalog test (Agent E). The two implementations must produce identical numbers (spec R6). Keys mirror QuantityComputeInput / QuantityComputeResult. When adding a vector, add it to both suites' expectations automatically by regenerating from computePrescriptionQuantity.",
+  "vectors": [
+    {
+      "name": "scheduled BID x5d, 1 tab/dose",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "BID",
+        "duration_days": 5,
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 10,
+        "units_per_dose": 1,
+        "total_doses": 10,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "scheduled TID x7d, 1 tab/dose",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "TID",
+        "duration_days": 7,
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 21,
+        "units_per_dose": 1,
+        "total_doses": 21,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "scheduled QID x3d, 2 caps/dose",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "QID",
+        "duration_days": 3,
+        "dose_amount": 2,
+        "dose_unit": "cap",
+        "dispense_unit": "cap"
+      },
+      "expected": {
+        "quantity": 24,
+        "units_per_dose": 2,
+        "total_doses": 12,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "half-tablet: 250mg dose from 500mg tab, BID x5d",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "BID",
+        "duration_days": 5,
+        "dose_amount": 250,
+        "dose_unit": "mg",
+        "strength_amount": 500,
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 5,
+        "units_per_dose": 0.5,
+        "total_doses": 10,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "mg -> mL by concentration: 250mg dose, 125mg/5mL (=25mg/mL) susp, TID x5d",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "TID",
+        "duration_days": 5,
+        "dose_amount": 250,
+        "dose_unit": "mg",
+        "strength_amount": 25,
+        "dispense_unit": "mL"
+      },
+      "expected": {
+        "quantity": 150,
+        "units_per_dose": 10,
+        "total_doses": 15,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "PRN fixed_quantity: clinician enters 20 tabs",
+      "input": {
+        "order_mode": "fixed_quantity",
+        "frequency_code": "PRN",
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab",
+        "fixed_quantity": 20
+      },
+      "expected": {
+        "quantity": 20,
+        "units_per_dose": null,
+        "total_doses": null,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "STAT computes exactly one dose, ignores duration",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "STAT",
+        "duration_days": 5,
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 1,
+        "units_per_dose": 1,
+        "total_doses": 1,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "container round-up: 150mL over 100mL bottles = 2 bottles",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "TID",
+        "duration_days": 5,
+        "dose_amount": 250,
+        "dose_unit": "mg",
+        "strength_amount": 25,
+        "dispense_unit": "bottle",
+        "container_size": 100
+      },
+      "expected": {
+        "quantity": 2,
+        "units_per_dose": 10,
+        "total_doses": 15,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "inhaler round-up: 56 puffs over 200-puff inhaler = 1 inhaler",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "QID",
+        "duration_days": 7,
+        "dose_amount": 2,
+        "dose_unit": "puff",
+        "dispense_unit": "inhaler",
+        "container_size": 200
+      },
+      "expected": {
+        "quantity": 1,
+        "units_per_dose": 2,
+        "total_doses": 28,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "sanity flag: 1mg dose on a 500mg drug -> 0.002 tab, out of range",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "OD",
+        "duration_days": 5,
+        "dose_amount": 1,
+        "dose_unit": "mg",
+        "strength_amount": 500,
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 0.01,
+        "units_per_dose": 0.002,
+        "total_doses": 5,
+        "needs_confirmation": true
+      }
+    },
+    {
+      "name": "Q8H x5d, 1 tab/dose (frequency map coverage)",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "Q8H",
+        "duration_days": 5,
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 15,
+        "units_per_dose": 1,
+        "total_doses": 15,
+        "needs_confirmation": false
+      }
+    },
+    {
+      "name": "lowercase q12h normalizes to Q12H, x3d, 1 tab/dose",
+      "input": {
+        "order_mode": "scheduled",
+        "frequency_code": "q12h",
+        "duration_days": 3,
+        "dose_amount": 1,
+        "dose_unit": "tab",
+        "dispense_unit": "tab"
+      },
+      "expected": {
+        "quantity": 6,
+        "units_per_dose": 1,
+        "total_doses": 6,
+        "needs_confirmation": false
+      }
+    }
+  ]
+}
