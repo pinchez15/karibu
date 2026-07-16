@@ -114,6 +114,14 @@ export interface Patient {
   whatsapp_number: string | null;
   date_of_birth: string | null;
   sex: 'M' | 'F' | null;
+  // Soft-retire (migration 111): a retired patient is a superseded duplicate
+  // registration. Clinical history is preserved; the record just stops
+  // appearing in search / lists / check-in flows. Optional so older row
+  // shapes (pre-111 fixtures, partial selects) still type-check.
+  retired_at?: string | null;
+  retired_by?: string | null;
+  retired_reason?: string | null;
+  merged_into_patient_id?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -67,6 +67,9 @@ async function getPatients(
     .from('patients')
     .select(cols, { count: 'exact' })
     .eq('clinic_id', clinicId)
+    // Retired duplicates (migration 111) never show in the finder; their
+    // charts stay reachable via old links / historical visits.
+    .is('retired_at', null)
     .range((page - 1) * limit, page * limit - 1)
 
   const term = search ? sanitizeSearchTerm(search) : ''
