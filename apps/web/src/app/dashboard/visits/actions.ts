@@ -268,6 +268,7 @@ export async function createPatientWithVisit(formData: FormData) {
       .from('patients')
       .select('id')
       .eq('clinic_id', staff.clinic_id)
+      .is('retired_at', null)
       .eq('whatsapp_number', whatsappNumber)
       .maybeSingle()
     existing = data ?? null
@@ -392,11 +393,17 @@ export async function checkInExistingPatient(
   // belongs to the caller's clinic before checking them in.
   const { data: patient } = await supabase
     .from('patients')
-    .select('id')
+    .select('id, retired_at')
     .eq('id', patientId)
     .eq('clinic_id', staff.clinic_id)
     .maybeSingle()
   if (!patient) return { error: 'Patient not found' }
+  if (patient.retired_at) {
+    return {
+      error:
+        'This patient record was retired as a duplicate. Check in the surviving record instead.',
+    }
+  }
 
   const { data: visitId, error: visitError } = await supabase.rpc('check_in_patient', {
     p_clinic_id: staff.clinic_id,

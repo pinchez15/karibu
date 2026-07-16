@@ -37,6 +37,11 @@ import {
 import { ChartVisitActions } from './ChartVisitActions'
 import { PatientEditSheet } from './PatientEditSheet'
 import { PatientProgramsCard } from './PatientProgramsCard'
+import { RetirePatientDialog } from './RetirePatientDialog'
+import {
+  RetiredPatientBanner,
+  type MergedIntoSummary,
+} from './RetiredPatientBanner'
 import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
 import { CareTaskMarkDoneButton } from '@/app/dashboard/worklists/CareTaskMarkDoneButton'
 import { guardianRelationshipLabel } from '@/lib/patient-demographics'
@@ -1123,6 +1128,7 @@ export function PatientDetailClient({
   initialTimeline,
   activeVisit = null,
   prescribingCatalog,
+  retiredMergedInto = null,
 }: {
   staffRole: StaffRole
   patient: PatientWithDerivedAge
@@ -1130,6 +1136,7 @@ export function PatientDetailClient({
   initialTimeline: PatientTimelineEvent[]
   activeVisit?: ActiveVisitSummary | null
   prescribingCatalog?: PharmacyCatalogDrug[]
+  retiredMergedInto?: MergedIntoSummary | null
 }) {
   const [patient, setPatient] = useState(initialPatient)
   const [events, setEvents] = useState<PatientTimelineEvent[]>(initialTimeline)
@@ -1141,14 +1148,19 @@ export function PatientDetailClient({
   const [careTaskOpen, setCareTaskOpen] = useState(false)
   const [vitalsOpen, setVitalsOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [retireOpen, setRetireOpen] = useState(false)
   const [latestVitalsState, setLatestVitalsState] = useState(latestVitals)
 
   useEffect(() => {
     setPatient(initialPatient)
   }, [initialPatient])
 
-  const canSign = SIGNING_ROLES.has(staffRole)
-  const canRecord = RECORDING_ROLES.has(staffRole)
+  const isRetired = Boolean(patient.retired_at)
+  const canSign = SIGNING_ROLES.has(staffRole) && !isRetired
+  const canRecord = RECORDING_ROLES.has(staffRole) && !isRetired
+  // Retiring is destructive-adjacent: admin only, and pointless on an
+  // already-retired record.
+  const canRetire = staffRole === 'admin' && !isRetired
 
   const latestPrintableVisit = useMemo(() => {
     const visits = events.filter(
@@ -1185,6 +1197,13 @@ export function PatientDetailClient({
 
   return (
     <div className="space-y-4">
+      {isRetired && patient.retired_at && (
+        <RetiredPatientBanner
+          retiredAt={patient.retired_at}
+          reason={patient.retired_reason ?? null}
+          mergedInto={retiredMergedInto}
+        />
+      )}
       <PatientHeader patient={patient} onEdit={() => setEditOpen(true)} />
       <LatestVitalsCard vitals={latestVitalsState} />
       <PatientProgramsCard patientId={patient.id} canRecord={canSign || canRecord} />
@@ -1192,13 +1211,15 @@ export function PatientDetailClient({
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Timeline</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <ChartVisitActions
-            patientId={patient.id}
-            staffRole={staffRole}
-            activeVisit={activeVisit}
-            prescribingCatalog={prescribingCatalog}
-            onOrderSubmitted={() => void refresh()}
-          />
+          {!isRetired && (
+            <ChartVisitActions
+              patientId={patient.id}
+              staffRole={staffRole}
+              activeVisit={activeVisit}
+              prescribingCatalog={prescribingCatalog}
+              onOrderSubmitted={() => void refresh()}
+            />
+          )}
           {latestPrintableVisit && (
             <Button size="sm" variant="outline" className="gap-2" asChild>
               <a
@@ -1222,15 +1243,17 @@ export function PatientDetailClient({
             <Activity className="w-4 h-4" />
             Record vitals
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setCareTaskOpen(true)}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add task
-          </Button>
+          {!isRetired && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCareTaskOpen(true)}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add task
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={() => setAddNoteOpen(true)}
@@ -1311,6 +1334,22 @@ export function PatientDetailClient({
         onOpenChange={setEditOpen}
         patient={patient}
         onSaved={setPatient}
+        canRetire={canRetire}
+        onRetireRequest={() => {
+          setEditOpen(false)
+          setRetireOpen(true)
+        }}
+      />
+
+      <RetirePatientDialog
+        open={retireOpen}
+        onOpenChange={setRetireOpen}
+        patientId={patient.id}
+        patientName={
+          [patient.first_name, patient.last_name].filter(Boolean).join(' ') ||
+          patient.display_name ||
+          'this patient'
+        }
       />
     </div>
   )

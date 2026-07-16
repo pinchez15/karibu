@@ -565,6 +565,62 @@ export async function updatePatientDemographics(
 }
 
 // ---------------------------------------------------------------------------
+// Writes — retire a duplicate registration (admin only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Soft-retire a duplicate patient registration via the retire_patient RPC
+ * (migration 111). Never a hard delete — visits/notes/vitals stay intact and
+ * keep counting in HMIS reports; the record just disappears from search,
+ * lists, and check-in flows. The RPC re-verifies the acting staff is an
+ * active admin in the patient's clinic, refuses open-visit-today, self-merge,
+ * and retired/cross-clinic merge targets, and is replay-idempotent via
+ * p_client_op_id.
+ */
+export async function retirePatient(input: {
+  patient_id: string
+  reason: string
+  merged_into_patient_id?: string | null
+  client_op_id?: string | null
+}): Promise<{ success: true } | { success: false; error: string }> {
+  const staff = await getStaff()
+  if (!staff) return { success: false, error: 'Not signed in' }
+  if (staff.role !== 'admin') {
+    return { success: false, error: 'Only an admin can retire a patient record.' }
+  }
+
+  const reason = input.reason.trim()
+  if (!reason) {
+    return { success: false, error: 'A reason is required to retire a patient.' }
+  }
+
+  const mergedInto = input.merged_into_patient_id ?? null
+  if (mergedInto && mergedInto === input.patient_id) {
+    return { success: false, error: 'A record cannot be merged into itself.' }
+  }
+
+  const patient = await loadPatientForStaff(input.patient_id, staff.clinic_id)
+  if (!patient) return { success: false, error: 'Patient not found' }
+
+  const supabase = createServiceClient()
+  const { error } = await supabase.rpc('retire_patient', {
+    p_patient_id: input.patient_id,
+    p_reason: reason,
+    p_merged_into: mergedInto,
+    p_client_op_id: input.client_op_id ?? crypto.randomUUID(),
+    p_retired_by: staff.id,
+  })
+  if (error) {
+    console.error('retirePatient: retire_patient RPC failed:', error)
+    return { success: false, error: error.message || 'Failed to retire patient' }
+  }
+
+  revalidatePath(`/dashboard/patients/${input.patient_id}`)
+  revalidatePath('/dashboard/visits')
+  return { success: true }
+}
+
+// ---------------------------------------------------------------------------
 // Writes — chart-initiated visits (Start visit / New script / Order lab)
 // ---------------------------------------------------------------------------
 
@@ -670,6 +726,13 @@ export async function ensureVisitForChartAction(input: {
 
   const patient = await loadPatientForStaff(input.patient_id, staff.clinic_id)
   if (!patient) return { success: false, error: 'Patient not found' }
+  if (patient.retired_at) {
+    return {
+      success: false,
+      error:
+        'This patient record was retired as a duplicate. Start the visit on the surviving record instead.',
+    }
+  }
 
   const supabase = createServiceClient()
 

@@ -29,11 +29,16 @@ export function PatientEditSheet({
   onOpenChange,
   patient,
   onSaved,
+  canRetire = false,
+  onRetireRequest,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   patient: PatientWithDerivedAge
   onSaved: (patient: PatientWithDerivedAge) => void
+  /** Admin-only affordance: show the "Retire duplicate" entry point. */
+  canRetire?: boolean
+  onRetireRequest?: () => void
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -241,6 +246,25 @@ export function PatientEditSheet({
             </Button>
           </div>
         </form>
+
+        {canRetire && onRetireRequest && (
+          <div className="mt-8 border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground">
+              Registered twice by mistake? Retiring hides this record from search
+              and check-in while keeping its history.
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-destructive hover:text-destructive"
+              onClick={onRetireRequest}
+              disabled={pending}
+            >
+              Retire duplicate record…
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   )

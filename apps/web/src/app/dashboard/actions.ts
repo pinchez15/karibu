@@ -74,6 +74,7 @@ async function findLikelyDuplicatePatient(
     .from('patients')
     .select('id, patient_id, first_name, last_name, display_name, date_of_birth')
     .eq('clinic_id', clinicId)
+    .is('retired_at', null)
     .eq('date_of_birth', dateOfBirth)
     .ilike('first_name', firstName)
     .ilike('last_name', lastName)
@@ -175,6 +176,9 @@ export async function searchPatients(query: string): Promise<Patient[]> {
     .from('patients')
     .select('*')
     .eq('clinic_id', staff.clinic_id)
+    // Retired duplicates never surface in pickers (check-in, ANC, HIV/TB,
+    // inpatient admit, calendar, merge-target search).
+    .is('retired_at', null)
     .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
     .order('last_name')
     .limit(8)
@@ -213,6 +217,21 @@ export async function addPatientToQueue(data: {
   if (data.existing_patient_id) {
     // Returning patient — use their existing record
     patientId = data.existing_patient_id
+
+    // Refuse retired duplicates (a stale tab / bookmark could still hold one).
+    const { data: existingRow } = await supabase
+      .from('patients')
+      .select('id, retired_at, merged_into_patient_id')
+      .eq('id', patientId)
+      .eq('clinic_id', staff.clinic_id)
+      .maybeSingle()
+    if (!existingRow) return { error: 'Patient not found' }
+    if (existingRow.retired_at) {
+      return {
+        error:
+          'This patient record was retired as a duplicate. Search for the surviving record instead.',
+      }
+    }
 
     // Update demographics if they've changed
     await supabase
@@ -259,6 +278,7 @@ export async function addPatientToQueue(data: {
         .from('patients')
         .select('id, patient_id')
         .eq('clinic_id', staff.clinic_id)
+        .is('retired_at', null)
         .eq('whatsapp_number', formattedPhone)
         .single()
 

@@ -49,6 +49,25 @@ export default async function PatientProfilePage({
     }
 
     const supabase = createServiceClient()
+
+    // Retired patients (migration 111) still render — old links must not
+    // 404 — with a banner pointing at the surviving record when one was set.
+    let retiredMergedInto: { id: string; name: string } | null = null
+    if (patient.retired_at && patient.merged_into_patient_id) {
+      const { data: survivor } = await supabase
+        .from('patients')
+        .select('id, first_name, last_name, display_name')
+        .eq('id', patient.merged_into_patient_id)
+        .eq('clinic_id', staff.clinic_id)
+        .maybeSingle()
+      if (survivor) {
+        retiredMergedInto = {
+          id: survivor.id as string,
+          name: patientDisplayName(survivor),
+        }
+      }
+    }
+
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const { data: todayVisit } = await supabase
@@ -111,6 +130,7 @@ export default async function PatientProfilePage({
             initialTimeline={initialTimeline}
             activeVisit={activeVisit}
             prescribingCatalog={prescribingCatalog}
+            retiredMergedInto={retiredMergedInto}
           />
         </div>
       </>
