@@ -29,4 +29,19 @@ data class PrescriptionOrderEntity(
     @ColumnInfo(name = "quantity_unit") val quantityUnit: String? = null,
     val status: String = "ordered",
     val notes: String? = null,
+    // PHARM-4 (migration 107 mirror): structured course-of-treatment fields.
+    // Additive + nullable — old rows read back with NULLs. See MIGRATION_32_33.
+    @ColumnInfo(name = "frequency_code") val frequencyCode: String? = null,
+    @ColumnInfo(name = "frequency_per_day") val frequencyPerDay: Int? = null,
+    @ColumnInfo(name = "duration_days") val durationDays: Int? = null,
+    @ColumnInfo(name = "dose_amount") val doseAmount: Double? = null,
+    @ColumnInfo(name = "dose_unit") val doseUnit: String? = null,
+    @ColumnInfo(name = "strength_amount") val strengthAmount: Double? = null,
+    @ColumnInfo(name = "strength_unit") val strengthUnit: String? = null,
+    @ColumnInfo(name = "form") val form: String? = null,
+    @ColumnInfo(name = "order_mode") val orderMode: String? = null,
+    @ColumnInfo(name = "quantity_source") val quantitySource: String? = null,
+    @ColumnInfo(name = "dispense_unit") val dispenseUnit: String? = null,
+    // PHARM-5 R2: cumulative dispensed-so-far, hydrated from the view on pull.
+    @ColumnInfo(name = "quantity_dispensed_so_far") val quantityDispensedSoFar: Double? = null,
 )

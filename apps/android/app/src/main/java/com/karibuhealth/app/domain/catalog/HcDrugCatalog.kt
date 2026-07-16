@@ -303,4 +303,310 @@ object HcDrugCatalog {
         val base = parts.joinToString(" ")
         return if (notes.isNullOrBlank()) base else "$base ($notes)"
     }
+
+    // =========================================================================
+    // PHARM-4 — structured course-of-treatment prescribing + computed quantity.
+    //
+    // Kotlin mirror of packages/shared/src/pharmacy-catalog.ts. This MUST produce
+    // identical numbers to the TS canonical; both are pinned by the shared golden
+    // vectors (packages/shared/src/__fixtures__/quantity-vectors.json, spec R6).
+    // Do NOT change the arithmetic here without regenerating those vectors and
+    // updating the TS mirror.
+    // =========================================================================
+
+    /** Dose unit — the unit the dose amount is expressed in per administration. */
+    enum class DoseUnit(val code: String) {
+        MG("mg"), ML("mL"), TAB("tab"), CAP("cap"), DROP("drop"), PUFF("puff");
+
+        companion object {
+            fun fromCode(code: String?): DoseUnit? =
+                code?.let { c -> entries.firstOrNull { it.code == c } }
+        }
+    }
+
+    /**
+     * Dispense unit — the unit stock is counted in at the counter. Distinct from
+     * strength unit (mg, mg/mL). Includes container concepts (bottle, inhaler).
+     */
+    enum class DispenseUnit(val code: String) {
+        TAB("tab"), CAP("cap"), ML("mL"), BOTTLE("bottle"), INHALER("inhaler"),
+        SACHET("sachet"), VIAL("vial"), DROP("drop"), PUFF("puff"), DOSE("dose");
+
+        companion object {
+            fun fromCode(code: String?): DispenseUnit? =
+                code?.let { c -> entries.firstOrNull { it.code == c } }
+        }
+    }
+
+    /** scheduled = quantity computed; fixed_quantity = clinician enters total (PRN). */
+    enum class OrderMode(val code: String) {
+        SCHEDULED("scheduled"), FIXED_QUANTITY("fixed_quantity");
+    }
+
+    /** Provenance of the dispensable quantity (R6 — replaces retired manual_confirmed). */
+    enum class QuantitySource(val code: String) {
+        COMPUTED("computed"), OVERRIDDEN("overridden");
+    }
+
+    /**
+     * frequency_code -> canonical doses per day. STAT maps to 1 but the compute
+     * forces total_doses = 1 (one dose, ignores duration). PRN is not schedulable
+     * (null) — it rides the fixed_quantity path. Mirrors FREQUENCY_PER_DAY in
+     * pharmacy-catalog.ts and prescription_frequency_per_day() in migration 107.
+     */
+    val frequencyPerDayMap: Map<String, Int?> = mapOf(
+        "OD" to 1,
+        "BID" to 2,
+        "TID" to 3,
+        "QID" to 4,
+        "Q4H" to 6,
+        "Q6H" to 4,
+        "Q8H" to 3,
+        "Q12H" to 2,
+        "HS" to 1,
+        "AC" to 3, // meal-timing modifier ~ TID
+        "PC" to 3, // meal-timing modifier ~ TID
+        "STAT" to 1,
+        "PRN" to null,
+    )
+
+    /** Normalize a frequency code to uppercase and look up its doses/day. */
+    fun frequencyPerDay(code: String?): Int? {
+        if (code.isNullOrBlank()) return null
+        val c = code.trim().uppercase()
+        if (!frequencyPerDayMap.containsKey(c)) return null
+        return frequencyPerDayMap[c]
+    }
+
+    /** Container dispense units — computed amount rounds UP to whole containers. */
+    private val containerDispenseUnits = setOf(DispenseUnit.BOTTLE, DispenseUnit.INHALER)
+
+    /** Sanity band for units-per-dose on solid oral forms (spec R5). */
+    const val SANITY_MIN_UNITS_PER_DOSE = 0.25
+    const val SANITY_MAX_UNITS_PER_DOSE = 4.0
+
+    data class QuantityComputeInput(
+        val orderMode: OrderMode,
+        val frequencyCode: String? = null,
+        val durationDays: Int? = null,
+        val doseAmount: Double,
+        val doseUnit: DoseUnit,
+        /** mg per one dispense unit (mg/tab for solids, mg/mL for liquids). Only used when doseUnit = MG. */
+        val strengthAmount: Double? = null,
+        val dispenseUnit: DispenseUnit,
+        val fixedQuantity: Double? = null,
+        /** Units (mL or puffs) per container when dispenseUnit is a container. */
+        val containerSize: Double? = null,
+    )
+
+    data class QuantityComputeResult(
+        val quantity: Double?,
+        val unitsPerDose: Double?,
+        val totalDoses: Int?,
+        val needsConfirmation: Boolean,
+        val flags: List<String>,
+    )
+
+    private fun roundTo(value: Double, decimals: Int): Double {
+        val f = Math.pow(10.0, decimals.toDouble())
+        return Math.round((value + 1e-12) * f) / f
+    }
+
+    /**
+     * Compute the dispensable quantity for a prescription line. Deterministic;
+     * pinned by quantity-vectors.json. Branches on doseUnit (spec R5):
+     *   tab/cap/drop/puff/mL -> unitsPerDose = doseAmount directly
+     *   mg                    -> unitsPerDose = doseAmount / strengthAmount
+     * Scheduled: quantity = unitsPerDose * frequencyPerDay * durationDays.
+     * STAT: totalDoses = 1. Container dispense units round UP to whole containers.
+     */
+    fun computePrescriptionQuantity(input: QuantityComputeInput): QuantityComputeResult {
+        val flags = mutableListOf<String>()
+
+        // ---- fixed_quantity (PRN): clinician enters the total directly ----
+        if (input.orderMode == OrderMode.FIXED_QUANTITY) {
+            val q = input.fixedQuantity
+            val bad = q == null || q <= 0.0
+            if (bad) flags.add("fixed_quantity_required")
+            return QuantityComputeResult(
+                quantity = if (bad) null else roundTo(q!!, 3),
+                unitsPerDose = null,
+                totalDoses = null,
+                needsConfirmation = bad,
+                flags = flags,
+            )
+        }
+
+        // ---- scheduled: derive unitsPerDose (in dispense unit) ----
+        val unitsPerDose: Double? = when (input.doseUnit) {
+            DoseUnit.TAB, DoseUnit.CAP, DoseUnit.DROP, DoseUnit.PUFF, DoseUnit.ML ->
+                input.doseAmount
+            DoseUnit.MG -> {
+                val s = input.strengthAmount
+                if (s == null || s <= 0.0) {
+                    flags.add("strength_required_for_mg_dose")
+                    null
+                } else {
+                    input.doseAmount / s
+                }
+            }
+        }
+
+        // ---- totalDoses ----
+        val freq = (input.frequencyCode ?: "").trim().uppercase()
+        val totalDoses: Int? = if (freq == "STAT") {
+            1
+        } else {
+            val perDay = frequencyPerDay(freq)
+            when {
+                perDay == null -> {
+                    flags.add("frequency_not_schedulable")
+                    null
+                }
+                input.durationDays == null || input.durationDays <= 0 -> {
+                    flags.add("duration_required")
+                    null
+                }
+                else -> perDay * input.durationDays
+            }
+        }
+
+        if (unitsPerDose == null || totalDoses == null) {
+            return QuantityComputeResult(
+                quantity = null,
+                unitsPerDose = unitsPerDose?.let { roundTo(it, 3) },
+                totalDoses = totalDoses,
+                needsConfirmation = true,
+                flags = flags,
+            )
+        }
+
+        // ---- sanity band (solid oral forms only) ----
+        var needs = false
+        val solid = input.doseUnit == DoseUnit.TAB ||
+            input.doseUnit == DoseUnit.CAP ||
+            (input.doseUnit == DoseUnit.MG &&
+                (input.dispenseUnit == DispenseUnit.TAB || input.dispenseUnit == DispenseUnit.CAP))
+        if (solid) {
+            if (unitsPerDose < SANITY_MIN_UNITS_PER_DOSE || unitsPerDose > SANITY_MAX_UNITS_PER_DOSE) {
+                flags.add("units_per_dose_out_of_range")
+                needs = true
+            }
+            if (Math.abs(unitsPerDose * 2 - Math.round(unitsPerDose * 2).toDouble()) > 1e-9) {
+                flags.add("non_half_tablet_fraction")
+                needs = true
+            }
+        }
+
+        // ---- quantity (round UP to whole containers where applicable) ----
+        var quantity = unitsPerDose * totalDoses
+        if (containerDispenseUnits.contains(input.dispenseUnit)) {
+            val cs = input.containerSize
+            if (cs == null || cs <= 0.0) {
+                flags.add("container_size_required")
+                needs = true
+            } else {
+                quantity = Math.ceil(quantity / cs)
+            }
+        }
+
+        return QuantityComputeResult(
+            quantity = roundTo(quantity, 3),
+            unitsPerDose = roundTo(unitsPerDose, 3),
+            totalDoses = totalDoses,
+            needsConfirmation = needs,
+            flags = flags,
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // Strength parsing — turns a catalog strength string ("500mg cap",
+    // "125mg/5mL susp", "100mcg MDI") into structured strength/form/dispense hints
+    // for the picker. Best-effort: unparsed strings leave fields null and the
+    // clinician confirms the computed quantity anyway (invariant preserved).
+    // -------------------------------------------------------------------------
+
+    data class ParsedStrength(
+        /** mg per one dispense unit (mg/tab for solids, mg/mL concentration for liquids). */
+        val strengthAmount: Double? = null,
+        val strengthUnit: String? = null,
+        val form: String? = null,
+        val dispenseUnit: DispenseUnit? = null,
+        /** Suggested default dose unit for the picker given the form. */
+        val defaultDoseUnit: DoseUnit? = null,
+        /** mL/puffs per container for container dispense units. */
+        val containerSize: Double? = null,
+    )
+
+    private val concentrationRegex =
+        Regex("""(\d+(?:\.\d+)?)\s*(mg|mcg|g|IU)\s*/\s*(\d+(?:\.\d+)?)\s*(mL|ml)""", RegexOption.IGNORE_CASE)
+    private val simpleAmountRegex =
+        Regex("""(\d+(?:\.\d+)?)\s*(mg|mcg|g|IU)""", RegexOption.IGNORE_CASE)
+
+    fun parseStrength(strength: String?): ParsedStrength {
+        if (strength.isNullOrBlank()) return ParsedStrength()
+        val s = strength.trim()
+        val lower = s.lowercase()
+
+        // Form + dispense hints from trailing/keyword tokens.
+        val hint: FormHint = when {
+            lower.contains("susp") -> FormHint("suspension", DispenseUnit.ML, DoseUnit.ML, null)
+            lower.contains("syrup") -> FormHint("syrup", DispenseUnit.ML, DoseUnit.ML, null)
+            lower.contains("mdi") || lower.contains("inhaler") ->
+                FormHint("inhaler", DispenseUnit.INHALER, DoseUnit.PUFF, 200.0)
+            lower.contains("neb") -> FormHint("solution", DispenseUnit.ML, DoseUnit.ML, null)
+            lower.contains("cap") -> FormHint("capsule", DispenseUnit.CAP, DoseUnit.CAP, null)
+            lower.contains("tab") -> FormHint("tablet", DispenseUnit.TAB, DoseUnit.TAB, null)
+            lower.contains("vial") -> FormHint("vial", DispenseUnit.VIAL, DoseUnit.ML, null)
+            lower.contains("inj") -> FormHint("injection", DispenseUnit.VIAL, DoseUnit.ML, null)
+            lower.contains("sachet") -> FormHint("sachet", DispenseUnit.SACHET, null, null)
+            lower.contains("la") -> FormHint("tablet", DispenseUnit.TAB, DoseUnit.TAB, null)
+            else -> FormHint(null, null, null, null)
+        }
+
+        // Concentration (liquids): strengthAmount = mg per mL.
+        concentrationRegex.find(s)?.let { m ->
+            val amt = m.groupValues[1].toDoubleOrNull()
+            val unit = m.groupValues[2]
+            val vol = m.groupValues[3].toDoubleOrNull()
+            if (amt != null && vol != null && vol > 0) {
+                return ParsedStrength(
+                    strengthAmount = amt / vol,
+                    strengthUnit = "$unit/mL",
+                    form = hint.form ?: "suspension",
+                    dispenseUnit = hint.dispenseUnit ?: DispenseUnit.ML,
+                    defaultDoseUnit = hint.doseUnit ?: DoseUnit.ML,
+                    containerSize = hint.containerSize,
+                )
+            }
+        }
+
+        // Simple amount (solids/single-number strengths).
+        simpleAmountRegex.find(s)?.let { m ->
+            val amt = m.groupValues[1].toDoubleOrNull()
+            val unit = m.groupValues[2]
+            return ParsedStrength(
+                strengthAmount = amt,
+                strengthUnit = unit,
+                form = hint.form,
+                dispenseUnit = hint.dispenseUnit,
+                defaultDoseUnit = hint.doseUnit,
+                containerSize = hint.containerSize,
+            )
+        }
+
+        return ParsedStrength(
+            form = hint.form,
+            dispenseUnit = hint.dispenseUnit,
+            defaultDoseUnit = hint.doseUnit,
+            containerSize = hint.containerSize,
+        )
+    }
+
+    private data class FormHint(
+        val form: String?,
+        val dispenseUnit: DispenseUnit?,
+        val doseUnit: DoseUnit?,
+        val containerSize: Double?,
+    )
 }

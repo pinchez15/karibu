@@ -874,7 +874,9 @@ data class RecordReviewResponseRequest(
     @SerialName("p_response") val response: String,
 )
 
-// EHR pivot RPCs (migration 045)
+// EHR pivot RPCs (migration 045). PHARM-4 (migration 107): structured fields ride
+// INSIDE p_lines JSONB (spec R4 — no RPC signature change). *_text stay for
+// back-compat display; the server derives them from the structured fields.
 @Serializable
 data class PrescriptionLineRpc(
     @SerialName("medication_code") val medicationCode: String? = null,
@@ -887,6 +889,17 @@ data class PrescriptionLineRpc(
     @SerialName("quantity_unit") val quantityUnit: String? = null,
     @SerialName("notes") val notes: String? = null,
     @SerialName("source") val source: String? = "manual",
+    // PHARM-4 structured fields (all nullable so legacy/offline payloads decode).
+    @SerialName("frequency_code") val frequencyCode: String? = null,
+    @SerialName("duration_days") val durationDays: Int? = null,
+    @SerialName("dose_amount") val doseAmount: Double? = null,
+    @SerialName("dose_unit") val doseUnit: String? = null,
+    @SerialName("strength_amount") val strengthAmount: Double? = null,
+    @SerialName("strength_unit") val strengthUnit: String? = null,
+    @SerialName("form") val form: String? = null,
+    @SerialName("order_mode") val orderMode: String? = null,
+    @SerialName("quantity_source") val quantitySource: String? = null,
+    @SerialName("dispense_unit") val dispenseUnit: String? = null,
 )
 
 fun PrescriptionLineRpc.summaryText(): String =
@@ -1076,6 +1089,21 @@ data class PrescriptionOrderDto(
     @SerialName("quantity_unit") val quantityUnit: String? = null,
     val status: String = "ordered",
     val notes: String? = null,
+    // PHARM-4 structured fields (read back from prescription_orders_with_dispensed).
+    @SerialName("frequency_code") val frequencyCode: String? = null,
+    @SerialName("frequency_per_day") val frequencyPerDay: Int? = null,
+    @SerialName("duration_days") val durationDays: Int? = null,
+    @SerialName("dose_amount") val doseAmount: Double? = null,
+    @SerialName("dose_unit") val doseUnit: String? = null,
+    @SerialName("strength_amount") val strengthAmount: Double? = null,
+    @SerialName("strength_unit") val strengthUnit: String? = null,
+    @SerialName("form") val form: String? = null,
+    @SerialName("order_mode") val orderMode: String? = null,
+    @SerialName("quantity_source") val quantitySource: String? = null,
+    @SerialName("dispense_unit") val dispenseUnit: String? = null,
+    // PHARM-5 R2: cumulative dispensed-so-far (SUM prescribed_equivalent) for the
+    // remaining-balance default on the Android dispenser. From the view only.
+    @SerialName("quantity_dispensed_so_far") val quantityDispensedSoFar: Double? = null,
 )
 
 // Migration 048 — atomic sign + summary + documentation complete.

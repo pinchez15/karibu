@@ -560,4 +560,16 @@ private fun com.karibuhealth.app.domain.model.PrescriptionOrderLine.toRpc() = Pr
     quantityPrescribed = quantityPrescribed,
     quantityUnit = quantityUnit,
     notes = notes,
+    // PHARM-4: carry structured fields through on re-submit so an edited/replayed
+    // line keeps its course-of-treatment data (frequency_code stays UPPERCASE).
+    frequencyCode = frequencyCode,
+    durationDays = durationDays,
+    doseAmount = doseAmount,
+    doseUnit = doseUnit,
+    strengthAmount = strengthAmount,
+    strengthUnit = strengthUnit,
+    form = form,
+    orderMode = orderMode,
+    quantitySource = quantitySource,
+    dispenseUnit = dispenseUnit,
 )
