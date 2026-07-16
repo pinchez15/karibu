@@ -66,15 +66,19 @@ const CLINICAL_CROSS_LINKS: NavItem[] = [
   { id: 'review', label: 'Review notes', href: '/dashboard/review', icon: ClipboardCheck, amber: true },
 ]
 
-// Top-header units. Home (calendar) is shared; other units are role-scoped desks.
+// Top-header units. Home (briefing dashboard + calendar) is shared; other units
+// are role-scoped desks.
 const UNITS: UnitDef[] = [
   {
     id: 'home',
     label: 'Home',
     icon: Home,
-    basePaths: ['/dashboard'],
+    basePaths: ['/dashboard', '/dashboard/calendar'],
     roles: ALL_STAFF_ROLES,
-    items: [{ id: 'calendar', label: 'Calendar', href: '/dashboard', icon: Calendar }],
+    items: [
+      { id: 'today', label: 'Today', href: '/dashboard', icon: Home },
+      { id: 'calendar', label: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+    ],
   },
   {
     id: 'opd',
