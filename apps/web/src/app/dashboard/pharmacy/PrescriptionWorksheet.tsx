@@ -79,8 +79,13 @@ function defaultDraft(line: PrescriptionOrderLine): LineDraft {
   }
 }
 
+// PHARM-5/R3: keep this in lock-step with the RPC's dispensable set
+// (rpc_complete_pharmacy_dispense: status IN ordered/dispensing/
+// partially_dispensed/out_of_stock). `out_of_stock` is included so a restocked
+// line is BOTH dispensable at the RPC AND editable in the worksheet — otherwise
+// the operator can never dispense it once stock arrives.
 function lineIsEditable(status: string): boolean {
-  return ['ordered', 'dispensing', 'partially_dispensed'].includes(status)
+  return ['ordered', 'dispensing', 'partially_dispensed', 'out_of_stock'].includes(status)
 }
 
 function lineOutcomeLabel(status: string): string {
@@ -507,6 +512,12 @@ export function PrescriptionWorksheet({
                         </select>
                       )}
                     </label>
+                    {/* PHARM-5: the Outcome dropdown NO LONGER sets the terminal
+                        status — the RPC derives it from cumulative qty vs
+                        prescribed. "OK"/"Part" both record a dispense (the math
+                        decides dispensed vs partially_dispensed); "OOS" records a
+                        zero-dispense out-of-stock. So a full remaining qty typed
+                        as "Part" still auto-completes the line. */}
                     <label className="flex flex-col gap-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                       Outcome
                       <select
@@ -518,6 +529,7 @@ export function PrescriptionWorksheet({
                           })
                         }
                         disabled={busy}
+                        title="Dispensed / Partial record a dispense (the amount decides completion); OOS = out of stock"
                       >
                         <option value="dispensed">OK</option>
                         <option value="partially_dispensed">Part</option>

@@ -1,8 +1,16 @@
 import { createServiceClient } from '@/lib/supabase'
-import { startOfTodayInTimezoneIso } from '@/lib/clinic-time'
 import { measureServerLoader, PERF_LOADER } from '@/lib/server-timing'
 import type { PrescriptionOrderLine, PharmacyQueueTab } from '@karibu/shared'
 import { type DispensingRow } from './pharmacy-shared'
+import {
+  ACTIVE,
+  PARTIAL,
+  RETURNED,
+  TERMINAL,
+  dispensingStatusOnTab,
+  pharmacyTabFilter,
+  type PharmacyTabFilter,
+} from './pharmacy-tabs'
 
 export type PharmacyStationRow = DispensingRow & {
   prescription_lines: PrescriptionOrderLine[]
@@ -29,40 +37,8 @@ export type PharmacyStockResult =
   | { ok: true; items: PharmacyStockItem[] }
   | { ok: false; error: string }
 
-const TERMINAL = ['dispensed', 'partial', 'out_of_stock'] as const
-const ACTIVE = ['not_started', 'in_progress', 'partial', 'out_of_stock'] as const
-const RETURNED = ['returned'] as const
-
-export type PharmacyTabFilter = {
-  /** dispensing_status values this tab includes. */
-  statuses: string[]
-  /** When set, only rows with dispensed_at >= this ISO instant are included. */
-  dispensedAfter?: string
-}
-
-/**
- * Pure, unit-testable mapping from a tab to its query predicate (WP1 D1/D3).
- *
- * - `to_dispense` = the ACTIVE set (not_started, in_progress, partial,
- *   out_of_stock). A multi-line script therefore stays on this tab until every
- *   line resolves — it never "disappears" mid-work. No date bound.
- * - `done_today` = the TERMINAL set, bounded to work dispensed since the
- *   clinic's local midnight (Africa/Kampala), not the server's UTC midnight.
- *
- * `nowIso` is injectable only for tests; production always uses the live clock.
- */
-export function pharmacyTabFilter(
-  tab: PharmacyQueueTab,
-  dispensedAfter: string = startOfTodayInTimezoneIso(),
-): PharmacyTabFilter {
-  if (tab === 'done_today') {
-    return { statuses: [...TERMINAL], dispensedAfter }
-  }
-  if (tab === 'returned_to_clinician') {
-    return { statuses: [...RETURNED] }
-  }
-  return { statuses: [...ACTIVE] }
-}
+export type { PharmacyTabFilter }
+export { pharmacyTabFilter, dispensingStatusOnTab }
 
 export async function getPharmacyStationQueue(
   clinicId: string,
@@ -146,7 +122,7 @@ async function getPharmacyStationQueueImpl(
   if (lineIds.length > 0) {
     const { data: records, error: recErr } = await supabase
       .from('dispense_records')
-      .select('prescription_order_id, quantity_dispensed, line_status')
+      .select('prescription_order_id, quantity_dispensed, prescribed_equivalent, line_status')
       .in('prescription_order_id', lineIds)
       .eq('clinic_id', clinicId)
     if (recErr) {
@@ -157,7 +133,11 @@ async function getPharmacyStationQueueImpl(
       if (status !== 'dispensed' && status !== 'partially_dispensed') continue
       const key = r.prescription_order_id as string
       const prev = dispensedByLine.get(key) ?? 0
-      dispensedByLine.set(key, prev + Number(r.quantity_dispensed ?? 0))
+      // PHARM-5/R1: remaining is measured in prescribed-equivalents so the UI
+      // default agrees with the RPC's completion math after a substitution.
+      // Falls back to the raw dispensed qty for pre-migration rows.
+      const equiv = r.prescribed_equivalent ?? r.quantity_dispensed
+      dispensedByLine.set(key, prev + Number(equiv ?? 0))
     }
   }
 
@@ -178,11 +158,12 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
   const supabase = createServiceClient()
 
   const toDispense = pharmacyTabFilter('to_dispense')
+  const partial = pharmacyTabFilter('partial')
   const doneToday = pharmacyTabFilter('done_today')
 
   const returned = pharmacyTabFilter('returned_to_clinician')
 
-  const [toDispenseRes, returnedRes, doneRes] = await Promise.all([
+  const [toDispenseRes, partialRes, returnedRes, doneRes] = await Promise.all([
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
@@ -191,6 +172,14 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
       .not('medications', 'is', null)
       .neq('medications', '')
       .in('dispensing_status', toDispense.statuses),
+    supabase
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .eq('clinic_id', clinicId)
+      .not('pharmacy_order_submitted_at', 'is', null)
+      .not('medications', 'is', null)
+      .neq('medications', '')
+      .in('dispensing_status', partial.statuses),
     supabase
       .from('visits')
       .select('id', { count: 'exact', head: true })
@@ -210,9 +199,10 @@ export async function getPharmacyTabCounts(clinicId: string): Promise<Record<Pha
 
   return {
     to_dispense: toDispenseRes.count ?? 0,
+    partial: partialRes.count ?? 0,
     returned_to_clinician: returnedRes.count ?? 0,
     done_today: doneRes.count ?? 0,
   }
 }
 
-export { ACTIVE, RETURNED, TERMINAL }
+export { ACTIVE, PARTIAL, RETURNED, TERMINAL }

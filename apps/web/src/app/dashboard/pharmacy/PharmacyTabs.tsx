@@ -7,6 +7,7 @@ import type { PharmacyQueueTab } from '@karibu/shared'
 
 const TAB_LABELS: Record<PharmacyQueueTab, string> = {
   to_dispense: 'To dispense',
+  partial: 'Partial',
   returned_to_clinician: 'Returned to clinician',
   done_today: 'Done today',
 }
