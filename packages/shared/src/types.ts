@@ -946,9 +946,16 @@ export type GuardianRelationship =
   | 'neighbor';
 
 // WP1 (D1): Waiting + In progress are merged into one "To dispense" tab so a
-// multi-line script stays on the same tab until every line is resolved. The
-// second tab is "Done today". See apps/web/.../pharmacy/pharmacy-data.ts.
-export type PharmacyQueueTab = 'to_dispense' | 'returned_to_clinician' | 'done_today';
+// multi-line script stays on the same tab until every line is resolved.
+// PHARM-5: a partial visit (some lines dispensed, a balance still owed) lives
+// in its own "Partial" tab so it appears in exactly one place and stays
+// actionable ("dispense the rest"). "Done today" holds fully-dispensed visits.
+// See apps/web/.../pharmacy/pharmacy-data.ts.
+export type PharmacyQueueTab =
+  | 'to_dispense'
+  | 'partial'
+  | 'returned_to_clinician'
+  | 'done_today';
 
 export interface Payment {
   id: string;
