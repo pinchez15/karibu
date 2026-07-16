@@ -1,17 +1,30 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
+interface SidebarPatientSearchProps {
+  /** Focus the input on mount / when toggled true — used when the collapsed rail expands into search. */
+  autoFocus?: boolean
+  /** Called after the requested autofocus is applied so the parent can reset its one-shot flag. */
+  onFocusHandled?: () => void
+}
+
 /**
- * Compact patient search for the OPD unit sidebar — routes to the register
+ * Compact patient search for the unit sidebar — routes to the register
  * with ?search= (same destination as the header ClinicianSearchBar).
  */
-export function SidebarPatientSearch() {
+export function SidebarPatientSearch({ autoFocus = false, onFocusHandled }: SidebarPatientSearchProps = {}) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!autoFocus) return
+    inputRef.current?.focus()
+    onFocusHandled?.()
+  }, [autoFocus, onFocusHandled])
 
   const goToSearch = useCallback(
     (term: string) => {
