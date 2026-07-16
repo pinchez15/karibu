@@ -16,3 +16,6 @@ local.properties
 # environment's JDK (CI: setup-java; local: your JAVA_HOME); toolchains resolve
 # via the Foojay convention plugin in settings.gradle.kts.
 /gradle/gradle-daemon-jvm.properties
+
+# Kotlin build daemon cache (errors/sessions) — local build artifact, not source.
+/.kotlin/
