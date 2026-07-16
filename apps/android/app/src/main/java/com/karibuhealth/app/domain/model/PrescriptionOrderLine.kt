@@ -36,16 +36,35 @@ enum class PharmacyQueueTab {
 fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): PharmacyQueueTab? {
     if (dispensingStatus == "returned") return null
     return when {
-        dispensingStatus in listOf("dispensed", "partial", "out_of_stock") &&
+        // PHARM-5 (R2): a `partial` visit still owes a balance, so it must stay in the
+        // working (InProgress) queue and NEVER route to DoneToday — even when a
+        // `dispensedAt` timestamp is present from the first partial dispense. Only fully
+        // `dispensed` and terminal `out_of_stock` move to DoneToday.
+        // Mirrors validators/prescription.ts pharmacyTabForVisit (partial -> in_progress).
+        // See docs/workplans/2026-07-16-pharmacy-rework/spec.md (Revisions v2, R2).
+        dispensingStatus == "partial" -> PharmacyQueueTab.InProgress
+        dispensingStatus in listOf("dispensed", "out_of_stock") &&
             !dispensedAt.isNullOrBlank() -> PharmacyQueueTab.DoneToday
         dispensingStatus == "not_started" || dispensingStatus.isNullOrBlank() -> PharmacyQueueTab.Waiting
         dispensingStatus == "in_progress" ||
-            dispensingStatus in listOf("partial", "out_of_stock") -> PharmacyQueueTab.InProgress
+            dispensingStatus == "out_of_stock" -> PharmacyQueueTab.InProgress
         else -> PharmacyQueueTab.Waiting
     }
 }
 
-/** Mirrors server aggregate_visit_dispensing_status for offline preview. */
+/**
+ * Mirrors the server function `aggregate_visit_dispensing_status`
+ * (packages/supabase/migrations/094_wp1_close_the_loops.sql:16-65) for offline preview.
+ *
+ * PHARM-5: this mirror consumes per-line statuses. Under the PHARM-5 backend, the server
+ * now DERIVES the per-line status from cumulative `prescribed_equivalent` vs
+ * `quantity_prescribed` (migration 106): `SUM >= quantity_prescribed` -> `dispensed`,
+ * `0 < SUM < prescribed` -> `partially_dispensed`. This mirror does not do that per-line
+ * derivation itself — it only rolls line statuses up to a visit status — so it stays in
+ * agreement as long as it treats a `partially_dispensed` line as a still-open "partial"
+ * visit (not a terminal one), which it does. Verified line-for-line against migration 094;
+ * do not let it drift (three mirrors already exist: SQL / validators/prescription.ts / here).
+ */
 fun aggregateDispensingStatus(lineStatuses: List<String>): String {
     if (lineStatuses.isEmpty()) return "not_started"
     val active = lineStatuses.filter { it != "cancelled" }
