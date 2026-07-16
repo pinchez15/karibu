@@ -29,6 +29,7 @@ import {
 import { KaribuLockup } from '@/components/karibu-mark'
 import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
 import { SidebarPatientSearch } from '@/components/sidebar-patient-search'
+import { PharmacySectionRail } from '@/components/pharmacy-section-rail'
 import { activeWebShellUnitId } from '@/lib/web-shell-units'
 import { cn } from '@/lib/utils'
 import { CLINICAL_ROLES, DATA_REPORT_ROLES, BILLING_ROLES, ALL_STAFF_ROLES } from '@/lib/staff-roles'
@@ -37,7 +38,7 @@ import { CLINICAL_ROLES, DATA_REPORT_ROLES, BILLING_ROLES, ALL_STAFF_ROLES } fro
 // derives the active *unit* from the path, not a role.
 export type WebShellRole = 'clinician' | 'pharmacy' | 'lab' | 'analyst'
 
-interface NavItem {
+export interface NavItem {
   id: string
   label: string
   href: string
@@ -260,6 +261,19 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
 
       {/* Body — unit sidebar + content */}
       <div className="flex flex-1 min-h-0">
+        {/* Pharmacy gets a collapsible icon rail (PHARM-3) so the dispensing
+            worksheet reclaims horizontal width on tablets. Every other unit
+            keeps the standard fixed-width section sidebar below, untouched. */}
+        {currentUnitId === 'pharmacy' ? (
+          <PharmacySectionRail
+            clinicName={clinicName}
+            unitLabel={activeUnit?.label ?? 'Pharmacy'}
+            items={items}
+            pathname={pathname}
+            counts={counts}
+            staff={staff}
+          />
+        ) : (
         <aside className="no-print w-[208px] bg-card border-r border-border flex flex-col shrink-0">
           <div className="p-4 border-b border-line-soft">
             <div className="kh-meta">CLINIC</div>
@@ -316,6 +330,7 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
             <SidebarAccountMenu displayName={staff.displayName} role={staff.role} initials={staff.initials} />
           )}
         </aside>
+        )}
 
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</main>
       </div>
@@ -350,7 +365,7 @@ export function WebTopBar({ title, subtitle, subtitleMeta = true, actions }: Web
 }
 
 /** Active-route detection: exact match or prefix. /dashboard never wins by prefix. */
-function isActive(pathname: string, href: string) {
+export function isActive(pathname: string, href: string) {
   if (pathname === href) return true
   if (href === '/dashboard') return false
   if (href === '/dashboard/admin' && pathname.startsWith('/dashboard/admin/reports')) return false
