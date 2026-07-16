@@ -60,6 +60,33 @@ class PharmacyDispenseTest {
         )
     }
 
+    // PHARM-5 (R2): a partial visit still owes a balance and must stay in the working queue,
+    // never DoneToday — even once a dispensedAt timestamp exists from the first partial.
+    @Test
+    fun pharmacyTabForVisit_partialStaysInProgressWithoutTimestamp() {
+        assertEquals(
+            PharmacyQueueTab.InProgress,
+            pharmacyTabForVisit("partial", null),
+        )
+    }
+
+    @Test
+    fun pharmacyTabForVisit_partialStaysInProgressEvenWithTimestamp() {
+        assertEquals(
+            PharmacyQueueTab.InProgress,
+            pharmacyTabForVisit("partial", "2026-06-16T12:00:00Z"),
+        )
+    }
+
+    // out_of_stock keeps its prior behaviour: terminal + timestamp -> DoneToday.
+    @Test
+    fun pharmacyTabForVisit_outOfStockDoneTodayWithTimestamp() {
+        assertEquals(
+            PharmacyQueueTab.DoneToday,
+            pharmacyTabForVisit("out_of_stock", "2026-06-16T12:00:00Z"),
+        )
+    }
+
     @Test
     fun prescriptionLineRpc_summaryText() {
         val line = com.karibuhealth.app.data.remote.dto.PrescriptionLineRpc(
