@@ -21,6 +21,61 @@ export function parseTestsOrdered(testsOrdered: string | null | undefined): stri
     .filter(Boolean);
 }
 
+/**
+ * Union of an existing comma-separated tests_ordered value with newly ordered
+ * tests. Existing order is preserved, incoming tests are appended, duplicates
+ * are dropped case-insensitively (first occurrence's casing wins). Returns
+ * null when both inputs are empty — the "no order" representation used by the
+ * lab board.
+ *
+ * SQL mirror: merge_tests_ordered() in
+ * packages/supabase/migrations/108_lab_order_protection_and_queue_release.sql —
+ * keep the two in sync. Lab orders are ADD-ONLY through the note/order paths
+ * (LAB-1 regression: the note editor's stale snapshot must never erase an
+ * order submitted from another surface).
+ */
+export function mergeTestsOrdered(
+  existing: string | null | undefined,
+  incoming: string | string[] | null | undefined,
+): string | null {
+  const incomingList = Array.isArray(incoming)
+    ? incoming.map((s) => s.trim()).filter(Boolean)
+    : parseTestsOrdered(incoming);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of [...parseTestsOrdered(existing), ...incomingList]) {
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out.length > 0 ? out.join(', ') : null;
+}
+
+/** Visit-level lab statuses that keep a visit on the lab bench. */
+export const LAB_QUEUE_OPEN_STATUSES = ['pending', 'running'] as const;
+
+/**
+ * Lab queue membership: the visit-level status is open AND at least one
+ * ordered test has not reached a terminal state. Mirrors the SQL filter in
+ * apps/web/src/app/dashboard/lab/page.tsx (lab_status IN pending/running)
+ * plus its countOpenLabTests post-filter.
+ */
+export function isLabQueueVisit(visit: {
+  tests_ordered: string | null | undefined;
+  lab_status: string | null | undefined;
+  lab_test_results?: LabTestResultRow[] | null;
+}): boolean {
+  if (
+    !visit.lab_status ||
+    !(LAB_QUEUE_OPEN_STATUSES as readonly string[]).includes(visit.lab_status)
+  ) {
+    return false;
+  }
+  const tests = mergeLabTestResults(visit.tests_ordered, visit.lab_test_results ?? []);
+  return countOpenLabTests(tests) > 0;
+}
+
 export function mergeLabTestResults(
   testsOrdered: string | null | undefined,
   stored: LabTestResultRow[] | null | undefined,

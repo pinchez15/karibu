@@ -6,7 +6,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { WebTopBar } from '@/components/web-shell'
 import { LabQueueClient, type LabVisitRow } from './LabQueueClient'
 import { RealtimeRefresher } from '@/components/realtime-refresher'
-import { countOpenLabTests, mergeLabTestResults, type LabTestResultRow } from '@karibu/shared'
+import { isLabQueueVisit, mergeLabTestResults, type LabTestResultRow } from '@karibu/shared'
 
 /**
  * Lab board — one row per ordered test, grouped by patient visit.
@@ -60,7 +60,9 @@ async function getLabQueue(clinicId: string): Promise<LabVisitRow[]> {
       const tests = mergeLabTestResults(visit.tests_ordered, visit.lab_test_results ?? [])
       return { ...visit, tests }
     })
-    .filter((row) => countOpenLabTests(row.tests) > 0)
+    // Shared membership predicate (vitest-covered): open visit-level status
+    // AND at least one test not yet resulted.
+    .filter((row) => isLabQueueVisit(row))
 }
 
 export default async function LabPage() {

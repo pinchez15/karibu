@@ -5,7 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { broadcastClinicRefresh } from '@/lib/realtime-server'
 import { getStaff, requireStaff } from '@/lib/auth'
 import { ensureCanRegisterPatients } from '@/lib/onboarding-server'
-import { formatPhoneNumber, isValidUgandaPhone } from '@karibu/shared'
+import { formatPhoneNumber, isValidUgandaPhone, mergeTestsOrdered } from '@karibu/shared'
 import { isGuardianRelationship } from '@/lib/patient-demographics'
 import {
   PrescriptionLineInputSchema,
@@ -600,15 +600,13 @@ export async function submitLabOrder(
     .maybeSingle()
   if (!visit) return { success: false, error: 'Visit not found' }
 
-  const existing = String(visit.tests_ordered ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-  const merged = Array.from(new Set([...existing, ...clean]))
+  // Shared add-only merge (mirrors merge_tests_ordered in migration 108):
+  // orders from other surfaces are never dropped, dupes are case-insensitive.
+  const merged = mergeTestsOrdered(visit.tests_ordered as string | null, clean)
 
   const { error } = await supabase
     .from('visits')
-    .update({ tests_ordered: merged.join(', '), lab_status: 'pending' })
+    .update({ tests_ordered: merged, lab_status: 'pending' })
     .eq('id', visitId)
     .eq('clinic_id', staff.clinic_id)
   if (error) return { success: false, error: error.message }
