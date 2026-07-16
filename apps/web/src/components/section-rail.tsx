@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
 import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
+import { SidebarPatientSearch } from '@/components/sidebar-patient-search'
 import { isActive, type NavItem } from '@/components/web-shell'
 import { cn } from '@/lib/utils'
 
-const STORAGE_KEY = 'karibu.pharmacyRailCollapsed'
+const STORAGE_KEY = 'karibu.sectionRailCollapsed'
 
 interface StaffSummary {
   displayName: string
@@ -15,39 +16,46 @@ interface StaffSummary {
   initials: string
 }
 
-interface PharmacySectionRailProps {
+interface SectionRailProps {
   clinicName: string
   unitLabel: string
   items: NavItem[]
   pathname: string
   counts?: Partial<Record<string, number | string>>
   staff?: StaffSummary
+  /** Show the patient search affordance for this unit (search box expanded, icon collapsed). */
+  showPatientSearch?: boolean
 }
 
 /**
- * PHARM-3 — the pharmacy section sidebar as a collapsible icon rail.
+ * The shared section sidebar for every WebShell unit (OPD, Inpatient, ANC,
+ * HIV/TB, Lab, Billing, Data, Pharmacy) as a collapsible icon rail.
  *
- * On an 8×11 tablet the Dispensing / Stock / History sub-nav steals horizontal
- * width from the master/detail dispense worksheet. Collapsed by default, each
- * item shows only its icon with an accessible tooltip (hover, keyboard focus,
- * and long-press for touch). The expand/collapse choice persists in
- * localStorage. When collapsed the rail shrinks to a 64px icon column and the
- * `flex-1` main content reclaims the freed width automatically.
+ * On an 8×11 tablet a fixed-width sub-nav steals horizontal width from the
+ * master/detail worksheets (dispense, lab worklist, chart). Collapsed by
+ * default, each item shows only its icon with an accessible tooltip (hover,
+ * keyboard focus, and long-press for touch). The expand/collapse choice
+ * persists app-wide in localStorage. When collapsed the rail shrinks to a
+ * 64px icon column and the `flex-1` main content reclaims the freed width.
  *
- * Scoped to pharmacy only — every other unit keeps the standard sidebar in
- * WebShell, so the top app nav and other desks are untouched.
+ * Units that carry a patient search (`showPatientSearch`) keep it reachable in
+ * both states: an expanded search box, or a collapsed search icon that expands
+ * the rail and focuses the input — the search is never silently dropped.
  */
-export function PharmacySectionRail({
+export function SectionRail({
   clinicName,
   unitLabel,
   items,
   pathname,
   counts,
   staff,
-}: PharmacySectionRailProps) {
+  showPatientSearch = false,
+}: SectionRailProps) {
   // Collapsed by default (spec). Hydrate the persisted preference after mount so
   // the initial server/client render agree, then reconcile with localStorage.
   const [collapsed, setCollapsed] = useState(true)
+  // When the collapsed search icon expands the rail, focus the search input.
+  const [focusSearch, setFocusSearch] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -59,17 +67,29 @@ export function PharmacySectionRail({
     }
   }, [])
 
+  const persist = useCallback((next: boolean) => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
+    } catch {
+      // ignore persistence failures
+    }
+  }, [])
+
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev
-      try {
-        window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-      } catch {
-        // ignore persistence failures
-      }
+      persist(next)
       return next
     })
-  }, [])
+  }, [persist])
+
+  // Search icon (collapsed): expand the rail and focus the search box so the
+  // patient search stays a single tap away on tablets.
+  const expandForSearch = useCallback(() => {
+    setCollapsed(false)
+    persist(false)
+    setFocusSearch(true)
+  }, [persist])
 
   return (
     <aside
@@ -114,6 +134,30 @@ export function PharmacySectionRail({
           <div className="kh-meta mt-3 text-cobalt">{unitLabel.toUpperCase()}</div>
         </div>
       )}
+
+      {/* Patient search — never silently dropped. Expanded: a search box.
+          Collapsed: an icon that expands the rail and focuses the box. */}
+      {showPatientSearch &&
+        (collapsed ? (
+          <div className="p-2 border-b border-line-soft flex justify-center">
+            <button
+              type="button"
+              onClick={expandForSearch}
+              aria-label="Search patients"
+              title="Search patients"
+              className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-body"
+            >
+              <Search className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+        ) : (
+          <div className="px-3 pt-3 pb-2 border-b border-line-soft">
+            <SidebarPatientSearch
+              autoFocus={focusSearch}
+              onFocusHandled={() => setFocusSearch(false)}
+            />
+          </div>
+        ))}
 
       {/* Section nav */}
       <nav

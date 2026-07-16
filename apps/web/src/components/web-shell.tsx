@@ -27,9 +27,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { KaribuLockup } from '@/components/karibu-mark'
-import { SidebarAccountMenu } from '@/components/sidebar-account-menu'
-import { SidebarPatientSearch } from '@/components/sidebar-patient-search'
-import { PharmacySectionRail } from '@/components/pharmacy-section-rail'
+import { SectionRail } from '@/components/section-rail'
 import { activeWebShellUnitId } from '@/lib/web-shell-units'
 import { cn } from '@/lib/utils'
 import { CLINICAL_ROLES, DATA_REPORT_ROLES, BILLING_ROLES, ALL_STAFF_ROLES } from '@/lib/staff-roles'
@@ -261,76 +259,18 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
 
       {/* Body — unit sidebar + content */}
       <div className="flex flex-1 min-h-0">
-        {/* Pharmacy gets a collapsible icon rail (PHARM-3) so the dispensing
-            worksheet reclaims horizontal width on tablets. Every other unit
-            keeps the standard fixed-width section sidebar below, untouched. */}
-        {currentUnitId === 'pharmacy' ? (
-          <PharmacySectionRail
-            clinicName={clinicName}
-            unitLabel={activeUnit?.label ?? 'Pharmacy'}
-            items={items}
-            pathname={pathname}
-            counts={counts}
-            staff={staff}
-          />
-        ) : (
-        <aside className="no-print w-[208px] bg-card border-r border-border flex flex-col shrink-0">
-          <div className="p-4 border-b border-line-soft">
-            <div className="kh-meta">CLINIC</div>
-            <div className="text-[13px] font-semibold text-ink truncate">{clinicName}</div>
-            {activeUnit && (
-              <div className="kh-meta mt-3 text-cobalt">{activeUnit.label.toUpperCase()}</div>
-            )}
-          </div>
-
-          {(currentUnitId === 'opd' || currentUnitId === 'inpatient') && (
-            <div className="px-3 pt-3 pb-2 border-b border-line-soft">
-              <SidebarPatientSearch />
-            </div>
-          )}
-
-          <nav className="px-3 py-3 flex-1 overflow-y-auto">
-            {items.map((item) => {
-              const active = isActive(pathname, item.href)
-              const count = counts?.[item.id] ?? item.count
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] mb-0.5 transition-colors',
-                    active
-                      ? 'bg-cobalt-soft text-cobalt font-semibold'
-                      : 'text-body hover:bg-background font-medium',
-                  )}
-                >
-                  <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-cobalt' : 'text-muted-foreground')} />
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {count !== undefined && (
-                    <span
-                      className={cn(
-                        'text-[11px] font-semibold px-1.5 py-px rounded-full',
-                        item.amber
-                          ? 'bg-amber-soft text-amber-ink'
-                          : active
-                            ? 'bg-white text-cobalt'
-                            : 'bg-background text-muted-foreground',
-                      )}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
-
-          {staff && (
-            <SidebarAccountMenu displayName={staff.displayName} role={staff.role} initials={staff.initials} />
-          )}
-        </aside>
-        )}
+        {/* Every unit gets the collapsible icon rail so master/detail worksheets
+            (dispense, lab worklist, chart) reclaim horizontal width on tablets.
+            Collapsed by default; the choice persists app-wide. */}
+        <SectionRail
+          clinicName={clinicName}
+          unitLabel={activeUnit?.label ?? 'Home'}
+          items={items}
+          pathname={pathname}
+          counts={counts}
+          staff={staff}
+          showPatientSearch={currentUnitId === 'opd' || currentUnitId === 'inpatient'}
+        />
 
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">{children}</main>
       </div>
