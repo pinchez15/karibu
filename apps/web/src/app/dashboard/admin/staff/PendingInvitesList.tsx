@@ -37,7 +37,7 @@ export function PendingInvitesList({ invites }: { invites: PendingInviteRow[] })
           text:
             action === 'resend'
               ? 'Invitation resent. They will receive a new secure link by email.'
-              : 'Invitation cancelled. You can invite this person again when ready.',
+              : 'Invitation removed. You can send a new invite from the form above.',
         })
         router.refresh()
       } else {
@@ -51,7 +51,8 @@ export function PendingInvitesList({ invites }: { invites: PendingInviteRow[] })
       <h3 className="text-lg font-semibold">Pending invitations ({invites.length})</h3>
       <p className="mt-1 text-sm text-muted-foreground">
         People who have not joined yet. Each invite is sent securely to their email and expires
-        after 30 days. Resend if they did not receive it; revoke to cancel access.
+        after 30 days. Resend if they did not receive it; remove to clear a stale invite so
+        you can send a fresh one.
       </p>
 
       {message && (
@@ -95,7 +96,7 @@ export function PendingInvitesList({ invites }: { invites: PendingInviteRow[] })
                   onClick={() => run(invite.id, 'revoke', revokeStaffInvitationAction)}
                   className="rounded-lg px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
                 >
-                  Revoke
+                  {busy ? 'Working…' : 'Remove'}
                 </button>
               </div>
             </li>

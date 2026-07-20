@@ -4,6 +4,20 @@ type ClerkApiError = {
   errors?: Array<{ code?: string; longMessage?: string; message?: string }>
 }
 
+/** Clerk errors where revoke is a no-op — the invitation is already inactive in Clerk. */
+const CLERK_INVITATION_REVOKE_NO_OP_CODES = new Set([
+  'resource_not_found',
+  'invitation_not_found',
+  'organization_invitation_not_pending',
+  'invitation_already_revoked',
+  'invitation_already_accepted',
+])
+
+export function isClerkInvitationRevokeNoOpError(error: unknown): boolean {
+  const err = error as ClerkApiError
+  return err?.errors?.some((e) => e.code && CLERK_INVITATION_REVOKE_NO_OP_CODES.has(e.code)) ?? false
+}
+
 export function isClerkOrgQuotaError(error: unknown): boolean {
   const err = error as ClerkApiError
   return err?.errors?.some((e) => e.code === 'organization_membership_quota_exceeded') ?? false

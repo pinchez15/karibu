@@ -2,7 +2,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase'
 import { getSiteUrl } from '@/lib/site-url'
 import { assertStaffRole } from '@/lib/staff-roles'
-import { formatClerkInviteError } from '@/lib/clerk-org-errors'
+import { formatClerkInviteError, isClerkInvitationRevokeNoOpError } from '@/lib/clerk-org-errors'
 import type { StaffRole } from '@karibu/shared'
 
 function orgRoleFor(role: StaffRole): 'org:admin' | 'org:member' {
@@ -241,8 +241,7 @@ export async function revokeStaffInvitation(params: {
         requestingUserId: params.requestingClerkUserId,
       })
     } catch (error) {
-      const code = (error as { errors?: Array<{ code?: string }> }).errors?.[0]?.code
-      if (code && !['resource_not_found', 'invitation_not_found'].includes(code)) {
+      if (!isClerkInvitationRevokeNoOpError(error)) {
         throw new Error(formatClerkInviteError(error))
       }
     }
