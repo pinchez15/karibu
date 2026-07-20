@@ -87,6 +87,18 @@ describe('aggregateDispensingStatus', () => {
   it('returns in_progress while lines still open', () => {
     expect(aggregateDispensingStatus(['ordered', 'dispensing'])).toBe('in_progress')
   })
+
+  it('returns in_progress when first med of a multi-line Rx is dispensed', () => {
+    expect(aggregateDispensingStatus(['dispensed', 'ordered'])).toBe('in_progress')
+  })
+
+  it('returns in_progress when a line is partially dispensed but others remain open', () => {
+    expect(aggregateDispensingStatus(['partially_dispensed', 'ordered'])).toBe('in_progress')
+  })
+
+  it('returns partial when a balance remains and no lines are still open', () => {
+    expect(aggregateDispensingStatus(['partially_dispensed'])).toBe('partial')
+  })
 })
 
 describe('pharmacyTabForVisit', () => {

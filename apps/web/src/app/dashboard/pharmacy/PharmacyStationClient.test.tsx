@@ -156,6 +156,34 @@ describe('PharmacyStationClient', () => {
     expect(screen.getByTestId('queue-row-visit-e2e-002')).toHaveAttribute('aria-selected', 'true')
   })
 
+  // Migration 113: finishing med 1 of a multi-line Rx keeps visit in_progress,
+  // so the pharmacist can keep dispensing without chasing Partial.
+  it('keeps the visit on "To dispense" when mid-session status stays in_progress', async () => {
+    const { dispensePharmacyLine } = await import('./actions')
+    vi.mocked(dispensePharmacyLine).mockResolvedValue({
+      success: true,
+      dispensingStatus: 'in_progress',
+    })
+
+    render(
+      <PharmacyStationClient
+        initialRows={PHARMACY_STATION_FIXTURE_ROWS}
+        activeTab="to_dispense"
+        refreshOnUpdate={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+    })
+
+    await dispenseSelectedLine()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('queue-row-visit-e2e-001')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('queue-row-visit-e2e-001')).toHaveAttribute('aria-selected', 'true')
+  })
+
   // PHARM-5 dispense-remainder flow: on the Partial tab, a still-partial
   // dispense keeps the visit; dispensing the remainder (→ "dispensed") drops it.
   it('keeps a visit on the Partial tab while a balance is still owed', async () => {

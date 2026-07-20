@@ -35,8 +35,9 @@ export type PharmacyTabFilter = {
  * Pure, unit-testable mapping from a tab to its query predicate (WP1 D1/D3).
  *
  * - `to_dispense` = the ACTIVE set (not_started, in_progress, out_of_stock). A
- *   multi-line script stays here until it either fully dispenses or acquires a
- *   partial balance (then it moves to `partial`). No date bound.
+ *   multi-line script stays here while any line is still ordered/dispensing
+ *   (migration 113: mid-session stays `in_progress`). It moves to `partial`
+ *   only once no open lines remain but a balance is still owed. No date bound.
  * - `partial` = the PARTIAL set (`partial`) — a balance is owed. No date bound.
  * - `done_today` = the TERMINAL set (`dispensed`), bounded to work dispensed
  *   since the clinic's local midnight (Africa/Kampala), not the server's UTC

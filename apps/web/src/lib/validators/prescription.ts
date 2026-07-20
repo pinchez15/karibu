@@ -114,6 +114,12 @@ export function aggregateDispensingStatus(
   if (active.every((s) => s === 'dispensed')) return 'dispensed';
   if (active.every((s) => s === 'out_of_stock')) return 'out_of_stock';
   if (active.every((s) => s === 'needs_clarification')) return 'not_started';
+  // Mid-session: keep To dispense while any line is still open — do not bounce
+  // to Partial just because the first med of a multi-line Rx was finished.
+  // Mirrors aggregate_visit_dispensing_status (migration 113).
+  if (active.some((s) => s === 'ordered' || s === 'dispensing')) {
+    return 'in_progress';
+  }
   if (
     active.some((s) =>
       ['dispensed', 'partially_dispensed', 'out_of_stock'].includes(s),
@@ -121,9 +127,7 @@ export function aggregateDispensingStatus(
   ) {
     return 'partial';
   }
-  if (
-    active.some((s) => ['ordered', 'dispensing', 'needs_clarification'].includes(s))
-  ) {
+  if (active.some((s) => s === 'needs_clarification')) {
     return 'in_progress';
   }
   return 'in_progress';

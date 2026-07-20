@@ -81,7 +81,7 @@ fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): Pharma
 
 /**
  * Mirrors the server function `aggregate_visit_dispensing_status`
- * (packages/supabase/migrations/094_wp1_close_the_loops.sql:16-65) for offline preview.
+ * (packages/supabase/migrations/113_pharmacy_mid_session_in_progress.sql) for offline preview.
  *
  * PHARM-5: this mirror consumes per-line statuses. Under the PHARM-5 backend, the server
  * now DERIVES the per-line status from cumulative `prescribed_equivalent` vs
@@ -89,8 +89,11 @@ fun pharmacyTabForVisit(dispensingStatus: String?, dispensedAt: String?): Pharma
  * `0 < SUM < prescribed` -> `partially_dispensed`. This mirror does not do that per-line
  * derivation itself — it only rolls line statuses up to a visit status — so it stays in
  * agreement as long as it treats a `partially_dispensed` line as a still-open "partial"
- * visit (not a terminal one), which it does. Verified line-for-line against migration 094;
- * do not let it drift (three mirrors already exist: SQL / validators/prescription.ts / here).
+ * visit (not a terminal one), which it does.
+ *
+ * Migration 113: while any line is still ordered/dispensing, the visit stays
+ * `in_progress` (To dispense) so finishing med 1 of a multi-line Rx does not bounce
+ * the patient to the Partial tab mid-session.
  */
 fun aggregateDispensingStatus(lineStatuses: List<String>): String {
     if (lineStatuses.isEmpty()) return "not_started"
@@ -104,7 +107,9 @@ fun aggregateDispensingStatus(lineStatuses: List<String>): String {
     if (dispensed == active.size) return "dispensed"
     if (oos == active.size) return "out_of_stock"
     if (needsClar > 0 && open == 0) return "returned"
+    // Mid-session: keep To dispense while open lines remain.
+    if (open > 0) return "in_progress"
     if (dispensed > 0 || partial > 0 || oos > 0) return "partial"
-    if (open > 0 || needsClar > 0) return "in_progress"
+    if (needsClar > 0) return "in_progress"
     return "in_progress"
 }

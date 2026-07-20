@@ -24,6 +24,30 @@ class PharmacyDispenseTest {
     }
 
     @Test
+    fun aggregateDispensingStatus_midSessionMultiLineStaysInProgress() {
+        assertEquals(
+            "in_progress",
+            aggregateDispensingStatus(listOf("dispensed", "ordered")),
+        )
+    }
+
+    @Test
+    fun aggregateDispensingStatus_partialWithOpenLinesStaysInProgress() {
+        assertEquals(
+            "in_progress",
+            aggregateDispensingStatus(listOf("partially_dispensed", "ordered")),
+        )
+    }
+
+    @Test
+    fun aggregateDispensingStatus_partialBalanceWithNoOpenLines() {
+        assertEquals(
+            "partial",
+            aggregateDispensingStatus(listOf("partially_dispensed")),
+        )
+    }
+
+    @Test
     fun aggregateDispensingStatus_returnedWhenNeedsClarificationOnly() {
         assertEquals(
             "returned",

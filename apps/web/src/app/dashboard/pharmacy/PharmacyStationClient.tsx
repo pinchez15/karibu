@@ -145,8 +145,10 @@ export function PharmacyStationClient({
     (visitId: string, result: DispenseCompletionResult) => {
       // PHARM-5: a visit leaves the current tab once its new dispensing_status no
       // longer belongs to that tab, and stays otherwise.
-      //   - To dispense: drops off when it becomes `partial` (→ Partial tab) or
-      //     `dispensed` (→ Done today); stays while `out_of_stock`/in-progress.
+      //   - To dispense: stays while mid-session `in_progress` (migration 113 —
+      //     finishing med 1 of N keeps open lines on this tab); drops off when it
+      //     becomes `partial` (genuine remaining balance, no open lines) or
+      //     `dispensed` (→ Done today).
       //   - Partial: drops off once fully `dispensed`; stays while a balance is
       //     still owed.
       // This replaces the old "only leaves when fully dispensed" rule, which
