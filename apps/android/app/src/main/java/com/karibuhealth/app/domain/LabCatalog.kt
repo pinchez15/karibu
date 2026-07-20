@@ -9,6 +9,8 @@ object LabCatalog {
         Test("MRDT", "Malaria RDT", "Malaria"),
         Test("BS_MPS", "Blood slide for malaria parasites", "Malaria"),
         Test("HIV_RDT", "HIV rapid test", "Serology"),
+        Test("HBSAG", "Hepatitis B rapid test (HBsAg)", "Serology"),
+        Test("BRU_RDT", "Brucellosis rapid test", "Serology"),
         Test("HB", "Haemoglobin", "Haematology"),
         Test("AFB", "Sputum smear (AFB / TB)", "Microbiology"),
         Test("URINALYSIS", "Urinalysis", "Urine"),

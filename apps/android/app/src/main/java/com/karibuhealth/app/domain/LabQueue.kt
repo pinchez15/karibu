@@ -54,7 +54,7 @@ object LabQueue {
             return catalog.code in QUALITATIVE_CODES
         }
         return Regex(
-            "malaria|hiv|pregnancy|ucg|syphilis|rpr|tpha|widal|typhoid|h\\.?\\s*pylori|rdt|rapid|afb|tb\\s*smear|sputum",
+            "malaria|hiv|hepatitis|hbsag|brucell|pregnancy|ucg|syphilis|rpr|tpha|widal|typhoid|h\\.?\\s*pylori|rdt|rapid|afb|tb\\s*smear|sputum",
             RegexOption.IGNORE_CASE,
         ).containsMatchIn(testName)
     }
@@ -113,7 +113,7 @@ object LabQueue {
     }
 
     private val QUALITATIVE_CODES = setOf(
-        "MRDT", "BS_MPS", "HIV_RDT", "SYPHILIS", "UCG", "WIDAL", "STOOL_RDT", "AFB",
+        "MRDT", "BS_MPS", "HIV_RDT", "HBSAG", "BRU_RDT", "SYPHILIS", "UCG", "WIDAL", "STOOL_RDT", "AFB",
     )
 
     @Serializable

@@ -133,11 +133,19 @@ INSERT INTO lab_test_catalog (code, test_name, category, specimen, display_order
   ('CRAG',      'Cryptococcal antigen (CrAg)', 'serology',     'blood',  23)
 ON CONFLICT (code) DO NOTHING;
 
+-- from 112_lab_catalog_hep_b_brucellosis.sql
+INSERT INTO lab_test_catalog (code, test_name, category, specimen, display_order, default_price_ugx) VALUES
+  ('HBSAG',   'Hepatitis B rapid test (HBsAg)', 'serology', 'blood', 24, 2500),
+  ('BRU_RDT', 'Brucellosis rapid test',         'serology', 'blood', 25, 2500)
+ON CONFLICT (code) DO NOTHING;
+
 -- from 076_billing_itemized.sql:10
 UPDATE lab_test_catalog SET default_price_ugx = CASE code
   WHEN 'MRDT'       THEN 1500
   WHEN 'BS_MPS'     THEN 3000
   WHEN 'HIV_RDT'    THEN 2000
+  WHEN 'HBSAG'      THEN 2500
+  WHEN 'BRU_RDT'    THEN 2500
   WHEN 'HB'         THEN 3500
   WHEN 'AFB'        THEN 4000
   WHEN 'URINALYSIS' THEN 2500

@@ -100,6 +100,8 @@ export function labTestSupportsPosNeg(testName: string): boolean {
       'MRDT',
       'BS_MPS',
       'HIV_RDT',
+      'HBSAG',
+      'BRU_RDT',
       'SYPHILIS',
       'UCG',
       'WIDAL',
@@ -108,7 +110,7 @@ export function labTestSupportsPosNeg(testName: string): boolean {
     ]);
     return qualitative.has(catalog.code);
   }
-  return /malaria|hiv|pregnancy|ucg|syphilis|rpr|tpha|widal|typhoid|h\.?\s*pylori|rdt|rapid|afb|tb\s*smear|sputum/i.test(
+  return /malaria|hiv|hepatitis|hbsag|brucell|pregnancy|ucg|syphilis|rpr|tpha|widal|typhoid|h\.?\s*pylori|rdt|rapid|afb|tb\s*smear|sputum/i.test(
     testName,
   );
 }

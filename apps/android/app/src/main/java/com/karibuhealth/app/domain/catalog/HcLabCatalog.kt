@@ -75,7 +75,8 @@ object HcLabCatalog {
             title = "Infection / serology",
             tests = listOf(
                 LabTest("HIV", "HIV rapid test", hint = "Determine / Stat-Pak / SD Bioline"),
-                LabTest("HBSAG", "Hepatitis B surface Ag", hint = "Routine in ANC"),
+                LabTest("HBSAG", "Hepatitis B rapid test (HBsAg)", hint = "Routine in ANC"),
+                LabTest("BRU_RDT", "Brucellosis rapid test", hint = "Serology / RDT"),
                 LabTest("SYPH_RPR", "Syphilis RPR", hint = "Routine in ANC"),
                 LabTest("TB_SMEAR", "TB sputum smear (AFB)", hint = "Refer to HC IV for GeneXpert"),
             ),

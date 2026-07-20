@@ -12,6 +12,8 @@ export const LAB_CATALOG_TESTS: LabCatalogTest[] = [
   { code: 'MRDT', name: 'Malaria RDT', category: 'Malaria', specimen: 'blood' },
   { code: 'BS_MPS', name: 'Blood slide for malaria parasites', category: 'Malaria', specimen: 'blood' },
   { code: 'HIV_RDT', name: 'HIV rapid test', category: 'Serology', specimen: 'blood' },
+  { code: 'HBSAG', name: 'Hepatitis B rapid test (HBsAg)', category: 'Serology', specimen: 'blood' },
+  { code: 'BRU_RDT', name: 'Brucellosis rapid test', category: 'Serology', specimen: 'blood' },
   { code: 'HB', name: 'Haemoglobin', category: 'Haematology', specimen: 'blood' },
   { code: 'AFB', name: 'Sputum smear (AFB / TB)', category: 'Microbiology', specimen: 'sputum' },
   { code: 'URINALYSIS', name: 'Urinalysis', category: 'Urine', specimen: 'urine' },

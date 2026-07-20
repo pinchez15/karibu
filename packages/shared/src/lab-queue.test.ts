@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   countOpenLabTests,
   isLabQueueVisit,
+  labTestSupportsPosNeg,
   mergeLabTestResults,
   mergeTestsOrdered,
   parseTestsOrdered,
@@ -125,5 +126,12 @@ describe('mergeLabTestResults + countOpenLabTests', () => {
       row('D', 'abnormal'),
     ];
     expect(countOpenLabTests(rows)).toBe(2);
+  });
+});
+
+describe('labTestSupportsPosNeg', () => {
+  it('treats Hepatitis B and Brucellosis as qualitative bench tests', () => {
+    expect(labTestSupportsPosNeg('Hepatitis B rapid test (HBsAg)')).toBe(true);
+    expect(labTestSupportsPosNeg('Brucellosis rapid test')).toBe(true);
   });
 });
