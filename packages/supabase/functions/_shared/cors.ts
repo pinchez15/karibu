@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = [
   Deno.env.get('WEB_URL'),
   'https://karibu.health',
   'https://www.karibu.health',
+  'https://demo.karibu.health',
 ].filter(Boolean) as string[]
 
 // In development, also allow localhost
