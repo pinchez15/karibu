@@ -83,7 +83,9 @@ async function getVisitDetailsImpl(visitId: string, clinicId: string) {
     supabase.rpc('rpc_visit_ebola_screening', { p_visit_id: visitId }),
     supabase
       .from('patient_vitals')
-      .select('temp_c')
+      .select(
+        'temp_c, bp_systolic, bp_diastolic, pulse_bpm, resp_rate, spo2_pct, weight_kg, height_cm, muac_cm, notes, recorded_at',
+      )
       .eq('visit_id', visitId)
       .order('recorded_at', { ascending: false })
       .limit(1),
@@ -101,10 +103,24 @@ async function getVisitDetailsImpl(visitId: string, clinicId: string) {
     (p: { protocol?: string }) => p.protocol === 'ebola',
   )
   const ebolaScreening = (ebolaRows ?? [])[0] ?? null
+  const latestVitalsRow = vitalsRows?.[0] ?? null
   const latestTempC =
-    vitalsRows && vitalsRows.length > 0
-      ? (vitalsRows[0].temp_c as number | null)
-      : null
+    latestVitalsRow != null ? (latestVitalsRow.temp_c as number | null) : null
+  const latest_vitals = latestVitalsRow
+    ? {
+        temp_c: (latestVitalsRow.temp_c as number | null) ?? null,
+        bp_systolic: (latestVitalsRow.bp_systolic as number | null) ?? null,
+        bp_diastolic: (latestVitalsRow.bp_diastolic as number | null) ?? null,
+        pulse_bpm: (latestVitalsRow.pulse_bpm as number | null) ?? null,
+        resp_rate: (latestVitalsRow.resp_rate as number | null) ?? null,
+        spo2_pct: (latestVitalsRow.spo2_pct as number | null) ?? null,
+        weight_kg: (latestVitalsRow.weight_kg as number | null) ?? null,
+        height_cm: (latestVitalsRow.height_cm as number | null) ?? null,
+        muac_cm: (latestVitalsRow.muac_cm as number | null) ?? null,
+        notes: (latestVitalsRow.notes as string | null) ?? null,
+        recorded_at: (latestVitalsRow.recorded_at as string | null) ?? null,
+      }
+    : null
 
   void logChartAccess(clinicId, visit.patient_id as string, 'visit_detail')
 
@@ -129,6 +145,7 @@ async function getVisitDetailsImpl(visitId: string, clinicId: string) {
     ebola_protocol_active: ebolaProtocolActive,
     ebola_screening: ebolaScreening,
     latest_temp_c: latestTempC,
+    latest_vitals,
   }
 }
 

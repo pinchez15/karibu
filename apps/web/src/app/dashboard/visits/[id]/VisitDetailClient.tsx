@@ -24,7 +24,7 @@ import {
 import { incorporationFor, type DictationIncorporate } from '@/lib/ai-review-helpers'
 import { useAiSuggestionsPoll } from '@/hooks/use-ai-suggestions-poll'
 import { NoteLifecycleActions, type AddendumView, type AmendmentView } from './NoteLifecycleActions'
-import { VitalsCard } from './VitalsCard'
+import { VitalsCard, type VisitVitalsReading } from './VitalsCard'
 import { BookFollowUp } from './BookFollowUp'
 import { EbolaScreeningCard, type EbolaScreeningRecord } from './EbolaScreeningCard'
 import { AddCareTaskSheet } from '@/app/dashboard/worklists/AddCareTaskSheet'
@@ -111,6 +111,7 @@ interface VisitWithRelations extends Visit {
   ebola_protocol_active?: boolean
   ebola_screening?: EbolaScreeningRecord | null
   latest_temp_c?: number | null
+  latest_vitals?: VisitVitalsReading | null
 }
 
 interface PaymentData {
@@ -251,7 +252,11 @@ export function VisitDetailClient({
         />
       )}
 
-      <VitalsCard patientId={visit.patient_id} visitId={visit.id} />
+      <VitalsCard
+        patientId={visit.patient_id}
+        visitId={visit.id}
+        latestVitals={visit.latest_vitals ?? null}
+      />
 
       {!visit.documentation_complete && aiSuggestions.length > 0 && (
         <AiNotesTimeline suggestions={aiSuggestions} onIncorporate={handleIncorporate} />

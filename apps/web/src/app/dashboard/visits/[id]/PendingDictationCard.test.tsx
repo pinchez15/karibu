@@ -35,13 +35,15 @@ describe('PendingDictationCard — lab ordering in the orders area (T2)', () => 
     cleanup()
   })
 
-  it('renders a unified note box with content checklist and no structured free-text pharmacy/labs', () => {
+  it('renders a unified note box without the long helper copy above it', () => {
     render(<PendingDictationCard visitId="visit-1" staffRole="doctor" />)
 
     expect(screen.getByPlaceholderText(/Dictate or type the visit note/i)).toBeInTheDocument()
-    expect(screen.getByText('Chief complaint / chief concern')).toBeInTheDocument()
     expect(screen.getByText('Patient next steps')).toBeInTheDocument()
     expect(screen.queryByText('Structured fields (optional)')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/AI notes \(MOH guidelines\) review this text/i),
+    ).not.toBeInTheDocument()
     expect(screen.getByText('Order medications')).toBeInTheDocument()
   })
 

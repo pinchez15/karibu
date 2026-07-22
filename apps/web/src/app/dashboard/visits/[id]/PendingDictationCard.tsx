@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import {
   type ClinicalNoteSections,
   type NoteSectionKey,
-  CLINICAL_NOTE_INCLUDE,
   CLINICAL_NOTE_PLACEHOLDER,
   PATIENT_NEXT_STEP_OPTIONS,
   parseClinicalNoteSections,
@@ -489,20 +488,6 @@ export function PendingDictationCard({
           <p className="text-xs text-muted-foreground mt-2">
             Review results here, update your note if needed, then sign when ready.
           </p>
-        </div>
-      )}
-
-      {!isReview && (
-        <div className="space-y-1.5">
-          <p className="text-sm text-muted-foreground">
-            Dictate or type the whole visit in one note. AI notes (MOH guidelines) review this
-            text. Order labs and medicines from the catalogs below — not as free text.
-          </p>
-          <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
-            {CLINICAL_NOTE_INCLUDE.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
         </div>
       )}
 
