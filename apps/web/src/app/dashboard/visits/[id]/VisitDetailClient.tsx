@@ -323,6 +323,7 @@ export function VisitDetailClient({
           pharmacyReturned={pharmacyReturned}
           dispenseNotes={visit.dispense_notes}
           prescriptionLines={prescriptionLines}
+          prescribingCatalog={prescribingCatalog}
           staffRole={staffRole ?? null}
           incorporatePrefill={incorporatePrefill}
           onIncorporateApplied={() => setIncorporatePrefill(null)}
@@ -353,19 +354,25 @@ export function VisitDetailClient({
                     Dispenser note: {visit.dispense_notes}
                   </p>
                 )}
-                <VisitPharmacyPanel
-                  visitId={visit.id}
-                  alreadySubmitted={!!visit.pharmacy_order_submitted_at}
-                  pharmacyReturned={pharmacyReturned}
-                  dispenseNotes={visit.dispense_notes}
-                  prescriptionLines={prescriptionLines}
-                  staffRole={staffRole ?? null}
-                  prescribingCatalog={prescribingCatalog}
-                />
+                {/* Ordering lives in the open note editor; keep this panel only
+                    after the note is signed (or when clarifying a return). */}
+                {(visit.documentation_complete || pharmacyReturned) && (
+                  <VisitPharmacyPanel
+                    visitId={visit.id}
+                    alreadySubmitted={!!visit.pharmacy_order_submitted_at}
+                    pharmacyReturned={pharmacyReturned}
+                    dispenseNotes={visit.dispense_notes}
+                    prescriptionLines={prescriptionLines}
+                    staffRole={staffRole ?? null}
+                    prescribingCatalog={prescribingCatalog}
+                  />
+                )}
               </div>
             )}
 
-            <VisitLabPanel visitId={visit.id} staffRole={staffRole ?? null} />
+            {visit.documentation_complete && (
+              <VisitLabPanel visitId={visit.id} staffRole={staffRole ?? null} />
+            )}
             {visit.follow_up_instructions && (
               <div>
                 <p className="text-sm text-muted-foreground">Follow-up Instructions</p>
@@ -538,7 +545,7 @@ function ClinicianNoteCard({
   const editSections = (() => {
     const parsed = parseClinicalNoteSections(structuredData ?? null)
     if (!sectionsHaveClinicalContent(parsed) && content.trim()) {
-      return { ...parsed, hpi: content.trim() }
+      return { ...parsed, additionalNote: content.trim() }
     }
     return parsed
   })()

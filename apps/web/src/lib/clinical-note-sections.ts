@@ -29,6 +29,23 @@ export type NoteSectionKey =
   | 'FollowUpInstructions'
   | 'AdditionalNote'
 
+/**
+ * Short checklist shown above the unified clinician note so notes stay consistent.
+ * Orders (lab/pharmacy) are separate catalog pickers — not part of this narrative.
+ */
+export const CLINICAL_NOTE_INCLUDE = [
+  'Chief complaint / chief concern',
+  'History of present illness',
+  'Physical exam',
+  'Family / social history (when relevant)',
+  'Working diagnosis',
+  'Assessment and plan',
+] as const
+
+export const CLINICAL_NOTE_PLACEHOLDER =
+  'Dictate or type the visit note. Include: chief complaint, history, physical exam, family/social history if relevant, diagnosis, and plan…'
+
+/** Kept for incorporate / Android parity; web note UI no longer edits these fields. */
 export const NOTE_SECTION_META: {
   key: NoteSectionKey
   label: string
@@ -94,12 +111,16 @@ export const NOTE_SECTION_META: {
   },
 ]
 
-export const FOLLOW_UP_TASK_OPTIONS = [
-  'Get script from pharmacy',
-  'Get labs drawn',
-  'Return for review',
-  'Referral',
+/** Stored values stay stable; `label` is what clinicians see (patient-facing next steps). */
+export const PATIENT_NEXT_STEP_OPTIONS = [
+  { value: 'Get script from pharmacy', label: 'Pick up medicines from pharmacy' },
+  { value: 'Get labs drawn', label: 'Have labs drawn' },
+  { value: 'Return for review', label: 'Return for review' },
+  { value: 'Referral', label: 'Go for referral' },
 ] as const
+
+/** @deprecated Use PATIENT_NEXT_STEP_OPTIONS — kept for call sites that only need values. */
+export const FOLLOW_UP_TASK_OPTIONS = PATIENT_NEXT_STEP_OPTIONS.map((o) => o.value)
 
 export function emptyClinicalNoteSections(): ClinicalNoteSections {
   return clinicalNoteSectionsSchema.parse({})
@@ -114,7 +135,7 @@ export function parseClinicalNoteSections(
     try {
       const parsed = clinicalNoteSectionsSchema.safeParse(JSON.parse(raw))
       if (parsed.success) {
-        return { ...base, ...fallbacks, ...parsed.data }
+        return coalesceToUnifiedNote({ ...base, ...fallbacks, ...parsed.data })
       }
     } catch {
       /* fall through */
@@ -123,19 +144,24 @@ export function parseClinicalNoteSections(
   if (raw && typeof raw === 'object') {
     const parsed = clinicalNoteSectionsSchema.safeParse(raw)
     if (parsed.success) {
-      return { ...base, ...fallbacks, ...parsed.data }
+      return coalesceToUnifiedNote({ ...base, ...fallbacks, ...parsed.data })
     }
   }
-  return { ...base, ...fallbacks }
+  return coalesceToUnifiedNote({ ...base, ...fallbacks })
 }
 
-function followUpWithTasks(sections: ClinicalNoteSections): string {
-  const tasks = sections.followUpTasks.filter(Boolean).join('; ')
-  const parts = [sections.followUpInstructions.trim(), tasks].filter(Boolean)
-  return parts.join('\n')
+/**
+ * If an older draft only filled structured fields, fold that narrative into the
+ * unified note box once so the clinician (and AI notes) see one surface.
+ */
+export function coalesceToUnifiedNote(sections: ClinicalNoteSections): ClinicalNoteSections {
+  if (sections.additionalNote.trim()) return sections
+  const legacyNarrative = legacyNarrativeText(sections)
+  if (!legacyNarrative) return sections
+  return { ...sections, additionalNote: legacyNarrative }
 }
 
-export function sectionsToClinicianText(sections: ClinicalNoteSections): string {
+function legacyNarrativeText(sections: ClinicalNoteSections): string {
   const blocks: string[] = []
   const add = (heading: string, value: string) => {
     const t = value.trim()
@@ -147,17 +173,37 @@ export function sectionsToClinicianText(sections: ClinicalNoteSections): string 
   add('Family and social history', sections.familySocialHistory)
   add('Diagnosis', sections.diagnosis)
   add('Assessment and plan', sections.assessmentPlan)
-  add('Medications', sections.medications)
-  add('Labs/tests', sections.testsOrdered)
+  return blocks.join('\n\n')
+}
+
+function followUpWithTasks(sections: ClinicalNoteSections): string {
+  const tasks = sections.followUpTasks.filter(Boolean).join('; ')
+  const parts = [sections.followUpInstructions.trim(), tasks].filter(Boolean)
+  return parts.join('\n')
+}
+
+/**
+ * Flat transcript persisted on provider_notes and fed to draft AI notes.
+ * Primary body is the unified note box so MOH guideline review sees one narrative.
+ */
+export function sectionsToClinicianText(sections: ClinicalNoteSections): string {
+  const blocks: string[] = []
+  const note = sections.additionalNote.trim() || legacyNarrativeText(sections)
+  if (note) blocks.push(note)
+
+  const meds = sections.medications.trim()
+  if (meds) blocks.push(`Medications: ${meds}`)
+
   const followUp = followUpWithTasks(sections)
-  if (followUp) blocks.push(`Follow-up: ${followUp}`)
-  add('Additional note', sections.additionalNote)
+  if (followUp) blocks.push(`Patient next steps: ${followUp}`)
+
   return blocks.join('\n\n')
 }
 
 export function sectionsHaveClinicalContent(sections: ClinicalNoteSections): boolean {
   return (
     [
+      sections.additionalNote,
       sections.chiefComplaint,
       sections.hpi,
       sections.physicalExam,
@@ -165,9 +211,7 @@ export function sectionsHaveClinicalContent(sections: ClinicalNoteSections): boo
       sections.diagnosis,
       sections.assessmentPlan,
       sections.medications,
-      sections.testsOrdered,
       sections.followUpInstructions,
-      sections.additionalNote,
     ].some((s) => s.trim().length > 0) || sections.followUpTasks.length > 0
   )
 }
@@ -185,20 +229,15 @@ export function sectionText(
 
 export function appendToSection(
   sections: ClinicalNoteSections,
-  key: NoteSectionKey,
+  _key: NoteSectionKey,
   chunk: string,
 ): ClinicalNoteSections {
-  if (key === 'AdditionalNote') {
-    const prev = String(sections.additionalNote ?? '').trimEnd()
-    return { ...sections, additionalNote: prev.length === 0 ? chunk : `${prev} ${chunk}` }
-  }
-  const field = NOTE_SECTION_META.find((m) => m.key === key)?.field
-  if (!field || field === 'followUpTasks') return sections
-  const prev = String(sections[field] ?? '').trimEnd()
-  const merged = prev.length === 0 ? chunk : `${prev} ${chunk}`
-  return { ...sections, [field]: merged }
+  // Web note UI is unified — clinical text always lands in the main note box.
+  const prev = String(sections.additionalNote ?? '').trimEnd()
+  return { ...sections, additionalNote: prev.length === 0 ? chunk : `${prev} ${chunk}` }
 }
 
 export function sectionDisplayLabel(key: NoteSectionKey): string {
+  if (key === 'AdditionalNote') return 'Clinician note'
   return NOTE_SECTION_META.find((m) => m.key === key)?.label ?? key
 }

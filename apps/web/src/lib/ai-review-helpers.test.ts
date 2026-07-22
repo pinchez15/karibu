@@ -7,44 +7,44 @@ import {
 } from './ai-review-helpers'
 
 describe('incorporationFor', () => {
-  it('maps ask_lab to TestsOrdered with lab picker flag', () => {
+  it('maps ask_lab into the unified note and opens the lab picker', () => {
     const result = incorporationFor({
       id: 's1',
       suggestion_type: 'ask_lab',
       question: 'Order malaria RDT?',
     })
-    expect(result.section).toBe('TestsOrdered')
+    expect(result.section).toBe('AdditionalNote')
     expect(result.prefill).toBe('Consider: Order malaria RDT?')
     expect(result.openLabPicker).toBe(true)
     expect(result.openRxPicker).toBe(false)
   })
 
-  it('maps ask_med to Medications with rx picker flag', () => {
+  it('maps ask_med into the unified note and opens the rx picker', () => {
     const result = incorporationFor({
       id: 's2',
       suggestion_type: 'ask_med',
       question: 'Document ACT dosing?',
     })
-    expect(result.section).toBe('Medications')
+    expect(result.section).toBe('AdditionalNote')
     expect(result.openRxPicker).toBe(true)
   })
 
-  it('maps ask_dx to Diagnosis', () => {
+  it('maps ask_dx into the unified note', () => {
     const result = incorporationFor({
       id: 's3',
       suggestion_type: 'ask_dx',
       question: 'Capture working diagnosis?',
     })
-    expect(result.section).toBe('Diagnosis')
+    expect(result.section).toBe('AdditionalNote')
   })
 
-  it('defaults unknown types to AssessmentPlan', () => {
+  it('defaults unknown types into the unified note', () => {
     const result = incorporationFor({
       id: 's4',
       suggestion_type: 'other',
       question: 'General prompt?',
     })
-    expect(result.section).toBe('AssessmentPlan')
+    expect(result.section).toBe('AdditionalNote')
   })
 })
 

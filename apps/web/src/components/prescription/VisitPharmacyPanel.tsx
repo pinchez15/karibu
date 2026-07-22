@@ -30,7 +30,7 @@ export function VisitPharmacyPanel({
   prescriptionLines?: PrescriptionOrderLine[]
   staffRole: StaffRole | null
   prescribingCatalog?: PharmacyCatalogDrug[]
-  onSubmitted?: () => void
+  onSubmitted?: (medicationsSummary: string) => void
 }) {
   const initialDrafts = pharmacyReturned ? prescriptionLinesToDrafts(prescriptionLines) : []
   const [drafts, setDrafts] = useState<DraftPrescriptionLine[]>(initialDrafts)
@@ -49,7 +49,7 @@ export function VisitPharmacyPanel({
   if (!canSubmit) return null
 
   return (
-    <div className="mt-4 space-y-3 rounded-xl border border-line-soft bg-muted/30 p-4">
+    <div className="space-y-3 rounded-xl border border-line-soft bg-muted/30 p-4">
       {pharmacyReturned && (
         <div className="rounded-xl border border-amber/30 bg-amber-soft p-3 text-sm">
           <p className="text-xs font-semibold text-amber-ink mb-1">Pharmacy returned for clarification</p>
@@ -107,7 +107,7 @@ export function VisitPharmacyPanel({
               setError(result.error)
               return
             }
-            onSubmitted?.()
+            onSubmitted?.(summary)
           })
         }}
       >

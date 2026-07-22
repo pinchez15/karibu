@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label'
 import {
   type ClinicalNoteSections,
   type NoteSectionKey,
-  NOTE_SECTION_META,
-  FOLLOW_UP_TASK_OPTIONS,
+  CLINICAL_NOTE_INCLUDE,
+  CLINICAL_NOTE_PLACEHOLDER,
+  PATIENT_NEXT_STEP_OPTIONS,
   parseClinicalNoteSections,
   sectionsToClinicianText,
   sectionsHaveClinicalContent,
@@ -25,20 +26,17 @@ import {
   saveDraftNote,
   signClinicianNote,
 } from './note-actions'
-import { submitPharmacyOrder } from '../actions'
-import { draftLinesToRpcInput } from '@/components/prescription/PrescriptionComposer'
-import { prescriptionLinesToDrafts } from '@/components/prescription/prescription-line-mappers'
 import { VisitLabPanel } from '@/components/lab/VisitLabPanel'
-import type { PrescriptionOrderLine, StaffRole } from '@karibu/shared'
+import { VisitPharmacyPanel } from '@/components/prescription/VisitPharmacyPanel'
+import type { PharmacyCatalogDrug, PrescriptionOrderLine, StaffRole } from '@karibu/shared'
 import { cn } from '@/lib/utils'
 
 /**
- * Structured clinician note editor (mirrors Android DictationScreen).
+ * Unified clinician note editor.
  *
- * - Section fields + batch-on-stop dictation per focused section
- * - Autosave draft + sync visit clinical summary (labs can queue before Sign)
- * - Save draft: explicit flush without signing
- * - Sign: attestation + documentation_complete
+ * - One narrative note box (AI draft review / MOH guidelines run on this text)
+ * - Collapsed catalog pickers for pharmacy + lab (no free-text orders)
+ * - Patient next-steps chips (patient-facing instructions, not clinician tasks)
  */
 
 interface PendingDictationCardProps {
@@ -57,8 +55,9 @@ interface PendingDictationCardProps {
   pharmacyReturned?: boolean
   dispenseNotes?: string | null
   prescriptionLines?: PrescriptionOrderLine[]
+  prescribingCatalog?: PharmacyCatalogDrug[]
   staffRole?: StaffRole | null
-  /** AI Incorporate — prefill a section and scroll into view. */
+  /** AI Incorporate — prefill the note and optionally open lab/Rx pickers. */
   incorporatePrefill?: DictationIncorporate | null
   onIncorporateApplied?: () => void
   editorRef?: RefObject<HTMLDivElement | null>
@@ -83,6 +82,7 @@ export function PendingDictationCard({
   pharmacyReturned = false,
   dispenseNotes = null,
   prescriptionLines = [],
+  prescribingCatalog,
   staffRole = null,
   incorporatePrefill = null,
   onIncorporateApplied,
@@ -90,22 +90,22 @@ export function PendingDictationCard({
 }: PendingDictationCardProps) {
   const { getToken } = useAuth()
 
-  const structuredDetailsRef = useRef<HTMLDetailsElement | null>(null)
-  const sectionRefs = useRef<Partial<Record<NoteSectionKey, HTMLTextAreaElement | null>>>({})
+  const pharmacyDetailsRef = useRef<HTMLDetailsElement | null>(null)
+  const labDetailsRef = useRef<HTMLDetailsElement | null>(null)
+  const noteTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const noteIdRef = useRef<string>(initialNoteId ?? crypto.randomUUID())
 
   const [sections, setSections] = useState<ClinicalNoteSections>(() =>
     initialSections ? parseClinicalNoteSections(initialSections) : parseClinicalNoteSections(null),
   )
-  const [focusedSection, setFocusedSection] = useState<NoteSectionKey | null>(null)
+  const [focusedSection, setFocusedSection] = useState<NoteSectionKey | null>('AdditionalNote')
   const [recordingSection, setRecordingSection] = useState<NoteSectionKey | null>(null)
   const [transcribingSection, setTranscribingSection] = useState<NoteSectionKey | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [pending, startTransition] = useTransition()
   const [savingDraft, setSavingDraft] = useState(false)
-  const [pharmacyPending, setPharmacyPending] = useState(false)
   const [pharmacySubmitted, setPharmacySubmitted] = useState(pharmacyOrderSubmitted)
   const [error, setError] = useState<string | null>(null)
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle')
@@ -205,19 +205,18 @@ export function PendingDictationCard({
     if (!incorporatePrefill) return
 
     setSections((prev) => appendToSection(prev, incorporatePrefill.section, incorporatePrefill.prefill))
-    setFocusedSection(incorporatePrefill.section)
+    setFocusedSection('AdditionalNote')
 
-    if (incorporatePrefill.section !== 'AdditionalNote') {
-      structuredDetailsRef.current?.setAttribute('open', '')
+    if (incorporatePrefill.openRxPicker) {
+      pharmacyDetailsRef.current?.setAttribute('open', '')
+    }
+    if (incorporatePrefill.openLabPicker) {
+      labDetailsRef.current?.setAttribute('open', '')
     }
 
     requestAnimationFrame(() => {
       editorRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      const target =
-        incorporatePrefill.section === 'AdditionalNote'
-          ? sectionRefs.current.AdditionalNote
-          : sectionRefs.current[incorporatePrefill.section]
-      target?.focus()
+      noteTextareaRef.current?.focus()
       onIncorporateApplied?.()
     })
   }, [incorporatePrefill, editorRef, onIncorporateApplied])
@@ -299,10 +298,7 @@ export function PendingDictationCard({
 
   const startRecording = useCallback(async () => {
     setError(null)
-    if (!focusedSection) {
-      setError('Click a section field first, then tap the mic to dictate.')
-      return
-    }
+    const target: NoteSectionKey = focusedSection ?? 'AdditionalNote'
     if (isRecording || isTranscribing) return
 
     recordedChunksRef.current = []
@@ -326,21 +322,23 @@ export function PendingDictationCard({
       recorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop())
         streamRef.current = null
-        const blob = new Blob(recordedChunksRef.current, { type: mimeType })
-        const target = recordingTargetRef.current
+        const recordedTarget = recordingTargetRef.current
         recordingTargetRef.current = null
         setRecordingSection(null)
-        if (target) void transcribeBlob(blob, target)
+        if (recordedTarget) {
+          void transcribeBlob(new Blob(recordedChunksRef.current, { type: mimeType }), recordedTarget)
+        }
       }
       recorder.start()
       isRecordingRef.current = true
-      recordingTargetRef.current = focusedSection
-      setRecordingSection(focusedSection)
+      recordingTargetRef.current = target
+      setRecordingSection(target)
+      setFocusedSection(target)
       setIsRecording(true)
     } catch {
       setError('Microphone access denied or unavailable.')
     }
-  }, [focusedSection, isRecording, isTranscribing, recordingSection, transcribeBlob])
+  }, [focusedSection, isRecording, isTranscribing, transcribeBlob])
 
   const stopRecording = useCallback(() => {
     isRecordingRef.current = false
@@ -427,82 +425,18 @@ export function PendingDictationCard({
     })
   }, [transcript, sections, visitId, onClose, flushPendingAutosave])
 
-  const handleSendToPharmacy = useCallback(() => {
-    setPharmacyPending(true)
-    setError(null)
-    void (async () => {
-      await flushPendingAutosave()
-
-      if (pharmacyReturned && prescriptionLines.length > 0) {
-        const lines = draftLinesToRpcInput(prescriptionLinesToDrafts(prescriptionLines))
-        if (lines.length === 0) {
-          setPharmacyPending(false)
-          setError('No prescription lines to resubmit.')
-          return
-        }
-        const result = await submitPharmacyOrder(visitId, {
-          lines,
-          medicationsSummary: sections.medications.trim(),
-        })
-        setPharmacyPending(false)
-        if (!result.success) {
-          setError(result.error)
-          return
-        }
-        setPharmacySubmitted(true)
-        return
-      }
-
-      const meds = sections.medications.trim()
-      if (!meds) {
-        setPharmacyPending(false)
-        setError('Add medications in the Pharmacy section first.')
-        return
-      }
-      const result = await submitPharmacyOrder(visitId, meds)
-      setPharmacyPending(false)
-      if (!result.success) {
-        setError(result.error)
-        return
-      }
-      setPharmacySubmitted(true)
-    })()
-  }, [
-    sections.medications,
-    visitId,
-    flushPendingAutosave,
-    pharmacyReturned,
-    prescriptionLines,
-  ])
-
   const activeSection = recordingSection ?? transcribingSection
   const micStatus = isRecording && activeSection
-    ? `Recording ${sectionDisplayLabel(activeSection)}… tap stop when done`
+    ? 'Recording… tap stop when done'
     : isTranscribing && activeSection
-      ? `Transcribing ${sectionDisplayLabel(activeSection)}…`
-      : 'Tap a section field, then mic to dictate'
-
-  const canSubmitPharmacy =
-    staffRole &&
-    ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole) &&
-    (pharmacyReturned
-      ? prescriptionLines.length > 0 || sections.medications.trim().length > 0
-      : sections.medications.trim().length > 0) &&
-    !pharmacySubmitted &&
-    !pharmacyReturned &&
-    !isRecording &&
-    !isTranscribing
+      ? 'Transcribing…'
+      : 'Tap Dictate to speak into the note'
 
   const canOrderLabs =
     staffRole != null && ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole)
 
-  const canResubmitPharmacy =
-    staffRole &&
-    ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole) &&
-    (prescriptionLines.length > 0 || sections.medications.trim().length > 0) &&
-    pharmacyReturned &&
-    !isRecording &&
-    !isTranscribing
+  const canOrderPharmacy =
+    staffRole != null && ['admin', 'doctor', 'nurse', 'clinical_officer', 'midwife'].includes(staffRole)
 
   const isReview = variant === 'review'
 
@@ -510,18 +444,18 @@ export function PendingDictationCard({
     <div
       ref={(node) => {
         if (editorRef) {
-          (editorRef as MutableRefObject<HTMLDivElement | null>).current = node
+          ;(editorRef as MutableRefObject<HTMLDivElement | null>).current = node
         }
       }}
       className={cn('space-y-4', !isReview && 'bg-card border border-border rounded-lg p-4')}
     >
       {!isReview && (
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">
-          {mode === 'editing' ? 'Edit clinician note' : 'Clinician note'}
-        </h3>
-        <AutosaveIndicator status={autosaveStatus} />
-      </div>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-lg font-semibold">
+            {mode === 'editing' ? 'Edit clinician note' : 'Clinician note'}
+          </h3>
+          <AutosaveIndicator status={autosaveStatus} />
+        </div>
       )}
 
       {isReview && (
@@ -535,7 +469,7 @@ export function PendingDictationCard({
           <p className="text-xs font-semibold text-amber-ink mb-1">Pharmacy returned for clarification</p>
           {dispenseNotes && <p className="whitespace-pre-wrap">{dispenseNotes}</p>}
           <p className="text-xs text-muted-foreground mt-2">
-            Update medications below, then resubmit to pharmacy.
+            Update the prescription under Order medications, then resubmit.
           </p>
         </div>
       )}
@@ -559,14 +493,19 @@ export function PendingDictationCard({
       )}
 
       {!isReview && (
-      <p className="text-sm text-muted-foreground">
-        Dictate or type the whole visit here — tap the mic and speak, no clicking field to
-        field. Expand structured fields only if you want to fill sections individually.
-        Sign when the note is complete.
-      </p>
+        <div className="space-y-1.5">
+          <p className="text-sm text-muted-foreground">
+            Dictate or type the whole visit in one note. AI notes (MOH guidelines) review this
+            text. Order labs and medicines from the catalogs below — not as free text.
+          </p>
+          <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+            {CLINICAL_NOTE_INCLUDE.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
-      {/* Unified dictation area (note #7a) — matches the Android single-flow feel. */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-2">
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -581,12 +520,12 @@ export function PendingDictationCard({
         </div>
         <Textarea
           ref={(el) => {
-            sectionRefs.current.AdditionalNote = el
+            noteTextareaRef.current = el
           }}
           value={sections.additionalNote}
           onChange={(e) => setSections((prev) => ({ ...prev, additionalNote: e.target.value }))}
           onFocus={() => setFocusedSection('AdditionalNote')}
-          placeholder="Dictate the visit: complaint, history, exam, diagnosis, plan…"
+          placeholder={CLINICAL_NOTE_PLACEHOLDER}
           className={`leading-relaxed ${
             isReview ? 'min-h-[100px]' : 'min-h-[220px]'
           } ${
@@ -597,78 +536,38 @@ export function PendingDictationCard({
         />
       </div>
 
-      <details ref={structuredDetailsRef} className="rounded-lg border border-line-soft">
-        <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Structured fields (optional)
-        </summary>
-        <div className="space-y-4 px-3 pb-3 pt-1">
-      {NOTE_SECTION_META.map((meta) => {
-        const isRec = recordingSection === meta.key && isRecording
-        const isTrans = transcribingSection === meta.key && isTranscribing
-        const fieldEnabled =
-          !pending && !savingDraft && (!isRecording || recordingSection === meta.key) && !isTranscribing
-        const value = String(sections[meta.field] ?? '')
-
-        return (
-          <div key={meta.key} className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {meta.label}
-              </Label>
-              {isRec && (
-                <span className="text-xs font-semibold text-amber-ink">Recording…</span>
-              )}
-              {isTrans && (
-                <span className="text-xs font-semibold text-cobalt">Transcribing…</span>
-              )}
-            </div>
-            <Textarea
-              ref={(el) => {
-                sectionRefs.current[meta.key] = el
+      {canOrderPharmacy && (
+        <details
+          ref={pharmacyDetailsRef}
+          className="rounded-lg border border-line-soft"
+          open={pharmacyReturned || undefined}
+        >
+          <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Order medications
+          </summary>
+          <div className="px-3 pb-3 pt-1">
+            <VisitPharmacyPanel
+              visitId={visitId}
+              alreadySubmitted={pharmacySubmitted}
+              pharmacyReturned={pharmacyReturned}
+              dispenseNotes={dispenseNotes}
+              prescriptionLines={prescriptionLines}
+              staffRole={staffRole ?? null}
+              prescribingCatalog={prescribingCatalog}
+              onSubmitted={(medicationsSummary) => {
+                setPharmacySubmitted(true)
+                setSections((prev) => ({
+                  ...prev,
+                  medications: medicationsSummary.trim() || prev.medications,
+                }))
               }}
-              value={value}
-              onChange={(e) =>
-                setSections((prev) => ({ ...prev, [meta.field]: e.target.value }))
-              }
-              onFocus={() => setFocusedSection(meta.key)}
-              placeholder={meta.placeholder}
-              className={`leading-relaxed ${
-                isRec ? 'border-amber ring-1 ring-amber/30' : ''
-              } ${isTrans ? 'border-cobalt ring-1 ring-cobalt/30' : ''}`}
-              disabled={!fieldEnabled}
-              rows={meta.minLines ?? 2}
             />
-            {meta.key === 'Medications' && (
-              <div className="pt-1">
-                {pharmacySubmitted && !pharmacyReturned ? (
-                  <p className="text-sm font-medium text-green">Sent to pharmacy</p>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!canSubmitPharmacy || pharmacyPending}
-                    onClick={handleSendToPharmacy}
-                  >
-                    {pharmacyPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : pharmacyReturned ? (
-                      'Resubmit to pharmacy'
-                    ) : (
-                      'Send to pharmacy'
-                    )}
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
-        )
-      })}
-        </div>
-      </details>
+        </details>
+      )}
 
       {canOrderLabs && (
-        <details className="rounded-lg border border-line-soft">
+        <details ref={labDetailsRef} className="rounded-lg border border-line-soft">
           <summary className="cursor-pointer px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Order lab tests
           </summary>
@@ -680,14 +579,18 @@ export function PendingDictationCard({
 
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Follow-up tasks
+          Patient next steps
         </Label>
+        <p className="text-xs text-muted-foreground">
+          Instructions for the patient after this visit (shown on the note / receipt) — not clinic
+          worklist tasks.
+        </p>
         <div className="flex flex-wrap gap-2">
-          {FOLLOW_UP_TASK_OPTIONS.map((option) => {
-            const selected = sections.followUpTasks.includes(option)
+          {PATIENT_NEXT_STEP_OPTIONS.map((option) => {
+            const selected = sections.followUpTasks.includes(option.value)
             return (
               <Button
-                key={option}
+                key={option.value}
                 type="button"
                 size="sm"
                 variant={selected ? 'default' : 'outline'}
@@ -696,18 +599,17 @@ export function PendingDictationCard({
                   setSections((prev) => ({
                     ...prev,
                     followUpTasks: selected
-                      ? prev.followUpTasks.filter((t) => t !== option)
-                      : [...prev.followUpTasks, option],
+                      ? prev.followUpTasks.filter((t) => t !== option.value)
+                      : [...prev.followUpTasks, option.value],
                   }))
                 }
               >
-                {option}
+                {option.label}
               </Button>
             )
           })}
         </div>
       </div>
-
 
       {error && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start justify-between gap-2">
@@ -793,13 +695,12 @@ export function PendingDictationCard({
         </Button>
       </div>
 
-      {/* Floating dictate button (#7d) — always reachable: focus any field, then
-          tap to dictate into it without scrolling to the action bar. */}
+      {/* Floating dictate button (#7d) — always reachable without scrolling. */}
       <button
         type="button"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={pending || savingDraft || isTranscribing}
-        title={focusedSection ? 'Dictate into the focused field' : 'Tap a field first, then dictate'}
+        title={isRecording ? 'Stop dictation' : 'Dictate into the clinician note'}
         aria-label={isRecording ? 'Stop dictation' : 'Dictate'}
         className={`fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors disabled:opacity-50 ${
           isRecording ? 'bg-destructive text-white' : 'bg-cobalt text-white hover:bg-cobalt/90'

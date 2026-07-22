@@ -56,26 +56,11 @@ export function filterTimelineAiNotes<T extends AiReviewSuggestionLike>(
 
 /** Map an AI suggestion to editor prefill (mirrors Android incorporationFor). */
 export function incorporationFor(suggestion: Pick<VisitAiReviewSuggestion, 'id' | 'suggestion_type' | 'question'>): DictationIncorporate {
-  const section: NoteSectionKey = (() => {
-    switch (suggestion.suggestion_type) {
-      case 'ask_lab':
-        return 'TestsOrdered'
-      case 'ask_dx':
-        return 'Diagnosis'
-      case 'ask_med':
-        return 'Medications'
-      case 'ask_history':
-        return 'Hpi'
-      case 'ask_red_flag':
-        return 'PhysicalExam'
-      default:
-        return 'AssessmentPlan'
-    }
-  })()
-
+  // Web uses one clinician note box — incorporate always targets AdditionalNote,
+  // and opens the lab/Rx catalog pickers when the suggestion is an order ask.
   return {
     suggestionId: suggestion.id,
-    section,
+    section: 'AdditionalNote' satisfies NoteSectionKey,
     prefill: `Consider: ${suggestion.question.trim()}`,
     openLabPicker: suggestion.suggestion_type === 'ask_lab',
     openRxPicker: suggestion.suggestion_type === 'ask_med',

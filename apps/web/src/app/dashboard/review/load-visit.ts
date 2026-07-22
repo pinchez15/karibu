@@ -94,7 +94,7 @@ export async function loadReviewVisitPanel(
   const transcript = providerNote?.transcript?.trim()
   const initialNoteSections =
     !sectionsHaveClinicalContent(parsed) && transcript
-      ? { ...parsed, hpi: transcript }
+      ? { ...parsed, additionalNote: transcript }
       : parsed
 
   return {

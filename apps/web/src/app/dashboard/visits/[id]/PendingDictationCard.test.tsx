@@ -35,6 +35,16 @@ describe('PendingDictationCard — lab ordering in the orders area (T2)', () => 
     cleanup()
   })
 
+  it('renders a unified note box with content checklist and no structured free-text pharmacy/labs', () => {
+    render(<PendingDictationCard visitId="visit-1" staffRole="doctor" />)
+
+    expect(screen.getByPlaceholderText(/Dictate or type the visit note/i)).toBeInTheDocument()
+    expect(screen.getByText('Chief complaint / chief concern')).toBeInTheDocument()
+    expect(screen.getByText('Patient next steps')).toBeInTheDocument()
+    expect(screen.queryByText('Structured fields (optional)')).not.toBeInTheDocument()
+    expect(screen.getByText('Order medications')).toBeInTheDocument()
+  })
+
   it('renders the reused lab catalog checklist for a clinical role before any test has been ordered', () => {
     render(<PendingDictationCard visitId="visit-1" staffRole="doctor" />)
 
@@ -83,7 +93,7 @@ describe('PendingDictationCard — flush pending autosave on teardown', () => {
   it('flushes the debounced autosave on unmount instead of dropping the typed content', async () => {
     const { unmount } = render(<PendingDictationCard visitId="visit-7" staffRole="doctor" />)
 
-    const editor = screen.getByPlaceholderText(/Dictate the visit/i)
+    const editor = screen.getByPlaceholderText(/Dictate or type the visit note/i)
     fireEvent.change(editor, {
       target: { value: 'Patient reports fever and chills for two days.' },
     })
@@ -111,7 +121,7 @@ describe('PendingDictationCard — flush pending autosave on teardown', () => {
   it('flushes the debounced autosave on pagehide (tab close / navigation away)', async () => {
     render(<PendingDictationCard visitId="visit-8" staffRole="doctor" />)
 
-    const editor = screen.getByPlaceholderText(/Dictate the visit/i)
+    const editor = screen.getByPlaceholderText(/Dictate or type the visit note/i)
     fireEvent.change(editor, {
       target: { value: 'Patient reports a persistent cough for one week.' },
     })
