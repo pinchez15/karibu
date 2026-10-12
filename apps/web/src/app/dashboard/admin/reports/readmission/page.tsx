@@ -23,7 +23,7 @@ function name(p: VisitRow['patient']): string {
 
 export default async function ReadmissionReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

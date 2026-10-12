@@ -44,7 +44,7 @@ async function getInventory(clinicId: string): Promise<{
 
 export default async function InventoryPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   const admin = await isAdmin()
   if (!admin) redirect('/dashboard')
 

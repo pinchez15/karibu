@@ -67,7 +67,7 @@ async function getLabQueue(clinicId: string): Promise<LabVisitRow[]> {
 
 export default async function LabPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (staff.role !== 'lab_tech' && staff.role !== 'admin') {
     redirect('/dashboard')

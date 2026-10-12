@@ -20,7 +20,7 @@ async function getPharmacyMarkupPercent(clinicId: string): Promise<number> {
 
 export default async function StockImportPage({ searchParams }: PageProps) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const admin = await isAdmin()
   const canPharmacy = admin || staff.role === 'dispenser'

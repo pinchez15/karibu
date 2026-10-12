@@ -57,7 +57,7 @@ async function getExpiringBatches(clinicId: string, days = 60): Promise<Expiring
 
 export default async function PharmacyStockPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   // Dispenser + admin + clinical officer (dual-acts as pharmacist) — see migration 093.
   if (
     staff.role !== 'dispenser' &&

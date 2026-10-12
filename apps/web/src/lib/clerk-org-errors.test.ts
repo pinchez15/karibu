@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isClerkInvitationRevokeNoOpError } from './clerk-org-errors'
+import { formatClerkInviteError, isClerkInvitationRevokeNoOpError } from './clerk-org-errors'
 
 describe('isClerkInvitationRevokeNoOpError', () => {
   it('returns true when Clerk says the invitation is no longer pending', () => {
@@ -35,5 +35,20 @@ describe('isClerkInvitationRevokeNoOpError', () => {
         errors: [{ code: 'organization_membership_quota_exceeded' }],
       }),
     ).toBe(false)
+  })
+})
+
+describe('formatClerkInviteError', () => {
+  it('explains the missing org-admin permission instead of echoing Clerk', () => {
+    const text = formatClerkInviteError({
+      errors: [{ longMessage: 'Current user is missing an organization permission.' }],
+    })
+    expect(text).toMatch(/not an admin of this clinic/)
+  })
+
+  it('passes other Clerk messages through', () => {
+    expect(formatClerkInviteError({ errors: [{ longMessage: 'Email is invalid.' }] })).toBe(
+      'Email is invalid.',
+    )
   })
 })

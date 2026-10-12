@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const supabase = createServiceClient()
   const { data: clinic } = await supabase

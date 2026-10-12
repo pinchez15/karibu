@@ -6,7 +6,7 @@ import { WebTopBar } from '@/components/web-shell'
 
 export default async function ConsultListPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const supabase = createServiceClient()
   const { data: threads, error } = await supabase

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 // the HMIS report uses, so the two always agree.
 export default async function DiseaseBurdenReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

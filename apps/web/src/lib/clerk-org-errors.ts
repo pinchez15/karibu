@@ -33,6 +33,12 @@ export function formatClerkInviteError(error: unknown): string {
 
   const err = error as ClerkApiError
   const clerkMsg = err?.errors?.[0]?.longMessage ?? err?.errors?.[0]?.message
+  if (clerkMsg && /missing an organization permission/i.test(clerkMsg)) {
+    return (
+      'Your sign-in account is not an admin of this clinic’s organization, so it cannot send ' +
+      'invitations. Ask Karibu support to make you an organization admin, then try again.'
+    )
+  }
   if (clerkMsg) return clerkMsg
   if (error instanceof Error) return error.message
   return 'Invitation failed'

@@ -7,7 +7,7 @@ import type { StaffRole } from '@karibu/shared'
 
 export default async function ReviewPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { unfinalized, uncoded, periodLabel } = await fetchReviewNotesData(staff.clinic_id)
   const pendingCount = unfinalized.length + uncoded.length

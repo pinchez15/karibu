@@ -67,7 +67,7 @@ async function getHistory(clinicId: string): Promise<HistoryRow[]> {
 
 export default async function PharmacyHistoryPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   // Dispenser + admin + clinical officer (dual-acts as pharmacist) — see migration 093.
   if (

@@ -91,7 +91,7 @@ const QUICK_LINKS = [
 
 export default async function AdminPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await isAdmin())) redirect('/dashboard')
 
   const stats = await getClinicStats(staff.clinic_id)

@@ -20,7 +20,7 @@ async function getClinicName(clinicId: string): Promise<string> {
 
 export default async function SettingsPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const clinicName = await getClinicName(staff.clinic_id)
 

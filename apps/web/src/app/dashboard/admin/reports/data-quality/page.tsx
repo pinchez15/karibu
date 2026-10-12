@@ -7,7 +7,7 @@ import { getDataQualityStats } from '../actions'
 
 export default async function DataQualityPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 

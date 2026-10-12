@@ -8,7 +8,7 @@ import { BillingRatesClient } from './BillingRatesClient'
 
 export default async function AdminBillingPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const admin = await isAdmin()
   if (!admin) redirect('/dashboard')

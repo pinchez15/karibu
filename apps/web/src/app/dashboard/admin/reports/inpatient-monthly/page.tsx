@@ -14,7 +14,7 @@ function defaultMonth(): { year: number; month: number } {
 
 export default async function InpatientMonthlyReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const { year, month } = defaultMonth()

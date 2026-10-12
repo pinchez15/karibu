@@ -9,7 +9,7 @@ import { PrintLandscapeButton } from '../hmis105/PrintLandscapeButton'
 
 export default async function Hmis106aHivPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const hasAccess = await hasDataReportsAccess()
   if (!hasAccess) redirect('/dashboard')

@@ -12,7 +12,7 @@ import { BriefingDashboard } from './BriefingDashboard'
  */
 export default async function DashboardPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const data = await loadBriefing(staff.clinic_id)
 

@@ -158,7 +158,7 @@ export default async function VisitDetailPage({
     const staff = await getStaff()
 
     if (!staff) {
-      redirect('/')
+      redirect('/no-access')
     }
 
     const { id } = await params

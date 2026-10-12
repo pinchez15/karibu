@@ -4,7 +4,7 @@ import { STAFF_ROLES, STAFF_ROLE_LABELS } from '@/lib/staff-roles'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { WebTopBar } from '@/components/web-shell'
-import { inviteClinicStaffAction } from './actions'
+import { InviteStaffForm } from './InviteStaffForm'
 import { PendingInvitesList } from './PendingInvitesList'
 import { StaffList } from './StaffList'
 import type { Staff } from '@karibu/shared'
@@ -42,7 +42,7 @@ export default async function StaffManagementPage() {
   const staff = await getStaff()
 
   if (!staff) {
-    redirect('/')
+    redirect('/no-access')
   }
 
   if (!(await isAdmin())) {
@@ -85,53 +85,12 @@ export default async function StaffManagementPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             They will receive an email to join this clinic. Their role controls what they can see and do in Karibu.
           </p>
-          <form action={inviteClinicStaffAction} className="mt-6 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
-              First name
-              <input
-                name="first_name"
-                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base"
-              />
-            </label>
-            <label className="text-sm font-medium">
-              Last name
-              <input
-                name="last_name"
-                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base"
-              />
-            </label>
-            <label className="text-sm font-medium sm:col-span-2">
-              Email
-              <input
-                name="email"
-                type="email"
-                required
-                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base"
-              />
-            </label>
-            <label className="text-sm font-medium sm:col-span-2">
-              Clinical role
-              <select
-                name="role"
-                defaultValue="clinical_officer"
-                className="mt-1.5 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base"
-              >
-                {STAFF_ROLES.filter((role) => role !== 'doctor').map((role) => (
-                  <option key={role} value={role}>
-                    {STAFF_ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                className="rounded-lg bg-primary px-5 py-2.5 text-base font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Send invitation
-              </button>
-            </div>
-          </form>
+          <InviteStaffForm
+            roles={STAFF_ROLES.filter((role) => role !== 'doctor').map((role) => ({
+              value: role,
+              label: STAFF_ROLE_LABELS[role],
+            }))}
+          />
         </section>
 
         {pendingInvites.length > 0 && <PendingInvitesList invites={pendingInvites} />}

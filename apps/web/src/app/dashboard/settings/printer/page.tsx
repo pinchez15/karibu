@@ -8,7 +8,7 @@ import { PrinterSetupClient } from './PrinterSetupClient'
 
 export default async function PrinterSettingsPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const settings = await getClinicPrintSettingsForStaff()
   if (!settings) redirect('/dashboard')

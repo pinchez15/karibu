@@ -39,7 +39,7 @@ const AGE_ORDER = ['<1y', '1–4y', '5–14y', '15–49y', '50y+', 'Unknown']
 
 export default async function DemographicsReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

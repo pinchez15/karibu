@@ -185,7 +185,7 @@ async function getVisitsToday(clinicId: string): Promise<number> {
 export default async function OpdTodayPage() {
   return measureServerLoader(PERF_LOADER.opdPage, async () => {
     const staff = await getStaff()
-    if (!staff) redirect('/')
+    if (!staff) redirect('/no-access')
 
     const now = new Date()
     const daysBack = now.getDay()

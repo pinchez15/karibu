@@ -53,7 +53,7 @@ const TITLES: Record<string, { title: string; description: string }> = {
  */
 export default async function ComingSoonReportPage({ params }: ComingSoonPageProps) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 

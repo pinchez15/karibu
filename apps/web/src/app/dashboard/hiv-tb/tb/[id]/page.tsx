@@ -22,7 +22,7 @@ export default async function TbEpisodeDetailPage({
   params: Promise<{ id: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
   const { id } = await params

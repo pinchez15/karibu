@@ -30,7 +30,7 @@ export default async function PatientProfilePage({
 }) {
   return measureServerLoader(PERF_LOADER.patientPage, async () => {
     const staff = await getStaff()
-    if (!staff) redirect('/')
+    if (!staff) redirect('/no-access')
 
     const { id: patientId } = await params
 

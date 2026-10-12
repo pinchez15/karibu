@@ -31,7 +31,7 @@ export default async function PharmacyPage({
   searchParams: Promise<{ visit?: string; tab?: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   // Dispenser + admin + clinical officer (dual-acts as pharmacist) — see migration 093.
   if (

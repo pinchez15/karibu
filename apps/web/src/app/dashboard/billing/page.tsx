@@ -13,7 +13,7 @@ function ugx(n: number): string {
 
 export default async function BillingPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const patients = await listPatientBalances()
   // WP3 D1: derive the displayed balance through the shared util (from the RPC's

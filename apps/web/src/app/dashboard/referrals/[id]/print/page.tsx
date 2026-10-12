@@ -9,7 +9,7 @@ export default async function ReferralPrintPage({
   params: Promise<{ id: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { id } = await params
   const summary = await getReferralPrintSummary(id)

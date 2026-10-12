@@ -15,7 +15,7 @@ export default async function PregnancyDetailPage({
 }) {
   const { id } = await params
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
   const pregnancy = await loadPregnancyDetail(id, staff.clinic_id)

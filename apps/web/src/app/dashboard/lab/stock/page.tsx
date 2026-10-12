@@ -21,7 +21,7 @@ async function getStock(clinicId: string): Promise<LabStockRow[]> {
 
 export default async function LabStockPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (staff.role !== 'lab_tech' && staff.role !== 'admin') {
     redirect('/dashboard')
   }

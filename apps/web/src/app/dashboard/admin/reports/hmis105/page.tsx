@@ -11,7 +11,7 @@ import { fetchUnfinalizedVisits, monthToDateRange } from '@/lib/review-notes'
 
 export default async function Hmis105Page() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 

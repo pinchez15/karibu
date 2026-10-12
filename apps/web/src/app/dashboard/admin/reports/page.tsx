@@ -20,7 +20,7 @@ function formatUgx(n: number): string {
 
 export default async function ReportsOverviewPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 

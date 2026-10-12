@@ -75,7 +75,7 @@ export default async function OrdersPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { tab } = await searchParams
   const initialTab =

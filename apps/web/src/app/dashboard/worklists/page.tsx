@@ -455,7 +455,7 @@ function CareTasksCard({ rows }: { rows: CareTaskRow[] }) {
 
 export default async function WorklistsPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   // All 7 worklists are independent — fetch in parallel. Errors inside each
   // action are logged + degraded to [], so Promise.all never rejects.

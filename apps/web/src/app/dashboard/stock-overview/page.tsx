@@ -62,7 +62,7 @@ function isOut<T extends { quantity_on_hand: number }>(row: T): boolean {
 
 export default async function StockOverviewPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { pharmacy, lab } = await loadStock(staff.clinic_id)
 

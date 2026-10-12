@@ -8,7 +8,7 @@ import { ClinicCalendar } from '@/components/clinic-calendar/ClinicCalendar'
 /** Full month calendar — moved off Home (which is now the briefing dashboard). */
 export default async function CalendarPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const appointments = await loadClinicAppointments(staff.clinic_id, {
     daysBack: 14,

@@ -20,7 +20,7 @@ function defaultDischargedRange(): { from: string; to: string } {
 
 export default async function InpatientPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
   const { from, to } = defaultDischargedRange()

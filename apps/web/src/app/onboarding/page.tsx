@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function OnboardingPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   if (staff.onboarding_completed_at) {
     redirect('/dashboard')

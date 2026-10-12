@@ -164,7 +164,7 @@ export default async function PatientsPage({
   }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const params = await searchParams
   const parsedPage = parseInt(params.page || '1', 10)

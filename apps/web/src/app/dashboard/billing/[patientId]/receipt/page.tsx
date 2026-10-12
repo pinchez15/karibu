@@ -13,7 +13,7 @@ export default async function BillingReceiptPage({
 }) {
   const { patientId } = await params
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const supabase = createServiceClient()
 

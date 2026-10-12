@@ -120,7 +120,7 @@ export default async function PrintPatientNotePage({
   params: Promise<{ id: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { id } = await params
   const result = await fetchPrintData(id, staff.clinic_id)

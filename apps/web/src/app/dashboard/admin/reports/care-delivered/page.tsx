@@ -14,7 +14,7 @@ function monthStart(): string {
 
 export default async function CareDeliveredReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

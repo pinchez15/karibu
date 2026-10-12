@@ -20,7 +20,7 @@ const MIN_CASES = 3 // ignore tiny numbers — 1→2 is not an outbreak
 
 export default async function OutbreakReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

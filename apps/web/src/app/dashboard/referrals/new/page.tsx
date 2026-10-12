@@ -12,7 +12,7 @@ export default async function NewReferralPage({
   searchParams: Promise<{ visitId?: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { visitId } = await searchParams
   if (!visitId) notFound()

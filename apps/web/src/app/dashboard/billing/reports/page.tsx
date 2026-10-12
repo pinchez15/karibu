@@ -100,7 +100,7 @@ function collectionsSummary(patients: PatientBalanceRow[]) {
 
 export default async function BillingReportsPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (staff.role !== 'admin') redirect('/dashboard')
 
   const [monthly, quarterly, patients] = await Promise.all([

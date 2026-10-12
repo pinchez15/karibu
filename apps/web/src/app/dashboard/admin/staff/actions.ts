@@ -16,19 +16,21 @@ async function requireClinicAdmin() {
   return staff
 }
 
-export async function inviteClinicStaffAction(formData: FormData) {
-  const actor = await requireClinicAdmin()
-  const { userId } = await auth()
-  if (!userId) throw new Error('Unauthorized')
-
-  const email = String(formData.get('email') ?? '').trim().toLowerCase()
-  const firstName = String(formData.get('first_name') ?? '').trim()
-  const lastName = String(formData.get('last_name') ?? '').trim()
-  const role = assertStaffRole(String(formData.get('role') ?? ''))
-
-  if (!email) throw new Error('Email is required')
-
+export async function inviteClinicStaffAction(
+  formData: FormData,
+): Promise<{ success: boolean; status?: 'invited' | 'provisioned'; error?: string }> {
   try {
+    const actor = await requireClinicAdmin()
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: 'Unauthorized' }
+
+    const email = String(formData.get('email') ?? '').trim().toLowerCase()
+    const firstName = String(formData.get('first_name') ?? '').trim()
+    const lastName = String(formData.get('last_name') ?? '').trim()
+    const role = assertStaffRole(String(formData.get('role') ?? ''))
+
+    if (!email) return { success: false, error: 'Email is required' }
+
     const result = await inviteStaffToClinic({
       clinicId: actor.clinic_id,
       email,
@@ -40,9 +42,10 @@ export async function inviteClinicStaffAction(formData: FormData) {
     })
 
     revalidatePath('/dashboard/admin/staff')
-    return result
+    return { success: true, status: result.status }
   } catch (err) {
-    throw new Error(formatClerkInviteError(err))
+    console.error('Staff invite failed:', err)
+    return { success: false, error: formatClerkInviteError(err) }
   }
 }
 

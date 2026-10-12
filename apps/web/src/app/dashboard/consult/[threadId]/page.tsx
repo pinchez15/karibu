@@ -11,7 +11,7 @@ export default async function ConsultThreadPage({
   params: Promise<{ threadId: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const { threadId } = await params
   const supabase = createServiceClient()

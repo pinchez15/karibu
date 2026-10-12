@@ -13,7 +13,7 @@ function ugx(n: number): string {
 
 export default async function ProfitabilityReportPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!(await hasDataReportsAccess())) redirect('/dashboard')
 
   const supabase = createServiceClient()

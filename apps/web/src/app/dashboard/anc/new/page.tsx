@@ -9,7 +9,7 @@ const CLINICAL = new Set(['admin', 'doctor', 'nurse', 'clinical_officer', 'midwi
 
 export default async function NewPregnancyPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
   return (

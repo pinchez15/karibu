@@ -12,7 +12,7 @@ export default async function ThermalPrinterTestPage({
   searchParams: Promise<{ long?: string }>
 }) {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
 
   const [printSettings, letterhead, params] = await Promise.all([
     getClinicPrintSettings(staff.clinic_id),

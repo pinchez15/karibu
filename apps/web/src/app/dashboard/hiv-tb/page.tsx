@@ -16,7 +16,7 @@ const CLINICAL = new Set([
 
 export default async function HivTbPage() {
   const staff = await getStaff()
-  if (!staff) redirect('/')
+  if (!staff) redirect('/no-access')
   if (!CLINICAL.has(staff.role)) redirect('/dashboard')
 
   const registry = await loadHivTbRegistry(staff.clinic_id)
