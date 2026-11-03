@@ -6,3 +6,4 @@ export * from './pharmacy-catalog';
 export * from './lab-catalog';
 export * from './lab-queue';
 export * from './queue-search';
+export * from './pricing';
