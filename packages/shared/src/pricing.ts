@@ -111,10 +111,10 @@ export const PRICE_BOOKS: Record<CountryCode, CountryPriceBook> = {
 
 export interface LocalOffice {
   slug: string
-  /** Public name, e.g. "Karibu Masaka". */
+  /** Public name, e.g. "Karibu Health". */
   name: string
   country: CountryCode
-  /** The district / region the office covers. */
+  /** Geographic scope shown on the page (country or region). */
   territory: string
   lead: {
     name: string
@@ -129,16 +129,16 @@ export interface LocalOffice {
 
 export const LOCAL_OFFICES: LocalOffice[] = [
   {
-    slug: 'masaka',
-    name: 'Karibu Masaka',
+    slug: 'uganda',
+    name: 'Karibu Health',
     country: 'UG',
-    territory: 'Masaka District',
+    territory: 'Uganda',
     lead: {
       name: 'Javis Bbombokka',
       firstName: 'Javis',
-      title: 'Lead, Karibu Masaka',
+      title: 'Marketing Personnel and Co-designer of Karibu',
       photo: '/headshots/javis.png',
-      bio: 'Javis is a nurse and co-designer of Karibu. Every screen clinicians use today was shaped by Javis’s time on Ugandan clinic floors, and every Masaka clinic is set up, trained and supported by Javis directly.',
+      bio: 'Javis is the implementation and support contact for Karibu in Uganda. Every screen clinicians use today was shaped by his time on Ugandan clinic floors, and he sets up, trains and supports facilities directly.',
     },
     inquiryEmail: 'nate@cappawork.com',
   },

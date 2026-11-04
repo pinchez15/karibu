@@ -58,12 +58,13 @@ export function LocalOfficePage({ office }: { office: LocalOffice }) {
             <Reveal>
               <Eyebrow>{office.name}</Eyebrow>
               <h1 className="landing-heading mt-4 text-[clamp(32px,4.4vw,54px)] font-semibold leading-[1.04] tracking-[-0.035em] text-ink">
-                Clinic software for {office.territory.replace(/ District$/, '')}, set up by someone you can call.
+                Clinic software for healthcare facilities across {book.countryName}, set up by someone you can call.
               </h1>
               <p className="mt-5 max-w-[560px] text-[17px] leading-relaxed text-body">
-                Karibu runs your patient records, lab, dispensary and billing on the Android phones
-                your staff already carry, with or without internet. {office.lead.name} sets it up at
-                your facility, trains your team on site, and stays your first call afterwards.
+                Karibu serves healthcare facilities across {book.countryName}. It runs your patient
+                records, lab, dispensary and billing on the Android phones your staff already carry,
+                with or without internet. {office.lead.name} sets it up at your facility, trains your
+                team on site, and stays your first call afterwards.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Btn kind="primary" size="lg" href="#contact">
@@ -90,7 +91,10 @@ export function LocalOfficePage({ office }: { office: LocalOffice }) {
                     {office.lead.title}
                   </div>
                   <div className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                    <MapPin size={14} aria-hidden /> {office.territory}, {book.countryName}
+                    <MapPin size={14} aria-hidden />{' '}
+                    {office.territory === book.countryName
+                      ? book.countryName
+                      : `${office.territory}, ${book.countryName}`}
                   </div>
                 </div>
               </div>
@@ -232,9 +236,9 @@ export function LocalOfficePage({ office }: { office: LocalOffice }) {
         <section className="border-y border-line bg-[rgb(var(--kh-bg))] py-14 sm:py-20">
           <Container narrow>
             <Reveal className="max-w-[680px]">
-              <Eyebrow>Your local office</Eyebrow>
+              <Eyebrow>Implementation and support</Eyebrow>
               <h2 className="landing-heading mt-3.5 text-[clamp(24px,2.6vw,32px)] font-semibold leading-[1.15] tracking-[-0.025em] text-ink">
-                {office.name} is run by {office.lead.name}.
+                {office.lead.name} is your implementation and support contact.
               </h2>
               <p className="mt-4 text-[16px] leading-relaxed text-body">{office.lead.bio}</p>
             </Reveal>
@@ -254,7 +258,7 @@ export function LocalOfficePage({ office }: { office: LocalOffice }) {
             suffixColor="rgba(255,255,255,0.6)"
           />
           <div className="text-[13px] text-white/55">
-            {office.name} is a local Karibu office.{' '}
+            {office.name} for healthcare facilities across {book.countryName}.{' '}
             <a href={CAPPAWORK_HREF} target="_blank" rel="noopener noreferrer" className="text-white/75 hover:text-white">
               CappaWork
             </a>{' '}
@@ -330,7 +334,8 @@ function QuoteSection({ office }: { office: LocalOffice }) {
                 <Smartphone size={16} className="text-cobalt" aria-hidden /> Runs on the Android phones you have
               </span>
               <span className="flex items-center gap-2.5">
-                <MapPin size={16} className="text-cobalt" aria-hidden /> Serving {office.territory}
+                <MapPin size={16} className="text-cobalt" aria-hidden /> Serving healthcare facilities across{' '}
+                {PRICE_BOOKS[office.country].countryName}
               </span>
             </div>
           </div>

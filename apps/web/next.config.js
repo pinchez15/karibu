@@ -4,6 +4,15 @@ const { withSentryConfig } = require('@sentry/nextjs')
 const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  async redirects() {
+    return [
+      {
+        source: '/local/masaka',
+        destination: '/local/uganda',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = withSentryConfig(nextConfig, {

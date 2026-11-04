@@ -3,7 +3,7 @@
 **Date:** 2026-11-03
 **Status:** Draft for Nate + Javis. These are the first prices to quote, not final ones.
 **Inputs:** Javis's competitor research (email, 2026-10-26), `karibu-os-strategic-direction.md`, `karibu-os-market-research.md`
-**Code:** `packages/shared/src/pricing.ts` (price book, country localization, office registry). Page: `/local/[office]` (first office: `/local/masaka`).
+**Code:** `packages/shared/src/pricing.ts` (price book, country localization, office registry). Page: `/local/[office]` (first office: `/local/uganda`; `/local/masaka` permanently redirects there).
 **Supersedes:** the editions and weekly UGX 2,500–15,000 targets in `karibu-os-strategic-direction.md` §3–4. That doc's free tier is not part of this price list. Revisit it if a free tier is wanted for clinician-led adoption.
 
 ---
