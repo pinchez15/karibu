@@ -58,8 +58,9 @@ describe('local offices', () => {
     for (const office of LOCAL_OFFICES) expect(PRICE_BOOKS[office.country]).toBeDefined()
   })
 
-  it('finds Masaka', () => {
-    expect(getLocalOffice('masaka')?.lead.firstName).toBe('Javis')
+  it('finds Uganda', () => {
+    expect(getLocalOffice('uganda')?.lead.firstName).toBe('Javis')
+    expect(getLocalOffice('uganda')?.name).toBe('Karibu Health')
     expect(getLocalOffice('nowhere')).toBeUndefined()
   })
 
