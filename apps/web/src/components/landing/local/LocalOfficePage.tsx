@@ -19,6 +19,7 @@ import {
   type LocalOffice,
   type EditionId,
 } from '@karibu/shared'
+import { captureLeadAction } from '@/app/local/[office]/actions'
 import { KLockup } from '../brand'
 import { CAPPAWORK_HREF } from '../constants'
 import { Btn, Container, Eyebrow, Reveal } from '../ui'
@@ -90,7 +91,10 @@ export function LocalOfficePage({ office }: { office: LocalOffice }) {
                     {office.lead.title}
                   </div>
                   <div className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                    <MapPin size={14} aria-hidden /> {office.territory}, {book.countryName}
+                    <MapPin size={14} aria-hidden />{' '}
+                    {office.territory === book.countryName
+                      ? book.countryName
+                      : `${office.territory}, ${book.countryName}`}
                   </div>
                 </div>
               </div>
@@ -289,11 +293,23 @@ const FACILITY_TYPES = ['Private clinic', 'Health centre (HC II–IV)', 'Hospita
 
 function QuoteSection({ office }: { office: LocalOffice }) {
   const [f, setF] = useState<QuoteFields>(EMPTY)
-  const [sent, setSent] = useState(false)
+  const [website, setWebsite] = useState('')
+  const [sent, setSent] = useState<false | 'saved' | 'email'>(false)
+  const [busy, setBusy] = useState(false)
   const first = office.lead.firstName
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
+    if (busy) return
+    setBusy(true)
+    // The enquiry lands in the office's pipeline in Karibu Office.
+    const saved = await captureLeadAction(office.slug, { ...f, website }).then((r) => r.ok).catch(() => false)
+    setBusy(false)
+    if (saved) {
+      setSent('saved')
+      return
+    }
+    // If that fails, fall back to opening an email so the enquiry is not lost.
     const body = [
       `Hello ${first}, I would like to talk about Karibu for my facility.`,
       '',
@@ -305,7 +321,7 @@ function QuoteSection({ office }: { office: LocalOffice }) {
       `Phone: ${f.phone}`,
     ].join('\n')
     window.location.href = contactHref(office, body)
-    setSent(true)
+    setSent('email')
   }
 
   const input =
@@ -341,9 +357,13 @@ function QuoteSection({ office }: { office: LocalOffice }) {
                 <span className="mb-4 inline-flex size-[58px] items-center justify-center rounded-full bg-green-soft text-green">
                   <Check size={26} aria-hidden />
                 </span>
-                <h3 className="landing-heading text-xl font-semibold text-ink">Almost there</h3>
+                <h3 className="landing-heading text-xl font-semibold text-ink">
+                  {sent === 'saved' ? 'Thank you' : 'Almost there'}
+                </h3>
                 <p className="mt-1.5 max-w-[260px] text-sm leading-snug text-body">
-                  Send the email that just opened and {first} will be in touch.
+                  {sent === 'saved'
+                    ? `${first} has your details and will call you within two working days.`
+                    : `Send the email that just opened and ${first} will be in touch.`}
                 </p>
               </div>
             ) : (
@@ -380,8 +400,14 @@ function QuoteSection({ office }: { office: LocalOffice }) {
                     <input required type="tel" placeholder="+256 7…" className={input} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
                   </label>
                 </div>
+                {/* Honeypot: hidden from people, tempting to bots. */}
+                <input
+                  type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                  value={website} onChange={(e) => setWebsite(e.target.value)}
+                  className="absolute -left-[9999px] h-0 w-0 opacity-0"
+                />
                 <Btn kind="primary" size="lg" type="submit" className="mt-3 w-full">
-                  Get in touch with {first}
+                  {busy ? 'Sending…' : `Get in touch with ${first}`}
                 </Btn>
               </form>
             )}

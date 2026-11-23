@@ -28,10 +28,13 @@ async function getClinicStats(clinicId: string) {
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
 
+  // OPD cases only — inpatient chart visits (admission_id set) are not a second
+  // client; they share the same day's front-desk check-in.
   const { data: recentVisits } = await supabase
     .from('visits')
     .select('visit_date')
     .eq('clinic_id', clinicId)
+    .is('admission_id', null)
     .gte('visit_date', weekAgo.toISOString().split('T')[0])
 
   const visitsByDay: Record<string, number> = {}
@@ -46,6 +49,7 @@ async function getClinicStats(clinicId: string) {
     .from('visits')
     .select('status, doctor:staff!visits_doctor_id_fkey(display_name)')
     .eq('clinic_id', clinicId)
+    .is('admission_id', null)
     .gte('visit_date', monthStart)
 
   const byClinician: Record<string, { total: number; unfinalized: number }> = {}
@@ -166,7 +170,7 @@ export default async function AdminPage() {
           <StatCard label="Staff" value={stats.staffCount} href="/dashboard/admin/staff" />
           <StatCard label="Patients" value={stats.patientCount} />
           <StatCard
-            label="Visits (7 days)"
+            label="OPD visits (7 days)"
             value={stats.totalWeekVisits}
             hint={`~${Math.round(stats.totalWeekVisits / 7)}/day`}
           />
@@ -175,7 +179,7 @@ export default async function AdminPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-border bg-card px-5 py-4">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Visits per day (last 7 days)
+              OPD visits per day (last 7 days)
             </h3>
             <div className="flex h-28 items-end justify-between gap-2">
               {days.map((day) => (

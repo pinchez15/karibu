@@ -209,9 +209,10 @@ export async function ensureInpatientVisit(
     patient_id: patientId,
     admission_id: admissionId,
     visit_date: today,
-    department: 'opd',
+    // Inpatient chart visit for lab/pharmacy — not an OPD queue entry.
+    department: 'inpatient',
     status: 'pending',
-    queue_status: 'waiting',
+    queue_status: 'with_doctor',
     priority: 'normal',
   })
 

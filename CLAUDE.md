@@ -20,22 +20,20 @@ That doc supersedes older planning docs when they conflict. Key locked decisions
 - Offline dispense with **local stock decrement**, sync when online
 - Payment **decoupled** from clinical closure; all writes via **SECURITY DEFINER RPCs**
 
-## Skill routing
+## Karibu Office (partner business tools, `apps/office`)
 
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
+Before changing `apps/office`, the `office` schema or any `office_*` RPC, read
+**`docs/karibu-office-spec.md`** (Section 14 holds the decided questions) and
+**`docs/architecture/adr-0002-local-offices.md`**. Rules that must not be broken:
 
-Key routing rules:
-- Product ideas, "is this worth building", brainstorming → invoke office-hours
-- Bugs, errors, "why is this broken", 500 errors → invoke investigate
-- Ship, deploy, push, create PR → invoke ship
-- QA, test the site, find bugs → invoke qa
-- Code review, check my diff → invoke review
-- Update docs after shipping → invoke document-release
-- Weekly retro → invoke retro
-- Design system, brand → invoke design-consultation
-- Visual audit, design polish → invoke design-review
-- Architecture review → invoke plan-eng-review
-- Save progress, checkpoint, resume → invoke checkpoint
-- Code quality, health check → invoke health
+- **No patient data in Karibu Office.** `office_*` RPCs return counts, timestamps and staff
+  names only. `packages/supabase/tests/office_operations.sql` fails if any office function
+  references a patient or clinical column.
+- **`apps/office` never gets the Supabase service-role key.** It uses the anon key plus the
+  user's Clerk token. Scheduled work runs from `apps/web` (Inngest) by calling SQL.
+- **Never create a clinic's Clerk organization with `createdBy`** from the office app: the
+  webhook would give the partner a clinic `staff` row.
+- Every office migration ends with `office.apply_rpc_grants(...)`.
+- Run the SQL tests with `packages/supabase/scripts/test-office-local.sh` (local Postgres 17,
+  no production contact).
+

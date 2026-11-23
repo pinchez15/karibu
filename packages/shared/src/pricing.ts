@@ -10,6 +10,9 @@
 //   3. Local offices sell, set up, train and support facilities in a
 //      territory. The office bills the facility and keeps 100% of it:
 //      subscription, setup and training. No revenue share with Karibu.
+//   4. Each office pays Karibu a flat partner fee (PARTNER_FEE_USD_MONTHLY),
+//      localized per country like every other price. It does not scale with
+//      the office's clinic revenue. See docs/karibu-office-spec.md §2 and §14.
 
 export type EditionId = 'core' | 'full' | 'pro'
 
@@ -74,6 +77,9 @@ export const SETUP_USD = 40
 /** Additional on-site training day, before transport. */
 export const EXTRA_TRAINING_DAY_USD = 13
 
+/** Flat fee an office pays Karibu, per office, per month. Not a revenue share. */
+export const PARTNER_FEE_USD_MONTHLY = 5
+
 /** A local price may sit this far (as a fraction) from USD x FX before it must be reset. */
 export const LOCAL_PRICE_TOLERANCE = 0.15
 
@@ -89,6 +95,8 @@ export interface CountryPriceBook {
   monthly: Record<EditionId, number>
   setup: number
   extraTrainingDay: number
+  /** What an office pays Karibu per month, in local currency. */
+  partnerFeeMonthly: number
 }
 
 export const PRICE_BOOKS: Record<CountryCode, CountryPriceBook> = {
@@ -106,15 +114,17 @@ export const PRICE_BOOKS: Record<CountryCode, CountryPriceBook> = {
     },
     setup: 150_000,
     extraTrainingDay: 50_000,
+    // $5 x 4,300 = 21,500; set 7% under at a clean number.
+    partnerFeeMonthly: 20_000,
   },
 }
 
 export interface LocalOffice {
   slug: string
-  /** Public name, e.g. "Karibu Masaka". */
+  /** Public name, e.g. "Karibu Uganda". */
   name: string
   country: CountryCode
-  /** The district / region the office covers. */
+  /** The area the office covers: a country, region or district. */
   territory: string
   lead: {
     name: string
@@ -129,16 +139,16 @@ export interface LocalOffice {
 
 export const LOCAL_OFFICES: LocalOffice[] = [
   {
-    slug: 'masaka',
-    name: 'Karibu Masaka',
+    slug: 'uganda',
+    name: 'Karibu Uganda',
     country: 'UG',
-    territory: 'Masaka District',
+    territory: 'Uganda',
     lead: {
       name: 'Javis Bbombokka',
       firstName: 'Javis',
-      title: 'Lead, Karibu Masaka',
+      title: 'Lead, Karibu Uganda',
       photo: '/headshots/javis.png',
-      bio: 'Javis is a nurse and co-designer of Karibu. Every screen clinicians use today was shaped by Javis’s time on Ugandan clinic floors, and every Masaka clinic is set up, trained and supported by Javis directly.',
+      bio: 'Javis is a nurse and co-designer of Karibu. Every screen clinicians use today was shaped by Javis’s time on Ugandan clinic floors, and every Karibu Uganda clinic is set up, trained and supported by Javis directly.',
     },
     inquiryEmail: 'nate@cappawork.com',
   },
@@ -154,6 +164,11 @@ export function localMonthly(country: CountryCode, edition: EditionId): number {
 
 export function localAnnual(country: CountryCode, edition: EditionId): number {
   return localMonthly(country, edition) * ANNUAL_MONTHS_CHARGED
+}
+
+/** The partner fee an office in this country pays Karibu for a number of months. */
+export function partnerFee(country: CountryCode, months = 1): number {
+  return PRICE_BOOKS[country].partnerFeeMonthly * months
 }
 
 /** How far a local price sits from its USD anchor, as a signed fraction. */

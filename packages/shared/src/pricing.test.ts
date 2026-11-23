@@ -5,6 +5,7 @@ import {
   EXTRA_TRAINING_DAY_USD,
   LOCAL_OFFICES,
   LOCAL_PRICE_TOLERANCE,
+  PARTNER_FEE_USD_MONTHLY,
   EDITION_IDS,
   PRICE_BOOKS,
   SETUP_USD,
@@ -13,6 +14,7 @@ import {
   localAnnual,
   localPriceDrift,
   officeMonthlyRevenue,
+  partnerFee,
 } from './pricing'
 
 const books = Object.values(PRICE_BOOKS)
@@ -28,6 +30,7 @@ describe('price books', () => {
     for (const [local, usd] of [
       [book.setup, SETUP_USD],
       [book.extraTrainingDay, EXTRA_TRAINING_DAY_USD],
+      [book.partnerFeeMonthly, PARTNER_FEE_USD_MONTHLY],
     ]) {
       expect(Math.abs(local / (usd * book.fxPerUsd) - 1)).toBeLessThanOrEqual(LOCAL_PRICE_TOLERANCE)
     }
@@ -58,13 +61,24 @@ describe('local offices', () => {
     for (const office of LOCAL_OFFICES) expect(PRICE_BOOKS[office.country]).toBeDefined()
   })
 
-  it('finds Masaka', () => {
-    expect(getLocalOffice('masaka')?.lead.firstName).toBe('Javis')
+  it('finds Uganda', () => {
+    expect(getLocalOffice('uganda')?.lead.firstName).toBe('Javis')
     expect(getLocalOffice('nowhere')).toBeUndefined()
   })
 
   it('office keeps the whole subscription', () => {
     expect(officeMonthlyRevenue('UG', { full: 5 })).toBe(650_000)
+  })
+})
+
+describe('partner fee', () => {
+  it('is flat per office and multiplies by months paid', () => {
+    expect(partnerFee('UG')).toBe(20_000)
+    expect(partnerFee('UG', 3)).toBe(60_000)
+  })
+
+  it('stays small next to one Core clinic', () => {
+    for (const book of books) expect(book.partnerFeeMonthly).toBeLessThan(book.monthly.core)
   })
 })
 

@@ -3,14 +3,14 @@
 **Date:** 2026-11-03
 **Status:** Draft for Nate + Javis. These are the first prices to quote, not final ones.
 **Inputs:** Javis's competitor research (email, 2026-10-26), `karibu-os-strategic-direction.md`, `karibu-os-market-research.md`
-**Code:** `packages/shared/src/pricing.ts` (price book, country localization, office registry). Page: `/local/[office]` (first office: `/local/masaka`).
+**Code:** `packages/shared/src/pricing.ts` (price book, country localization, office registry). Page: `/local/[office]` (first office: `/local/uganda`; `/local/masaka` redirects there).
 **Supersedes:** the editions and weekly UGX 2,500–15,000 targets in `karibu-os-strategic-direction.md` §3–4. That doc's free tier is not part of this price list. Revisit it if a free tier is wanted for clinician-led adoption.
 
 ---
 
 ## 1. The model in one paragraph
 
-Karibu sets **one USD price book**, per facility per month: **Core $15, Full $30, Pro $60**. Each country gets **one local price book**, which is the USD price converted at a fixed FX anchor and rounded to a clean local number. A **local office** sells, sets up, trains and supports facilities in its territory. **The office bills the facility directly and keeps 100% of it**: subscription, setup and training. There is no revenue share with Karibu.
+Karibu sets **one USD price book**, per facility per month: **Core $15, Full $30, Pro $60**. Each country gets **one local price book**, which is the USD price converted at a fixed FX anchor and rounded to a clean local number. A **local office** sells, sets up, trains and supports facilities in its territory. **The office bills the facility directly and keeps 100% of it**: subscription, setup and training. There is no revenue share with Karibu on clinic revenue. Each office pays Karibu a flat **partner fee of $5 a month** (UGX 20,000 in Uganda), which does not grow with the office's book.
 
 ## 2. Rules
 
@@ -30,6 +30,7 @@ Karibu sets **one USD price book**, per facility per month: **Core $15, Full $30
 | Karibu Pro | $60 | 260,000 | 2,600,000 | unlimited | Full + extra storage |
 | Setup (once) | $40 | 150,000 | — | | Install, configure catalogs, 1 training day on site |
 | Extra on-site training day | $13 | 50,000 + transport | — | | |
+| Partner fee (office pays Karibu) | $5 | 20,000 | — | | Per office, not per facility |
 
 The FX anchor is **4,300 UGX/USD**. Mid-market rates ran 4,250–4,345 from 2026-10-31 to 11-03; XE showed 4,279.73 on 11-03. The first draft used 3,700, which was stale. Subscriptions sit within about 1% of the straight conversion.
 
@@ -63,6 +64,14 @@ The office keeps everything it bills.
 
 `officeMonthlyRevenue()` in `pricing.ts` computes these figures.
 
+### The partner fee
+
+Added 2026-11-23 (`docs/karibu-office-spec.md` §2). The office is a vendor of Karibu, not a grant recipient, and pays a flat $5 a month whatever the size of its book. UGX 20,000 is 7% under $5 × 4,300 and falls under the same 15% drift test as every other local price. Against the table above, the fee is 3% of a 5-Full book and under 1% of a 20-Full + 5-Pro book.
+
+If the fee lapses, the office can't provision new clinics. Existing clinics are never interrupted.
+
+**Not decided:** where the fee goes. The default built in Karibu Office is that Karibu receives it and ring-fences it into a per-country fund for starting new offices. See the spec, §14.
+
 ## 6. Adding a country or an office
 
 - **New office in an existing country:** add a `LocalOffice` entry to `LOCAL_OFFICES` with a slug, territory, lead and contact. The page at `/local/<slug>` is generated automatically.
@@ -73,4 +82,4 @@ The office keeps everything it bills.
 1. **Patient cap and storage.** Is 10,000 registered patients the right Core/Full cap? How much storage do Core/Full include, and how much does Pro add?
 2. **Weekly payment.** Should offices also offer weekly payment (Full ≈ UGX 32,500/week), or keep monthly + annual only?
 3. **Bureau pricing.** For UCMB/UPMB facilities, do we offer an annual per-facility price for many facilities at once? If so, who sells it, the local office or Karibu?
-4. **Territory exclusivity.** Is Masaka exclusive to Javis's office, and what happens when a Masaka clinic signs up on its own?
+4. **Territory exclusivity.** The first office (Javis) now covers all of Uganda, not just Masaka (2026-11-13). When a second Ugandan office opens, how is territory split, and what happens when a clinic signs up on its own?

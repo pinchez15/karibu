@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Sparkles,
   ListTodo,
+  LifeBuoy,
   Settings,
   Stethoscope,
   BedDouble,
@@ -247,11 +248,22 @@ export function WebShell({ staff, staffRole, clinicName = 'Ssunga HC III', count
             )
           })}
         </nav>
+        {/* Every staff member can ask for help; it goes to the clinic's Karibu office. */}
+        <Link
+          href="/dashboard/help"
+          className={cn(
+            'ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors',
+            pathname === '/dashboard/help' ? 'bg-cobalt-soft text-cobalt' : 'text-body hover:bg-background',
+          )}
+        >
+          <LifeBuoy className="h-4 w-4" />
+          Get help
+        </Link>
         {isAdmin && (
           <Link
             href="/dashboard/admin"
             className={cn(
-              'ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors',
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors',
               pathname === '/dashboard/admin' ? 'bg-cobalt-soft text-cobalt' : 'text-body hover:bg-background',
             )}
           >

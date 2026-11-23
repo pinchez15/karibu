@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Karibu Health design tokens, the same values as apps/web/src/app/globals.css
+  and packages/design-system. Cobalt anchors trust. Amber is reserved for
+  urgency. RGB triples so Tailwind's alpha syntax works.
+*/
+:root {
+  --kh-cobalt:        31 54 199;
+  --kh-cobalt-deep:   21 37 154;
+  --kh-cobalt-soft:   232 236 251;
+  --kh-cobalt-ink:    11 20 82;
+  --kh-amber:         245 165 36;
+  --kh-amber-soft:    253 241 216;
+  --kh-amber-ink:     122 74 0;
+  --kh-green:         14 138 95;
+  --kh-green-soft:    220 241 231;
+  --kh-red:           200 54 43;
+  --kh-red-soft:      251 229 226;
+  --kh-ink:           14 21 48;
+  --kh-body:          58 66 86;
+  --kh-muted:         107 115 133;
+  --kh-line:          229 231 238;
+  --kh-line-soft:     239 241 246;
+  --kh-bg:            247 248 251;
+  --kh-surface:       255 255 255;
+}
+
+@layer base {
+  * { border-color: rgb(var(--kh-line)); }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-background text-body font-sans;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { @apply text-2xl font-semibold tracking-tight text-ink; }
+  h2 { @apply text-lg font-semibold tracking-tight text-ink; }
+  h3 { @apply text-base font-semibold text-ink; }
+  /* 16px inputs stop Android/iOS zooming the page on focus. */
+  input, select, textarea { font-size: 16px; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-lg px-4 py-3
+           text-[15px] font-semibold transition-colors
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-cobalt focus-visible:ring-offset-2
+           disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-cobalt text-white active:bg-cobalt-deep; }
+  .btn-secondary { @apply btn border border-line bg-surface text-ink active:bg-line-soft; }
+  .btn-whatsapp { @apply btn bg-green text-white active:opacity-90; }
+  .btn-quiet { @apply btn px-2 text-cobalt; }
+  .btn-danger { @apply btn border border-red/30 bg-surface text-red; }
+
+  .card { @apply rounded-xl border border-line bg-surface p-4; }
+  .field { @apply block; }
+  .field > span { @apply mb-1 block text-sm font-medium text-body; }
+  .input {
+    @apply block min-h-touch w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink
+           placeholder:text-muted/70 focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt-soft;
+  }
+  .meta { @apply font-mono text-[11px] font-medium uppercase tracking-wider text-muted; }
+
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .chip-info { @apply chip bg-cobalt-soft text-cobalt; }
+  .chip-success { @apply chip bg-green-soft text-green; }
+  .chip-warning { @apply chip bg-amber-soft text-amber-ink; }
+  .chip-danger { @apply chip bg-red-soft text-red; }
+  .chip-neutral { @apply chip bg-line-soft text-muted; }
+
+  .notice { @apply rounded-xl border px-4 py-3 text-sm; }
+  .notice-warning { @apply notice border-amber/40 bg-amber-soft text-amber-ink; }
+  .notice-danger { @apply notice border-red/30 bg-red-soft text-red; }
+  .notice-success { @apply notice border-green/30 bg-green-soft text-green; }
+  .notice-info { @apply notice border-cobalt/20 bg-cobalt-soft text-cobalt-deep; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}

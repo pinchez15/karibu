@@ -36,6 +36,9 @@ messages; you triage on the phone and compose on the desktop.
 3. **No offline capability on web.** Do not build service-worker/PWA offline sync.
    Android is the offline client; duplicating Room+outbox+reconciliation in the browser
    is out of scope permanently unless the product owner reverses this in writing.
+   *Scope (2026-11-23):* this rule is about the EHR web app (`apps/web`). Karibu Office
+   (`apps/office`) is a separate app with no clinical data and may queue its own field
+   notes offline; see `docs/architecture/adr-0002-local-offices.md` §11.
 4. **All business logic lives in shared SECURITY DEFINER RPCs.** The platform split is
    purely a UX-layer decision. Never fork business rules per platform.
 5. **Tablets run the Android app** (wide screen + offline; adaptive layouts exist).

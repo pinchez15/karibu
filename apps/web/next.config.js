@@ -4,6 +4,10 @@ const { withSentryConfig } = require('@sentry/nextjs')
 const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  async redirects() {
+    // The first office was Masaka; it now covers all of Uganda. Keep old links working.
+    return [{ source: '/local/masaka', destination: '/local/uganda', permanent: true }]
+  },
 }
 
 module.exports = withSentryConfig(nextConfig, {

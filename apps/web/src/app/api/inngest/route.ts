@@ -4,6 +4,7 @@ import { reviewClinicianNote } from '@/inngest/functions/review-clinician-note'
 import { draftPatientReceipt } from '@/inngest/functions/draft-patient-receipt'
 import { suggestHmisCode } from '@/inngest/functions/suggest-hmis-code'
 import { pollAiStructureQueue } from '@/inngest/functions/poll-ai-queue'
+import { officeNightly } from '@/inngest/functions/office-nightly'
 
 // Single endpoint Inngest calls to invoke every registered function.
 //
@@ -22,5 +23,6 @@ export const { GET, POST, PUT } = serve({
     draftPatientReceipt,
     suggestHmisCode,
     pollAiStructureQueue,
+    officeNightly,
   ],
 })
