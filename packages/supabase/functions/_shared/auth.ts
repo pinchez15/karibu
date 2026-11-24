@@ -14,9 +14,10 @@
 // `requireAuth` to gate access.
 
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'https://esm.sh/jose@5.9.6'
+import { serviceKeys } from './service-key.ts'
 
 const CLERK_ISSUER = Deno.env.get('CLERK_ISSUER') || ''
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const SERVICE_KEYS = serviceKeys()
 
 let jwksCache: ReturnType<typeof createRemoteJWKSet> | null = null
 function getJWKS() {
@@ -49,9 +50,9 @@ export async function requireAuth(req: Request): Promise<AuthContext> {
     throw new AuthError('Empty bearer token')
   }
 
-  // Service-to-service: exact-match service role key. Constant-time-ish via
-  // length check first; this token never reaches Clerk verification.
-  if (SERVICE_ROLE_KEY && token.length === SERVICE_ROLE_KEY.length && token === SERVICE_ROLE_KEY) {
+  // Service-to-service: exact match on a Supabase secret key (new or legacy).
+  // This token never reaches Clerk verification.
+  if (SERVICE_KEYS.includes(token)) {
     return { type: 'service' }
   }
 

@@ -16,6 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { getCorsHeaders, handleCorsPreflightOrError } from '../_shared/cors.ts'
 import { checkRateLimit } from '../_shared/rate-limit.ts'
 import { requireAuth, requireStaffForClinic, AuthError, authErrorResponse } from '../_shared/auth.ts'
+import { serviceKey } from '../_shared/service-key.ts'
 import { createLogger } from '../_shared/logger.ts'
 import { auditLog } from '../_shared/audit.ts'
 
@@ -96,7 +97,7 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseServiceKey = serviceKey()
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Look up the visit so we can (a) tenant-check the caller and (b) pass
