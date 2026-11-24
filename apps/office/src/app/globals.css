@@ -79,6 +79,15 @@
   .notice-info { @apply notice border-cobalt/20 bg-cobalt-soft text-cobalt-deep; }
 }
 
+/*
+  Desktop: a page is a readable column unless a block asks for the full width
+  with .wide. Phones are unaffected.
+*/
+@media (min-width: 1024px) {
+  .page > * { max-width: 44rem; }
+  .page > .wide { max-width: none; }
+}
+
 @media print {
   .no-print { display: none !important; }
   body { background: white; }
