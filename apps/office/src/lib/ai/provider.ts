@@ -15,9 +15,13 @@ let client: OpenAI | null = null
 export const openAiVision: VisionProvider = {
   async extractJson({ system, user, images }) {
     client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const model = process.env.OPENAI_OFFICE_VISION_MODEL || 'gpt-4o-mini'
+    // GPT-5 and o-series models reject a custom temperature; they take a
+    // reasoning effort instead. Older chat models keep temperature 0.
+    const reasoning = /^(gpt-5|o\d)/.test(model)
     const res = await client.chat.completions.create({
-      model: process.env.OPENAI_OFFICE_VISION_MODEL || 'gpt-4o-mini',
-      temperature: 0,
+      model,
+      ...(reasoning ? { reasoning_effort: 'low' as const } : { temperature: 0 }),
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: system },
