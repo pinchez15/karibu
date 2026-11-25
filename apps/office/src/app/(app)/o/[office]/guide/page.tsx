@@ -37,7 +37,7 @@ export default async function GuidePage({ params }: Props) {
             {STAGES.map((n) => {
               const state = n < current ? 'done' : n === current ? 'current' : 'next'
               return (
-                <li key={n} className={`card flex flex-col gap-1.5 ${state === 'current' ? 'border-cobalt ring-2 ring-cobalt-soft' : ''}`}>
+                <li key={n} className={`card flex flex-col gap-1.5 ${state === 'current' ? 'border-coral ring-2 ring-coral-soft' : ''}`}>
                   <span className="flex items-center justify-between gap-2">
                     <span className="meta whitespace-nowrap">{t('stage.n', { n })}</span>
                     {state === 'done' ? <span className="chip-success whitespace-nowrap">{t('stage.done')}</span> : null}

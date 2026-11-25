@@ -16,4 +16,4 @@ export interface Ticket {
   notes?: { author_kind: 'clinic' | 'office' | 'karibu'; author_name: string | null; body: string; at: string }[]
 }
 
-export const TICKET_CHIP = { open: 'chip-danger', in_progress: 'chip-warning', resolved: 'chip-success', closed: 'chip-neutral' } as const
+export const TICKET_CHIP = { open: 'chip-warning', in_progress: 'chip-info', resolved: 'chip-success', closed: 'chip-neutral' } as const

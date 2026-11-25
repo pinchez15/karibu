@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#1F36C7' }
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#D92B4B' }
 
 // Every page is per-user; nothing here is safe to prerender.
 export const dynamic = 'force-dynamic'

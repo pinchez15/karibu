@@ -1,4 +1,4 @@
-import { Flash, PageHeader, Section } from '@/components/ui'
+import { Flash, PageHeader, Section, Tabs } from '@/components/ui'
 import { getOfficeScope } from '@/lib/auth'
 import { monthLabel, shortDate } from '@/lib/dates'
 import { rpc } from '@/lib/db'
@@ -21,7 +21,11 @@ export default async function MoneyPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <PageHeader title={t('money.title')} action={<a href={`${base}/invoices/new`} className="btn-primary shrink-0">{t('money.newInvoice')}</a>} />
+      <PageHeader title={t('money.title')} sub={t('money.disclaimer')} action={<a href={`${base}/invoices/new`} className="btn-primary btn-sm shrink-0">{t('money.newInvoice')}</a>} />
+      <Tabs items={[
+        { href: base, label: t('cash.tabInvoices'), on: true },
+        { href: `${base}/cashflow`, label: t('cash.tabForecast') },
+      ]} />
       {/* Both can be set: a monthly run that created some invoices and skipped others. */}
       {flash.ok ? <Flash ok={flash.ok} /> : null}
       {flash.error ? <Flash error={flash.error} /> : null}
@@ -73,7 +77,6 @@ export default async function MoneyPage({ params, searchParams }: Props) {
       <div className="wide grid gap-5 lg:grid-cols-5 lg:gap-8">
       <div id="record" className="scroll-mt-20 space-y-5 lg:order-2 lg:col-span-2">
       <Section title={t('money.record')}>
-        <p className="text-sm text-muted">{t('money.disclaimer')}</p>
         <form action={recordSmsAction.bind(null, slug)} className="card space-y-3">
           <label className="field"><span>{t('money.paste')}</span>
             <textarea name="sms" rows={4} required className="input text-sm" placeholder="You have received UGX 130,000 from …" /></label>

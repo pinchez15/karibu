@@ -24,6 +24,10 @@ const CORE = [
   ['/(app)/o/[office]/clinics/[id]/page', APP_BUDGET_KB],
   ['/(app)/o/[office]/clinics/[id]/onboarding/page', APP_BUDGET_KB],
   ['/(app)/o/[office]/money/page', APP_BUDGET_KB],
+  ['/(app)/o/[office]/money/cashflow/page', APP_BUDGET_KB],
+  ['/(app)/o/[office]/pipeline/page', APP_BUDGET_KB],
+  ['/(app)/o/[office]/support/page', APP_BUDGET_KB],
+  ['/(app)/o/[office]/analytics/page', APP_BUDGET_KB],
   ['/(public)/r/[token]/page', PUBLIC_BUDGET_KB],
   ['/(public)/i/[token]/page', PUBLIC_BUDGET_KB],
 ]

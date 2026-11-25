@@ -114,6 +114,19 @@ The nightly job is one SQL function, `office_run_nightly()` (health scores, aler
 
 Photo-to-catalog uses a vision model behind a small provider interface (OpenAI, per `platform-contract.md` §6). Output becomes a **draft** the partner edits row by row. Nothing reaches a clinic until `office_catalog_draft_approve`. The prompt tells the model to ignore patient names; the staff roster is not sent to the model in Phase 1 (the clinic types its staff list in the form).
 
+### 14. Cash flow inputs and analytics are counts, with the judgement in the app
+
+Added 2026-11-25 (migration 119).
+
+- `office.costs` and `office.office_prefs` hold what the partner types in: their own costs and the balance they say is in their accounts. Nothing reads a bank or a wallet, and decision 8 stands: money is recorded, never moved. The six-month forecast is arithmetic in `apps/office/src/lib/cashflow.ts`.
+- `office_analytics` returns raw counts across the office's live clinics: weekly visit counts, staff totals from the nightly health snapshot, the lead-to-live funnel, payment timing and support load. It selects no patient or clinical column; the structural test covers it.
+- Whether a panel has enough data to show a rate or a trend is decided in `apps/office/src/lib/analytics.ts`, not in SQL, so the thresholds are unit tested and can change without a migration. A panel is `collecting`, `ready`, `stale` or `paused`. The owner's pauses are stored in `office.office_prefs.analytics_paused`.
+- Brand: decision 1's "existing Karibu Health tokens" is superseded. Office uses the KaribuLearn coral (`docs/karibu-office-brand.md`).
+
+### 15. The facility register is reference data, claimed through the same door
+
+Added 2026-11-25 (migrations 120, 121). `office.facilities` is a read-only list of health facilities per country, seeded for Uganda from the Ministry of Health's 2018 master list. `office_facilities_search` reports each facility as open, yours or held by joining on the same normalized (country, district, name) key as decision 6, and never returns the holder. `office_facilities_add` calls `office.claim_clinic`, so a facility from the register is claimed, refused or queued for Karibu central exactly like a clinic typed in by hand. Facilities are organisations, so no patient data is involved. The seed is generated (`packages/supabase/data/facilities/build_ug_2018.py`); a newer list is a new generated migration.
+
 ## What is not built
 
 - Phase 2 and 3 modules. Their tables exist as stubs: `office.kits`, `devices`, `referral_links`, `commissions`, `one_on_ones`.

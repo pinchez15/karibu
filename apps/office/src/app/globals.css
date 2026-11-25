@@ -3,33 +3,40 @@
 @tailwind utilities;
 
 /*
-  Karibu Health design tokens, the same values as apps/web/src/app/globals.css
-  and packages/design-system. Cobalt anchors trust. Amber is reserved for
-  urgency. RGB triples so Tailwind's alpha syntax works.
+  Karibu Office brand kit. See docs/karibu-office-brand.md.
+
+  Partners know the EHR well, and colour habits transfer, so Office shares no
+  action colour with it. The EHR is cobalt with square-ish buttons. Office is
+  coral (from KaribuLearn) on warm neutrals, with pill buttons.
+
+  RGB triples so Tailwind's alpha syntax works.
 */
 :root {
-  --kh-cobalt:        31 54 199;
-  --kh-cobalt-deep:   21 37 154;
-  --kh-cobalt-soft:   232 236 251;
-  --kh-cobalt-ink:    11 20 82;
-  --kh-amber:         245 165 36;
-  --kh-amber-soft:    253 241 216;
-  --kh-amber-ink:     122 74 0;
-  --kh-green:         14 138 95;
-  --kh-green-soft:    220 241 231;
-  --kh-red:           200 54 43;
-  --kh-red-soft:      251 229 226;
-  --kh-ink:           14 21 48;
-  --kh-body:          58 66 86;
-  --kh-muted:         107 115 133;
-  --kh-line:          229 231 238;
-  --kh-line-soft:     239 241 246;
-  --kh-bg:            247 248 251;
-  --kh-surface:       255 255 255;
+  --ko-coral:         217 43 75;    /* #D92B4B  action: buttons, links (4.8:1 on white) */
+  --ko-coral-bright:  251 77 91;    /* #FB4D5B  the brand coral: mark, charts, highlights */
+  --ko-coral-deep:    184 31 61;    /* #B81F3D  pressed, hover */
+  --ko-coral-soft:    255 231 234;  /* #FFE7EA  selected, tinted chips */
+  --ko-coral-wash:    255 245 244;  /* #FFF5F4  tinted panels */
+  --ko-coral-ink:     122 20 42;    /* #7A142A  text on soft and wash */
+  --ko-amber:         245 165 36;
+  --ko-amber-soft:    253 241 216;
+  --ko-amber-ink:     122 74 0;
+  --ko-green:         14 138 95;
+  --ko-green-soft:    220 241 231;
+  --ko-green-ink:     10 107 73;
+  --ko-red:           127 29 29;    /* #7F1D1D  brick: "needs you" */
+  --ko-red-soft:      246 226 222;
+  --ko-ink:           36 16 24;     /* #241018 */
+  --ko-body:          82 69 75;     /* #52454B */
+  --ko-muted:         116 102 108;  /* #74666C  5.3:1 on white */
+  --ko-line:          233 223 226;
+  --ko-line-soft:     246 238 240;
+  --ko-bg:            251 247 248;  /* #FBF7F8 */
+  --ko-surface:       255 255 255;
 }
 
 @layer base {
-  * { border-color: rgb(var(--kh-line)); }
+  * { border-color: rgb(var(--ko-line)); }
   html { -webkit-text-size-adjust: 100%; }
   body {
     @apply bg-background text-body font-sans;
@@ -41,47 +48,65 @@
   h3 { @apply text-base font-semibold text-ink; }
   /* 16px inputs stop Android/iOS zooming the page on focus. */
   input, select, textarea { font-size: 16px; }
+  summary { cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
 }
 
 @layer components {
+  /* Pill buttons: the EHR's are rounded rectangles. */
   .btn {
-    @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-lg px-4 py-3
+    @apply inline-flex min-h-touch items-center justify-center gap-2 rounded-full px-5 py-3
            text-[15px] font-semibold transition-colors
-           focus:outline-none focus-visible:ring-2 focus-visible:ring-cobalt focus-visible:ring-offset-2
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2
            disabled:opacity-50;
   }
-  .btn-primary { @apply btn bg-cobalt text-white active:bg-cobalt-deep; }
-  .btn-secondary { @apply btn border border-line bg-surface text-ink active:bg-line-soft; }
-  .btn-whatsapp { @apply btn bg-green text-white active:opacity-90; }
-  .btn-quiet { @apply btn px-2 text-cobalt; }
-  .btn-danger { @apply btn border border-red/30 bg-surface text-red; }
+  .btn-primary { @apply btn bg-coral text-white hover:bg-coral-deep active:bg-coral-deep; }
+  .btn-secondary { @apply btn border border-ink/20 bg-surface text-ink hover:bg-line-soft active:bg-line-soft; }
+  .btn-whatsapp { @apply btn bg-green text-white hover:opacity-90 active:opacity-90; }
+  .btn-quiet { @apply btn px-3 text-coral hover:bg-coral-wash; }
+  .btn-danger { @apply btn border border-red/40 bg-surface text-red; }
+  /* Desktop sizes. A phone keeps the 48px touch height. */
+  .btn-sm { @apply lg:min-h-0 lg:px-4 lg:py-2 lg:text-sm; }
+  .btn-xs { @apply min-h-0 px-3 py-1.5 text-[13px]; }
 
-  .card { @apply rounded-xl border border-line bg-surface p-4; }
+  .card { @apply rounded-2xl border border-line bg-surface p-4; }
   .field { @apply block; }
   .field > span { @apply mb-1 block text-sm font-medium text-body; }
   .input {
-    @apply block min-h-touch w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink
-           placeholder:text-muted/70 focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt-soft;
+    @apply block min-h-touch w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-ink
+           placeholder:text-muted/80 focus:border-coral focus:outline-none focus:ring-2 focus:ring-coral-soft;
   }
-  .meta { @apply font-mono text-[11px] font-medium uppercase tracking-wider text-muted; }
+  .meta { @apply text-xs font-semibold uppercase tracking-wide text-muted; }
+  .num { font-variant-numeric: tabular-nums; }
 
-  .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
-  .chip-info { @apply chip bg-cobalt-soft text-cobalt; }
-  .chip-success { @apply chip bg-green-soft text-green; }
+  .chip { @apply inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold; }
+  .chip-info { @apply chip bg-coral-soft text-coral-ink; }
+  .chip-success { @apply chip bg-green-soft text-green-ink; }
   .chip-warning { @apply chip bg-amber-soft text-amber-ink; }
-  .chip-danger { @apply chip bg-red-soft text-red; }
-  .chip-neutral { @apply chip bg-line-soft text-muted; }
+  /* Solid, so "needs you" is the one chip that is filled. */
+  .chip-danger { @apply chip bg-red text-white; }
+  .chip-neutral { @apply chip bg-line-soft text-body; }
 
-  .notice { @apply rounded-xl border px-4 py-3 text-sm; }
+  .notice { @apply rounded-2xl border px-4 py-3 text-sm; }
   .notice-warning { @apply notice border-amber/40 bg-amber-soft text-amber-ink; }
   .notice-danger { @apply notice border-red/30 bg-red-soft text-red; }
-  .notice-success { @apply notice border-green/30 bg-green-soft text-green; }
-  .notice-info { @apply notice border-cobalt/20 bg-cobalt-soft text-cobalt-deep; }
+  .notice-success { @apply notice border-green/30 bg-green-soft text-green-ink; }
+  .notice-info { @apply notice border-coral/20 bg-coral-wash text-coral-ink; }
+
+  /* Tables on a laptop. Wrap in .table-wrap so a wide table scrolls inside its box. */
+  .table-wrap { @apply overflow-x-auto rounded-2xl border border-line bg-surface; }
+  .table { @apply w-full text-left text-sm; }
+  .table th { @apply whitespace-nowrap bg-line-soft/60 px-4 py-2.5 text-xs font-semibold text-muted; }
+  .table td { @apply border-t border-line-soft px-4 py-3 align-middle; }
+
+  .tabs { @apply flex gap-6 overflow-x-auto border-b border-line; }
+  .tab { @apply -mb-px whitespace-nowrap border-b-2 border-transparent pb-2.5 text-sm font-medium text-body hover:text-ink; }
+  .tab-on { @apply border-coral font-semibold text-coral; }
 }
 
 /*
-  Desktop: a page is a readable column unless a block asks for the full width
-  with .wide. Phones are unaffected.
+  A page is a readable column unless a block asks for the full width with
+  .wide. Phones are unaffected.
 */
 @media (min-width: 1024px) {
   .page > * { max-width: 44rem; }
