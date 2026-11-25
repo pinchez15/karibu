@@ -25,9 +25,9 @@ export default async function MoneyPage({ params, searchParams }: Props) {
       {/* Both can be set: a monthly run that created some invoices and skipped others. */}
       {flash.ok ? <Flash ok={flash.ok} /> : null}
       {flash.error ? <Flash error={flash.error} /> : null}
-      {home.stage.stage < 3 ? <p className="notice-info">{t('money.locked')}</p> : null}
+      {data.invoices.length === 0 ? <p className="notice-info">{t('money.locked')}</p> : null}
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="wide grid grid-cols-3 gap-2 lg:gap-4">
         {(['billed', 'collected', 'outstanding'] as const).map((k) => (
           <div key={k} className="card px-3 py-3">
             <span className="meta block">{t(`money.${k}`)}</span>
@@ -70,6 +70,8 @@ export default async function MoneyPage({ params, searchParams }: Props) {
         </Section>
       ) : null}
 
+      <div className="wide grid gap-5 lg:grid-cols-5 lg:gap-8">
+      <div id="record" className="scroll-mt-20 space-y-5 lg:order-2 lg:col-span-2">
       <Section title={t('money.record')}>
         <p className="text-sm text-muted">{t('money.disclaimer')}</p>
         <form action={recordSmsAction.bind(null, slug)} className="card space-y-3">
@@ -113,7 +115,9 @@ export default async function MoneyPage({ params, searchParams }: Props) {
           </form>
         </details>
       </Section>
+      </div>
 
+      <div className="space-y-5 lg:col-span-3">
       <Section title={t('money.invoices')}>
         <form action={generateMonthAction.bind(null, slug)}>
           <button className="btn-secondary w-full">{t('money.runMonth', { month: thisMonth })}</button>
@@ -167,7 +171,9 @@ export default async function MoneyPage({ params, searchParams }: Props) {
         </Section>
       ) : null}
 
-      <a href={`${base}/export`} className="btn-secondary w-full">{t('money.export')}</a>
+      <a href={`${base}/export`} className="btn-secondary w-full sm:w-auto">{t('money.export')}</a>
+      </div>
+      </div>
     </>
   )
 }

@@ -1,8 +1,10 @@
+import { JourneyList } from '@/components/Journey'
 import { Flash, Section } from '@/components/ui'
 import { getOfficeScope } from '@/lib/auth'
 import { shortDate } from '@/lib/dates'
 import { getHome } from '@/lib/office'
 import { rpc } from '@/lib/db'
+import { journey } from '@/lib/journey'
 import { nextUnlock } from '@/lib/stage'
 import { taskHref, taskTitle } from '@/lib/tasks'
 import { t } from '@/i18n'
@@ -36,7 +38,8 @@ export default async function TodayPage({ params, searchParams }: Props) {
     : null
 
   return (
-    <>
+    <div className="wide grid gap-5 lg:grid-cols-3 lg:gap-8">
+      <div className="space-y-5 lg:col-span-2">
       <div>
         <h1>{t('home.greeting')}</h1>
         <p className="mt-1 text-[15px]">{summary.length ? summary.join(' · ') : t('home.allClear')}</p>
@@ -54,9 +57,16 @@ export default async function TodayPage({ params, searchParams }: Props) {
         <a href={`${base}/more/account`} className="notice-warning block font-semibold">{t('home.feeDue')}</a>
       ) : null}
 
-      <Section title={t('home.summary.tasks', { n: home.tasks.length })}>
+      <Section title={home.tasks.length > 0 ? t('home.summary.tasks', { n: home.tasks.length }) : t('clinic.tasks')}>
         {home.tasks.length === 0 ? (
-          <div className="card text-sm text-muted">{t('home.allClearHint')}</div>
+          <div className="card space-y-3">
+            <p className="text-sm">{t('home.allClearHint')}</p>
+            <div className="flex flex-wrap gap-2">
+              <a href={`${base}/clinics/new`} className="btn-primary">{t('clinics.add')}</a>
+              <a href={`${base}/clinics/import`} className="btn-secondary">{t('clinics.import')}</a>
+              <a href={`${base}/more/share`} className="btn-secondary">{t('more.share')}</a>
+            </div>
+          </div>
         ) : (
           <ul className="space-y-2">
             {home.tasks.map((task) => {
@@ -90,7 +100,9 @@ export default async function TodayPage({ params, searchParams }: Props) {
           <button className="btn-secondary shrink-0">{t('common.add')}</button>
         </form>
       </Section>
+      </div>
 
+      <aside className="space-y-5">
       <div className="grid grid-cols-3 gap-2">
         {(['pipeline', 'onboarding', 'live'] as const).map((k) => (
           <a key={k} href={`${base}/clinics?show=${k}`} className="card px-3 py-3 text-center">
@@ -100,14 +112,28 @@ export default async function TodayPage({ params, searchParams }: Props) {
         ))}
       </div>
 
+      {home.tasks.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2">
+          <a href={`${base}/clinics/new`} className="btn-primary">{t('clinics.add')}</a>
+          <a href={`${base}/more/share`} className="btn-secondary">{t('more.share')}</a>
+        </div>
+      ) : null}
+
+      {/* The whole product on one card, so nothing has to be found by finishing a step first. */}
+      <Section
+        title={t('guide.todayTitle')}
+        action={<a href={`${base}/guide`} className="text-sm font-medium text-cobalt">{t('nav.guide')} →</a>}
+      >
+        <JourneyList jobs={journey(base, home)} />
+      </Section>
+
       {next ? (
         <Section title={t('stage.nextTitle')}>
-          <div className="card space-y-3">
+          <div className="card space-y-2">
             <p className="meta">{t('stage.label', { n: home.stage.stage })} · {t(`stage.name.${home.stage.stage}`)}</p>
             <p className="text-[15px] text-ink">
               {t(`stage.next.${next}`, { clinics: stage5?.clinics ?? 10, staff: stage5?.staff ?? 3 })}
             </p>
-            {next <= 3 ? <a href={`${base}/clinics`} className="btn-primary w-full">{t(`stage.nextAction.${next}`)}</a> : null}
           </div>
         </Section>
       ) : null}
@@ -118,6 +144,7 @@ export default async function TodayPage({ params, searchParams }: Props) {
           <p className="text-sm">{t('home.notCertifiedBody')}</p>
         </div>
       ) : null}
-    </>
+      </aside>
+    </div>
   )
 }

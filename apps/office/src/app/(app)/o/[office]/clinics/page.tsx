@@ -36,11 +36,19 @@ export default async function ClinicsPage({ params, searchParams }: Props) {
   ]
 
   return (
-    <>
-      <PageHeader title={t('clinics.title')} action={<a href={`${base}/new`} className="btn-primary shrink-0">{t('clinics.add')}</a>} />
+    <div className="wide space-y-5">
+      <PageHeader
+        title={t('clinics.title')}
+        action={
+          <>
+            <a href={`${base}/import`} className="btn-secondary hidden sm:inline-flex">{t('clinics.import')}</a>
+            <a href={`${base}/new`} className="btn-primary">{t('clinics.add')}</a>
+          </>
+        }
+      />
       <Flash {...flash} />
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:px-0">
         {filters.map((f) => (
           <a
             key={f.key}
@@ -55,12 +63,46 @@ export default async function ClinicsPage({ params, searchParams }: Props) {
       </div>
 
       {shown.length === 0 ? (
-        <div className="card space-y-1">
-          <p className="font-semibold text-ink">{t('clinics.empty')}</p>
-          <p className="text-sm">{t('clinics.emptyHint')}</p>
+        <div className="card max-w-xl space-y-3">
+          <div className="space-y-1">
+            <p className="font-semibold text-ink">{t('clinics.empty')}</p>
+            <p className="text-sm">{t('guide.job.find.body')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={`${base}/new`} className="btn-primary">{t('clinics.add')}</a>
+            <a href={`${base}/import`} className="btn-secondary">{t('clinics.import')}</a>
+            <a href={`/o/${slug}/more/share`} className="btn-secondary">{t('more.share')}</a>
+          </div>
         </div>
       ) : (
-        <ul className="space-y-2">
+        <>
+        <div className="card hidden overflow-hidden p-0 lg:block">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-line bg-line-soft/60">
+              <tr>
+                {(['clinic', 'stage', 'health', 'next', 'lastContact', 'owner'] as const).map((k) => (
+                  <th key={k} scope="col" className="meta px-4 py-2.5 font-medium">{t(`clinics.col.${k}`)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line-soft">
+              {shown.map((c) => (
+                <tr key={c.id} className="hover:bg-line-soft/50">
+                  <td className="px-4 py-3">
+                    <a href={`${base}/${c.id}`} className="font-semibold text-ink hover:text-cobalt">{c.name}</a>
+                    <span className="block text-xs text-muted">{[c.district, c.facility_level].filter(Boolean).join(' · ')}</span>
+                  </td>
+                  <td className="px-4 py-3"><StageChip stage={c.stage} /></td>
+                  <td className="px-4 py-3">{c.health ? <HealthChip score={c.health.score} /> : <span className="text-muted">—</span>}</td>
+                  <td className="max-w-[18rem] truncate px-4 py-3 text-ink">{c.next_action ?? <span className="text-muted">—</span>}</td>
+                  <td className="whitespace-nowrap px-4 py-3">{c.last_contact_at ? relativeDay(c.last_contact_at, t) : <span className="text-muted">—</span>}</td>
+                  <td className="px-4 py-3">{c.assigned_member ?? <span className="text-muted">—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul className="space-y-2 lg:hidden">
           {shown.map((c) => (
             <li key={c.id}>
               <a href={`${base}/${c.id}`} className="card block space-y-1.5 active:bg-line-soft">
@@ -82,9 +124,10 @@ export default async function ClinicsPage({ params, searchParams }: Props) {
             </li>
           ))}
         </ul>
+        </>
       )}
 
-      <a href={`${base}/import`} className="btn-secondary w-full">{t('clinics.import')}</a>
-    </>
+      <a href={`${base}/import`} className="btn-secondary w-full sm:hidden">{t('clinics.import')}</a>
+    </div>
   )
 }

@@ -17,7 +17,12 @@ export default async function SupportPage({ params, searchParams }: Props) {
   return (
     <>
       <PageHeader title={t('support.title')} />
-      {tickets.length === 0 ? <p className="card text-sm">{t('support.empty')}</p> : (
+      {tickets.length === 0 ? (
+        <div className="card space-y-1">
+          <p className="font-semibold text-ink">{t('support.empty')}</p>
+          <p className="text-sm">{t('support.emptyHint')}</p>
+        </div>
+      ) : (
         <ul className="space-y-2">
           {tickets.map((tk) => (
             <li key={tk.id}>
