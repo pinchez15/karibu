@@ -19,6 +19,6 @@ export async function updateTicket(ticketId: string, path: string, form: FormDat
   } catch (e) {
     failure = errorMessage(e, t)
   }
-  revalidatePath(path)
-  redirect(`${path}?${new URLSearchParams(failure ? { error: failure } : { ok: t('common.saved') })}`)
+  revalidatePath(path.split('?')[0])
+  redirect(`${path}${path.includes('?') ? '&' : '?'}${new URLSearchParams(failure ? { error: failure } : { ok: t('common.saved') })}`)
 }

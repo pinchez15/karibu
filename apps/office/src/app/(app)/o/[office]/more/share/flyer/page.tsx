@@ -23,9 +23,9 @@ export default async function FlyerPage({ params }: Props) {
 
       {/* Vector only: prints sharp on A5 or A4 and costs a few KB to load. */}
       <article className="overflow-hidden rounded-2xl border border-line bg-white print:rounded-none print:border-0">
-        <div className="space-y-4 bg-cobalt-ink p-6 text-white">
+        <div className="space-y-4 bg-coral-ink p-6 text-white">
           <div className="flex items-center gap-2.5">
-            <KMark size={36} color="#FFFFFF" fg="rgb(var(--kh-cobalt))" />
+            <KMark size={36} color="#FFFFFF" fg="rgb(var(--ko-coral))" />
             <span className="text-lg font-semibold">{office.name}</span>
           </div>
           <p className="text-[26px] font-semibold leading-tight tracking-tight">

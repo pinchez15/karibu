@@ -71,7 +71,7 @@ export default async function NewClinicPage({ params, searchParams }: Props) {
           <ol className="space-y-3">
             {([1, 2, 3, 4, 5] as const).map((n) => (
               <li key={n} className="flex gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cobalt-soft text-xs font-semibold text-cobalt">{n}</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-coral-soft text-xs font-semibold text-coral">{n}</span>
                 <span>{t(`clinics.afterAdd.${n}`)}</span>
               </li>
             ))}

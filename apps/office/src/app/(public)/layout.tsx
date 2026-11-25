@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   referrer: 'no-referrer',
 }
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#1F36C7' }
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#D92B4B' }
 
 export const dynamic = 'force-dynamic'
 

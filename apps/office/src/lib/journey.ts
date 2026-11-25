@@ -23,12 +23,12 @@ export function journey(base: string, home: Home): Job[] {
     key, href, actions, count, state: href === null ? 'later' : count ? 'now' : 'ready',
   })
   return [
-    job('find', `${base}/clinics?show=pipeline`, home.counts.pipeline, [
+    job('find', `${base}/pipeline`, home.counts.pipeline, [
       ['addClinic', `${base}/clinics/new`],
       ['importList', `${base}/clinics/import`],
       ['sharePage', `${base}/more/share`],
     ]),
-    job('onboard', `${base}/clinics?show=onboarding`, home.counts.onboarding),
+    job('onboard', `${base}/onboarding`, home.counts.onboarding),
     job('live', `${base}/clinics?show=live`, home.counts.live),
     job('support', `${base}/support`, home.open_tickets),
     job('money', `${base}/money`, home.invoices.overdue + home.unmatched_payments, [

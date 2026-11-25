@@ -72,7 +72,7 @@ export async function updateClinicAction(slug: string, accountId: string, form: 
   await getOfficeScope(slug)
   const path = `/o/${slug}/clinics/${accountId}`
   const patch: Record<string, string> = {}
-  for (const key of ['facility_level', 'contact_name', 'contact_phone', 'champion_name', 'champion_phone', 'tier', 'next_action', 'notes', 'go_live_mode', 'billing_starts_on']) {
+  for (const key of ['facility_level', 'contact_name', 'contact_phone', 'champion_name', 'champion_phone', 'tier', 'next_action', 'next_action_at', 'notes', 'go_live_mode', 'billing_starts_on']) {
     if (form.has(key)) patch[key] = text(form, key)
   }
   try {
@@ -87,13 +87,17 @@ export async function updateClinicAction(slug: string, accountId: string, form: 
 export async function setStageAction(slug: string, accountId: string, form: FormData) {
   await getOfficeScope(slug)
   const path = `/o/${slug}/clinics/${accountId}`
+  // The pipeline board moves a clinic and stays on the board.
+  const asked = text(form, 'return_to')
+  const returnTo = asked.startsWith(`/o/${slug}/`) ? asked : null
   try {
     await rpc('office_clinic_set_stage', { p_account_id: accountId, p_stage: text(form, 'stage'), p_note: text(form, 'note') || null })
   } catch (e) {
-    go(path, { error: errorMessage(e, t) })
+    go(returnTo ?? path, { error: errorMessage(e, t) })
   }
   revalidatePath(path)
-  go(text(form, 'stage') === 'churned' ? `/o/${slug}/clinics` : path, { ok: t('common.saved') })
+  if (returnTo) revalidatePath(returnTo)
+  go(returnTo ?? (text(form, 'stage') === 'churned' ? `/o/${slug}/clinics` : path), { ok: t('common.saved') })
 }
 
 /** Called by the visit log form, online or when the phone's queue flushes. Idempotent on `id`. */

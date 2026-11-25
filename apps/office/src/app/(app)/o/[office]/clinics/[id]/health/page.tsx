@@ -63,7 +63,7 @@ export default async function HealthPage({ params }: Props) {
         <div className="card">
           <div className="flex h-24 items-end gap-1" role="img" aria-label={`${t('health.chart')}: ${h.daily.map((d) => d.visits).join(', ')}`}>
             {h.daily.map((d) => (
-              <div key={d.day} className="flex-1 rounded-t bg-cobalt/80" style={{ height: `${Math.max(3, (d.visits / peak) * 100)}%` }} title={`${d.day}: ${d.visits}`} />
+              <div key={d.day} className="flex-1 rounded-t bg-coral/80" style={{ height: `${Math.max(3, (d.visits / peak) * 100)}%` }} title={`${d.day}: ${d.visits}`} />
             ))}
           </div>
           <div className="mt-2 flex gap-1" aria-hidden>

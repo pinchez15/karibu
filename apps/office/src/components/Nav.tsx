@@ -1,11 +1,28 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { Icon, type IconName } from './icons'
 
-export type NavItem = { href: string; label: string; exact?: boolean; badge?: number }
+export type NavItem = {
+  href: string
+  label: string
+  icon: IconName
+  exact?: boolean
+  /** A count beside the label. */
+  badge?: number
+  /** True when the count is something waiting on the partner, not just a size. */
+  urgent?: boolean
+  /** Other paths that should light this item up. */
+  also?: string[]
+  /** Paths under href that belong to another item. */
+  except?: string[]
+}
 
 function isActive(path: string, item: NavItem) {
-  return item.exact ? path === item.href : path === item.href || path.startsWith(`${item.href}/`)
+  if (item.exact) return path === item.href
+  if (item.except?.some((p) => path === p || path.startsWith(`${p}/`))) return false
+  const roots = [item.href, ...(item.also ?? [])]
+  return roots.some((root) => path === root || path.startsWith(`${root}/`))
 }
 
 /** Desktop sidebar links. A client component only so the current page can be marked. */
@@ -20,12 +37,17 @@ export function SideLinks({ items }: { items: NavItem[] }) {
             <a
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[15px] font-medium ${
-                active ? 'bg-cobalt-soft font-semibold text-cobalt-deep' : 'text-body hover:bg-line-soft'
+              className={`flex min-h-[36px] items-center gap-2.5 rounded-full px-3 text-sm ${
+                active ? 'bg-coral-soft font-semibold text-coral-ink' : 'font-medium text-body hover:bg-line-soft'
               }`}
             >
-              {item.label}
-              {item.badge ? <span className="chip-danger">{item.badge}</span> : null}
+              <Icon name={item.icon} />
+              <span className="flex-1">{item.label}</span>
+              {item.badge ? (
+                <span className={`num rounded-full px-1.5 text-xs font-semibold ${item.urgent ? 'bg-amber-soft text-amber-ink' : active ? 'text-coral-ink' : 'text-muted'}`}>
+                  {item.badge}
+                </span>
+              ) : null}
             </a>
           </li>
         )
@@ -46,12 +68,15 @@ export function TabLinks({ items }: { items: NavItem[] }) {
             <a
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex min-h-[56px] flex-col items-center justify-center border-t-2 text-[13px] font-semibold active:bg-line-soft ${
-                active ? 'border-cobalt text-cobalt' : 'border-transparent text-body'
+              className={`relative flex min-h-[58px] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold active:bg-line-soft ${
+                active ? 'text-coral' : 'text-muted'
               }`}
             >
+              <Icon name={item.icon} size={22} />
               {item.label}
-              {item.badge ? <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-red" aria-label={String(item.badge)} /> : null}
+              {item.badge && item.urgent ? (
+                <span className="absolute right-[calc(50%-18px)] top-2 h-2 w-2 rounded-full bg-amber" aria-label={String(item.badge)} />
+              ) : null}
             </a>
           </li>
         )

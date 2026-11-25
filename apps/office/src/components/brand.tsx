@@ -1,5 +1,5 @@
 // Karibu mark, same geometry as apps/web/src/components/landing/brand.tsx.
-export function KMark({ size = 32, color = 'rgb(var(--kh-cobalt))', fg = '#FFFFFF' }: { size?: number; color?: string; fg?: string }) {
+export function KMark({ size = 32, color = 'rgb(var(--ko-coral-bright))', fg = '#FFFFFF' }: { size?: number; color?: string; fg?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
       <rect x="0" y="0" width="100" height="100" rx="22" fill={color} />
