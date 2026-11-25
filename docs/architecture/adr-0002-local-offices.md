@@ -123,6 +123,10 @@ Added 2026-11-25 (migration 119).
 - Whether a panel has enough data to show a rate or a trend is decided in `apps/office/src/lib/analytics.ts`, not in SQL, so the thresholds are unit tested and can change without a migration. A panel is `collecting`, `ready`, `stale` or `paused`. The owner's pauses are stored in `office.office_prefs.analytics_paused`.
 - Brand: decision 1's "existing Karibu Health tokens" is superseded. Office uses the KaribuLearn coral (`docs/karibu-office-brand.md`).
 
+### 15. The facility register is reference data, claimed through the same door
+
+Added 2026-11-25 (migrations 120, 121). `office.facilities` is a read-only list of health facilities per country, seeded for Uganda from the Ministry of Health's 2018 master list. `office_facilities_search` reports each facility as open, yours or held by joining on the same normalized (country, district, name) key as decision 6, and never returns the holder. `office_facilities_add` calls `office.claim_clinic`, so a facility from the register is claimed, refused or queued for Karibu central exactly like a clinic typed in by hand. Facilities are organisations, so no patient data is involved. The seed is generated (`packages/supabase/data/facilities/build_ug_2018.py`); a newer list is a new generated migration.
+
 ## What is not built
 
 - Phase 2 and 3 modules. Their tables exist as stubs: `office.kits`, `devices`, `referral_links`, `commissions`, `one_on_ones`.

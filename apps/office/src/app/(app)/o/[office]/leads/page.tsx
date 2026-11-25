@@ -1,4 +1,4 @@
-import { Flash, PageHeader, WhatsAppButton } from '@/components/ui'
+import { Flash, PageHeader, Tabs, WhatsAppButton } from '@/components/ui'
 import { getOfficeScope } from '@/lib/auth'
 import { relativeDay } from '@/lib/dates'
 import { rpc } from '@/lib/db'
@@ -87,10 +87,11 @@ export default async function LeadsPage({ params, searchParams }: Props) {
         action={
           <>
             <a href={`${base}/clinics/import`} className="btn-secondary btn-sm">{t('clinics.import')}</a>
-            <a href={`${base}/clinics/new`} className="btn-primary btn-sm">{t('pipeline.add')}</a>
+            <a href={`${here}/register`} className="btn-primary btn-sm">{t('today.findClinics')}</a>
           </>
         }
       />
+      <Tabs items={[{ href: here, label: t('register.tabWaiting'), on: true, badge: asked.length }, { href: `${here}/register`, label: t('register.tab') }]} />
       <Flash {...flash} />
 
       <section className="space-y-2">
@@ -133,7 +134,7 @@ export default async function LeadsPage({ params, searchParams }: Props) {
           <h2 className="text-[15px]">{t('leads.waysTitle')}</h2>
           <ul className="grid gap-3 sm:grid-cols-3">
             {([
-              ['share', `${base}/more/share`], ['import', `${base}/clinics/import`], ['hand', `${base}/clinics/new`],
+              ['register', `${here}/register`], ['share', `${base}/more/share`], ['hand', `${base}/clinics/new`],
             ] as const).map(([key, href]) => (
               <li key={key}>
                 <a href={href} className="block h-full rounded-xl border border-line p-3 hover:border-ink/30">
@@ -143,7 +144,6 @@ export default async function LeadsPage({ params, searchParams }: Props) {
               </li>
             ))}
           </ul>
-          <p className="text-[13px] text-muted">{t('leads.directory')}</p>
         </section>
       </div>
     </div>

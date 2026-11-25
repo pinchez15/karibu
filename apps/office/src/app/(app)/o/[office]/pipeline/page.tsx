@@ -100,7 +100,7 @@ export default async function PipelinePage({ params, searchParams }: Props) {
       {p.sales.length + p.onboarding.length === 0 ? (
         <Empty title={t('pipeline.emptyTitle')} body={t('pipeline.emptyBody')}>
           <a href={`${base}/clinics/new`} className="btn-primary btn-sm">{t('pipeline.add')}</a>
-          <a href={`${base}/leads`} className="btn-secondary btn-sm">{t('today.findClinics')}</a>
+          <a href={`${base}/leads/register`} className="btn-secondary btn-sm">{t('today.findClinics')}</a>
           <a href={`${base}/more/share`} className="btn-secondary btn-sm">{t('more.share')}</a>
         </Empty>
       ) : (

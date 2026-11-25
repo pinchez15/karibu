@@ -69,7 +69,7 @@ export default async function HomePage({ params, searchParams }: Props) {
           {all.length === 0 ? <p className="mt-1 text-[15px]">{t('today.sub0')}</p> : null}
         </div>
         <div className="flex gap-2">
-          <a href={`${base}/leads`} className="btn-secondary btn-sm">{t('today.findClinics')}</a>
+          <a href={`${base}/leads/register`} className="btn-secondary btn-sm">{t('today.findClinics')}</a>
           <a href={`${base}/clinics/new`} className="btn-secondary btn-sm">{t('clinics.add')}</a>
         </div>
       </div>
